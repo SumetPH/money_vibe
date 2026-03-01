@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
+import 'portfolio_detail_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
   const AccountListScreen({super.key});
@@ -71,93 +72,96 @@ class _AccountListScreenState extends State<AccountListScreen> {
             groupedAccounts.putIfAbsent(group, () => []).add(account);
           }
 
-          return CustomScrollView(
-            slivers: [
-              // Header
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _TotalRow(
-                      label: 'ยอดรวม',
-                      amount: netWorth,
-                      icon: Icons.account_balance_wallet,
-                      iconColor: const Color(0xFFFFB300),
-                      isTopLevel: true,
-                    ),
-                  ],
-                ),
-              ),
-              // Each group has its own ReorderableListView
-              for (final groupName in groupOrder)
-                if (groupedAccounts.containsKey(groupName) &&
-                    groupedAccounts[groupName]!.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SectionHeader(
-                          title: groupName,
-                          total: groupTotals[groupName] ?? 0,
-                        ),
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          buildDefaultDragHandles: isReorderMode,
-                          itemCount: groupedAccounts[groupName]!.length,
-                          onReorder: isReorderMode
-                              ? (oldIndex, newIndex) {
-                                  accountProvider.reorderAccountsInGroup(
-                                    groupName,
-                                    oldIndex,
-                                    newIndex,
-                                  );
-                                }
-                              : (_, _) {},
-                          proxyDecorator: (child, index, animation) {
-                            return AnimatedBuilder(
-                              animation: animation,
-                              builder: (context, child) {
-                                final animValue = Curves.easeInOut.transform(
-                                  animation.value,
-                                );
-                                final elevation = 1 + animValue * 8;
-                                final scale = 1 + animValue * 0.02;
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: Material(
-                                    elevation: elevation,
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: child,
-                            );
-                          },
-                          itemBuilder: (context, index) {
-                            final account = groupedAccounts[groupName]![index];
-                            final balance = accountProvider.getBalance(
-                              account.id,
-                              transactions,
-                            );
-
-                            return _AccountItem(
-                              key: ValueKey(account.id),
-                              account: account,
-                              balance: balance,
-                              isReorderMode: isReorderMode,
-                              onTap: () => _openForm(context, account),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+          return SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _TotalRow(
+                        label: 'ยอดรวม',
+                        amount: netWorth,
+                        icon: Icons.account_balance_wallet,
+                        iconColor: const Color(0xFFFFB300),
+                        isTopLevel: true,
+                      ),
+                    ],
                   ),
-              // Footer padding
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
+                ),
+                // Each group has its own ReorderableListView
+                for (final groupName in groupOrder)
+                  if (groupedAccounts.containsKey(groupName) &&
+                      groupedAccounts[groupName]!.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionHeader(
+                            title: groupName,
+                            total: groupTotals[groupName] ?? 0,
+                          ),
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: isReorderMode,
+                            itemCount: groupedAccounts[groupName]!.length,
+                            onReorder: isReorderMode
+                                ? (oldIndex, newIndex) {
+                                    accountProvider.reorderAccountsInGroup(
+                                      groupName,
+                                      oldIndex,
+                                      newIndex,
+                                    );
+                                  }
+                                : (_, _) {},
+                            proxyDecorator: (child, index, animation) {
+                              return AnimatedBuilder(
+                                animation: animation,
+                                builder: (context, child) {
+                                  final animValue = Curves.easeInOut.transform(
+                                    animation.value,
+                                  );
+                                  final elevation = 1 + animValue * 8;
+                                  final scale = 1 + animValue * 0.02;
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: Material(
+                                      elevation: elevation,
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: child,
+                              );
+                            },
+                            itemBuilder: (context, index) {
+                              final account =
+                                  groupedAccounts[groupName]![index];
+                              final balance = accountProvider.getBalance(
+                                account.id,
+                                transactions,
+                              );
+
+                              return _AccountItem(
+                                key: ValueKey(account.id),
+                                account: account,
+                                balance: balance,
+                                isReorderMode: isReorderMode,
+                                onTap: () => _openForm(context, account),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                // Footer padding
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
           );
         },
       ),
@@ -165,10 +169,19 @@ class _AccountListScreenState extends State<AccountListScreen> {
   }
 
   void _openForm(BuildContext context, Account? account) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
-    );
+    if (account != null && account.type == AccountType.portfolio) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PortfolioDetailScreen(account: account),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
+      );
+    }
   }
 
   void _showAppMenu(BuildContext context) {

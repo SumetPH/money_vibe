@@ -1,6 +1,3 @@
-import 'dart:ui';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/account_provider.dart';
@@ -45,12 +42,20 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
       // Reload all providers after import
       debugPrint('BackupRestore: result.hasData = ${result.hasData}');
-      debugPrint('BackupRestore: result.categoriesCount = ${result.categoriesCount}');
+      debugPrint(
+        'BackupRestore: result.categoriesCount = ${result.categoriesCount}',
+      );
       if (result.hasData) {
         debugPrint('BackupRestore: Reloading providers...');
-        await Provider.of<AccountProvider>(context, listen: false).reload();
-        await Provider.of<CategoryProvider>(context, listen: false).reload();
-        await Provider.of<TransactionProvider>(context, listen: false).reload();
+        final accountProvider =
+            Provider.of<AccountProvider>(context, listen: false);
+        final categoryProvider =
+            Provider.of<CategoryProvider>(context, listen: false);
+        final transactionProvider =
+            Provider.of<TransactionProvider>(context, listen: false);
+        await accountProvider.reload();
+        await categoryProvider.reload();
+        await transactionProvider.reload();
         debugPrint('BackupRestore: Providers reloaded');
       } else {
         debugPrint('BackupRestore: No data to reload');
@@ -105,7 +110,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'ส่งออกข้อมูลทั้งหมดเป็นไฟล์ CSV 3 ไฟล์',
+                              'ส่งออกข้อมูลทั้งหมดเป็นไฟล์ CSV 4 ไฟล์',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
@@ -170,7 +175,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                       icon: const Icon(Icons.restore),
                       label: const Text('Restore'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
                       ),
                     ),
                   ),

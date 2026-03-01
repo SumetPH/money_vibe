@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database_helper.dart';
 import '../models/account.dart';
+import '../models/stock_holding.dart';
 import '../models/transaction.dart';
 
 class AccountProvider extends ChangeNotifier {
@@ -9,6 +10,7 @@ class AccountProvider extends ChangeNotifier {
   final _db = DatabaseHelper.instance;
 
   final List<Account> _accounts = [];
+  final Map<String, List<StockHolding>> _holdings = {}; // portfolioId → holdings
 
   // ── Seed data (used only on first launch) ─────────────────────────────────
 
@@ -101,6 +103,38 @@ class AccountProvider extends ChangeNotifier {
       icon: Icons.show_chart,
       color: const Color(0xFF009688),
     ),
+    Account(
+      id: 'acc_ibkr',
+      name: 'IBKR Portfolio',
+      type: AccountType.portfolio,
+      cashBalance: 5000,
+      exchangeRate: 35.0,
+      icon: Icons.candlestick_chart,
+      color: const Color(0xFF1565C0),
+    ),
+  ];
+
+  static List<StockHolding> get _seedHoldings => [
+    StockHolding(
+      id: 'h_aapl',
+      portfolioId: 'acc_ibkr',
+      ticker: 'AAPL',
+      name: 'Apple Inc.',
+      shares: 10,
+      priceUsd: 185.0,
+      costBasisUsd: 170.0,
+      sortOrder: 0,
+    ),
+    StockHolding(
+      id: 'h_msft',
+      portfolioId: 'acc_ibkr',
+      ticker: 'MSFT',
+      name: 'Microsoft Corp.',
+      shares: 5,
+      priceUsd: 415.0,
+      costBasisUsd: 390.0,
+      sortOrder: 1,
+    ),
   ];
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -113,16 +147,34 @@ class AccountProvider extends ChangeNotifier {
         await _db.insertAccount(acc.toMap());
       }
       _accounts.addAll(seeds);
+
+      // Seed holdings
+      for (final h in _seedHoldings) {
+        await _db.insertHolding(h.toMap());
+        _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+      }
     } else {
       _accounts.addAll(rows.map(Account.fromMap));
+
+      final holdingRows = await _db.getPortfolioHoldings();
+      for (final row in holdingRows) {
+        final h = StockHolding.fromMap(row);
+        _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+      }
     }
   }
 
   /// Reload accounts from database (used after restore)
   Future<void> reload() async {
     _accounts.clear();
+    _holdings.clear();
     final rows = await _db.getAccounts();
     _accounts.addAll(rows.map(Account.fromMap));
+    final holdingRows = await _db.getPortfolioHoldings();
+    for (final row in holdingRows) {
+      final h = StockHolding.fromMap(row);
+      _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+    }
     notifyListeners();
   }
 
@@ -149,11 +201,25 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
+  List<StockHolding> getHoldings(String portfolioId) =>
+      List.unmodifiable(_holdings[portfolioId] ?? []);
+
   // ── Balance computation ───────────────────────────────────────────────────
 
   double getBalance(String accountId, List<AppTransaction> transactions) {
     final account = findById(accountId);
     if (account == null) return 0;
+
+    // Portfolio: balance = cashBalance + sum of holdings value in THB
+    if (account.type == AccountType.portfolio) {
+      double total = account.cashBalance;
+      for (final h in (_holdings[accountId] ?? [])) {
+        total += h.shares * h.priceUsd * account.exchangeRate;
+      }
+      return total;
+    }
+
+    // Regular accounts: computed from transactions
     double balance = account.initialBalance;
     for (final tx in transactions) {
       if (tx.accountId == accountId) {
@@ -187,7 +253,7 @@ class AccountProvider extends ChangeNotifier {
     return totals;
   }
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
+  // ── Account CRUD ──────────────────────────────────────────────────────────
 
   void addAccount(Account account) {
     _accounts.add(account);
@@ -206,8 +272,10 @@ class AccountProvider extends ChangeNotifier {
 
   void deleteAccount(String id) {
     _accounts.removeWhere((a) => a.id == id);
+    _holdings.remove(id);
     notifyListeners();
     _db.deleteAccount(id);
+    _db.deleteHoldingsByPortfolio(id);
   }
 
   void reorderAccounts(int oldIndex, int newIndex) {
@@ -272,6 +340,31 @@ class AccountProvider extends ChangeNotifier {
 
     // Perform the reorder
     reorderAccounts(actualOldIndex, actualNewIndex);
+  }
+
+  // ── Holdings CRUD ──────────────────────────────────────────────────────────
+
+  void addHolding(StockHolding holding) {
+    _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
+    notifyListeners();
+    _db.insertHolding(holding.toMap());
+  }
+
+  void updateHolding(StockHolding updated) {
+    final list = _holdings[updated.portfolioId];
+    if (list == null) return;
+    final idx = list.indexWhere((h) => h.id == updated.id);
+    if (idx != -1) {
+      list[idx] = updated;
+      notifyListeners();
+      _db.updateHolding(updated.toMap());
+    }
+  }
+
+  void deleteHolding(String id, String portfolioId) {
+    _holdings[portfolioId]?.removeWhere((h) => h.id == id);
+    notifyListeners();
+    _db.deleteHolding(id);
   }
 
   String generateId() => _uuid.v4();

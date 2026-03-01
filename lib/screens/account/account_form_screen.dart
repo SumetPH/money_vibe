@@ -18,6 +18,7 @@ class AccountFormScreen extends StatefulWidget {
 class _AccountFormScreenState extends State<AccountFormScreen> {
   final _nameController = TextEditingController();
   final _initialBalanceController = TextEditingController();
+  final _exchangeRateController = TextEditingController();
   final _noteController = TextEditingController();
 
   late AccountType _selectedType;
@@ -35,9 +36,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     super.initState();
     final acc = widget.account;
     _nameController.text = acc?.name ?? '';
-    _initialBalanceController.text = acc != null
-        ? formatAmount(acc.initialBalance)
-        : '';
     _selectedType = acc?.type ?? AccountType.cash;
     _selectedCurrency = acc?.currency ?? 'THB';
     _startDate = acc?.startDate ?? DateTime.now();
@@ -45,12 +43,24 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _selectedColor = acc?.color ?? AppColors.accountColors.first;
     _excludeFromNetWorth = acc?.excludeFromNetWorth ?? false;
     _isHidden = acc?.isHidden ?? false;
+
+    if (_selectedType == AccountType.portfolio) {
+      _initialBalanceController.text =
+          acc != null ? formatAmount(acc.cashBalance) : '';
+      _exchangeRateController.text =
+          acc != null ? acc.exchangeRate.toString() : '35.0';
+    } else {
+      _initialBalanceController.text =
+          acc != null ? formatAmount(acc.initialBalance) : '';
+      _exchangeRateController.text = '35.0';
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _initialBalanceController.dispose();
+    _exchangeRateController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -67,7 +77,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     final balanceText = _initialBalanceController.text
         .replaceAll(',', '')
         .trim();
-    final initialBalance = double.tryParse(balanceText) ?? 0;
+    final balanceValue = double.tryParse(balanceText) ?? 0;
+    final exchangeRate =
+        double.tryParse(_exchangeRateController.text.trim()) ?? 35.0;
+
+    final isPortfolio = _selectedType == AccountType.portfolio;
+    final initialBalance = isPortfolio ? 0.0 : balanceValue;
+    final cashBalance = isPortfolio ? balanceValue : 0.0;
 
     final provider = context.read<AccountProvider>();
 
@@ -86,6 +102,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
+          cashBalance: cashBalance,
+          exchangeRate: exchangeRate,
         ),
       );
     } else {
@@ -101,6 +119,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           color: _selectedColor,
           excludeFromNetWorth: _excludeFromNetWorth,
           isHidden: _isHidden,
+          cashBalance: cashBalance,
+          exchangeRate: exchangeRate,
         ),
       );
     }
@@ -166,17 +186,19 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             onTap: _pickAccountType,
           ),
           _buildDivider(),
-          // Initial Balance
+          // Initial Balance / Cash Balance
           Container(
             color: AppColors.surface,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 130,
                   child: Text(
-                    'ยอดเริ่มต้น',
-                    style: TextStyle(
+                    _selectedType == AccountType.portfolio
+                        ? 'เงินสดใน Broker'
+                        : 'ยอดเริ่มต้น',
+                    style: const TextStyle(
                       fontSize: 15,
                       color: AppColors.textSecondary,
                     ),
@@ -193,12 +215,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                       FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
                     ],
                     textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
-                      hintText: 'ยอดเริ่มต้น',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                    decoration: InputDecoration(
+                      hintText: _selectedType == AccountType.portfolio
+                          ? '0'
+                          : 'ยอดเริ่มต้น',
+                      hintStyle:
+                          const TextStyle(color: AppColors.textSecondary),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     style: const TextStyle(fontSize: 15),
                   ),
@@ -207,6 +232,48 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             ),
           ),
           _buildDivider(),
+          // Exchange Rate (portfolio only)
+          if (_selectedType == AccountType.portfolio) ...[
+            Container(
+              color: AppColors.surface,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 130,
+                    child: Text(
+                      'USD/THB',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _exchangeRateController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      ],
+                      textAlign: TextAlign.right,
+                      decoration: const InputDecoration(
+                        hintText: '35.0',
+                        hintStyle: TextStyle(color: AppColors.textSecondary),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _buildDivider(),
+          ],
           // Currency
           _buildPickerRow(
             label: 'สกุลเงิน',
@@ -412,7 +479,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                       ? const Icon(Icons.check, color: AppColors.header)
                       : null,
                   onTap: () {
-                    setState(() => _selectedType = type);
+                    setState(() {
+                      _selectedType = type;
+                      // Clear balance field when switching type
+                      _initialBalanceController.clear();
+                    });
                     Navigator.pop(context);
                   },
                 ),

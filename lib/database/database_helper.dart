@@ -17,7 +17,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'money.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE accounts (
@@ -31,7 +31,10 @@ class DatabaseHelper {
             color INTEGER NOT NULL,
             exclude_from_net_worth INTEGER NOT NULL DEFAULT 0,
             is_hidden INTEGER NOT NULL DEFAULT 0,
-            sort_order INTEGER NOT NULL DEFAULT 0
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            cash_balance REAL NOT NULL DEFAULT 0,
+            exchange_rate REAL NOT NULL DEFAULT 35.0,
+            auto_update_rate INTEGER NOT NULL DEFAULT 1
           )
         ''');
         await db.execute('''
@@ -64,6 +67,18 @@ class DatabaseHelper {
             record_date INTEGER
           )
         ''');
+        await db.execute('''
+          CREATE TABLE portfolio_holdings (
+            id TEXT PRIMARY KEY,
+            portfolio_id TEXT NOT NULL,
+            ticker TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
+            shares REAL NOT NULL DEFAULT 0,
+            price_usd REAL NOT NULL DEFAULT 0,
+            cost_basis_usd REAL NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -74,6 +89,35 @@ class DatabaseHelper {
         if (oldVersion < 3) {
           await db.execute(
             'ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 4) {
+          await db.execute(
+            'ALTER TABLE accounts ADD COLUMN cash_balance REAL NOT NULL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE accounts ADD COLUMN exchange_rate REAL NOT NULL DEFAULT 35.0',
+          );
+          await db.execute('''
+            CREATE TABLE portfolio_holdings (
+              id TEXT PRIMARY KEY,
+              portfolio_id TEXT NOT NULL,
+              ticker TEXT NOT NULL,
+              name TEXT NOT NULL DEFAULT '',
+              shares REAL NOT NULL DEFAULT 0,
+              price_usd REAL NOT NULL DEFAULT 0,
+              sort_order INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+        }
+        if (oldVersion < 5) {
+          await db.execute(
+            'ALTER TABLE portfolio_holdings ADD COLUMN cost_basis_usd REAL NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 6) {
+          await db.execute(
+            'ALTER TABLE accounts ADD COLUMN auto_update_rate INTEGER NOT NULL DEFAULT 1',
           );
         }
       },
@@ -186,5 +230,45 @@ class DatabaseHelper {
   Future<void> deleteTransaction(String id) async {
     final db = await database;
     await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ── Portfolio Holdings ─────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getPortfolioHoldings() async {
+    final db = await database;
+    return db.query('portfolio_holdings', orderBy: 'sort_order ASC, rowid ASC');
+  }
+
+  Future<void> insertHolding(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert(
+      'portfolio_holdings',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> updateHolding(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update(
+      'portfolio_holdings',
+      data,
+      where: 'id = ?',
+      whereArgs: [data['id']],
+    );
+  }
+
+  Future<void> deleteHolding(String id) async {
+    final db = await database;
+    await db.delete('portfolio_holdings', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteHoldingsByPortfolio(String portfolioId) async {
+    final db = await database;
+    await db.delete(
+      'portfolio_holdings',
+      where: 'portfolio_id = ?',
+      whereArgs: [portfolioId],
+    );
   }
 }

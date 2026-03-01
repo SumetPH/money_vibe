@@ -5,7 +5,8 @@ enum AccountType {
   bankAccount('บัญชีธนาคาร'),
   creditCard('บัตรเครดิต'),
   debt('หนี้สิน'),
-  investment('ลงทุน');
+  investment('ลงทุน'),
+  portfolio('พอร์ตหุ้น US');
 
   final String label;
   const AccountType(this.label);
@@ -21,6 +22,7 @@ String accountTypeDisplayGroup(AccountType type) {
     case AccountType.debt:
       return 'หนี้สิน';
     case AccountType.investment:
+    case AccountType.portfolio:
       return 'ลงทุน';
   }
 }
@@ -36,6 +38,7 @@ int accountTypeOrder(AccountType type) {
     case AccountType.debt:
       return 3;
     case AccountType.investment:
+    case AccountType.portfolio:
       return 4;
   }
 }
@@ -53,6 +56,11 @@ class Account {
   bool isHidden;
   int sortOrder;
 
+  // Portfolio-specific fields
+  double cashBalance;
+  double exchangeRate;
+  bool autoUpdateRate;
+
   Account({
     required this.id,
     required this.name,
@@ -65,7 +73,12 @@ class Account {
     this.excludeFromNetWorth = false,
     this.isHidden = false,
     this.sortOrder = 0,
+    this.cashBalance = 0,
+    this.exchangeRate = 35.0,
+    this.autoUpdateRate = true,
   }) : startDate = startDate ?? DateTime.now();
+
+  bool get isPortfolio => type == AccountType.portfolio;
 
   Map<String, dynamic> toMap() => {
     'id': id,
@@ -79,6 +92,9 @@ class Account {
     'exclude_from_net_worth': excludeFromNetWorth ? 1 : 0,
     'is_hidden': isHidden ? 1 : 0,
     'sort_order': sortOrder,
+    'cash_balance': cashBalance,
+    'exchange_rate': exchangeRate,
+    'auto_update_rate': autoUpdateRate ? 1 : 0,
   };
 
   static Account fromMap(Map<String, dynamic> m) => Account(
@@ -93,6 +109,9 @@ class Account {
     excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
     isHidden: m['is_hidden'] == 1,
     sortOrder: m['sort_order'] as int? ?? 0,
+    cashBalance: (m['cash_balance'] as num? ?? 0).toDouble(),
+    exchangeRate: (m['exchange_rate'] as num? ?? 35.0).toDouble(),
+    autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
   );
 
   Account copyWith({
@@ -111,6 +130,9 @@ class Account {
     String? group,
     String? note,
     int? sortOrder,
+    double? cashBalance,
+    double? exchangeRate,
+    bool? autoUpdateRate,
   }) {
     return Account(
       id: id,
@@ -124,6 +146,9 @@ class Account {
       excludeFromNetWorth: excludeFromNetWorth ?? this.excludeFromNetWorth,
       isHidden: isHidden ?? this.isHidden,
       sortOrder: sortOrder ?? this.sortOrder,
+      cashBalance: cashBalance ?? this.cashBalance,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
+      autoUpdateRate: autoUpdateRate ?? this.autoUpdateRate,
     );
   }
 }
