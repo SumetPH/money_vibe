@@ -2,15 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class StockPriceService {
-  // สมัคร API key ฟรีได้ที่ https://finnhub.io (ไม่ต้องใส่บัตรเครดิต)
-  // แล้วแก้ค่าด้านล่างนี้
-  static const String apiKey = 'd4anikhr01qseda2gvk0d4anikhr01qseda2gvkg';
-
   static const _finnhubBase = 'https://finnhub.io/api/v1';
   static const _erBase = 'https://open.er-api.com';
 
-  bool get isConfigured =>
-      apiKey != 'YOUR_FINNHUB_API_KEY' && apiKey.isNotEmpty;
+  final String? apiKey;
+
+  StockPriceService({this.apiKey});
+
+  bool get isConfigured => apiKey != null && apiKey!.isNotEmpty;
 
   /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน (parallel requests)
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {

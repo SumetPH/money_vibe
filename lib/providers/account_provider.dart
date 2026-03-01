@@ -367,5 +367,33 @@ class AccountProvider extends ChangeNotifier {
     _db.deleteHolding(id);
   }
 
+  void reorderHoldings(String portfolioId, int oldIndex, int newIndex) {
+    final holdings = _holdings[portfolioId];
+    if (holdings == null) return;
+    if (oldIndex < 0 || oldIndex >= holdings.length) return;
+    if (newIndex < 0 || newIndex > holdings.length) return;
+
+    // Adjust newIndex for the remove-then-insert operation
+    if (newIndex > oldIndex) {
+      newIndex--;
+    }
+
+    // Remove and re-insert
+    final movedHolding = holdings.removeAt(oldIndex);
+    holdings.insert(newIndex, movedHolding);
+
+    // Update sortOrder for all holdings in this portfolio
+    for (var i = 0; i < holdings.length; i++) {
+      final h = holdings[i];
+      final newSortOrder = i * 10; // Use multiples of 10 for flexibility
+      if (h.sortOrder != newSortOrder) {
+        h.sortOrder = newSortOrder;
+        _db.updateHolding(h.toMap());
+      }
+    }
+
+    notifyListeners();
+  }
+
   String generateId() => _uuid.v4();
 }

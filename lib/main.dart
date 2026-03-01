@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/account_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
@@ -16,11 +17,13 @@ void main() async {
   final accountProvider = AccountProvider();
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
+  final settingsProvider = SettingsProvider();
 
   await Future.wait([
     accountProvider.init(),
     categoryProvider.init(),
     transactionProvider.init(),
+    settingsProvider.loadSettings(),
   ]);
 
   runApp(
@@ -28,6 +31,7 @@ void main() async {
       accountProvider: accountProvider,
       categoryProvider: categoryProvider,
       transactionProvider: transactionProvider,
+      settingsProvider: settingsProvider,
     ),
   );
 }
@@ -36,12 +40,14 @@ class MyApp extends StatelessWidget {
   final AccountProvider accountProvider;
   final CategoryProvider categoryProvider;
   final TransactionProvider transactionProvider;
+  final SettingsProvider settingsProvider;
 
   const MyApp({
     super.key,
     required this.accountProvider,
     required this.categoryProvider,
     required this.transactionProvider,
+    required this.settingsProvider,
   });
 
   @override
@@ -51,6 +57,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: accountProvider),
         ChangeNotifierProvider.value(value: categoryProvider),
         ChangeNotifierProvider.value(value: transactionProvider),
+        ChangeNotifierProvider.value(value: settingsProvider),
       ],
       child: MaterialApp(
         title: 'Money',

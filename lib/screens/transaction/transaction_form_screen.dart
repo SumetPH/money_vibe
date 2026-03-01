@@ -190,7 +190,21 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   Widget build(BuildContext context) {
     return Consumer3<AccountProvider, TransactionProvider, CategoryProvider>(
       builder: (context, accountProvider, txProvider, catProvider, _) {
-        final accounts = accountProvider.visibleAccounts;
+        // Filter out debt accounts for Income/Expense transactions
+        final allVisibleAccounts = accountProvider.visibleAccounts;
+        final accounts =
+            (_type == TransactionType.income ||
+                _type == TransactionType.expense ||
+                _type == TransactionType.debtRepay)
+            ? allVisibleAccounts
+                  .where(
+                    (a) =>
+                        a.type != AccountType.debt &&
+                        a.type != AccountType.investment &&
+                        a.type != AccountType.portfolio,
+                  )
+                  .toList()
+            : allVisibleAccounts;
         final selectedAccount = _selectedAccountId != null
             ? accountProvider.findById(_selectedAccountId!)
             : null;
@@ -257,6 +271,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     required Category? selectedCategory,
   }) {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
+    final txProvider = context.read<TransactionProvider>();
+    final transactions = txProvider.transactions;
 
     return [
       // Amount section
@@ -343,6 +359,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           onAccountTap: () => _pickAccount(context, accounts, false),
           onToAccountTap: () => _pickAccount(context, accounts, true),
           onCategoryTap: () => _pickCategory(context, categories),
+          accountProvider: accountProvider,
+          transactions: transactions,
         ),
 
       const SizedBox(height: 8),
@@ -379,6 +397,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     List<Account> accounts,
     bool isTarget,
   ) {
+    final txProvider = context.read<TransactionProvider>();
+    final transactions = txProvider.transactions;
+    final accountProvider = context.read<AccountProvider>();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -416,6 +438,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 itemCount: accounts.length,
                 itemBuilder: (_, i) {
                   final acc = accounts[i];
+                  final balance = accountProvider.getBalance(acc.id, transactions);
                   final selected =
                       (isTarget ? _selectedToAccountId : _selectedAccountId) ==
                       acc.id;
@@ -430,6 +453,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                       child: Icon(acc.icon, color: acc.color, size: 20),
                     ),
                     title: Text(acc.name),
+                    subtitle: Text(
+                      formatAmount(balance),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.amountColor(balance),
+                      ),
+                    ),
                     trailing: selected
                         ? const Icon(Icons.check, color: AppColors.header)
                         : null,
@@ -944,6 +974,8 @@ class _AccountCategorySelector extends StatelessWidget {
   final VoidCallback onAccountTap;
   final VoidCallback onToAccountTap;
   final VoidCallback onCategoryTap;
+  final AccountProvider accountProvider;
+  final List<AppTransaction> transactions;
 
   const _AccountCategorySelector({
     required this.type,
@@ -955,10 +987,16 @@ class _AccountCategorySelector extends StatelessWidget {
     required this.onAccountTap,
     required this.onToAccountTap,
     required this.onCategoryTap,
+    required this.accountProvider,
+    required this.transactions,
   });
 
   @override
   Widget build(BuildContext context) {
+    final balance = selectedAccount != null
+        ? accountProvider.getBalance(selectedAccount!.id, transactions)
+        : 0.0;
+
     return Container(
       color: AppColors.surface,
       child: Row(
@@ -990,13 +1028,25 @@ class _AccountCategorySelector extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          selectedAccount!.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectedAccount!.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              formatAmount(balance),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.amountColor(balance),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ] else

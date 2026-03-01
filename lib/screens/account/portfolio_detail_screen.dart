@@ -5,6 +5,7 @@ import '../../models/account.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
@@ -20,12 +21,15 @@ class PortfolioDetailScreen extends StatefulWidget {
 }
 
 class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
-  final _priceService = StockPriceService();
+  late StockPriceService _priceService;
   bool _isRefreshing = false;
+  bool _isReorderMode = false;
 
   @override
   void initState() {
     super.initState();
+    final settings = context.read<SettingsProvider>();
+    _priceService = StockPriceService(apiKey: settings.finnhubApiKey);
     if (_priceService.isConfigured) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
     }
@@ -111,6 +115,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   ),
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.more_horiz),
+                onPressed: () => _showMenuSheet(context),
+              ),
             ],
           ),
           floatingActionButton: FloatingActionButton(
@@ -154,14 +162,55 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     ),
                   )
                 else
-                  for (final h in holdings)
-                    _HoldingItem(
-                      holding: h,
-                      exchangeRate: acc.exchangeRate,
-                      onTap: () =>
-                          _showHoldingSheet(context, provider, acc.id, h),
-                      onDelete: () => provider.deleteHolding(h.id, acc.id),
-                    ),
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    buildDefaultDragHandles: _isReorderMode,
+                    itemCount: holdings.length,
+                    onReorder: _isReorderMode
+                        ? (oldIndex, newIndex) {
+                            provider.reorderHoldings(
+                              acc.id,
+                              oldIndex,
+                              newIndex,
+                            );
+                          }
+                        : (_, _) {},
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) {
+                          final animValue = Curves.easeInOut.transform(
+                            animation.value,
+                          );
+                          final elevation = 1 + animValue * 8;
+                          final scale = 1 + animValue * 0.02;
+                          return Transform.scale(
+                            scale: scale,
+                            child: Material(
+                              elevation: elevation,
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    itemBuilder: (context, index) {
+                      final h = holdings[index];
+                      return _HoldingItem(
+                        key: ValueKey(h.id),
+                        holding: h,
+                        exchangeRate: acc.exchangeRate,
+                        isReorderMode: _isReorderMode,
+                        onTap: () =>
+                            _showHoldingSheet(context, provider, acc.id, h),
+                        onDelete: () => provider.deleteHolding(h.id, acc.id),
+                      );
+                    },
+                  ),
 
                 const SizedBox(height: 80),
               ],
@@ -267,6 +316,62 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           }
         },
         generateId: provider.generateId,
+      ),
+    );
+  }
+
+  void _showMenuSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('เพิ่มหุ้นใหม่'),
+              onTap: () {
+                Navigator.pop(context);
+                _showHoldingSheet(
+                  context,
+                  context.read<AccountProvider>(),
+                  widget.account.id,
+                  null,
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.reorder),
+              title: const Text('จัดเรียงลำดับ'),
+              trailing: Switch(
+                value: _isReorderMode,
+                onChanged: (value) {
+                  setState(() => _isReorderMode = value);
+                  Navigator.pop(context);
+                },
+              ),
+              onTap: () {
+                setState(() => _isReorderMode = !_isReorderMode);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -506,12 +611,15 @@ class _CashRow extends StatelessWidget {
 class _HoldingItem extends StatelessWidget {
   final StockHolding holding;
   final double exchangeRate;
+  final bool isReorderMode;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _HoldingItem({
+    super.key,
     required this.holding,
     required this.exchangeRate,
+    this.isReorderMode = false,
     required this.onTap,
     required this.onDelete,
   });
@@ -526,13 +634,22 @@ class _HoldingItem extends StatelessWidget {
     return Column(
       children: [
         InkWell(
-          onTap: onTap,
+          onTap: isReorderMode ? null : onTap,
           child: Container(
             color: AppColors.surface,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Drag handle (only visible in reorder mode)
+                if (isReorderMode) ...[
+                  const Icon(
+                    Icons.drag_indicator,
+                    color: AppColors.divider,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Ticker badge
                 Container(
                   width: 44,
@@ -573,13 +690,6 @@ class _HoldingItem extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      Text(
-                        '${holding.priceUsd.toStringAsFixed(2)} USD',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
                       if (hasCost)
                         Text(
                           'ทุน ${holding.costBasisUsd.toStringAsFixed(2)} USD',
@@ -588,6 +698,13 @@ class _HoldingItem extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                         ),
+                      Text(
+                        'ราคา ${holding.priceUsd.toStringAsFixed(2)} USD',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -625,17 +742,18 @@ class _HoldingItem extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => _confirmDelete(context),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.more_horiz,
-                      color: AppColors.textSecondary,
-                      size: 20,
+                if (!isReorderMode)
+                  GestureDetector(
+                    onTap: () => _confirmDelete(context),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.more_horiz,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
