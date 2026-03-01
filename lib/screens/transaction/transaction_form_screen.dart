@@ -16,14 +16,11 @@ class TransactionFormScreen extends StatefulWidget {
   const TransactionFormScreen({super.key, this.transaction});
 
   @override
-  State<TransactionFormScreen> createState() =>
-      _TransactionFormScreenState();
+  State<TransactionFormScreen> createState() => _TransactionFormScreenState();
 }
 
 class _TransactionFormScreenState extends State<TransactionFormScreen> {
   final _amountController = TextEditingController();
-  final _payeeController = TextEditingController();
-  final _locationController = TextEditingController();
   final _noteController = TextEditingController();
   final _tagController = TextEditingController();
 
@@ -33,7 +30,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   String? _selectedToAccountId;
   String? _selectedDebtAccountId;
   late DateTime _selectedDateTime;
-  DateTime? _recordDate;
 
   bool get _isEditing => widget.transaction != null;
 
@@ -44,22 +40,19 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _type = tx?.type ?? TransactionType.expense;
     _selectedAccountId = tx?.accountId;
     _selectedCategoryId = tx?.categoryId;
-    _selectedToAccountId =
-        _type == TransactionType.transfer ? tx?.toAccountId : null;
-    _selectedDebtAccountId =
-        _type == TransactionType.debtRepay ? tx?.toAccountId : null;
+    _selectedToAccountId = _type == TransactionType.transfer
+        ? tx?.toAccountId
+        : null;
+    _selectedDebtAccountId = _type == TransactionType.debtRepay
+        ? tx?.toAccountId
+        : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
-    _recordDate = tx?.recordDate;
-    _amountController.text =
-        tx != null ? formatAmount(tx.amount) : '';
-    _payeeController.text = tx?.payee ?? '';
-    _locationController.text = tx?.location ?? '';
+    _amountController.text = tx != null ? formatAmount(tx.amount) : '';
     _noteController.text = tx?.note ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_selectedAccountId == null) {
-        final accounts =
-            context.read<AccountProvider>().visibleAccounts;
+        final accounts = context.read<AccountProvider>().visibleAccounts;
         if (accounts.isNotEmpty) {
           setState(() => _selectedAccountId = accounts.first.id);
         }
@@ -70,34 +63,30 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   @override
   void dispose() {
     _amountController.dispose();
-    _payeeController.dispose();
-    _locationController.dispose();
     _noteController.dispose();
     _tagController.dispose();
     super.dispose();
   }
 
   void _save() {
-    final amountText =
-        _amountController.text.replaceAll(',', '').trim();
+    final amountText = _amountController.text.replaceAll(',', '').trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกจำนวนเงิน')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณากรอกจำนวนเงิน')));
       return;
     }
     if (_selectedAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาเลือกบัญชี')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชี')));
       return;
     }
-    if (_type == TransactionType.debtRepay &&
-        _selectedDebtAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาเลือกบัญชีหนี้สิน')),
-      );
+    if (_type == TransactionType.debtRepay && _selectedDebtAccountId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชีหนี้สิน')));
       return;
     }
 
@@ -111,25 +100,16 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
 
     final tx = AppTransaction(
-      id: _isEditing
-          ? widget.transaction!.id
-          : txProvider.generateId(),
+      id: _isEditing ? widget.transaction!.id : txProvider.generateId(),
       type: _type,
       amount: amount,
       accountId: _selectedAccountId!,
       categoryId: _selectedCategoryId,
       toAccountId: toAccountId,
-      payee: _payeeController.text.trim().isEmpty
-          ? null
-          : _payeeController.text.trim(),
-      location: _locationController.text.trim().isEmpty
-          ? null
-          : _locationController.text.trim(),
       dateTime: _selectedDateTime,
       note: _noteController.text.trim().isEmpty
           ? null
           : _noteController.text.trim(),
-      recordDate: _recordDate,
     );
 
     if (_isEditing) {
@@ -141,10 +121,36 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     Navigator.pop(context);
   }
 
+  void _delete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ลบรายการ'),
+        content: const Text('คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<TransactionProvider>().deleteTransaction(
+                widget.transaction!.id,
+              );
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close form
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AccountProvider, TransactionProvider,
-        CategoryProvider>(
+    return Consumer3<AccountProvider, TransactionProvider, CategoryProvider>(
       builder: (context, accountProvider, txProvider, catProvider, _) {
         final accounts = accountProvider.visibleAccounts;
         final selectedAccount = _selectedAccountId != null
@@ -178,19 +184,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               }),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_horiz),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.save_outlined),
-                onPressed: () {},
-                tooltip: 'บันทึกแบบร่าง',
-              ),
-              IconButton(
-                icon: const Icon(Icons.check),
-                onPressed: _save,
-              ),
+              if (_isEditing)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _delete,
+                  tooltip: 'ลบรายการ',
+                ),
+              IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
           body: ListView(
@@ -219,16 +219,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     required Category? selectedCategory,
   }) {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
-    final amountText =
-        _amountController.text.replaceAll(',', '').trim();
-    final amount = double.tryParse(amountText) ?? 0.0;
 
     return [
       // Amount section
       Container(
         color: AppColors.surface,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
             Text(
@@ -243,10 +239,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               child: TextField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true),
+                  decimal: true,
+                ),
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'[0-9.,]')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
                 textAlign: TextAlign.right,
                 style: TextStyle(
@@ -265,8 +261,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ),
                   border: InputBorder.none,
                   isDense: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   suffixText: 'บาท',
                   suffixStyle: TextStyle(
                     fontSize: 14,
@@ -283,34 +278,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ),
       ),
 
-      // รวม row (debtRepay only)
-      if (isDebtRepay) ...[
-        const Divider(height: 1, indent: 16),
-        Container(
-          color: AppColors.surface,
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              const Text(
-                'รวม',
-                style: TextStyle(
-                    fontSize: 15, color: AppColors.textSecondary),
-              ),
-              const Spacer(),
-              Text(
-                '${formatAmount(amount)} บาท',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.expense,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-
       const SizedBox(height: 8),
 
       // Account section
@@ -319,11 +286,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           selectedDebtAccount: selectedDebtAccount,
           selectedAccount: selectedAccount,
           selectedCategory: selectedCategory,
-          onDebtAccountTap: () =>
-              _pickDebtAccount(context, accountProvider),
+          onDebtAccountTap: () => _pickDebtAccount(context, accountProvider),
           onAccountTap: () => _pickAccount(context, accounts, false),
-          onClearAccount: () =>
-              setState(() => _selectedAccountId = null),
+          onClearAccount: () => setState(() => _selectedAccountId = null),
           onCategoryTap: () => _pickCategory(context, categories),
         )
       else
@@ -341,24 +306,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
       const SizedBox(height: 8),
 
-      // Payee (not for debtRepay)
-      if (!isDebtRepay) ...[
-        _FieldRow(
-          label: 'ผู้รับเงิน',
-          controller: _payeeController,
-          icon: Icons.person_outline,
-          hint: '',
-        ),
-        _buildDivider(),
-      ],
-
-      // Location
-      _FieldRow(
-        label: 'ตำแหน่ง',
-        controller: _locationController,
-        icon: Icons.location_on_outlined,
-        hint: '',
-      ),
       _buildDivider(),
 
       // DateTime
@@ -367,15 +314,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         onTap: () => _pickDateTime(context),
       ),
       _buildDivider(),
-
-      // Record date (debtRepay only)
-      if (isDebtRepay) ...[
-        _RecordDateRow(
-          recordDate: _recordDate,
-          onTap: () => _pickRecordDate(context),
-        ),
-        _buildDivider(),
-      ],
 
       // Note
       _FieldRow(
@@ -390,43 +328,24 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       // Tags
       _TagRow(controller: _tagController),
       const SizedBox(height: 16),
-
-      // Add image
-      GestureDetector(
-        onTap: () {},
-        child: Container(
-          color: AppColors.surface,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: const Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_photo_alternate_outlined,
-                    color: AppColors.textSecondary, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'เพิ่มรูปภาพ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 80),
     ];
   }
 
   Widget _buildDivider() => const Divider(height: 1, indent: 16);
 
   void _pickAccount(
-      BuildContext context, List<Account> accounts, bool isTarget) {
+    BuildContext context,
+    List<Account> accounts,
+    bool isTarget,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
         minChildSize: 0.3,
@@ -434,7 +353,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         expand: false,
         builder: (_, scrollController) => Column(
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               width: 36,
               height: 4,
@@ -446,10 +365,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             const SizedBox(height: 12),
             Text(
               isTarget ? 'เลือกบัญชีปลายทาง' : 'เลือกบัญชี',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
             const Divider(),
             Expanded(
               child: ListView.builder(
@@ -457,9 +375,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 itemCount: accounts.length,
                 itemBuilder: (_, i) {
                   final acc = accounts[i];
-                  final selected = (isTarget
-                          ? _selectedToAccountId
-                          : _selectedAccountId) ==
+                  final selected =
+                      (isTarget ? _selectedToAccountId : _selectedAccountId) ==
                       acc.id;
                   return ListTile(
                     leading: Container(
@@ -469,13 +386,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                         color: acc.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child:
-                          Icon(acc.icon, color: acc.color, size: 20),
+                      child: Icon(acc.icon, color: acc.color, size: 20),
                     ),
                     title: Text(acc.name),
                     trailing: selected
-                        ? const Icon(Icons.check,
-                            color: AppColors.header)
+                        ? const Icon(Icons.check, color: AppColors.header)
                         : null,
                     onTap: () {
                       setState(() {
@@ -498,12 +413,16 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     );
   }
 
-  void _pickDebtAccount(
-      BuildContext context, AccountProvider accountProvider) {
+  void _pickDebtAccount(BuildContext context, AccountProvider accountProvider) {
     final debtAccounts = accountProvider.debtAccounts;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      clipBehavior: Clip.antiAlias,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
         minChildSize: 0.3,
@@ -511,7 +430,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         expand: false,
         builder: (_, scrollController) => Column(
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               width: 36,
               height: 4,
@@ -523,10 +442,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             const SizedBox(height: 12),
             const Text(
               'เลือกบัญชีหนี้สิน',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
             const Divider(),
             Expanded(
               child: ListView.builder(
@@ -543,13 +461,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                         color: acc.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child:
-                          Icon(acc.icon, color: acc.color, size: 20),
+                      child: Icon(acc.icon, color: acc.color, size: 20),
                     ),
                     title: Text(acc.name),
                     trailing: selected
-                        ? const Icon(Icons.check,
-                            color: AppColors.header)
+                        ? const Icon(Icons.check, color: AppColors.header)
                         : null,
                     onTap: () {
                       setState(() => _selectedDebtAccountId = acc.id);
@@ -570,6 +486,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
         minChildSize: 0.3,
@@ -577,7 +498,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         expand: false,
         builder: (_, scrollController) => Column(
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               width: 36,
               height: 4,
@@ -589,10 +510,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             const SizedBox(height: 12),
             const Text(
               'เลือกหมวดหมู่',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
             const Divider(),
             Expanded(
               child: ListView.builder(
@@ -608,13 +528,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                         color: cat.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child:
-                          Icon(cat.icon, color: cat.color, size: 20),
+                      child: Icon(cat.icon, color: cat.color, size: 20),
                     ),
                     title: Text(cat.name),
                     trailing: _selectedCategoryId == cat.id
-                        ? const Icon(Icons.check,
-                            color: AppColors.header)
+                        ? const Icon(Icons.check, color: AppColors.header)
                         : null,
                     onTap: () {
                       setState(() => _selectedCategoryId = cat.id);
@@ -649,20 +567,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
     setState(() {
       _selectedDateTime = DateTime(
-        date.year, date.month, date.day, time.hour, time.minute,
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
       );
     });
-  }
-
-  Future<void> _pickRecordDate(BuildContext context) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _recordDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (date == null || !mounted) return;
-    setState(() => _recordDate = date);
   }
 }
 
@@ -670,21 +581,77 @@ class _TypeSelector extends StatelessWidget {
   final TransactionType selectedType;
   final ValueChanged<TransactionType> onChanged;
 
-  const _TypeSelector({
-    required this.selectedType,
-    required this.onChanged,
-  });
+  const _TypeSelector({required this.selectedType, required this.onChanged});
+
+  (IconData, Color) _getTypeStyle(TransactionType type) {
+    switch (type) {
+      case TransactionType.income:
+        return (Icons.arrow_downward, Colors.green);
+      case TransactionType.expense:
+        return (Icons.arrow_upward, Colors.red);
+      case TransactionType.transfer:
+        return (Icons.swap_horiz, Colors.blue);
+      case TransactionType.debtRepay:
+        return (Icons.payment, Colors.orange);
+    }
+  }
+
+  void _showTypePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      clipBehavior: Clip.antiAlias,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'เลือกประเภทรายการ',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            ...TransactionType.values.map((type) {
+              final (icon, color) = _getTypeStyle(type);
+              return ListTile(
+                leading: Icon(icon, color: color),
+                title: Text(type.label),
+                trailing: selectedType == type
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  onChanged(type);
+                  Navigator.pop(context);
+                },
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<TransactionType>(
-      onSelected: onChanged,
-      itemBuilder: (_) => TransactionType.values
-          .map((t) => PopupMenuItem(
-                value: t,
-                child: Text(t.label),
-              ))
-          .toList(),
+    return InkWell(
+      onTap: () => _showTypePicker(context),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -697,8 +664,7 @@ class _TypeSelector extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down,
-              color: Colors.white, size: 20),
+          const Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
         ],
       ),
     );
@@ -735,8 +701,7 @@ class _DebtRepayAccountSection extends StatelessWidget {
           InkWell(
             onTap: onDebtAccountTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   const SizedBox(
@@ -744,8 +709,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     child: Text(
                       'หนี้สิน',
                       style: TextStyle(
-                          fontSize: 15,
-                          color: AppColors.textSecondary),
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -754,20 +720,25 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: selectedDebtAccount!.color
-                            .withValues(alpha: 0.15),
+                        color: selectedDebtAccount!.color.withValues(
+                          alpha: 0.15,
+                        ),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(selectedDebtAccount!.icon,
-                          color: selectedDebtAccount!.color, size: 13),
+                      child: Icon(
+                        selectedDebtAccount!.icon,
+                        color: selectedDebtAccount!.color,
+                        size: 13,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         selectedDebtAccount!.name,
                         style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textPrimary),
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -776,128 +747,144 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       child: Text(
                         'เลือกบัญชีหนี้สิน',
                         style: TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textSecondary),
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
-                  const Icon(Icons.arrow_drop_down,
-                      color: AppColors.textSecondary, size: 20),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
           ),
           const Divider(height: 1, indent: 16),
-          // บัญชี (source chip) + หมวดหมู่ row
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                _AccountChip(
-                  account: selectedAccount,
-                  onTap: onAccountTap,
-                  onClear: onClearAccount,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: onCategoryTap,
+          // บัญชี row
+          InkWell(
+            onTap: onAccountTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 72,
                     child: Text(
-                      selectedCategory?.name ??
-                          'เลือกหมวดหมู่ (ปล่อยว่างได้)',
+                      'บัญชี',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: selectedCategory != null
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AccountChip extends StatelessWidget {
-  final Account? account;
-  final VoidCallback onTap;
-  final VoidCallback onClear;
-
-  const _AccountChip({
-    required this.account,
-    required this.onTap,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (account == null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.divider),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Text(
-            'บัญชี',
-            style: TextStyle(
-                fontSize: 13, color: AppColors.textSecondary),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: account!.color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onTap,
-            borderRadius:
-                const BorderRadius.horizontal(left: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.only(
-                  left: 10, top: 6, bottom: 6, right: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(account!.icon,
-                      size: 14, color: account!.color),
-                  const SizedBox(width: 4),
-                  Text(
-                    account!.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: account!.color,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(width: 8),
+                  if (selectedAccount != null) ...[
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: selectedAccount!.color.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        selectedAccount!.icon,
+                        color: selectedAccount!.color,
+                        size: 13,
+                      ),
                     ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        selectedAccount!.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ] else
+                    const Expanded(
+                      child: Text(
+                        'เลือกบัญชี',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: AppColors.textSecondary,
+                    size: 20,
                   ),
                 ],
               ),
             ),
           ),
+          const Divider(height: 1, indent: 16),
+          // หมวดหมู่ row
           InkWell(
-            onTap: onClear,
-            borderRadius: const BorderRadius.horizontal(
-                right: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 6),
-              child: Icon(Icons.close, size: 14, color: account!.color),
+            onTap: onCategoryTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 72,
+                    child: Text(
+                      'หมวดหมู่',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (selectedCategory != null) ...[
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: selectedCategory!.color.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        selectedCategory!.icon,
+                        color: selectedCategory!.color,
+                        size: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        selectedCategory!.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ] else
+                    const Expanded(
+                      child: Text(
+                        'เลือกหมวดหมู่ (ปล่อยว่างได้)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -941,7 +928,9 @@ class _AccountCategorySelector extends StatelessWidget {
               onTap: onAccountTap,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 20),
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Row(
                   children: [
                     if (selectedAccount != null) ...[
@@ -949,20 +938,23 @@ class _AccountCategorySelector extends StatelessWidget {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: selectedAccount!.color
-                              .withValues(alpha: 0.15),
+                          color: selectedAccount!.color.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(selectedAccount!.icon,
-                            color: selectedAccount!.color, size: 16),
+                        child: Icon(
+                          selectedAccount!.icon,
+                          color: selectedAccount!.color,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           selectedAccount!.name,
                           style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary),
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -970,46 +962,17 @@ class _AccountCategorySelector extends StatelessWidget {
                       const Text(
                         'เลือกบัญชี',
                         style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary),
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                   ],
                 ),
               ),
             ),
           ),
-          // Middle divider with + / swap button
-          Container(
-            width: 1,
-            height: 60,
-            color: AppColors.divider,
-          ),
-          GestureDetector(
-            onTap: type == TransactionType.transfer
-                ? onToAccountTap
-                : onCategoryTap,
-            child: Container(
-              width: 36,
-              height: 36,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.divider),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                type == TransactionType.transfer
-                    ? Icons.swap_horiz
-                    : Icons.add,
-                color: AppColors.textSecondary,
-                size: 18,
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 60,
-            color: AppColors.divider,
-          ),
+          // Middle divider
+          Container(width: 1, height: 60, color: AppColors.divider),
           // Category / To-Account selector
           Expanded(
             child: InkWell(
@@ -1018,7 +981,9 @@ class _AccountCategorySelector extends StatelessWidget {
                   : onCategoryTap,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 20),
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Row(
                   children: [
                     if (type == TransactionType.transfer &&
@@ -1027,20 +992,25 @@ class _AccountCategorySelector extends StatelessWidget {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: selectedToAccount!.color
-                              .withValues(alpha: 0.15),
+                          color: selectedToAccount!.color.withValues(
+                            alpha: 0.15,
+                          ),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(selectedToAccount!.icon,
-                            color: selectedToAccount!.color, size: 16),
+                        child: Icon(
+                          selectedToAccount!.icon,
+                          color: selectedToAccount!.color,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           selectedToAccount!.name,
                           style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary),
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1050,20 +1020,25 @@ class _AccountCategorySelector extends StatelessWidget {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: selectedCategory!.color
-                              .withValues(alpha: 0.15),
+                          color: selectedCategory!.color.withValues(
+                            alpha: 0.15,
+                          ),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(selectedCategory!.icon,
-                            color: selectedCategory!.color, size: 16),
+                        child: Icon(
+                          selectedCategory!.icon,
+                          color: selectedCategory!.color,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           selectedCategory!.name,
                           style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary),
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1073,8 +1048,9 @@ class _AccountCategorySelector extends StatelessWidget {
                             ? 'บัญชีปลายทาง'
                             : 'เลือกหมวดหมู่',
                         style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary),
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                   ],
                 ),
@@ -1128,8 +1104,7 @@ class _FieldRow extends StatelessWidget {
                 hintText: hint,
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(fontSize: 15),
             ),
@@ -1153,16 +1128,12 @@ class _DateTimeRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color: AppColors.surface,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             const Text(
               'วันและเวลา',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Text(
@@ -1173,8 +1144,11 @@ class _DateTimeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.calendar_today_outlined,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.calendar_today_outlined,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -1184,69 +1158,23 @@ class _DateTimeRow extends StatelessWidget {
   String _formatThaiDateTime(DateTime dt) {
     const thaiDays = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
     const thaiMonths = [
-      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-      'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-      'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
     ];
     final day = thaiDays[dt.weekday - 1];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$day. ${dt.day} ${thaiMonths[dt.month - 1]} ${dt.year + 543} $h:$m';
-  }
-}
-
-class _RecordDateRow extends StatelessWidget {
-  final DateTime? recordDate;
-  final VoidCallback onTap;
-
-  const _RecordDateRow(
-      {required this.recordDate, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: AppColors.surface,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            const Text(
-              'วันที่บันทึก',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              recordDate != null
-                  ? _formatThaiDate(recordDate!)
-                  : '-',
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.calendar_today_outlined,
-                color: AppColors.textSecondary, size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatThaiDate(DateTime dt) {
-    const thaiDays = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
-    const thaiMonths = [
-      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-      'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-      'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-    ];
-    final day = thaiDays[dt.weekday - 1];
-    return '$day. ${dt.day} ${thaiMonths[dt.month - 1]} ${dt.year + 543}';
   }
 }
 
@@ -1266,8 +1194,7 @@ class _TagRow extends StatelessWidget {
             width: 90,
             child: Text(
               'แท็ก',
-              style: TextStyle(
-                  fontSize: 15, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
           ),
           Expanded(
@@ -1277,7 +1204,9 @@ class _TagRow extends StatelessWidget {
                 hintText:
                     'เพิ่มแท็กได้ตรงนี้ (พิมพ์ชื่อกดปุ่ม Enter เพื่อสร้างแท็ก)',
                 hintStyle: TextStyle(
-                    fontSize: 12, color: AppColors.textSecondary),
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -1285,8 +1214,11 @@ class _TagRow extends StatelessWidget {
               style: const TextStyle(fontSize: 14),
             ),
           ),
-          const Icon(Icons.access_time,
-              color: AppColors.textSecondary, size: 20),
+          const Icon(
+            Icons.access_time,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
         ],
       ),
     );

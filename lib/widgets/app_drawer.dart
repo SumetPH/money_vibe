@@ -86,8 +86,8 @@ class AppDrawer extends StatelessWidget {
                 _DrawerItem(
                   icon: Icons.settings_outlined,
                   label: 'การตั้งค่า',
-                  selected: false,
-                  onTap: () => Navigator.pop(context),
+                  selected: currentRoute == '/settings',
+                  onTap: () => _navigate(context, '/settings'),
                 ),
               ],
             ),

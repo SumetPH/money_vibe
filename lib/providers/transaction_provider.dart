@@ -12,108 +12,97 @@ class TransactionProvider extends ChangeNotifier {
   // ── Seed data ─────────────────────────────────────────────────────────────
 
   static List<AppTransaction> get _seedTransactions => [
-        // 28 Feb 2026
-        AppTransaction(
-          id: 'tx1',
-          type: TransactionType.income,
-          amount: 500,
-          accountId: 'acc_kbank_main',
-          categoryId: 'cat_laadin',
-          dateTime: DateTime(2026, 2, 28, 12, 37),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx2',
-          type: TransactionType.expense,
-          amount: 287,
-          accountId: 'acc_ktc_mc',
-          categoryId: 'cat_food',
-          dateTime: DateTime(2026, 2, 28, 12, 37),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx3',
-          type: TransactionType.expense,
-          amount: 130,
-          accountId: 'acc_cash',
-          categoryId: 'cat_food',
-          dateTime: DateTime(2026, 2, 28, 12, 4),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx4',
-          type: TransactionType.expense,
-          amount: 65,
-          accountId: 'acc_ktc_mc',
-          categoryId: 'cat_drink',
-          dateTime: DateTime(2026, 2, 28, 12, 3),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx5',
-          type: TransactionType.expense,
-          amount: 455,
-          accountId: 'acc_ktc_mc',
-          categoryId: 'cat_food',
-          dateTime: DateTime(2026, 2, 28, 12, 3),
-          isCleared: true,
-        ),
-        // 27 Feb 2026
-        AppTransaction(
-          id: 'tx6',
-          type: TransactionType.transfer,
-          amount: 4000,
-          accountId: 'acc_ktb_main',
-          toAccountId: 'acc_ktb_saving',
-          dateTime: DateTime(2026, 2, 27, 13, 56),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx7',
-          type: TransactionType.transfer,
-          amount: 15275.54,
-          accountId: 'acc_ktb_main',
-          toAccountId: 'acc_kbank_main',
-          dateTime: DateTime(2026, 2, 27, 13, 47),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx8',
-          type: TransactionType.debtRepay,
-          amount: 5859.89,
-          accountId: 'acc_ktb_main',
-          toAccountId: 'acc_ktc_mc',
-          dateTime: DateTime(2026, 2, 27, 13, 44),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx9',
-          type: TransactionType.debtRepay,
-          amount: 11103.54,
-          accountId: 'acc_kbank_main',
-          toAccountId: 'acc_kbank_visa',
-          dateTime: DateTime(2026, 2, 27, 13, 43),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx10',
-          type: TransactionType.debtRepay,
-          amount: 6638,
-          accountId: 'acc_kbank_main',
-          toAccountId: 'acc_car',
-          dateTime: DateTime(2026, 2, 27, 13, 43),
-          isCleared: true,
-        ),
-        AppTransaction(
-          id: 'tx11',
-          type: TransactionType.expense,
-          amount: 2500,
-          accountId: 'acc_kbank_main',
-          categoryId: 'cat_home',
-          dateTime: DateTime(2026, 2, 27, 13, 43),
-          isCleared: true,
-        ),
-      ];
+    // 28 Feb 2026
+    AppTransaction(
+      id: 'tx1',
+      type: TransactionType.income,
+      amount: 500,
+      accountId: 'acc_kbank_main',
+      categoryId: 'cat_laadin',
+      dateTime: DateTime(2026, 2, 28, 12, 37),
+    ),
+    AppTransaction(
+      id: 'tx2',
+      type: TransactionType.expense,
+      amount: 287,
+      accountId: 'acc_ktc_mc',
+      categoryId: 'cat_food',
+      dateTime: DateTime(2026, 2, 28, 12, 37),
+    ),
+    AppTransaction(
+      id: 'tx3',
+      type: TransactionType.expense,
+      amount: 130,
+      accountId: 'acc_cash',
+      categoryId: 'cat_food',
+      dateTime: DateTime(2026, 2, 28, 12, 4),
+    ),
+    AppTransaction(
+      id: 'tx4',
+      type: TransactionType.expense,
+      amount: 65,
+      accountId: 'acc_ktc_mc',
+      categoryId: 'cat_drink',
+      dateTime: DateTime(2026, 2, 28, 12, 3),
+    ),
+    AppTransaction(
+      id: 'tx5',
+      type: TransactionType.expense,
+      amount: 455,
+      accountId: 'acc_ktc_mc',
+      categoryId: 'cat_food',
+      dateTime: DateTime(2026, 2, 28, 12, 3),
+    ),
+    // 27 Feb 2026
+    AppTransaction(
+      id: 'tx6',
+      type: TransactionType.transfer,
+      amount: 4000,
+      accountId: 'acc_ktb_main',
+      toAccountId: 'acc_ktb_saving',
+      dateTime: DateTime(2026, 2, 27, 13, 56),
+    ),
+    AppTransaction(
+      id: 'tx7',
+      type: TransactionType.transfer,
+      amount: 15275.54,
+      accountId: 'acc_ktb_main',
+      toAccountId: 'acc_kbank_main',
+      dateTime: DateTime(2026, 2, 27, 13, 47),
+    ),
+    AppTransaction(
+      id: 'tx8',
+      type: TransactionType.debtRepay,
+      amount: 5859.89,
+      accountId: 'acc_ktb_main',
+      toAccountId: 'acc_ktc_mc',
+      dateTime: DateTime(2026, 2, 27, 13, 44),
+    ),
+    AppTransaction(
+      id: 'tx9',
+      type: TransactionType.debtRepay,
+      amount: 11103.54,
+      accountId: 'acc_kbank_main',
+      toAccountId: 'acc_kbank_visa',
+      dateTime: DateTime(2026, 2, 27, 13, 43),
+    ),
+    AppTransaction(
+      id: 'tx10',
+      type: TransactionType.debtRepay,
+      amount: 6638,
+      accountId: 'acc_kbank_main',
+      toAccountId: 'acc_car',
+      dateTime: DateTime(2026, 2, 27, 13, 43),
+    ),
+    AppTransaction(
+      id: 'tx11',
+      type: TransactionType.expense,
+      amount: 2500,
+      accountId: 'acc_kbank_main',
+      categoryId: 'cat_home',
+      dateTime: DateTime(2026, 2, 27, 13, 43),
+    ),
+  ];
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -130,17 +119,25 @@ class TransactionProvider extends ChangeNotifier {
     }
   }
 
+  /// Reload transactions from database (used after restore)
+  Future<void> reload() async {
+    _transactions.clear();
+    final rows = await _db.getTransactions();
+    _transactions.addAll(rows.map(AppTransaction.fromMap));
+    notifyListeners();
+  }
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   List<AppTransaction> get transactions => List.unmodifiable(_transactions);
 
-  List<AppTransaction> getTransactionsForPeriod(
-      DateTime from, DateTime to) {
+  List<AppTransaction> getTransactionsForPeriod(DateTime from, DateTime to) {
     return _transactions
-        .where((t) =>
-            t.dateTime
-                .isAfter(from.subtract(const Duration(seconds: 1))) &&
-            t.dateTime.isBefore(to.add(const Duration(days: 1))))
+        .where(
+          (t) =>
+              t.dateTime.isAfter(from.subtract(const Duration(seconds: 1))) &&
+              t.dateTime.isBefore(to.add(const Duration(days: 1))),
+        )
         .toList()
       ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
   }
@@ -151,12 +148,14 @@ class TransactionProvider extends ChangeNotifier {
     return getTransactionsForPeriod(from, now);
   }
 
-  Map<DateTime, List<AppTransaction>> groupByDate(
-      List<AppTransaction> txs) {
+  Map<DateTime, List<AppTransaction>> groupByDate(List<AppTransaction> txs) {
     final Map<DateTime, List<AppTransaction>> grouped = {};
     for (final tx in txs) {
-      final date =
-          DateTime(tx.dateTime.year, tx.dateTime.month, tx.dateTime.day);
+      final date = DateTime(
+        tx.dateTime.year,
+        tx.dateTime.month,
+        tx.dateTime.day,
+      );
       grouped.putIfAbsent(date, () => []).add(tx);
     }
     return grouped;
@@ -170,9 +169,11 @@ class TransactionProvider extends ChangeNotifier {
 
   double getTotalExpense(List<AppTransaction> txs) {
     return txs
-        .where((t) =>
-            t.type == TransactionType.expense ||
-            t.type == TransactionType.debtRepay)
+        .where(
+          (t) =>
+              t.type == TransactionType.expense ||
+              t.type == TransactionType.debtRepay,
+        )
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 

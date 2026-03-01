@@ -49,13 +49,9 @@ class Account {
   DateTime startDate;
   IconData icon;
   Color color;
-  bool autoClearTransaction;
-  bool showOnMain;
-  bool isDefault;
   bool excludeFromNetWorth;
   bool isHidden;
-  String? group;
-  String? note;
+  int sortOrder;
 
   Account({
     required this.id,
@@ -66,52 +62,38 @@ class Account {
     DateTime? startDate,
     this.icon = Icons.account_balance_wallet,
     this.color = const Color(0xFF607D8B),
-    this.autoClearTransaction = true,
-    this.showOnMain = false,
-    this.isDefault = false,
     this.excludeFromNetWorth = false,
     this.isHidden = false,
-    this.group,
-    this.note,
+    this.sortOrder = 0,
   }) : startDate = startDate ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'type': type.name,
-        'initial_balance': initialBalance,
-        'currency': currency,
-        'start_date': startDate.millisecondsSinceEpoch,
-        'icon': icon.codePoint,
-        'color': color.toARGB32(),
-        'auto_clear': autoClearTransaction ? 1 : 0,
-        'show_on_main': showOnMain ? 1 : 0,
-        'is_default': isDefault ? 1 : 0,
-        'exclude_from_net_worth': excludeFromNetWorth ? 1 : 0,
-        'is_hidden': isHidden ? 1 : 0,
-        'group_name': group,
-        'note': note,
-      };
+    'id': id,
+    'name': name,
+    'type': type.name,
+    'initial_balance': initialBalance,
+    'currency': currency,
+    'start_date': startDate.millisecondsSinceEpoch,
+    'icon': icon.codePoint,
+    'color': color.toARGB32(),
+    'exclude_from_net_worth': excludeFromNetWorth ? 1 : 0,
+    'is_hidden': isHidden ? 1 : 0,
+    'sort_order': sortOrder,
+  };
 
   static Account fromMap(Map<String, dynamic> m) => Account(
-        id: m['id'] as String,
-        name: m['name'] as String,
-        type: AccountType.values
-            .firstWhere((e) => e.name == m['type'] as String),
-        initialBalance: (m['initial_balance'] as num).toDouble(),
-        currency: m['currency'] as String,
-        startDate:
-            DateTime.fromMillisecondsSinceEpoch(m['start_date'] as int),
-        icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
-        color: Color(m['color'] as int),
-        autoClearTransaction: m['auto_clear'] == 1,
-        showOnMain: m['show_on_main'] == 1,
-        isDefault: m['is_default'] == 1,
-        excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
-        isHidden: m['is_hidden'] == 1,
-        group: m['group_name'] as String?,
-        note: m['note'] as String?,
-      );
+    id: m['id'] as String,
+    name: m['name'] as String,
+    type: AccountType.values.firstWhere((e) => e.name == m['type'] as String),
+    initialBalance: (m['initial_balance'] as num).toDouble(),
+    currency: m['currency'] as String,
+    startDate: DateTime.fromMillisecondsSinceEpoch(m['start_date'] as int),
+    icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
+    color: Color(m['color'] as int),
+    excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
+    isHidden: m['is_hidden'] == 1,
+    sortOrder: m['sort_order'] as int? ?? 0,
+  );
 
   Account copyWith({
     String? name,
@@ -128,6 +110,7 @@ class Account {
     bool? isHidden,
     String? group,
     String? note,
+    int? sortOrder,
   }) {
     return Account(
       id: id,
@@ -138,13 +121,9 @@ class Account {
       startDate: startDate ?? this.startDate,
       icon: icon ?? this.icon,
       color: color ?? this.color,
-      autoClearTransaction: autoClearTransaction ?? this.autoClearTransaction,
-      showOnMain: showOnMain ?? this.showOnMain,
-      isDefault: isDefault ?? this.isDefault,
       excludeFromNetWorth: excludeFromNetWorth ?? this.excludeFromNetWorth,
       isHidden: isHidden ?? this.isHidden,
-      group: group ?? this.group,
-      note: note ?? this.note,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }

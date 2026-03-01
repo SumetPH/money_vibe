@@ -25,12 +25,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late DateTime _startDate;
   late IconData _selectedIcon;
   late Color _selectedColor;
-  late bool _autoClear;
-  late bool _showOnMain;
-  late bool _isDefault;
   late bool _excludeFromNetWorth;
   late bool _isHidden;
-  String? _group;
 
   bool get _isEditing => widget.account != null;
 
@@ -39,20 +35,16 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     super.initState();
     final acc = widget.account;
     _nameController.text = acc?.name ?? '';
-    _initialBalanceController.text =
-        acc != null ? formatAmount(acc.initialBalance) : '';
-    _noteController.text = acc?.note ?? '';
+    _initialBalanceController.text = acc != null
+        ? formatAmount(acc.initialBalance)
+        : '';
     _selectedType = acc?.type ?? AccountType.cash;
     _selectedCurrency = acc?.currency ?? 'THB';
     _startDate = acc?.startDate ?? DateTime.now();
     _selectedIcon = acc?.icon ?? Icons.account_balance_wallet;
     _selectedColor = acc?.color ?? AppColors.accountColors.first;
-    _autoClear = acc?.autoClearTransaction ?? true;
-    _showOnMain = acc?.showOnMain ?? false;
-    _isDefault = acc?.isDefault ?? false;
     _excludeFromNetWorth = acc?.excludeFromNetWorth ?? false;
     _isHidden = acc?.isHidden ?? false;
-    _group = acc?.group;
   }
 
   @override
@@ -66,60 +58,79 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _save() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกชื่อบัญชี')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณากรอกชื่อบัญชี')));
       return;
     }
 
-    final balanceText =
-        _initialBalanceController.text.replaceAll(',', '').trim();
+    final balanceText = _initialBalanceController.text
+        .replaceAll(',', '')
+        .trim();
     final initialBalance = double.tryParse(balanceText) ?? 0;
 
     final provider = context.read<AccountProvider>();
 
     if (_isEditing) {
-      provider.updateAccount(widget.account!.copyWith(
-        name: name,
-        type: _selectedType,
-        initialBalance: initialBalance,
-        currency: _selectedCurrency,
-        startDate: _startDate,
-        icon: _selectedIcon,
-        color: _selectedColor,
-        autoClearTransaction: _autoClear,
-        showOnMain: _showOnMain,
-        isDefault: _isDefault,
-        excludeFromNetWorth: _excludeFromNetWorth,
-        isHidden: _isHidden,
-        group: _group,
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-      ));
+      provider.updateAccount(
+        widget.account!.copyWith(
+          name: name,
+          type: _selectedType,
+          initialBalance: initialBalance,
+          currency: _selectedCurrency,
+          startDate: _startDate,
+          icon: _selectedIcon,
+          color: _selectedColor,
+          excludeFromNetWorth: _excludeFromNetWorth,
+          isHidden: _isHidden,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
+        ),
+      );
     } else {
-      provider.addAccount(Account(
-        id: provider.generateId(),
-        name: name,
-        type: _selectedType,
-        initialBalance: initialBalance,
-        currency: _selectedCurrency,
-        startDate: _startDate,
-        icon: _selectedIcon,
-        color: _selectedColor,
-        autoClearTransaction: _autoClear,
-        showOnMain: _showOnMain,
-        isDefault: _isDefault,
-        excludeFromNetWorth: _excludeFromNetWorth,
-        isHidden: _isHidden,
-        group: _group,
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-      ));
+      provider.addAccount(
+        Account(
+          id: provider.generateId(),
+          name: name,
+          type: _selectedType,
+          initialBalance: initialBalance,
+          currency: _selectedCurrency,
+          startDate: _startDate,
+          icon: _selectedIcon,
+          color: _selectedColor,
+          excludeFromNetWorth: _excludeFromNetWorth,
+          isHidden: _isHidden,
+        ),
+      );
     }
 
     Navigator.pop(context);
+  }
+
+  void _delete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ลบบัญชี'),
+        content: const Text('คุณต้องการที่จะลบบัญชีนี้ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<AccountProvider>().deleteAccount(widget.account!.id);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close form
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -133,20 +144,20 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         ),
         title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _save,
-          ),
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+              tooltip: 'ลบบัญชี',
+            ),
+          IconButton(icon: const Icon(Icons.check), onPressed: _save),
         ],
       ),
       body: ListView(
         children: [
           const SizedBox(height: 8),
           // Name
-          _buildTextField(
-            controller: _nameController,
-            hintText: 'ชื่อ',
-          ),
+          _buildTextField(controller: _nameController, hintText: 'ชื่อ'),
           _buildDivider(),
           // Account Type
           _buildPickerRow(
@@ -158,8 +169,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           // Initial Balance
           Container(
             color: AppColors.surface,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
                 const SizedBox(
@@ -176,16 +186,16 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   child: TextField(
                     controller: _initialBalanceController,
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true, signed: true),
+                      decimal: true,
+                      signed: true,
+                    ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[-0-9.,]')),
+                      FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
                     ],
                     textAlign: TextAlign.right,
                     decoration: const InputDecoration(
                       hintText: 'ยอดเริ่มต้น',
-                      hintStyle:
-                          TextStyle(color: AppColors.textSecondary),
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -219,24 +229,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           const SizedBox(height: 8),
           // Switches
           _buildSwitchRow(
-            label: 'ปรับสถานะรายการเป็นเคลียร์อัตโนมัติ',
-            value: _autoClear,
-            onChanged: (v) => setState(() => _autoClear = v),
-          ),
-          _buildDivider(),
-          _buildSwitchRow(
-            label: 'แสดงในหน้าหลัก',
-            value: _showOnMain,
-            onChanged: (v) => setState(() => _showOnMain = v),
-          ),
-          _buildDivider(),
-          _buildSwitchRow(
-            label: 'บัญชีเริ่มต้น',
-            value: _isDefault,
-            onChanged: (v) => setState(() => _isDefault = v),
-          ),
-          _buildDivider(),
-          _buildSwitchRow(
             label: 'ไม่รวมในทรัพย์สินสุทธิ',
             value: _excludeFromNetWorth,
             onChanged: (v) => setState(() => _excludeFromNetWorth = v),
@@ -247,53 +239,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             value: _isHidden,
             onChanged: (v) => setState(() => _isHidden = v),
           ),
-          const SizedBox(height: 8),
-          // Group
-          _buildPickerRow(
-            label: 'กลุ่ม',
-            value: _group ?? 'ไม่มีกลุ่ม',
-            onTap: () {},
-          ),
-          _buildDivider(),
-          // Note
-          Container(
-            color: AppColors.surface,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(
-                  width: 80,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 12),
-                    child: Text(
-                      'โน้ต',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _noteController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
-                const Icon(Icons.drag_handle,
-                    color: AppColors.textSecondary, size: 20),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -348,8 +293,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -366,10 +314,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             const Text(
               'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Container(
@@ -382,8 +327,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               child: Icon(_selectedIcon, color: _selectedColor, size: 26),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -400,10 +348,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             const Text(
               'สี',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Container(
@@ -415,8 +360,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -457,16 +405,18 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: AccountType.values
-              .map((type) => ListTile(
-                    title: Text(type.label),
-                    trailing: _selectedType == type
-                        ? const Icon(Icons.check, color: AppColors.header)
-                        : null,
-                    onTap: () {
-                      setState(() => _selectedType = type);
-                      Navigator.pop(context);
-                    },
-                  ))
+              .map(
+                (type) => ListTile(
+                  title: Text(type.label),
+                  trailing: _selectedType == type
+                      ? const Icon(Icons.check, color: AppColors.header)
+                      : null,
+                  onTap: () {
+                    setState(() => _selectedType = type);
+                    Navigator.pop(context);
+                  },
+                ),
+              )
               .toList(),
         ),
       ),
@@ -496,16 +446,14 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               padding: EdgeInsets.all(12),
               child: Text(
                 'เลือกไอคอน',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
             SizedBox(
               height: 250,
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -526,15 +474,16 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             : AppColors.background,
                         borderRadius: BorderRadius.circular(10),
                         border: selected
-                            ? Border.all(
-                                color: _selectedColor, width: 2)
+                            ? Border.all(color: _selectedColor, width: 2)
                             : null,
                       ),
-                      child: Icon(icon,
-                          color: selected
-                              ? _selectedColor
-                              : AppColors.textSecondary,
-                          size: 24),
+                      child: Icon(
+                        icon,
+                        color: selected
+                            ? _selectedColor
+                            : AppColors.textSecondary,
+                        size: 24,
+                      ),
                     ),
                   );
                 },
@@ -557,16 +506,14 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               padding: EdgeInsets.all(12),
               child: Text(
                 'เลือกสี',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
             SizedBox(
               height: 200,
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -574,7 +521,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 itemCount: AppColors.accountColors.length,
                 itemBuilder: (_, i) {
                   final color = AppColors.accountColors[i];
-                  final selected = color.toARGB32() == _selectedColor.toARGB32();
+                  final selected =
+                      color.toARGB32() == _selectedColor.toARGB32();
                   return GestureDetector(
                     onTap: () {
                       setState(() => _selectedColor = color);
@@ -585,13 +533,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         color: color,
                         borderRadius: BorderRadius.circular(10),
                         border: selected
-                            ? Border.all(
-                                color: Colors.black45, width: 2)
+                            ? Border.all(color: Colors.black45, width: 2)
                             : null,
                       ),
                       child: selected
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );
@@ -606,9 +556,18 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
   String _formatThaiDate(DateTime date) {
     const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-      'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-      'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
     ];
     return '${date.day} ${thaiMonths[date.month - 1]} ${date.year + 543}';
   }

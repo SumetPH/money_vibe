@@ -25,7 +25,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   late CategoryType _type;
   late IconData _selectedIcon;
   late Color _selectedColor;
-  late bool _isDefault;
   String? _parentId;
 
   bool get _isEditing => widget.category != null;
@@ -39,7 +38,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     _noteController.text = cat?.note ?? '';
     _selectedIcon = cat?.icon ?? Icons.category;
     _selectedColor = cat?.color ?? AppColors.accountColors.first;
-    _isDefault = cat?.isDefault ?? false;
     _parentId = cat?.parentId;
   }
 
@@ -53,43 +51,74 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   void _save() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกชื่อหมวดหมู่')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณากรอกชื่อหมวดหมู่')));
       return;
     }
 
     final provider = context.read<CategoryProvider>();
 
     if (_isEditing) {
-      provider.updateCategory(widget.category!.copyWith(
-        name: name,
-        icon: _selectedIcon,
-        color: _selectedColor,
-        isDefault: _isDefault,
-        parentId: _parentId,
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-        clearParent: _parentId == null,
-        clearNote: _noteController.text.trim().isEmpty,
-      ));
+      provider.updateCategory(
+        widget.category!.copyWith(
+          name: name,
+          icon: _selectedIcon,
+          color: _selectedColor,
+          parentId: _parentId,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
+          clearParent: _parentId == null,
+          clearNote: _noteController.text.trim().isEmpty,
+        ),
+      );
     } else {
-      provider.addCategory(Category(
-        id: provider.generateId(),
-        name: name,
-        icon: _selectedIcon,
-        color: _selectedColor,
-        type: _type,
-        parentId: _parentId,
-        isDefault: _isDefault,
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-      ));
+      provider.addCategory(
+        Category(
+          id: provider.generateId(),
+          name: name,
+          icon: _selectedIcon,
+          color: _selectedColor,
+          type: _type,
+          parentId: _parentId,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
+        ),
+      );
     }
 
     Navigator.pop(context);
+  }
+
+  void _delete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ลบหมวดหมู่'),
+        content: const Text('คุณต้องการที่จะลบหมวดหมู่นี้ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<CategoryProvider>().deleteCategory(
+                widget.category!.id,
+              );
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close form
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.accountColors.first,
+            ),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -103,10 +132,13 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
         ),
         title: Text(_isEditing ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _save,
-          ),
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+              tooltip: 'ลบหมวดหมู่',
+            ),
+          IconButton(icon: const Icon(Icons.check), onPressed: _save),
         ],
       ),
       body: Consumer<CategoryProvider>(
@@ -115,17 +147,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               .mainCategoriesOfType(_type)
               .where((c) => c.id != widget.category?.id)
               .toList();
-          final parentCategory =
-              _parentId != null ? catProvider.findById(_parentId!) : null;
+          final parentCategory = _parentId != null
+              ? catProvider.findById(_parentId!)
+              : null;
 
           return ListView(
             children: [
               const SizedBox(height: 8),
               // Name
-              _buildTextField(
-                controller: _nameController,
-                hintText: 'ชื่อ',
-              ),
+              _buildTextField(controller: _nameController, hintText: 'ชื่อ'),
               _buildDivider(),
               // Parent category
               _buildPickerRow(
@@ -140,18 +170,13 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               // Color
               _buildColorRow(),
               const SizedBox(height: 8),
-              // isDefault toggle
-              _buildSwitchRow(
-                label: 'หมวดหมู่เริ่มต้น',
-                value: _isDefault,
-                onChanged: (v) => setState(() => _isDefault = v),
-              ),
-              const SizedBox(height: 8),
               // Note
               Container(
                 color: AppColors.surface,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 4),
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -176,14 +201,16 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 12),
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         style: const TextStyle(fontSize: 15),
                       ),
                     ),
-                    const Icon(Icons.drag_handle,
-                        color: AppColors.textSecondary, size: 20),
+                    const Icon(
+                      Icons.drag_handle,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
@@ -193,7 +220,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(10),
@@ -222,18 +251,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }) {
     return Container(
       color: AppColors.surface,
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle:
-              const TextStyle(color: AppColors.textSecondary),
+          hintStyle: const TextStyle(color: AppColors.textSecondary),
           border: InputBorder.none,
           isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
         style: const TextStyle(fontSize: 15),
       ),
@@ -249,8 +275,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       onTap: onTap,
       child: Container(
         color: AppColors.surface,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Text(
@@ -269,8 +294,11 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -282,16 +310,12 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       onTap: _pickIcon,
       child: Container(
         color: AppColors.surface,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             const Text(
               'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Container(
@@ -301,12 +325,14 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 color: _selectedColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(_selectedIcon,
-                  color: _selectedColor, size: 26),
+              child: Icon(_selectedIcon, color: _selectedColor, size: 26),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -318,16 +344,12 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       onTap: _pickColor,
       child: Container(
         color: AppColors.surface,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             const Text(
               'สี',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Container(
@@ -339,44 +361,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSwitchRow({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Switch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDivider() => const Divider(height: 1, indent: 16);
 
-  void _pickParent(
-      BuildContext context, List<Category> candidates) {
+  void _pickParent(BuildContext context, List<Category> candidates) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -399,8 +397,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
             const SizedBox(height: 12),
             const Text(
               'เลือกหมวดหมู่หลัก',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             const SizedBox(height: 4),
             const Divider(),
@@ -414,46 +411,45 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.textSecondary
-                            .withValues(alpha: 0.1),
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.category,
-                          color: AppColors.textSecondary,
-                          size: 18),
+                      child: const Icon(
+                        Icons.category,
+                        color: AppColors.textSecondary,
+                        size: 18,
+                      ),
                     ),
                     title: const Text('(หมวดหมู่หลัก)'),
                     trailing: _parentId == null
-                        ? const Icon(Icons.check,
-                            color: AppColors.header)
+                        ? const Icon(Icons.check, color: AppColors.header)
                         : null,
                     onTap: () {
                       setState(() => _parentId = null);
                       Navigator.pop(context);
                     },
                   ),
-                  ...candidates.map((cat) => ListTile(
-                        leading: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: cat.color
-                                .withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(cat.icon,
-                              color: cat.color, size: 18),
+                  ...candidates.map(
+                    (cat) => ListTile(
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: cat.color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
                         ),
-                        title: Text(cat.name),
-                        trailing: _parentId == cat.id
-                            ? const Icon(Icons.check,
-                                color: AppColors.header)
-                            : null,
-                        onTap: () {
-                          setState(() => _parentId = cat.id);
-                          Navigator.pop(context);
-                        },
-                      )),
+                        child: Icon(cat.icon, color: cat.color, size: 18),
+                      ),
+                      title: Text(cat.name),
+                      trailing: _parentId == cat.id
+                          ? const Icon(Icons.check, color: AppColors.header)
+                          : null,
+                      onTap: () {
+                        setState(() => _parentId = cat.id);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -475,16 +471,14 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               padding: EdgeInsets.all(12),
               child: Text(
                 'เลือกไอคอน',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
             SizedBox(
               height: 260,
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -501,21 +495,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: selected
-                            ? _selectedColor
-                                .withValues(alpha: 0.15)
+                            ? _selectedColor.withValues(alpha: 0.15)
                             : AppColors.background,
                         borderRadius: BorderRadius.circular(10),
                         border: selected
-                            ? Border.all(
-                                color: _selectedColor,
-                                width: 2)
+                            ? Border.all(color: _selectedColor, width: 2)
                             : null,
                       ),
-                      child: Icon(icon,
-                          color: selected
-                              ? _selectedColor
-                              : AppColors.textSecondary,
-                          size: 24),
+                      child: Icon(
+                        icon,
+                        color: selected
+                            ? _selectedColor
+                            : AppColors.textSecondary,
+                        size: 24,
+                      ),
                     ),
                   );
                 },
@@ -538,16 +531,14 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               padding: EdgeInsets.all(12),
               child: Text(
                 'เลือกสี',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
             SizedBox(
               height: 200,
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -567,13 +558,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                         color: color,
                         borderRadius: BorderRadius.circular(10),
                         border: selected
-                            ? Border.all(
-                                color: Colors.black45, width: 2)
+                            ? Border.all(color: Colors.black45, width: 2)
                             : null,
                       ),
                       child: selected
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );

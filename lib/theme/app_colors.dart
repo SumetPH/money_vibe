@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color header = Color(0xFF1B3548);
+  static const Color header = Color(0xFF393E46);
   static const Color income = Color(0xFF4CAF50);
   static const Color expense = Color(0xFFF44336);
   static const Color transfer = Color(0xFF2196F3);

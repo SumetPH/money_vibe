@@ -8,8 +8,15 @@ import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
 
-class AccountListScreen extends StatelessWidget {
+class AccountListScreen extends StatefulWidget {
   const AccountListScreen({super.key});
+
+  @override
+  State<AccountListScreen> createState() => _AccountListScreenState();
+}
+
+class _AccountListScreenState extends State<AccountListScreen> {
+  bool _isReorderMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +37,7 @@ class AccountListScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.more_horiz),
-            onPressed: () {},
+            onPressed: () => _showAppMenu(context),
           ),
         ],
       ),
@@ -38,6 +45,7 @@ class AccountListScreen extends StatelessWidget {
         builder: (context, accountProvider, txProvider, _) {
           final transactions = txProvider.transactions;
           final accounts = accountProvider.visibleAccounts;
+          final isReorderMode = _isReorderMode;
           final netWorth = accountProvider.getTotalNetWorth(transactions);
           final groupTotals = accountProvider.getGroupTotals(transactions);
 
@@ -56,42 +64,102 @@ class AccountListScreen extends StatelessWidget {
             'ลงทุน',
           ];
 
-          return ListView(
-            children: [
-              // ยอดรวม header
-              _TotalRow(
-                label: 'ยอดรวม',
-                amount: netWorth,
-                icon: Icons.account_balance_wallet,
-                iconColor: const Color(0xFFFFB300),
-                isTopLevel: true,
+          // Group accounts by display group
+          final Map<String, List<Account>> groupedAccounts = {};
+          for (final account in accounts) {
+            final group = accountTypeDisplayGroup(account.type);
+            groupedAccounts.putIfAbsent(group, () => []).add(account);
+          }
+
+          return CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _TotalRow(
+                      label: 'ยอดรวม',
+                      amount: netWorth,
+                      icon: Icons.account_balance_wallet,
+                      iconColor: const Color(0xFFFFB300),
+                      isTopLevel: true,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              // Each group
+              // Each group has its own ReorderableListView
               for (final groupName in groupOrder)
-                if (grouped.containsKey(groupName)) ...[
-                  _SectionHeader(
-                    title: groupName,
-                    total: groupTotals[groupName] ?? 0,
+                if (groupedAccounts.containsKey(groupName) &&
+                    groupedAccounts[groupName]!.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionHeader(
+                          title: groupName,
+                          total: groupTotals[groupName] ?? 0,
+                        ),
+                        ReorderableListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          buildDefaultDragHandles: isReorderMode,
+                          itemCount: groupedAccounts[groupName]!.length,
+                          onReorder: isReorderMode
+                              ? (oldIndex, newIndex) {
+                                  accountProvider.reorderAccountsInGroup(
+                                    groupName,
+                                    oldIndex,
+                                    newIndex,
+                                  );
+                                }
+                              : (_, _) {},
+                          proxyDecorator: (child, index, animation) {
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (context, child) {
+                                final animValue = Curves.easeInOut.transform(
+                                  animation.value,
+                                );
+                                final elevation = 1 + animValue * 8;
+                                final scale = 1 + animValue * 0.02;
+                                return Transform.scale(
+                                  scale: scale,
+                                  child: Material(
+                                    elevation: elevation,
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: child,
+                            );
+                          },
+                          itemBuilder: (context, index) {
+                            final account = groupedAccounts[groupName]![index];
+                            final balance = accountProvider.getBalance(
+                              account.id,
+                              transactions,
+                            );
+
+                            return _AccountItem(
+                              key: ValueKey(account.id),
+                              account: account,
+                              balance: balance,
+                              isReorderMode: isReorderMode,
+                              onTap: () => _openForm(context, account),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  ...grouped[groupName]!.map((account) {
-                    final balance = accountProvider.getBalance(
-                        account.id, transactions);
-                    return _AccountItem(
-                      account: account,
-                      balance: balance,
-                      onTap: () => _openForm(context, account),
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                ],
+              // Footer padding
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openForm(context, null),
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -99,8 +167,62 @@ class AccountListScreen extends StatelessWidget {
   void _openForm(BuildContext context, Account? account) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => AccountFormScreen(account: account),
+      MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
+    );
+  }
+
+  void _showAppMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('เพิ่มบัญชีใหม่'),
+              onTap: () {
+                Navigator.pop(context);
+                _openForm(context, null);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.reorder),
+              title: const Text('จัดเรียงลำดับ'),
+              trailing: Switch(
+                value: _isReorderMode,
+                onChanged: (value) {
+                  setState(() => _isReorderMode = value);
+                  Navigator.pop(context);
+                },
+              ),
+              onTap: () {
+                setState(() => _isReorderMode = !_isReorderMode);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.visibility_outlined),
+              title: const Text('จัดการการแสดงบัญชี'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -145,16 +267,16 @@ class _TotalRow extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    fontWeight:
-                        isTopLevel ? FontWeight.w500 : FontWeight.normal,
+                    fontSize: 16,
+                    fontWeight: isTopLevel
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 Text(
                   '${formatAmount(amount)} บาท',
                   style: TextStyle(
-                    fontSize: isTopLevel ? 16 : 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.amountColor(amount),
                   ),
@@ -163,13 +285,48 @@ class _TotalRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.more_horiz,
-                color: AppColors.textSecondary, size: 20),
-            onPressed: () {},
+            icon: const Icon(
+              Icons.more_horiz,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
+            onPressed: () => _showTotalMenu(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showTotalMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('รายละเอียดทรัพย์สิน'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -192,7 +349,7 @@ class _SectionHeader extends StatelessWidget {
             child: Text(
               title,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
@@ -201,14 +358,11 @@ class _SectionHeader extends StatelessWidget {
           Text(
             '${formatAmount(total)} บาท',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.amountColor(total),
             ),
           ),
-          const SizedBox(width: 4),
-          const Icon(Icons.more_horiz,
-              color: AppColors.textSecondary, size: 18),
         ],
       ),
     );
@@ -218,11 +372,14 @@ class _SectionHeader extends StatelessWidget {
 class _AccountItem extends StatelessWidget {
   final Account account;
   final double balance;
+  final bool isReorderMode;
   final VoidCallback onTap;
 
   const _AccountItem({
+    super.key,
     required this.account,
     required this.balance,
+    this.isReorderMode = false,
     required this.onTap,
   });
 
@@ -234,14 +391,18 @@ class _AccountItem extends StatelessWidget {
           onTap: onTap,
           child: Container(
             color: AppColors.surface,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                // Drag handle
-                const Icon(Icons.drag_indicator,
-                    color: AppColors.divider, size: 20),
-                const SizedBox(width: 8),
+                // Drag handle (only visible in reorder mode)
+                if (isReorderMode) ...[
+                  const Icon(
+                    Icons.drag_indicator,
+                    color: AppColors.divider,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Account icon
                 Container(
                   width: 36,
@@ -250,8 +411,7 @@ class _AccountItem extends StatelessWidget {
                     color: account.color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child:
-                      Icon(account.icon, color: account.color, size: 20),
+                  child: Icon(account.icon, color: account.color, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Name and balance
@@ -262,29 +422,74 @@ class _AccountItem extends StatelessWidget {
                       Text(
                         account.name,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
                         '${formatAmount(balance)} บาท',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.amountColor(balance),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.textSecondary, size: 20),
+                IconButton(
+                  icon: const Icon(
+                    Icons.more_horiz,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () => _showAccountMenu(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
               ],
             ),
           ),
         ),
-        const Divider(indent: 72),
+        const Divider(height: 1, color: AppColors.divider),
       ],
+    );
+  }
+
+  void _showAccountMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('แก้ไข'),
+              onTap: () {
+                Navigator.pop(context);
+                onTap();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

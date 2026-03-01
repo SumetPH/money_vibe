@@ -14,8 +14,7 @@ class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
 
   @override
-  State<TransactionListScreen> createState() =>
-      _TransactionListScreenState();
+  State<TransactionListScreen> createState() => _TransactionListScreenState();
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
@@ -56,14 +55,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             ),
             centerTitle: true,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.tune),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.tune), onPressed: () {}),
             ],
           ),
           body: allTx.isEmpty
@@ -80,10 +73,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     final date = sortedDates[i];
                     final txs = grouped[date]!
                       ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-                    final dayIncome =
-                        txProvider.getTotalIncome(txs);
-                    final dayExpense =
-                        txProvider.getTotalExpense(txs);
+                    final dayIncome = txProvider.getTotalIncome(txs);
+                    final dayExpense = txProvider.getTotalExpense(txs);
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,12 +84,27 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           income: dayIncome,
                           expense: dayExpense,
                         ),
-                        ...txs.map((tx) => _TransactionItem(
-                              tx: tx,
-                              accountProvider: accountProvider,
-                              catProvider: catProvider,
-                              onTap: () => _openForm(context, tx),
-                            )),
+                        ...txs.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final tx = entry.value;
+                          return Column(
+                            children: [
+                              _TransactionItem(
+                                tx: tx,
+                                accountProvider: accountProvider,
+                                catProvider: catProvider,
+                                onTap: () => _openForm(context, tx),
+                              ),
+                              if (index < txs.length - 1)
+                                const Divider(
+                                  height: 1,
+                                  indent: 52,
+                                  endIndent: 12,
+                                  color: AppColors.divider,
+                                ),
+                            ],
+                          );
+                        }),
                       ],
                     );
                   },
@@ -113,8 +119,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  List<AppTransaction> _getFilteredTransactions(
-      TransactionProvider provider) {
+  List<AppTransaction> _getFilteredTransactions(TransactionProvider provider) {
     final now = DateTime.now();
     switch (_filter) {
       case _PeriodFilter.last30Days:
@@ -139,17 +144,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _PeriodFilter.values
-              .map((f) => ListTile(
-                    title: Text(f.label),
-                    trailing: _filter == f
-                        ? const Icon(Icons.check,
-                            color: AppColors.header)
-                        : null,
-                    onTap: () {
-                      setState(() => _filter = f);
-                      Navigator.pop(context);
-                    },
-                  ))
+              .map(
+                (f) => ListTile(
+                  title: Text(f.label),
+                  trailing: _filter == f
+                      ? const Icon(Icons.check, color: AppColors.header)
+                      : null,
+                  onTap: () {
+                    setState(() => _filter = f);
+                    Navigator.pop(context);
+                  },
+                ),
+              )
               .toList(),
         ),
       ),
@@ -159,9 +165,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   void _openForm(BuildContext context, AppTransaction? tx) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => TransactionFormScreen(transaction: tx),
-      ),
+      MaterialPageRoute(builder: (_) => TransactionFormScreen(transaction: tx)),
     );
   }
 }
@@ -194,20 +198,27 @@ class _DateHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Text(
-            _formatDate(date),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+          Expanded(
+            child: Text(
+              _formatDate(date),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           if (income > 0) ...[
             Text(
               '+${formatAmount(income)}',
               style: const TextStyle(
-                  fontSize: 13, color: AppColors.income),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.income,
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -215,7 +226,10 @@ class _DateHeader extends StatelessWidget {
             Text(
               '-${formatAmount(expense)}',
               style: const TextStyle(
-                  fontSize: 13, color: AppColors.expense),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.expense,
+              ),
             ),
         ],
       ),
@@ -224,16 +238,30 @@ class _DateHeader extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const thaiDays = [
-      'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี',
-      'ศุกร์', 'เสาร์', 'อาทิตย์'
+      'จันทร์',
+      'อังคาร',
+      'พุธ',
+      'พฤหัสบดี',
+      'ศุกร์',
+      'เสาร์',
+      'อาทิตย์',
     ];
     const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-      'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-      'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
     ];
     final dayOfWeek = thaiDays[date.weekday - 1];
-    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year + 543} - $dayOfWeek (เมื่อวาน)';
+    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year + 543} - $dayOfWeek';
   }
 }
 
@@ -263,9 +291,9 @@ class _TransactionItem extends StatelessWidget {
     final typeColor = _typeColor(tx.type);
     final displayAmount =
         (tx.type == TransactionType.expense ||
-                tx.type == TransactionType.debtRepay)
-            ? -tx.amount
-            : tx.amount;
+            tx.type == TransactionType.debtRepay)
+        ? -tx.amount
+        : tx.amount;
 
     return InkWell(
       onTap: onTap,
@@ -274,11 +302,7 @@ class _TransactionItem extends StatelessWidget {
         child: Row(
           children: [
             // Type indicator bar
-            Container(
-              width: 4,
-              height: 60,
-              color: typeColor,
-            ),
+            Container(width: 4, height: 60, color: typeColor),
             const SizedBox(width: 12),
             // Category/Type icon
             Container(
@@ -292,8 +316,8 @@ class _TransactionItem extends StatelessWidget {
                 tx.type == TransactionType.transfer
                     ? Icons.swap_horiz
                     : tx.type == TransactionType.debtRepay
-                        ? Icons.payment
-                        : (category?.icon ?? Icons.receipt),
+                    ? Icons.payment
+                    : (category?.icon ?? Icons.receipt),
                 color: category?.color ?? typeColor,
                 size: 20,
               ),
@@ -308,17 +332,17 @@ class _TransactionItem extends StatelessWidget {
                   Text(
                     _buildAccountLabel(account, toAccount, tx),
                     style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   // Category / Payee
                   Text(
-                    _buildSubLabel(category?.name, tx.payee),
+                    _buildSubLabel(category?.name),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -333,7 +357,7 @@ class _TransactionItem extends StatelessWidget {
                 Text(
                   _formatTime(tx.dateTime),
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -342,13 +366,13 @@ class _TransactionItem extends StatelessWidget {
                       ? formatAmount(tx.amount)
                       : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: tx.type == TransactionType.transfer
                         ? AppColors.transfer
                         : tx.type == TransactionType.debtRepay
-                            ? AppColors.expense
-                            : AppColors.amountColor(displayAmount),
+                        ? AppColors.expense
+                        : AppColors.amountColor(displayAmount),
                   ),
                 ),
               ],
@@ -374,7 +398,10 @@ class _TransactionItem extends StatelessWidget {
   }
 
   String _buildAccountLabel(
-      Account? account, Account? toAccount, AppTransaction tx) {
+    Account? account,
+    Account? toAccount,
+    AppTransaction tx,
+  ) {
     if (tx.type == TransactionType.transfer ||
         tx.type == TransactionType.debtRepay) {
       final from = account?.name ?? '-';
@@ -384,11 +411,11 @@ class _TransactionItem extends StatelessWidget {
     return account?.name ?? '-';
   }
 
-  String _buildSubLabel(String? categoryName, String? payee) {
-    if (categoryName != null && payee != null) {
-      return '$categoryName · $payee';
+  String _buildSubLabel(String? categoryName) {
+    if (categoryName != null) {
+      return categoryName;
     }
-    return categoryName ?? payee ?? '';
+    return categoryName ?? '';
   }
 
   String _formatTime(DateTime dt) {
@@ -412,7 +439,7 @@ class _BottomSummaryBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: AppColors.header,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SafeArea(
         top: false,
@@ -428,8 +455,9 @@ class _BottomSummaryBar extends StatelessWidget {
                       const Text(
                         'รายรับรวม',
                         style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary),
+                          fontSize: 13,
+                          color: AppColors.surface,
+                        ),
                       ),
                       Text(
                         '${formatAmount(totalIncome)} บาท',
@@ -452,8 +480,7 @@ class _BottomSummaryBar extends StatelessWidget {
                       color: AppColors.fabYellow,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.add,
-                        color: Colors.white, size: 28),
+                    child: const Icon(Icons.add, color: Colors.white, size: 28),
                   ),
                 ),
                 Expanded(
@@ -463,8 +490,9 @@ class _BottomSummaryBar extends StatelessWidget {
                       const Text(
                         'รายจ่ายรวม',
                         style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary),
+                          fontSize: 13,
+                          color: AppColors.surface,
+                        ),
                       ),
                       Text(
                         '-${formatAmount(totalExpense)} บาท',

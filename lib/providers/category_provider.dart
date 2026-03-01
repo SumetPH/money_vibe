@@ -171,6 +171,17 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
+  /// Reload categories from database (used after restore)
+  Future<void> reload() async {
+    debugPrint('CategoryProvider: Reloading...');
+    _categories.clear();
+    final rows = await _db.getCategories();
+    debugPrint('CategoryProvider: Loaded ${rows.length} categories from DB');
+    _categories.addAll(rows.map(Category.fromMap));
+    notifyListeners();
+    debugPrint('CategoryProvider: Reload complete, total: ${_categories.length}');
+  }
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   List<Category> get categories => List.unmodifiable(_categories);
@@ -227,6 +238,38 @@ class CategoryProvider extends ChangeNotifier {
     _categories.removeWhere((c) => c.id == id);
     notifyListeners();
     _db.deleteCategory(id);
+  }
+
+  void reorderCategories(CategoryType type, int oldIndex, int newIndex) {
+    // Get categories of this type sorted by current order
+    final typeCategories = _categories
+        .where((c) => c.type == type)
+        .toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    if (oldIndex < 0 || oldIndex >= typeCategories.length) return;
+    if (newIndex < 0 || newIndex > typeCategories.length) return;
+
+    // Adjust newIndex for the remove-then-insert operation
+    if (newIndex > oldIndex) {
+      newIndex--;
+    }
+
+    // Remove and re-insert
+    final movedCategory = typeCategories.removeAt(oldIndex);
+    typeCategories.insert(newIndex, movedCategory);
+
+    // Update sortOrder for all categories in this type
+    for (var i = 0; i < typeCategories.length; i++) {
+      final cat = typeCategories[i];
+      final newSortOrder = i * 10; // Use multiples of 10 for flexibility
+      if (cat.sortOrder != newSortOrder) {
+        cat.sortOrder = newSortOrder;
+        _db.updateCategorySortOrder(cat.id, newSortOrder);
+      }
+    }
+
+    notifyListeners();
   }
 
   String generateId() => _uuid.v4();

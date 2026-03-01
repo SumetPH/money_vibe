@@ -8,6 +8,7 @@ import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
 import 'screens/category/category_list_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
+import 'screens/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +23,13 @@ void main() async {
     transactionProvider.init(),
   ]);
 
-  runApp(MyApp(
-    accountProvider: accountProvider,
-    categoryProvider: categoryProvider,
-    transactionProvider: transactionProvider,
-  ));
+  runApp(
+    MyApp(
+      accountProvider: accountProvider,
+      categoryProvider: categoryProvider,
+      transactionProvider: transactionProvider,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -58,6 +61,7 @@ class MyApp extends StatelessWidget {
           '/': (_) => const TransactionListScreen(),
           '/accounts': (_) => const AccountListScreen(),
           '/categories': (_) => const CategoryListScreen(),
+          '/settings': (_) => const SettingsScreen(),
         },
       ),
     );

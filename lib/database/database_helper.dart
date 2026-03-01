@@ -17,7 +17,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'money.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE accounts (
@@ -29,13 +29,9 @@ class DatabaseHelper {
             start_date INTEGER NOT NULL,
             icon INTEGER NOT NULL,
             color INTEGER NOT NULL,
-            auto_clear INTEGER NOT NULL DEFAULT 1,
-            show_on_main INTEGER NOT NULL DEFAULT 0,
-            is_default INTEGER NOT NULL DEFAULT 0,
             exclude_from_net_worth INTEGER NOT NULL DEFAULT 0,
             is_hidden INTEGER NOT NULL DEFAULT 0,
-            group_name TEXT,
-            note TEXT
+            sort_order INTEGER NOT NULL DEFAULT 0
           )
         ''');
         await db.execute('''
@@ -47,7 +43,8 @@ class DatabaseHelper {
             color INTEGER NOT NULL,
             parent_id TEXT,
             is_default INTEGER NOT NULL DEFAULT 0,
-            note TEXT
+            note TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0
           )
         ''');
         await db.execute('''
@@ -68,6 +65,18 @@ class DatabaseHelper {
           )
         ''');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE accounts ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+      },
     );
   }
 
@@ -75,19 +84,31 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getAccounts() async {
     final db = await database;
-    return db.query('accounts', orderBy: 'rowid ASC');
+    return db.query('accounts', orderBy: 'sort_order ASC, rowid ASC');
   }
 
   Future<void> insertAccount(Map<String, dynamic> data) async {
     final db = await database;
-    await db.insert('accounts', data,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'accounts',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateAccount(Map<String, dynamic> data) async {
     final db = await database;
-    await db.update('accounts', data,
-        where: 'id = ?', whereArgs: [data['id']]);
+    await db.update('accounts', data, where: 'id = ?', whereArgs: [data['id']]);
+  }
+
+  Future<void> updateAccountSortOrder(String id, int sortOrder) async {
+    final db = await database;
+    await db.update(
+      'accounts',
+      {'sort_order': sortOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> deleteAccount(String id) async {
@@ -99,19 +120,36 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getCategories() async {
     final db = await database;
-    return db.query('categories', orderBy: 'rowid ASC');
+    return db.query('categories', orderBy: 'sort_order ASC, rowid ASC');
+  }
+
+  Future<void> updateCategorySortOrder(String id, int sortOrder) async {
+    final db = await database;
+    await db.update(
+      'categories',
+      {'sort_order': sortOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> insertCategory(Map<String, dynamic> data) async {
     final db = await database;
-    await db.insert('categories', data,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'categories',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateCategory(Map<String, dynamic> data) async {
     final db = await database;
-    await db.update('categories', data,
-        where: 'id = ?', whereArgs: [data['id']]);
+    await db.update(
+      'categories',
+      data,
+      where: 'id = ?',
+      whereArgs: [data['id']],
+    );
   }
 
   Future<void> deleteCategory(String id) async {
@@ -128,14 +166,21 @@ class DatabaseHelper {
 
   Future<void> insertTransaction(Map<String, dynamic> data) async {
     final db = await database;
-    await db.insert('transactions', data,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'transactions',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateTransaction(Map<String, dynamic> data) async {
     final db = await database;
-    await db.update('transactions', data,
-        where: 'id = ?', whereArgs: [data['id']]);
+    await db.update(
+      'transactions',
+      data,
+      where: 'id = ?',
+      whereArgs: [data['id']],
+    );
   }
 
   Future<void> deleteTransaction(String id) async {
