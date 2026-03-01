@@ -50,14 +50,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _amountController.text = tx != null ? formatAmount(tx.amount) : '';
     _noteController.text = tx?.note ?? '';
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_selectedAccountId == null) {
-        final accounts = context.read<AccountProvider>().visibleAccounts;
-        if (accounts.isNotEmpty) {
-          setState(() => _selectedAccountId = accounts.first.id);
-        }
-      }
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (_selectedAccountId == null) {
+    //     final accounts = context.read<AccountProvider>().visibleAccounts;
+    //     if (accounts.isNotEmpty) {
+    //       setState(() => _selectedAccountId = accounts.first.id);
+    //     }
+    //   }
+    // });
   }
 
   @override
@@ -66,6 +66,44 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _noteController.dispose();
     _tagController.dispose();
     super.dispose();
+  }
+
+  /// Format amount with commas while typing
+  void _formatAmountInput(String value) {
+    // Remove commas and get raw digits
+    final raw = value.replaceAll(',', '');
+    if (raw.isEmpty) {
+      _amountController.text = '';
+      _amountController.selection = const TextSelection.collapsed(offset: 0);
+      return;
+    }
+
+    // Parse as double to handle decimal point
+    final hasDecimal = raw.contains('.');
+    final parts = raw.split('.');
+    final intPart = parts[0];
+
+    // Add commas to integer part
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+
+    // Reconstruct with decimal if present
+    String formatted;
+    if (hasDecimal && parts.length > 1) {
+      formatted = '$formattedInt.${parts[1]}';
+    } else {
+      formatted = formattedInt;
+    }
+
+    // Update text if different
+    if (_amountController.text != formatted) {
+      _amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   void _save() {
@@ -271,7 +309,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ),
                 ),
                 autofocus: !_isEditing,
-                onChanged: isDebtRepay ? (_) => setState(() {}) : null,
+                onChanged: (value) {
+                  _formatAmountInput(value);
+                  if (isDebtRepay) setState(() {});
+                },
               ),
             ),
           ],

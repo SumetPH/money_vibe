@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Money',
+                    'Money Vibe',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -45,10 +45,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const Text(
                     'การเงินส่วนบุคคล',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -64,12 +61,14 @@ class AppDrawer extends StatelessWidget {
                   selected: currentRoute == '/',
                   onTap: () => _navigate(context, '/'),
                 ),
+                const Divider(),
                 _DrawerItem(
                   icon: Icons.account_balance_wallet,
                   label: 'บัญชี',
                   selected: currentRoute == '/accounts',
                   onTap: () => _navigate(context, '/accounts'),
                 ),
+                const Divider(),
                 _DrawerItem(
                   icon: Icons.category_outlined,
                   label: 'หมวดหมู่',
@@ -83,6 +82,7 @@ class AppDrawer extends StatelessWidget {
                   selected: false,
                   onTap: () => Navigator.pop(context),
                 ),
+                const Divider(),
                 _DrawerItem(
                   icon: Icons.settings_outlined,
                   label: 'การตั้งค่า',
@@ -135,8 +135,7 @@ class _DrawerItem extends StatelessWidget {
       selected: selected,
       selectedTileColor: AppColors.header.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       onTap: onTap,
     );
   }

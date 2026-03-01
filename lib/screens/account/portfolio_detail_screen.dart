@@ -685,7 +685,7 @@ class _HoldingItem extends StatelessWidget {
               ),
               onTap: () {
                 Navigator.pop(context);
-                onDelete();
+                _showDeleteConfirmation(context);
               },
             ),
             ListTile(
@@ -698,6 +698,30 @@ class _HoldingItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ยืนยันการลบหุ้น'),
+        content: Text('คุณต้องการลบ ${holding.ticker} ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onDelete();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
+            child: const Text('ลบ'),
+          ),
+        ],
       ),
     );
   }
