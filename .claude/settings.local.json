@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export PATH=\"$PATH:/Users/sumetph/development/flutter/bin\")",
+      "Bash(flutter analyze --no-fatal-infos)",
+      "Bash(~/development/flutter/bin/flutter pub get)",
+      "Bash(~/development/flutter/bin/flutter analyze)",
+      "Bash(python3:*)"
+    ]
+  }
+}
