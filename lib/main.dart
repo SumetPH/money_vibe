@@ -59,16 +59,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: transactionProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
       ],
-      child: MaterialApp(
-        title: 'Money',
-        theme: AppTheme.theme,
-        debugShowCheckedModeBanner: false,
-        initialRoute: '/',
-        routes: {
-          '/': (_) => const TransactionListScreen(),
-          '/accounts': (_) => const AccountListScreen(),
-          '/categories': (_) => const CategoryListScreen(),
-          '/settings': (_) => const SettingsScreen(),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          return MaterialApp(
+            title: 'Money',
+            theme: AppTheme.getTheme(settingsProvider.isDarkMode),
+            debugShowCheckedModeBanner: false,
+            initialRoute: '/',
+            routes: {
+              '/': (_) => const TransactionListScreen(),
+              '/accounts': (_) => const AccountListScreen(),
+              '/categories': (_) => const CategoryListScreen(),
+              '/settings': (_) => const SettingsScreen(),
+            },
+          );
         },
       ),
     );

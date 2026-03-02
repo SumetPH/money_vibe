@@ -3,11 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _finnhubApiKeyKey = 'finnhub_api_key';
-  
+  static const _darkModeKey = 'dark_mode';
+
   String? _finnhubApiKey;
+  bool _isDarkMode = false;
   bool _isLoaded = false;
 
   String? get finnhubApiKey => _finnhubApiKey;
+  bool get isDarkMode => _isDarkMode;
   bool get isLoaded => _isLoaded;
 
   bool get isFinnhubConfigured =>
@@ -16,6 +19,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
+    _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
     _isLoaded = true;
     notifyListeners();
   }
@@ -30,5 +34,16 @@ class SettingsProvider extends ChangeNotifier {
       _finnhubApiKey = apiKey;
     }
     notifyListeners();
+  }
+
+  Future<void> setDarkMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_darkModeKey, enabled);
+    _isDarkMode = enabled;
+    notifyListeners();
+  }
+
+  Future<void> toggleDarkMode() async {
+    await setDarkMode(!_isDarkMode);
   }
 }

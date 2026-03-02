@@ -31,20 +31,16 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   Future<void> _saveApiKey() async {
     final settings = context.read<SettingsProvider>();
     final apiKey = _controller.text.trim();
-    
+
     await settings.setFinnhubApiKey(apiKey.isEmpty ? null : apiKey);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            apiKey.isEmpty 
-                ? 'ลบ API key แล้ว' 
-                : 'บันทึก API key แล้ว',
+            apiKey.isEmpty ? 'ลบ API key แล้ว' : 'บันทึก API key แล้ว',
           ),
-          backgroundColor: apiKey.isEmpty 
-              ? Colors.orange 
-              : Colors.green,
+          backgroundColor: apiKey.isEmpty ? Colors.orange : Colors.green,
         ),
       );
     }
@@ -53,9 +49,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finnhub API Key'),
-      ),
+      appBar: AppBar(title: const Text('Finnhub API Key')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -89,10 +83,11 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                     ),
                     InkWell(
                       onTap: () {
-                        // TODO: Launch URL if url_launcher is available
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('เปิด https://finnhub.io ในเบราว์เซอร์'),
+                            content: Text(
+                              'เปิด https://finnhub.io ในเบราว์เซอร์',
+                            ),
                           ),
                         );
                       },
@@ -120,7 +115,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Status indicator
             Row(
               children: [
@@ -131,8 +126,8 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isConfigured 
-                      ? 'API Key ตั้งค่าแล้ว' 
+                  _isConfigured
+                      ? 'API Key ตั้งค่าแล้ว'
                       : 'ยังไม่ได้ตั้งค่า API Key',
                   style: TextStyle(
                     fontSize: 14,
@@ -143,7 +138,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // API Key input field
             TextField(
               controller: _controller,
@@ -166,17 +161,14 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
               autofocus: !_isConfigured,
             ),
             const SizedBox(height: 16),
-            
+
             // Helper text
             const Text(
               'API key จะถูกเก็บในเครื่องของคุณอย่างปลอดภัย',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            
+
             // Save button
             FilledButton.icon(
               onPressed: _saveApiKey,
@@ -187,7 +179,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Clear button (only show if configured)
             if (_isConfigured)
               OutlinedButton.icon(

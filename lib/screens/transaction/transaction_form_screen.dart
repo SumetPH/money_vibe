@@ -7,6 +7,7 @@ import '../../models/category.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 
@@ -222,7 +223,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             : null;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
@@ -273,19 +274,21 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
     final txProvider = context.read<TransactionProvider>();
     final transactions = txProvider.transactions;
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
 
     return [
       // Amount section
       Container(
-        color: AppColors.surface,
+        color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
             Text(
               isDebtRepay ? 'เงินต้น' : 'จำนวน',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: 16),
@@ -303,25 +306,30 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   fontSize: 28,
                   fontWeight: FontWeight.w300,
                   color: isDebtRepay
-                      ? AppColors.expense
-                      : AppColors.textSecondary,
+                      ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                      : (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
                 ),
                 decoration: InputDecoration(
                   hintText: 'จำนวน',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w300,
-                    color: AppColors.divider,
+                    color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  filled: false,
                   suffixText: 'บาท',
                   suffixStyle: TextStyle(
                     fontSize: 14,
                     color: isDebtRepay
-                        ? AppColors.expense
-                        : AppColors.textSecondary,
+                        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                        : (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
                 autofocus: !_isEditing,
@@ -401,10 +409,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     final transactions = txProvider.transactions;
     final accountProvider = context.read<AccountProvider>();
 
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -457,11 +467,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                       formatAmount(balance),
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.amountColor(balance),
+                        color: AppColors.getAmountColor(balance, isDarkMode),
                       ),
                     ),
                     trailing: selected
-                        ? const Icon(Icons.check, color: AppColors.header)
+                        ? Icon(Icons.check, color: colorScheme.primary)
                         : null,
                     onTap: () {
                       setState(() {
@@ -486,11 +496,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   void _pickDebtAccount(BuildContext context, AccountProvider accountProvider) {
     final debtAccounts = accountProvider.debtAccounts;
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       clipBehavior: Clip.antiAlias,
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -536,7 +548,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     ),
                     title: Text(acc.name),
                     trailing: selected
-                        ? const Icon(Icons.check, color: AppColors.header)
+                        ? Icon(Icons.check, color: colorScheme.primary)
                         : null,
                     onTap: () {
                       setState(() => _selectedDebtAccountId = acc.id);
@@ -554,10 +566,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   }
 
   void _pickCategory(BuildContext context, List<Category> categories) {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -603,7 +617,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     ),
                     title: Text(cat.name),
                     trailing: _selectedCategoryId == cat.id
-                        ? const Icon(Icons.check, color: AppColors.header)
+                        ? Icon(Icons.check, color: colorScheme.primary)
                         : null,
                     onTap: () {
                       setState(() => _selectedCategoryId = cat.id);
@@ -668,10 +682,12 @@ class _TypeSelector extends StatelessWidget {
   }
 
   void _showTypePicker(BuildContext context) {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       clipBehavior: Clip.antiAlias,
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -703,7 +719,7 @@ class _TypeSelector extends StatelessWidget {
                 trailing: selectedType == type
                     ? Icon(
                         Icons.check,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: colorScheme.primary,
                       )
                     : null,
                 onTap: () {
@@ -763,8 +779,10 @@ class _DebtRepayAccountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
     return Container(
-      color: AppColors.surface,
+      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -775,13 +793,13 @@ class _DebtRepayAccountSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 72,
                     child: Text(
                       'หนี้สิน',
                       style: TextStyle(
                         fontSize: 15,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -806,26 +824,26 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         selectedDebtAccount!.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textPrimary,
+                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ] else
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'เลือกบัญชีหนี้สิน',
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                       ),
                     ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_drop_down,
-                    color: AppColors.textSecondary,
+                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -840,13 +858,13 @@ class _DebtRepayAccountSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 72,
                     child: Text(
                       'บัญชี',
                       style: TextStyle(
                         fontSize: 15,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -869,26 +887,26 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         selectedAccount!.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textPrimary,
+                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ] else
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'เลือกบัญชี',
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                       ),
                     ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_drop_down,
-                    color: AppColors.textSecondary,
+                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -903,13 +921,13 @@ class _DebtRepayAccountSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 72,
                     child: Text(
                       'หมวดหมู่',
                       style: TextStyle(
                         fontSize: 15,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -932,26 +950,26 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         selectedCategory!.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textPrimary,
+                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ] else
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'เลือกหมวดหมู่ (ปล่อยว่างได้)',
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                       ),
                     ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_drop_down,
-                    color: AppColors.textSecondary,
+                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -993,12 +1011,14 @@ class _AccountCategorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
     final balance = selectedAccount != null
         ? accountProvider.getBalance(selectedAccount!.id, transactions)
         : 0.0;
 
     return Container(
-      color: AppColors.surface,
+      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       child: Row(
         children: [
           // Account selector
@@ -1033,9 +1053,9 @@ class _AccountCategorySelector extends StatelessWidget {
                           children: [
                             Text(
                               selectedAccount!.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textPrimary,
+                                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1043,18 +1063,18 @@ class _AccountCategorySelector extends StatelessWidget {
                               formatAmount(balance),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.amountColor(balance),
+                                color: AppColors.getAmountColor(balance, isDarkMode),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ] else
-                      const Text(
+                      Text(
                         'เลือกบัญชี',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -1063,7 +1083,7 @@ class _AccountCategorySelector extends StatelessWidget {
             ),
           ),
           // Middle divider
-          Container(width: 1, height: 60, color: AppColors.divider),
+          Container(width: 1, height: 60, color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
           // Category / To-Account selector
           Expanded(
             child: InkWell(
@@ -1098,9 +1118,9 @@ class _AccountCategorySelector extends StatelessWidget {
                       Expanded(
                         child: Text(
                           selectedToAccount!.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textPrimary,
+                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1126,9 +1146,9 @@ class _AccountCategorySelector extends StatelessWidget {
                       Expanded(
                         child: Text(
                           selectedCategory!.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textPrimary,
+                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1138,9 +1158,9 @@ class _AccountCategorySelector extends StatelessWidget {
                         type == TransactionType.transfer
                             ? 'บัญชีปลายทาง'
                             : 'เลือกหมวดหมู่',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -1171,8 +1191,10 @@ class _FieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
     return Container(
-      color: AppColors.surface,
+      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1181,9 +1203,9 @@ class _FieldRow extends StatelessWidget {
             width: 90,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textSecondary,
+                color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
           ),
@@ -1194,13 +1216,16 @@ class _FieldRow extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                filled: false,
               ),
               style: const TextStyle(fontSize: 15),
             ),
           ),
-          Icon(icon, color: AppColors.textSecondary, size: 20),
+          Icon(icon, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 20),
         ],
       ),
     );
@@ -1215,29 +1240,31 @@ class _DateTimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: AppColors.surface,
+        color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            const Text(
+            Text(
               'วันและเวลา',
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
             const Spacer(),
             Text(
               _formatThaiDateTime(dateTime),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textPrimary,
+                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
+            Icon(
               Icons.calendar_today_outlined,
-              color: AppColors.textSecondary,
+              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
               size: 18,
             ),
           ],
@@ -1276,38 +1303,43 @@ class _TagRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
     return Container(
-      color: AppColors.surface,
+      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          const SizedBox(
+          SizedBox(
             width: 90,
             child: Text(
               'แท็ก',
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
           ),
           Expanded(
             child: TextField(
               controller: controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText:
                     'เพิ่มแท็กได้ตรงนี้ (พิมพ์ชื่อกดปุ่ม Enter เพื่อสร้างแท็ก)',
                 hintStyle: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
+                filled: false,
               ),
               style: const TextStyle(fontSize: 14),
             ),
           ),
-          const Icon(
+          Icon(
             Icons.access_time,
-            color: AppColors.textSecondary,
+            color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
             size: 20,
           ),
         ],

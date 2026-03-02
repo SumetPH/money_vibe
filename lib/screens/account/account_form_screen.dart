@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 
@@ -30,6 +31,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late bool _isHidden;
 
   bool get _isEditing => widget.account != null;
+  bool _isDarkMode = false;
 
   @override
   void initState() {
@@ -45,13 +47,16 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _isHidden = acc?.isHidden ?? false;
 
     if (_selectedType == AccountType.portfolio) {
-      _initialBalanceController.text =
-          acc != null ? formatAmount(acc.cashBalance) : '';
-      _exchangeRateController.text =
-          acc != null ? acc.exchangeRate.toString() : '35.0';
+      _initialBalanceController.text = acc != null
+          ? formatAmount(acc.cashBalance)
+          : '';
+      _exchangeRateController.text = acc != null
+          ? acc.exchangeRate.toString()
+          : '35.0';
     } else {
-      _initialBalanceController.text =
-          acc != null ? formatAmount(acc.initialBalance) : '';
+      _initialBalanceController.text = acc != null
+          ? formatAmount(acc.initialBalance)
+          : '';
       _exchangeRateController.text = '35.0';
     }
   }
@@ -131,203 +136,300 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _delete() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('ลบบัญชี'),
-        content: const Text('คุณต้องการที่จะลบบัญชีนี้ใช่หรือไม่?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<AccountProvider>().deleteAccount(widget.account!.id);
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close form
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
-            child: const Text('ลบ'),
-          ),
-        ],
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final dialogBgColor = isDarkMode
+              ? AppColors.darkSurface
+              : Colors.white;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+
+          return AlertDialog(
+            backgroundColor: dialogBgColor,
+            title: Text('ลบบัญชี', style: TextStyle(color: textColor)),
+            content: Text(
+              'คุณต้องการที่จะลบบัญชีนี้ใช่หรือไม่?',
+              style: TextStyle(color: textColor),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.read<AccountProvider>().deleteAccount(
+                    widget.account!.id,
+                  );
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Close form
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: isDarkMode
+                      ? AppColors.darkExpense
+                      : AppColors.expense,
+                ),
+                child: const Text('ลบ'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _delete,
-              tooltip: 'ลบบัญชี',
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, _) {
+        _isDarkMode = settingsProvider.isDarkMode;
+        final bgColor = _isDarkMode
+            ? AppColors.darkBackground
+            : AppColors.background;
+        final surfaceColor = _isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final textPrimaryColor = _isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final textSecondaryColor = _isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final dividerColor = _isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+
+        return Scaffold(
+          backgroundColor: bgColor,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(context),
             ),
-          IconButton(icon: const Icon(Icons.check), onPressed: _save),
-        ],
-      ),
-      body: ListView(
-        children: [
-          const SizedBox(height: 8),
-          // Name
-          _buildTextField(controller: _nameController, hintText: 'ชื่อ'),
-          _buildDivider(),
-          // Account Type
-          _buildPickerRow(
-            label: 'ชนิดบัญชี',
-            value: _selectedType.label,
-            onTap: _pickAccountType,
-          ),
-          _buildDivider(),
-          // Initial Balance / Cash Balance
-          Container(
-            color: AppColors.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 130,
-                  child: Text(
-                    _selectedType == AccountType.portfolio
-                        ? 'เงินสดใน Broker'
-                        : 'ยอดเริ่มต้น',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+            title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
+            actions: [
+              if (_isEditing)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _delete,
+                  tooltip: 'ลบบัญชี',
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _initialBalanceController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
-                    ],
-                    textAlign: TextAlign.right,
-                    decoration: InputDecoration(
-                      hintText: _selectedType == AccountType.portfolio
-                          ? '0'
-                          : 'ยอดเริ่มต้น',
-                      hintStyle:
-                          const TextStyle(color: AppColors.textSecondary),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
-              ],
-            ),
+              IconButton(icon: const Icon(Icons.check), onPressed: _save),
+            ],
           ),
-          _buildDivider(),
-          // Exchange Rate (portfolio only)
-          if (_selectedType == AccountType.portfolio) ...[
-            Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 130,
-                    child: Text(
-                      'USD/THB',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _exchangeRateController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                      ],
-                      textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
-                        hintText: '35.0',
-                        hintStyle: TextStyle(color: AppColors.textSecondary),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                  ),
-                ],
+          body: ListView(
+            children: [
+              const SizedBox(height: 8),
+              // Name
+              _buildTextField(
+                controller: _nameController,
+                hintText: 'ชื่อ',
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
               ),
-            ),
-            _buildDivider(),
-          ],
-          // Currency
-          _buildPickerRow(
-            label: 'สกุลเงิน',
-            value: 'สกุลเงินหลัก ($_selectedCurrency)',
-            onTap: () {},
+              _buildDivider(color: dividerColor),
+              // Account Type
+              _buildPickerRow(
+                label: 'ชนิดบัญชี',
+                value: _selectedType.label,
+                onTap: _pickAccountType,
+                surfaceColor: surfaceColor,
+                textPrimaryColor: textPrimaryColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              // Initial Balance / Cash Balance
+              _buildBalanceField(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              // Exchange Rate (portfolio only)
+              if (_selectedType == AccountType.portfolio) ...[
+                _buildExchangeRateField(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+              ],
+              // Currency
+              _buildPickerRow(
+                label: 'สกุลเงิน',
+                value: 'สกุลเงินหลัก ($_selectedCurrency)',
+                onTap: () {},
+                surfaceColor: surfaceColor,
+                textPrimaryColor: textPrimaryColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              // Start Date
+              _buildPickerRow(
+                label: 'เริ่มวันที่',
+                value: _formatThaiDate(_startDate),
+                onTap: _pickDate,
+                surfaceColor: surfaceColor,
+                textPrimaryColor: textPrimaryColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              // Icon
+              _buildIconRow(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              // Color
+              _buildColorRow(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              const SizedBox(height: 8),
+              // Switches
+              _buildSwitchRow(
+                label: 'ไม่รวมในทรัพย์สินสุทธิ',
+                value: _excludeFromNetWorth,
+                onChanged: (v) => setState(() => _excludeFromNetWorth = v),
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+              _buildDivider(color: dividerColor),
+              _buildSwitchRow(
+                label: 'ซ่อนบัญชีนี้',
+                value: _isHidden,
+                onChanged: (v) => setState(() => _isHidden = v),
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
+            ],
           ),
-          _buildDivider(),
-          // Start Date
-          _buildPickerRow(
-            label: 'เริ่มวันที่',
-            value: _formatThaiDate(_startDate),
-            onTap: _pickDate,
-          ),
-          _buildDivider(),
-          // Icon
-          _buildIconRow(),
-          _buildDivider(),
-          // Color
-          _buildColorRow(),
-          const SizedBox(height: 8),
-          // Switches
-          _buildSwitchRow(
-            label: 'ไม่รวมในทรัพย์สินสุทธิ',
-            value: _excludeFromNetWorth,
-            onChanged: (v) => setState(() => _excludeFromNetWorth = v),
-          ),
-          _buildDivider(),
-          _buildSwitchRow(
-            label: 'ซ่อนบัญชีนี้',
-            value: _isHidden,
-            onChanged: (v) => setState(() => _isHidden = v),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
+    required Color surfaceColor,
+    required Color textSecondaryColor,
   }) {
     return Container(
-      color: AppColors.surface,
+      color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(color: AppColors.textSecondary),
+          hintStyle: TextStyle(color: textSecondaryColor),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          filled: false,
         ),
-        style: const TextStyle(fontSize: 15),
+        style: TextStyle(fontSize: 15, color: textSecondaryColor),
+      ),
+    );
+  }
+
+  Widget _buildBalanceField({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              _selectedType == AccountType.portfolio
+                  ? 'เงินสดใน Broker'
+                  : 'ยอดเริ่มต้น',
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _initialBalanceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
+              ],
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: _selectedType == AccountType.portfolio
+                    ? '0'
+                    : 'ยอดเริ่มต้น',
+                hintStyle: TextStyle(color: textSecondaryColor),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                filled: false,
+              ),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExchangeRateField({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              'USD/THB',
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _exchangeRateController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: '35.0',
+                hintStyle: TextStyle(color: textSecondaryColor),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                filled: false,
+              ),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -336,52 +438,48 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required String label,
     required String value,
     required VoidCallback onTap,
+    required Color surfaceColor,
+    required Color textPrimaryColor,
+    required Color textSecondaryColor,
   }) {
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: AppColors.surface,
+        color: surfaceColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
             const Spacer(),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textPrimary,
-              ),
+              style: TextStyle(fontSize: 15, color: textPrimaryColor),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIconRow() {
+  Widget _buildIconRow({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
     return InkWell(
       onTap: _pickIcon,
       child: Container(
-        color: AppColors.surface,
+        color: surfaceColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const Text(
+            Text(
               'ไอคอน',
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -394,28 +492,27 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               child: Icon(_selectedIcon, color: _selectedColor, size: 26),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildColorRow() {
+  Widget _buildColorRow({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
     return InkWell(
       onTap: _pickColor,
       child: Container(
-        color: AppColors.surface,
+        color: surfaceColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const Text(
+            Text(
               'สี',
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -427,11 +524,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
@@ -442,19 +535,18 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required String label,
     required bool value,
     required ValueChanged<bool> onChanged,
+    required Color surfaceColor,
+    required Color textSecondaryColor,
   }) {
     return Container(
-      color: AppColors.surface,
+      color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
           ),
           Switch(value: value, onChanged: onChanged),
@@ -463,33 +555,53 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  Widget _buildDivider() => const Divider(height: 1, indent: 16);
+  Widget _buildDivider({required Color color}) =>
+      Divider(height: 1, indent: 16, color: color);
 
   void _pickAccountType() {
     showModalBottomSheet(
       context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: AccountType.values
-              .map(
-                (type) => ListTile(
-                  title: Text(type.label),
-                  trailing: _selectedType == type
-                      ? const Icon(Icons.check, color: AppColors.header)
-                      : null,
-                  onTap: () {
-                    setState(() {
-                      _selectedType = type;
-                      // Clear balance field when switching type
-                      _initialBalanceController.clear();
-                    });
-                    Navigator.pop(context);
-                  },
-                ),
-              )
-              .toList(),
-        ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final surfaceColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final headerColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: AccountType.values
+                  .map(
+                    (type) => ListTile(
+                      tileColor: surfaceColor,
+                      title: Text(
+                        type.label,
+                        style: TextStyle(color: textPrimaryColor),
+                      ),
+                      trailing: _selectedType == type
+                          ? Icon(Icons.check, color: headerColor)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedType = type;
+                          // Clear balance field when switching type
+                          _initialBalanceController.clear();
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+        },
       ),
     );
   }
@@ -509,59 +621,79 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _pickIcon() {
     showModalBottomSheet(
       context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'เลือกไอคอน',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-            ),
-            SizedBox(
-              height: 250,
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountIcons.length,
-                itemBuilder: (_, i) {
-                  final icon = AppColors.accountIcons[i];
-                  final selected = icon == _selectedIcon;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedIcon = icon);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? _selectedColor.withValues(alpha: 0.2)
-                            : AppColors.background,
-                        borderRadius: BorderRadius.circular(10),
-                        border: selected
-                            ? Border.all(color: _selectedColor, width: 2)
-                            : null,
-                      ),
-                      child: Icon(
-                        icon,
-                        color: selected
-                            ? _selectedColor
-                            : AppColors.textSecondary,
-                        size: 24,
-                      ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode
+              ? AppColors.darkBackground
+              : AppColors.background;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final textSecondaryColor = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    'เลือกไอคอน',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textPrimaryColor,
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                SizedBox(
+                  height: 250,
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
+                    itemCount: AppColors.accountIcons.length,
+                    itemBuilder: (_, i) {
+                      final icon = AppColors.accountIcons[i];
+                      final selected = icon == _selectedIcon;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedIcon = icon);
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? _selectedColor.withValues(alpha: 0.2)
+                                : bgColor,
+                            borderRadius: BorderRadius.circular(10),
+                            border: selected
+                                ? Border.all(color: _selectedColor, width: 2)
+                                : null,
+                          ),
+                          child: Icon(
+                            icon,
+                            color: selected
+                                ? _selectedColor
+                                : textSecondaryColor,
+                            size: 24,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -569,58 +701,72 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _pickColor() {
     showModalBottomSheet(
       context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'เลือกสี',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-            ),
-            SizedBox(
-              height: 200,
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountColors.length,
-                itemBuilder: (_, i) {
-                  final color = AppColors.accountColors[i];
-                  final selected =
-                      color.toARGB32() == _selectedColor.toARGB32();
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedColor = color);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(10),
-                        border: selected
-                            ? Border.all(color: Colors.black45, width: 2)
-                            : null,
-                      ),
-                      child: selected
-                          ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 20,
-                            )
-                          : null,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    'เลือกสี',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textPrimaryColor,
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                SizedBox(
+                  height: 200,
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
+                    itemCount: AppColors.accountColors.length,
+                    itemBuilder: (_, i) {
+                      final color = AppColors.accountColors[i];
+                      final selected =
+                          color.toARGB32() == _selectedColor.toARGB32();
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedColor = color);
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(10),
+                            border: selected
+                                ? Border.all(color: Colors.black45, width: 2)
+                                : null,
+                          ),
+                          child: selected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 20,
+                                )
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

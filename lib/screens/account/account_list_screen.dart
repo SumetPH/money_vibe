@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
@@ -42,8 +43,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
           ),
         ],
       ),
-      body: Consumer2<AccountProvider, TransactionProvider>(
-        builder: (context, accountProvider, txProvider, _) {
+      body: Consumer3<AccountProvider, TransactionProvider, SettingsProvider>(
+        builder: (context, accountProvider, txProvider, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
           final transactions = txProvider.transactions;
           final accounts = accountProvider.visibleAccounts;
           final isReorderMode = _isReorderMode;
@@ -86,6 +88,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         icon: Icons.account_balance_wallet,
                         iconColor: const Color(0xFFFFB300),
                         isTopLevel: true,
+                        isDarkMode: isDarkMode,
                       ),
                     ],
                   ),
@@ -101,6 +104,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                           _SectionHeader(
                             title: groupName,
                             total: groupTotals[groupName] ?? 0,
+                            isDarkMode: isDarkMode,
                           ),
                           ReorderableListView.builder(
                             shrinkWrap: true,
@@ -129,7 +133,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                     scale: scale,
                                     child: Material(
                                       elevation: elevation,
-                                      color: AppColors.surface,
+                                      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                                       borderRadius: BorderRadius.circular(8),
                                       child: child,
                                     ),
@@ -152,6 +156,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                 balance: balance,
                                 isReorderMode: isReorderMode,
                                 onTap: () => _openForm(context, account),
+                                isDarkMode: isDarkMode,
                               );
                             },
                           ),
@@ -187,55 +192,62 @@ class _AccountListScreenState extends State<AccountListScreen> {
   void _showAppMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
+          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: const Icon(Icons.add_circle_outline),
+                  title: Text('เพิ่มบัญชีใหม่', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openForm(context, null);
+                  },
+                ),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: const Icon(Icons.reorder),
+                  title: Text('จัดเรียงลำดับ', style: TextStyle(color: textColor)),
+                  trailing: Switch(
+                    value: _isReorderMode,
+                    onChanged: (value) {
+                      setState(() => _isReorderMode = value);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  onTap: () {
+                    setState(() => _isReorderMode = !_isReorderMode);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: const Icon(Icons.visibility_outlined),
+                  title: Text('จัดการการแสดงบัญชี', style: TextStyle(color: textColor)),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('เพิ่มบัญชีใหม่'),
-              onTap: () {
-                Navigator.pop(context);
-                _openForm(context, null);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.reorder),
-              title: const Text('จัดเรียงลำดับ'),
-              trailing: Switch(
-                value: _isReorderMode,
-                onChanged: (value) {
-                  setState(() => _isReorderMode = value);
-                  Navigator.pop(context);
-                },
-              ),
-              onTap: () {
-                setState(() => _isReorderMode = !_isReorderMode);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.visibility_outlined),
-              title: const Text('จัดการการแสดงบัญชี'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -247,6 +259,7 @@ class _TotalRow extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final bool isTopLevel;
+  final bool isDarkMode;
 
   const _TotalRow({
     required this.label,
@@ -254,12 +267,17 @@ class _TotalRow extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     this.isTopLevel = false,
+    required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
     return Container(
-      color: AppColors.surface,
+      color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -284,6 +302,7 @@ class _TotalRow extends StatelessWidget {
                     fontWeight: isTopLevel
                         ? FontWeight.w600
                         : FontWeight.normal,
+                    color: textPrimaryColor,
                   ),
                 ),
                 Text(
@@ -291,16 +310,16 @@ class _TotalRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.amountColor(amount),
+                    color: AppColors.getAmountColor(amount, isDarkMode),
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.more_horiz,
-              color: AppColors.textSecondary,
+              color: textSecondaryColor,
               size: 20,
             ),
             onPressed: () => _showTotalMenu(context),
@@ -315,31 +334,36 @@ class _TotalRow extends StatelessWidget {
   void _showTotalMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
+          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.info_outline, color: textColor),
+                  title: Text('รายละเอียดทรัพย์สิน', style: TextStyle(color: textColor)),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('รายละเอียดทรัพย์สิน'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -348,23 +372,27 @@ class _TotalRow extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final double total;
+  final bool isDarkMode;
 
-  const _SectionHeader({required this.title, required this.total});
+  const _SectionHeader({required this.title, required this.total, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkBackground : AppColors.background;
+    final textColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
     return Container(
-      color: AppColors.background,
+      color: bgColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: textColor,
               ),
             ),
           ),
@@ -373,7 +401,7 @@ class _SectionHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColors.amountColor(total),
+              color: AppColors.getAmountColor(total, isDarkMode),
             ),
           ),
         ],
@@ -387,6 +415,7 @@ class _AccountItem extends StatelessWidget {
   final double balance;
   final bool isReorderMode;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
   const _AccountItem({
     super.key,
@@ -394,24 +423,30 @@ class _AccountItem extends StatelessWidget {
     required this.balance,
     this.isReorderMode = false,
     required this.onTap,
+    required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
     return Column(
       children: [
         InkWell(
           onTap: onTap,
           child: Container(
-            color: AppColors.surface,
+            color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
                 // Drag handle (only visible in reorder mode)
                 if (isReorderMode) ...[
-                  const Icon(
+                  Icon(
                     Icons.drag_indicator,
-                    color: AppColors.divider,
+                    color: dividerColor,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -434,10 +469,10 @@ class _AccountItem extends StatelessWidget {
                     children: [
                       Text(
                         account.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: textPrimaryColor,
                         ),
                       ),
                       Text(
@@ -445,16 +480,16 @@ class _AccountItem extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.amountColor(balance),
+                          color: AppColors.getAmountColor(balance, isDarkMode),
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_horiz,
-                    color: AppColors.textSecondary,
+                    color: textSecondaryColor,
                     size: 20,
                   ),
                   onPressed: () => _showAccountMenu(context),
@@ -465,7 +500,7 @@ class _AccountItem extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1, color: AppColors.divider),
+        Divider(height: 1, color: dividerColor),
       ],
     );
   }
@@ -473,35 +508,40 @@ class _AccountItem extends StatelessWidget {
   void _showAccountMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
+          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTap();
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('แก้ไข'),
-              onTap: () {
-                Navigator.pop(context);
-                onTap();
-              },
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

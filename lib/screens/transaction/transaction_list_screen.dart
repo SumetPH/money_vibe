@@ -7,6 +7,7 @@ import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../widgets/app_drawer.dart';
 import 'transaction_form_screen.dart';
 
@@ -22,100 +23,123 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AccountProvider, TransactionProvider, CategoryProvider>(
-      builder: (context, accountProvider, txProvider, catProvider, _) {
-        final allTx = _getFilteredTransactions(txProvider);
-        final grouped = txProvider.groupByDate(allTx);
-        final sortedDates = grouped.keys.toList()
-          ..sort((a, b) => b.compareTo(a));
+    return Consumer4<
+      AccountProvider,
+      TransactionProvider,
+      CategoryProvider,
+      SettingsProvider
+    >(
+      builder:
+          (
+            context,
+            accountProvider,
+            txProvider,
+            catProvider,
+            settingsProvider,
+            _,
+          ) {
+            final isDarkMode = settingsProvider.isDarkMode;
+            final allTx = _getFilteredTransactions(txProvider);
+            final grouped = txProvider.groupByDate(allTx);
+            final sortedDates = grouped.keys.toList()
+              ..sort((a, b) => b.compareTo(a));
 
-        final totalIncome = txProvider.getTotalIncome(allTx);
-        final totalExpense = txProvider.getTotalExpense(allTx);
+            final totalIncome = txProvider.getTotalIncome(allTx);
+            final totalExpense = txProvider.getTotalExpense(allTx);
 
-        return Scaffold(
-          drawer: const AppDrawer(currentRoute: '/'),
-          appBar: AppBar(
-            leading: Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
-            title: GestureDetector(
-              onTap: _showPeriodPicker,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${_filter.label} (${allTx.length})',
-                    style: const TextStyle(fontSize: 16),
+            return Scaffold(
+              drawer: const AppDrawer(currentRoute: '/'),
+              appBar: AppBar(
+                leading: Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
+                ),
+                title: GestureDetector(
+                  onTap: _showPeriodPicker,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${_filter.label} (${allTx.length})',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                centerTitle: true,
+                actions: [
+                  IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                  IconButton(icon: const Icon(Icons.tune), onPressed: () {}),
                 ],
               ),
-            ),
-            centerTitle: true,
-            actions: [
-              IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.tune), onPressed: () {}),
-            ],
-          ),
-          body: allTx.isEmpty
-              ? const Center(
-                  child: Text(
-                    'ยังไม่มีรายการ',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  itemCount: sortedDates.length,
-                  itemBuilder: (context, i) {
-                    final date = sortedDates[i];
-                    final txs = grouped[date]!
-                      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-                    final dayIncome = txProvider.getTotalIncome(txs);
-                    final dayExpense = txProvider.getTotalExpense(txs);
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _DateHeader(
-                          date: date,
-                          income: dayIncome,
-                          expense: dayExpense,
+              body: allTx.isEmpty
+                  ? Center(
+                      child: Text(
+                        'ยังไม่มีรายการ',
+                        style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
-                        ...txs.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final tx = entry.value;
-                          return Column(
-                            children: [
-                              _TransactionItem(
-                                tx: tx,
-                                accountProvider: accountProvider,
-                                catProvider: catProvider,
-                                onTap: () => _openForm(context, tx),
-                              ),
-                              if (index < txs.length - 1)
-                                const Divider(
-                                  height: 1,
-                                  indent: 52,
-                                  endIndent: 12,
-                                  color: AppColors.divider,
-                                ),
-                            ],
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
-          bottomNavigationBar: _BottomSummaryBar(
-            totalIncome: totalIncome,
-            totalExpense: totalExpense,
-            onAdd: () => _openForm(context, null),
-          ),
-        );
-      },
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemCount: sortedDates.length,
+                      itemBuilder: (context, i) {
+                        final date = sortedDates[i];
+                        final txs = grouped[date]!
+                          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+                        final dayIncome = txProvider.getTotalIncome(txs);
+                        final dayExpense = txProvider.getTotalExpense(txs);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _DateHeader(
+                              date: date,
+                              income: dayIncome,
+                              expense: dayExpense,
+                              isDarkMode: isDarkMode,
+                            ),
+                            ...txs.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final tx = entry.value;
+                              return Column(
+                                children: [
+                                  _TransactionItem(
+                                    tx: tx,
+                                    accountProvider: accountProvider,
+                                    catProvider: catProvider,
+                                    onTap: () => _openForm(context, tx),
+                                    isDarkMode: isDarkMode,
+                                  ),
+                                  if (index < txs.length - 1)
+                                    Divider(
+                                      height: 1,
+                                      indent: 52,
+                                      endIndent: 12,
+                                      color: isDarkMode
+                                          ? AppColors.darkDivider
+                                          : AppColors.divider,
+                                    ),
+                                ],
+                              );
+                            }),
+                          ],
+                        );
+                      },
+                    ),
+              bottomNavigationBar: _BottomSummaryBar(
+                totalIncome: totalIncome,
+                totalExpense: totalExpense,
+                onAdd: () => _openForm(context, null),
+                isDarkMode: isDarkMode,
+              ),
+            );
+          },
     );
   }
 
@@ -184,27 +208,38 @@ class _DateHeader extends StatelessWidget {
   final DateTime date;
   final double income;
   final double expense;
+  final bool isDarkMode;
 
   const _DateHeader({
     required this.date,
     required this.income,
     required this.expense,
+    required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.background;
+    final textColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
     return Container(
-      color: AppColors.background,
+      color: bgColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
             child: Text(
               _formatDate(date),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: textColor,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
@@ -214,10 +249,10 @@ class _DateHeader extends StatelessWidget {
           if (income > 0) ...[
             Text(
               '+${formatAmount(income)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.income,
+                color: incomeColor,
               ),
             ),
             const SizedBox(width: 8),
@@ -225,10 +260,10 @@ class _DateHeader extends StatelessWidget {
           if (expense > 0)
             Text(
               '-${formatAmount(expense)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.expense,
+                color: expenseColor,
               ),
             ),
         ],
@@ -270,12 +305,14 @@ class _TransactionItem extends StatelessWidget {
   final AccountProvider accountProvider;
   final CategoryProvider catProvider;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
   const _TransactionItem({
     required this.tx,
     required this.accountProvider,
     required this.catProvider,
     required this.onTap,
+    required this.isDarkMode,
   });
 
   @override
@@ -288,17 +325,25 @@ class _TransactionItem extends StatelessWidget {
         ? catProvider.findById(tx.categoryId!)
         : null;
 
-    final typeColor = _typeColor(tx.type);
+    final typeColor = _typeColor(tx.type, isDarkMode);
     final displayAmount =
         (tx.type == TransactionType.expense ||
             tx.type == TransactionType.debtRepay)
         ? -tx.amount
         : tx.amount;
 
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textPrimaryColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: AppColors.surface,
+        color: surfaceColor,
         child: Row(
           children: [
             // Type indicator bar
@@ -331,20 +376,17 @@ class _TransactionItem extends StatelessWidget {
                   // Account info
                   Text(
                     _buildAccountLabel(account, toAccount, tx),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: textPrimaryColor,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   // Category / Payee
                   Text(
                     _buildSubLabel(category?.name),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 14, color: textSecondaryColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -356,10 +398,7 @@ class _TransactionItem extends StatelessWidget {
               children: [
                 Text(
                   _formatTime(tx.dateTime),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 13, color: textSecondaryColor),
                 ),
                 Text(
                   tx.type == TransactionType.transfer
@@ -369,10 +408,14 @@ class _TransactionItem extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: tx.type == TransactionType.transfer
-                        ? AppColors.transfer
+                        ? (isDarkMode
+                              ? AppColors.darkTransfer
+                              : AppColors.transfer)
                         : tx.type == TransactionType.debtRepay
-                        ? AppColors.expense
-                        : AppColors.amountColor(displayAmount),
+                        ? (isDarkMode
+                              ? AppColors.darkExpense
+                              : AppColors.expense)
+                        : AppColors.getAmountColor(displayAmount, isDarkMode),
                   ),
                 ),
               ],
@@ -384,7 +427,19 @@ class _TransactionItem extends StatelessWidget {
     );
   }
 
-  Color _typeColor(TransactionType type) {
+  Color _typeColor(TransactionType type, bool isDarkMode) {
+    if (isDarkMode) {
+      switch (type) {
+        case TransactionType.income:
+          return AppColors.darkIncome;
+        case TransactionType.expense:
+          return AppColors.darkExpense;
+        case TransactionType.transfer:
+          return AppColors.darkTransfer;
+        case TransactionType.debtRepay:
+          return AppColors.darkExpense;
+      }
+    }
     switch (type) {
       case TransactionType.income:
         return AppColors.income;
@@ -429,17 +484,23 @@ class _BottomSummaryBar extends StatelessWidget {
   final double totalIncome;
   final double totalExpense;
   final VoidCallback onAdd;
+  final bool isDarkMode;
 
   const _BottomSummaryBar({
     required this.totalIncome,
     required this.totalExpense,
     required this.onAdd,
+    required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
+    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final fabColor = isDarkMode ? AppColors.darkFabYellow : AppColors.fabYellow;
+
     return Container(
-      color: AppColors.header,
+      color: headerColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SafeArea(
         top: false,
@@ -452,19 +513,19 @@ class _BottomSummaryBar extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'รายรับรวม',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.surface,
+                          color: AppColors.darkTextPrimary,
                         ),
                       ),
                       Text(
                         '${formatAmount(totalIncome)} บาท',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.income,
+                          color: incomeColor,
                         ),
                       ),
                     ],
@@ -476,8 +537,8 @@ class _BottomSummaryBar extends StatelessWidget {
                   child: Container(
                     width: 50,
                     height: 50,
-                    decoration: const BoxDecoration(
-                      color: AppColors.fabYellow,
+                    decoration: BoxDecoration(
+                      color: fabColor,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -487,11 +548,11 @@ class _BottomSummaryBar extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
+                      Text(
                         'รายจ่ายรวม',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.surface,
+                          color: AppColors.darkTextPrimary,
                         ),
                       ),
                       Text(

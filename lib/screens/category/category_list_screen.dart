@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/category.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
@@ -58,13 +59,24 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           ),
         ],
       ),
-      body: Consumer2<CategoryProvider, TransactionProvider>(
-        builder: (context, catProvider, txProvider, _) {
+      body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
+        builder: (context, catProvider, txProvider, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
           return IndexedStack(
             index: _currentIndex,
             children: [
-              _buildCategoryList(catProvider, txProvider, CategoryType.expense),
-              _buildCategoryList(catProvider, txProvider, CategoryType.income),
+              _buildCategoryList(
+                catProvider,
+                txProvider,
+                CategoryType.expense,
+                isDarkMode,
+              ),
+              _buildCategoryList(
+                catProvider,
+                txProvider,
+                CategoryType.income,
+                isDarkMode,
+              ),
             ],
           );
         },
@@ -92,6 +104,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     CategoryProvider catProvider,
     TransactionProvider txProvider,
     CategoryType type,
+    bool isDarkMode,
   ) {
     final allTransactions = txProvider.transactions;
     final cats = catProvider.categoriesOfType(type);
@@ -108,7 +121,11 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       return Center(
         child: Text(
           _searchQuery.isEmpty ? 'ยังไม่มีหมวดหมู่' : 'ไม่พบ "$_searchQuery"',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(
+            color: isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
+          ),
         ),
       );
     }
@@ -131,7 +148,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               scale: scale,
               child: Material(
                 elevation: elevation,
-                color: AppColors.surface,
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
                 child: child,
               ),
@@ -150,6 +167,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           total: total,
           isReorderMode: _isReorderMode,
           onTap: () => _openForm(context, cat),
+          isDarkMode: isDarkMode,
         );
       },
     );
@@ -168,63 +186,70 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   void _showMenuBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      clipBehavior: Clip.antiAlias,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.add),
-                title: const Text('เพิ่มหมวดหมู่'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _openForm(context, null);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.reorder),
-                title: const Text('จัดเรียงลำดับ'),
-                trailing: Switch(
-                  value: _isReorderMode,
-                  onChanged: (value) {
-                    setState(() => _isReorderMode = value);
-                    Navigator.pop(ctx);
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.add, color: textColor),
+                  title: Text(
+                    'เพิ่มหมวดหมู่',
+                    style: TextStyle(color: textColor),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openForm(context, null);
                   },
                 ),
-                onTap: () {
-                  setState(() => _isReorderMode = !_isReorderMode);
-                  Navigator.pop(ctx);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.bar_chart),
-                title: const Text('สถิติ'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  // TODO: Navigate to statistics
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+                Divider(height: 1, color: dividerColor),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.reorder, color: textColor),
+                  title: Text(
+                    'จัดเรียงลำดับ',
+                    style: TextStyle(color: textColor),
+                  ),
+                  trailing: Switch(
+                    value: _isReorderMode,
+                    onChanged: (value) {
+                      setState(() => _isReorderMode = value);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  onTap: () {
+                    setState(() => _isReorderMode = !_isReorderMode);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -234,6 +259,7 @@ class _CategoryItem extends StatelessWidget {
   final double total;
   final bool isReorderMode;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
   const _CategoryItem({
     super.key,
@@ -241,6 +267,7 @@ class _CategoryItem extends StatelessWidget {
     required this.total,
     this.isReorderMode = false,
     required this.onTap,
+    required this.isDarkMode,
   });
 
   @override
@@ -249,22 +276,27 @@ class _CategoryItem extends StatelessWidget {
         ? -total
         : total;
 
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textPrimaryColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
     return Column(
       children: [
         InkWell(
           onTap: isReorderMode ? null : onTap,
           child: Container(
-            color: AppColors.surface,
+            color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
                 // Drag handle (only visible in reorder mode)
                 if (isReorderMode) ...[
-                  const Icon(
-                    Icons.drag_indicator,
-                    color: AppColors.divider,
-                    size: 20,
-                  ),
+                  Icon(Icons.drag_indicator, color: dividerColor, size: 20),
                   const SizedBox(width: 8),
                 ],
                 // Icon
@@ -285,10 +317,10 @@ class _CategoryItem extends StatelessWidget {
                     children: [
                       Text(
                         category.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: textPrimaryColor,
                         ),
                       ),
                       if (total > 0)
@@ -296,23 +328,30 @@ class _CategoryItem extends StatelessWidget {
                           '${formatAmount(displayAmount)} บาท',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.amountColor(displayAmount),
+                            color: AppColors.getAmountColor(
+                              displayAmount,
+                              isDarkMode,
+                            ),
                           ),
                         ),
                     ],
                   ),
                 ),
                 if (!isReorderMode)
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
-                    color: AppColors.textSecondary,
+                    color: textSecondaryColor,
                     size: 20,
                   ),
               ],
             ),
           ),
         ),
-        Divider(indent: isReorderMode ? 100 : 72, height: 1),
+        Divider(
+          indent: isReorderMode ? 100 : 72,
+          height: 1,
+          color: dividerColor,
+        ),
       ],
     );
   }
