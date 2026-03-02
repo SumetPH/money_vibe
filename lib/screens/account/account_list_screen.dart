@@ -206,9 +206,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
   void _showAppMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
+      builder: (_) => Consumer2<AccountProvider, SettingsProvider>(
+        builder: (context, accountProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
+          final showHiddenAccounts = accountProvider.showHiddenAccounts;
           final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
@@ -266,10 +267,20 @@ class _AccountListScreenState extends State<AccountListScreen> {
                   tileColor: bgColor,
                   leading: const Icon(Icons.visibility_outlined),
                   title: Text(
-                    'จัดการการแสดงบัญชี',
+                    'แสดงบัญชีที่ซ่อน',
                     style: TextStyle(color: textColor),
                   ),
-                  onTap: () => Navigator.pop(context),
+                  trailing: Switch(
+                    value: showHiddenAccounts,
+                    onChanged: (value) {
+                      accountProvider.toggleShowHiddenAccounts();
+                      Navigator.pop(context);
+                    },
+                  ),
+                  onTap: () {
+                    accountProvider.toggleShowHiddenAccounts();
+                    Navigator.pop(context);
+                  },
                 ),
               ],
             ),

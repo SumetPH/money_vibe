@@ -16,9 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ตั้งค่า'),
-      ),
+      appBar: AppBar(title: const Text('ตั้งค่า')),
       drawer: const AppDrawer(currentRoute: '/settings'),
       body: ListView(
         children: [
@@ -46,10 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Finnhub API Key Section
           const ListTile(
-            title: Text(
-              'API',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            title: Text('API', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           ListTile(
             leading: const Icon(Icons.api),
@@ -77,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.backup_outlined),
             title: const Text('สำรองและกู้คืนข้อมูล'),
-            subtitle: const Text('Backup/Restore ด้วย CSV'),
+            subtitle: const Text('Backup/Restore ด้วย SQL'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(

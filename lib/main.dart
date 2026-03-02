@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'database/database_helper.dart';
 import 'providers/account_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
@@ -15,9 +14,6 @@ import 'screens/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Clear database on every app start
-  // await DatabaseHelper.instance.clearDatabase();
 
   final accountProvider = AccountProvider();
   final categoryProvider = CategoryProvider();

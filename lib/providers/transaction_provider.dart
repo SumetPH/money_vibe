@@ -109,11 +109,11 @@ class TransactionProvider extends ChangeNotifier {
   Future<void> init() async {
     final rows = await _db.getTransactions();
     if (rows.isEmpty) {
-      // final seeds = _seedTransactions;
-      // for (final tx in seeds) {
-      //   await _db.insertTransaction(tx.toMap());
-      // }
-      // _transactions.addAll(seeds);
+      final seeds = _seedTransactions;
+      for (final tx in seeds) {
+        await _db.insertTransaction(tx.toMap());
+      }
+      _transactions.addAll(seeds);
     } else {
       _transactions.addAll(rows.map(AppTransaction.fromMap));
     }

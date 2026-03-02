@@ -13,6 +13,15 @@ class AccountProvider extends ChangeNotifier {
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
 
+  bool _showHiddenAccounts = false;
+
+  bool get showHiddenAccounts => _showHiddenAccounts;
+
+  void toggleShowHiddenAccounts() {
+    _showHiddenAccounts = !_showHiddenAccounts;
+    notifyListeners();
+  }
+
   // ── Seed data (used only on first launch) ─────────────────────────────────
 
   static List<Account> get _seedAccounts => [
@@ -143,17 +152,17 @@ class AccountProvider extends ChangeNotifier {
   Future<void> init() async {
     final rows = await _db.getAccounts();
     if (rows.isEmpty) {
-      // final seeds = _seedAccounts;
-      // for (final acc in seeds) {
-      //   await _db.insertAccount(acc.toMap());
-      // }
-      // _accounts.addAll(seeds);
+      final seeds = _seedAccounts;
+      for (final acc in seeds) {
+        await _db.insertAccount(acc.toMap());
+      }
+      _accounts.addAll(seeds);
 
-      // // Seed holdings
-      // for (final h in _seedHoldings) {
-      //   await _db.insertHolding(h.toMap());
-      //   _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
-      // }
+      // Seed holdings
+      for (final h in _seedHoldings) {
+        await _db.insertHolding(h.toMap());
+        _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+      }
     } else {
       _accounts.addAll(rows.map(Account.fromMap));
 
@@ -183,8 +192,12 @@ class AccountProvider extends ChangeNotifier {
 
   List<Account> get accounts => List.unmodifiable(_accounts);
 
-  List<Account> get visibleAccounts =>
-      _accounts.where((a) => !a.isHidden).toList();
+  List<Account> get visibleAccounts {
+    if (_showHiddenAccounts) {
+      return List.unmodifiable(_accounts);
+    }
+    return _accounts.where((a) => !a.isHidden).toList();
+  }
 
   List<Account> get debtAccounts => _accounts
       .where(
@@ -240,13 +253,18 @@ class AccountProvider extends ChangeNotifier {
 
   double getTotalNetWorth(List<AppTransaction> transactions) {
     return _accounts
-        .where((a) => !a.excludeFromNetWorth && !a.isHidden)
+        .where(
+          (a) => !a.excludeFromNetWorth && (_showHiddenAccounts || !a.isHidden),
+        )
         .fold(0.0, (sum, a) => sum + getBalance(a.id, transactions));
   }
 
   Map<String, double> getGroupTotals(List<AppTransaction> transactions) {
     final Map<String, double> totals = {};
-    for (final account in visibleAccounts) {
+    final accountsToShow = _showHiddenAccounts
+        ? _accounts
+        : _accounts.where((a) => !a.isHidden);
+    for (final account in accountsToShow) {
       final group = accountTypeDisplayGroup(account.type);
       totals[group] =
           (totals[group] ?? 0) + getBalance(account.id, transactions);

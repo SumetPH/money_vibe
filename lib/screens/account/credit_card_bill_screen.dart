@@ -176,6 +176,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return ListView.builder(
+      key: const PageStorageKey('credit_card_bill_list'),
       padding: const EdgeInsets.all(16),
       itemCount: bills.length,
       itemBuilder: (context, index) {
@@ -690,8 +691,8 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                   isExpense
                       ? Icons.shopping_bag_outlined
                       : tx.type == TransactionType.income
-                          ? Icons.card_giftcard_outlined
-                          : Icons.payment_outlined,
+                      ? Icons.card_giftcard_outlined
+                      : Icons.payment_outlined,
                   color: isExpense
                       ? AppColors.getAmountColor(-1, isDarkMode)
                       : AppColors.getAmountColor(1, isDarkMode),
@@ -707,8 +708,8 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                           (isExpense
                               ? 'รายการใช้จ่าย'
                               : tx.type == TransactionType.income
-                                  ? 'รายรับ/เงินคืน'
-                                  : 'ชำระบัตรเครดิต'),
+                              ? 'รายรับ/เงินคืน'
+                              : 'ชำระบัตรเครดิต'),
                       style: TextStyle(fontSize: 14, color: textPrimaryColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

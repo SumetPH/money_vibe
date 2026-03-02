@@ -161,11 +161,11 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> init() async {
     final rows = await _db.getCategories();
     if (rows.isEmpty) {
-      // final seeds = _seedCategories;
-      // for (final cat in seeds) {
-      //   await _db.insertCategory(cat.toMap());
-      // }
-      // _categories.addAll(seeds);
+      final seeds = _seedCategories;
+      for (final cat in seeds) {
+        await _db.insertCategory(cat.toMap());
+      }
+      _categories.addAll(seeds);
     } else {
       _categories.addAll(rows.map(Category.fromMap));
     }
