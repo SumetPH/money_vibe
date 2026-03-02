@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'database/database_helper.dart';
 import 'providers/account_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
@@ -13,6 +15,9 @@ import 'screens/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Clear database on every app start
+  // await DatabaseHelper.instance.clearDatabase();
 
   final accountProvider = AccountProvider();
   final categoryProvider = CategoryProvider();
@@ -81,32 +86,26 @@ class MyApp extends StatelessWidget {
 
 // Shared helper for amount formatting
 String formatAmount(double amount, {bool showSign = false}) {
-  final abs = amount.abs();
-  final parts = abs.toStringAsFixed(2).split('.');
-  final intPart = parts[0].replaceAllMapped(
-    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]},',
-  );
-  final result = '$intPart.${parts[1]}';
-  if (showSign && amount > 0) return '+$result';
-  if (amount < 0) return '-$result';
+  // Handle -0.0 case explicitly
+  if (amount == 0.0 || amount == -0.0) {
+    return '0.00';
+  }
+  final formatter = NumberFormat('#,##0.00', 'en_US');
+  final result = formatter.format(amount);
+  if (result == '-0.00') return '0.00';
+  if (showSign && amount > 0 && !result.startsWith('+')) return '+$result';
   return result;
 }
 
 String formatAmountShort(double amount) {
+  // Handle -0.0 case explicitly
+  if (amount == 0.0 || amount == -0.0) return '0.00';
   final abs = amount.abs();
   String formatted;
   if (abs >= 1000000) {
-    formatted = '${(abs / 1000000).toStringAsFixed(2)}M';
-  } else if (abs >= 1000) {
-    final parts = abs.toStringAsFixed(2).split('.');
-    final intPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-    formatted = '$intPart.${parts[1]}';
+    formatted = '${NumberFormat('#,##0.00', 'en_US').format(abs / 1000000)}M';
   } else {
-    formatted = abs.toStringAsFixed(2);
+    formatted = NumberFormat('#,##0.00', 'en_US').format(abs);
   }
   if (amount < 0) return '-$formatted';
   return formatted;

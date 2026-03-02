@@ -51,7 +51,6 @@ class Category {
     Color? color,
     CategoryType? type,
     String? parentId,
-    bool? isDefault,
     String? note,
     int? sortOrder,
     bool clearParent = false,

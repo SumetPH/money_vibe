@@ -9,6 +9,7 @@ import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
+import 'credit_card_bill_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
   const AccountListScreen({super.key});
@@ -133,7 +134,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                     scale: scale,
                                     child: Material(
                                       elevation: elevation,
-                                      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                                      color: isDarkMode
+                                          ? AppColors.darkSurface
+                                          : AppColors.surface,
                                       borderRadius: BorderRadius.circular(8),
                                       child: child,
                                     ),
@@ -156,6 +159,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                 balance: balance,
                                 isReorderMode: isReorderMode,
                                 onTap: () => _openForm(context, account),
+                                onTapEdit: () =>
+                                    _openEditForm(context, account),
                                 isDarkMode: isDarkMode,
                               );
                             },
@@ -181,12 +186,21 @@ class _AccountListScreenState extends State<AccountListScreen> {
           builder: (_) => PortfolioDetailScreen(account: account),
         ),
       );
-    } else {
+    } else if (account != null && account.type == AccountType.creditCard) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
+        MaterialPageRoute(
+          builder: (_) => CreditCardBillScreen(account: account),
+        ),
       );
     }
+  }
+
+  void _openEditForm(BuildContext context, Account account) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
+    );
   }
 
   void _showAppMenu(BuildContext context) {
@@ -196,8 +210,12 @@ class _AccountListScreenState extends State<AccountListScreen> {
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
-          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return SafeArea(
             child: Column(
@@ -216,7 +234,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 ListTile(
                   tileColor: bgColor,
                   leading: const Icon(Icons.add_circle_outline),
-                  title: Text('เพิ่มบัญชีใหม่', style: TextStyle(color: textColor)),
+                  title: Text(
+                    'เพิ่มบัญชีใหม่',
+                    style: TextStyle(color: textColor),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _openForm(context, null);
@@ -225,7 +246,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 ListTile(
                   tileColor: bgColor,
                   leading: const Icon(Icons.reorder),
-                  title: Text('จัดเรียงลำดับ', style: TextStyle(color: textColor)),
+                  title: Text(
+                    'จัดเรียงลำดับ',
+                    style: TextStyle(color: textColor),
+                  ),
                   trailing: Switch(
                     value: _isReorderMode,
                     onChanged: (value) {
@@ -241,7 +265,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 ListTile(
                   tileColor: bgColor,
                   leading: const Icon(Icons.visibility_outlined),
-                  title: Text('จัดการการแสดงบัญชี', style: TextStyle(color: textColor)),
+                  title: Text(
+                    'จัดการการแสดงบัญชี',
+                    style: TextStyle(color: textColor),
+                  ),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -273,8 +300,12 @@ class _TotalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textPrimaryColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
 
     return Container(
       color: surfaceColor,
@@ -317,11 +348,7 @@ class _TotalRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: Icon(
-              Icons.more_horiz,
-              color: textSecondaryColor,
-              size: 20,
-            ),
+            icon: Icon(Icons.more_horiz, color: textSecondaryColor, size: 20),
             onPressed: () => _showTotalMenu(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -338,8 +365,12 @@ class _TotalRow extends StatelessWidget {
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
-          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return SafeArea(
             child: Column(
@@ -357,7 +388,10 @@ class _TotalRow extends StatelessWidget {
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.info_outline, color: textColor),
-                  title: Text('รายละเอียดทรัพย์สิน', style: TextStyle(color: textColor)),
+                  title: Text(
+                    'รายละเอียดทรัพย์สิน',
+                    style: TextStyle(color: textColor),
+                  ),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -374,12 +408,20 @@ class _SectionHeader extends StatelessWidget {
   final double total;
   final bool isDarkMode;
 
-  const _SectionHeader({required this.title, required this.total, required this.isDarkMode});
+  const _SectionHeader({
+    required this.title,
+    required this.total,
+    required this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkBackground : AppColors.background;
-    final textColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final bgColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
+    final textColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
 
     return Container(
       color: bgColor,
@@ -415,6 +457,7 @@ class _AccountItem extends StatelessWidget {
   final double balance;
   final bool isReorderMode;
   final VoidCallback onTap;
+  final VoidCallback onTapEdit;
   final bool isDarkMode;
 
   const _AccountItem({
@@ -423,14 +466,19 @@ class _AccountItem extends StatelessWidget {
     required this.balance,
     this.isReorderMode = false,
     required this.onTap,
+    required this.onTapEdit,
     required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textPrimaryColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Column(
@@ -444,11 +492,7 @@ class _AccountItem extends StatelessWidget {
               children: [
                 // Drag handle (only visible in reorder mode)
                 if (isReorderMode) ...[
-                  Icon(
-                    Icons.drag_indicator,
-                    color: dividerColor,
-                    size: 20,
-                  ),
+                  Icon(Icons.drag_indicator, color: dividerColor, size: 20),
                   const SizedBox(width: 8),
                 ],
                 // Account icon
@@ -506,14 +550,20 @@ class _AccountItem extends StatelessWidget {
   }
 
   void _showAccountMenu(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+
     showModalBottomSheet(
+      backgroundColor: bgColor,
       context: context,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
-          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return SafeArea(
             child: Column(
@@ -535,7 +585,7 @@ class _AccountItem extends StatelessWidget {
                   title: Text('แก้ไข', style: TextStyle(color: textColor)),
                   onTap: () {
                     Navigator.pop(context);
-                    onTap();
+                    onTapEdit();
                   },
                 ),
               ],

@@ -1292,7 +1292,7 @@ class _DateTimeRow extends StatelessWidget {
     final day = thaiDays[dt.weekday - 1];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
-    return '$day. ${dt.day} ${thaiMonths[dt.month - 1]} ${dt.year + 543} $h:$m';
+    return '$day. ${dt.day} ${thaiMonths[dt.month - 1]} ${dt.year} $h:$m';
   }
 }
 

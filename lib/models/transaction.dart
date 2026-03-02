@@ -41,7 +41,7 @@ class AppTransaction {
     'account_id': accountId,
     'category_id': categoryId,
     'to_account_id': toAccountId,
-    'date_time': dateTime.millisecondsSinceEpoch,
+    'date_time': dateTime.toIso8601String(),
     'note': note,
     'tags': jsonEncode(tags),
   };
@@ -70,7 +70,7 @@ class AppTransaction {
       accountId: m['account_id'] as String,
       categoryId: m['category_id'] as String?,
       toAccountId: m['to_account_id'] as String?,
-      dateTime: DateTime.fromMillisecondsSinceEpoch(m['date_time'] as int),
+      dateTime: DateTime.parse(m['date_time'] as String),
       note: m['note'] as String?,
       tags: parsedTags,
     );

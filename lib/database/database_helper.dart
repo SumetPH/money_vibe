@@ -12,12 +12,21 @@ class DatabaseHelper {
     return _db!;
   }
 
+  /// Clear database by deleting and recreating it
+  Future<void> clearDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'money.db');
+    await deleteDatabase(path);
+    _db = null;
+    await _initDb();
+  }
+
   Future<Database> _initDb() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money.db');
     return openDatabase(
       path,
-      version: 6,
+      version: 1,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE accounts (
@@ -26,7 +35,7 @@ class DatabaseHelper {
             type TEXT NOT NULL,
             initial_balance REAL NOT NULL DEFAULT 0,
             currency TEXT NOT NULL DEFAULT 'THB',
-            start_date INTEGER NOT NULL,
+            start_date TEXT NOT NULL,
             icon INTEGER NOT NULL,
             color INTEGER NOT NULL,
             exclude_from_net_worth INTEGER NOT NULL DEFAULT 0,
@@ -34,7 +43,8 @@ class DatabaseHelper {
             sort_order INTEGER NOT NULL DEFAULT 0,
             cash_balance REAL NOT NULL DEFAULT 0,
             exchange_rate REAL NOT NULL DEFAULT 35.0,
-            auto_update_rate INTEGER NOT NULL DEFAULT 1
+            auto_update_rate INTEGER NOT NULL DEFAULT 1,
+            statement_day INTEGER
           )
         ''');
         await db.execute('''
@@ -45,7 +55,6 @@ class DatabaseHelper {
             icon INTEGER NOT NULL,
             color INTEGER NOT NULL,
             parent_id TEXT,
-            is_default INTEGER NOT NULL DEFAULT 0,
             note TEXT,
             sort_order INTEGER NOT NULL DEFAULT 0
           )
@@ -58,13 +67,9 @@ class DatabaseHelper {
             account_id TEXT NOT NULL,
             category_id TEXT,
             to_account_id TEXT,
-            payee TEXT,
-            location TEXT,
-            date_time INTEGER NOT NULL,
+            date_time TEXT NOT NULL,
             note TEXT,
-            tags TEXT NOT NULL DEFAULT '',
-            is_cleared INTEGER NOT NULL DEFAULT 0,
-            record_date INTEGER
+            tags TEXT NOT NULL DEFAULT ''
           )
         ''');
         await db.execute('''
@@ -79,47 +84,6 @@ class DatabaseHelper {
             sort_order INTEGER NOT NULL DEFAULT 0
           )
         ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute(
-            'ALTER TABLE accounts ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
-          );
-        }
-        if (oldVersion < 3) {
-          await db.execute(
-            'ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
-          );
-        }
-        if (oldVersion < 4) {
-          await db.execute(
-            'ALTER TABLE accounts ADD COLUMN cash_balance REAL NOT NULL DEFAULT 0',
-          );
-          await db.execute(
-            'ALTER TABLE accounts ADD COLUMN exchange_rate REAL NOT NULL DEFAULT 35.0',
-          );
-          await db.execute('''
-            CREATE TABLE portfolio_holdings (
-              id TEXT PRIMARY KEY,
-              portfolio_id TEXT NOT NULL,
-              ticker TEXT NOT NULL,
-              name TEXT NOT NULL DEFAULT '',
-              shares REAL NOT NULL DEFAULT 0,
-              price_usd REAL NOT NULL DEFAULT 0,
-              sort_order INTEGER NOT NULL DEFAULT 0
-            )
-          ''');
-        }
-        if (oldVersion < 5) {
-          await db.execute(
-            'ALTER TABLE portfolio_holdings ADD COLUMN cost_basis_usd REAL NOT NULL DEFAULT 0',
-          );
-        }
-        if (oldVersion < 6) {
-          await db.execute(
-            'ALTER TABLE accounts ADD COLUMN auto_update_rate INTEGER NOT NULL DEFAULT 1',
-          );
-        }
       },
     );
   }

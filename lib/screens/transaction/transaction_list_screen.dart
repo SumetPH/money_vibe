@@ -19,7 +19,7 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  _PeriodFilter _filter = _PeriodFilter.last30Days;
+  _PeriodFilter _filter = _PeriodFilter.thisYear;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +296,7 @@ class _DateHeader extends StatelessWidget {
       'ธันวาคม',
     ];
     final dayOfWeek = thaiDays[date.weekday - 1];
-    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year + 543} - $dayOfWeek';
+    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} - $dayOfWeek';
   }
 }
 
@@ -383,7 +383,7 @@ class _TransactionItem extends StatelessWidget {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  // Category / Payee
+                  // Category
                   Text(
                     _buildSubLabel(category?.name),
                     style: TextStyle(fontSize: 14, color: textSecondaryColor),

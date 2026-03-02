@@ -31,14 +31,13 @@ class AppColors {
   static const Color darkFabYellow = Color(0xFFFFCA28);
 
   static Color amountColor(double amount, {bool isDarkMode = false}) {
-    if (isDarkMode) {
-      if (amount > 0) return darkIncome;
-      if (amount < 0) return darkExpense;
-      return darkTextSecondary;
+    if (amount.abs() < 0.005) {
+      return isDarkMode ? darkTextSecondary : textSecondary;
     }
-    if (amount > 0) return income;
-    if (amount < 0) return expense;
-    return textSecondary;
+    if (isDarkMode) {
+      return amount > 0 ? darkIncome : darkExpense;
+    }
+    return amount > 0 ? income : expense;
   }
 
   static Color getAmountColor(double amount, bool isDarkMode) =>

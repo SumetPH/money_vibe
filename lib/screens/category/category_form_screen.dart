@@ -99,13 +99,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final dialogBgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+          final dialogBgColor = isDarkMode
+              ? AppColors.darkSurface
+              : Colors.white;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return AlertDialog(
             backgroundColor: dialogBgColor,
             title: Text('ลบหมวดหมู่', style: TextStyle(color: textColor)),
-            content: Text('คุณต้องการที่จะลบหมวดหมู่นี้ใช่หรือไม่?', style: TextStyle(color: textColor)),
+            content: Text(
+              'คุณต้องการที่จะลบหมวดหมู่นี้ใช่หรือไม่?',
+              style: TextStyle(color: textColor),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -120,7 +127,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                   Navigator.pop(context);
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: isDarkMode ? AppColors.darkExpense : AppColors.expense,
+                  foregroundColor: isDarkMode
+                      ? AppColors.darkExpense
+                      : AppColors.expense,
                 ),
                 child: const Text('ลบ'),
               ),
@@ -136,11 +145,21 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     return Consumer2<CategoryProvider, SettingsProvider>(
       builder: (context, catProvider, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
-        final bgColor = isDarkMode ? AppColors.darkBackground : AppColors.background;
-        final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-        final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-        final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
-        final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+        final bgColor = isDarkMode
+            ? AppColors.darkBackground
+            : AppColors.background;
+        final surfaceColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final textPrimaryColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final textSecondaryColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
 
         final parentCandidates = catProvider
             .mainCategoriesOfType(_type)
@@ -172,7 +191,12 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
             children: [
               const SizedBox(height: 8),
               // Name
-              _buildTextField(controller: _nameController, hintText: 'ชื่อ', surfaceColor: surfaceColor, textSecondaryColor: textSecondaryColor),
+              _buildTextField(
+                controller: _nameController,
+                hintText: 'ชื่อ',
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
               _buildDivider(color: dividerColor),
               // Parent category
               _buildPickerRow(
@@ -185,13 +209,22 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
               _buildDivider(color: dividerColor),
               // Icon
-              _buildIconRow(surfaceColor: surfaceColor, textSecondaryColor: textSecondaryColor),
+              _buildIconRow(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
               _buildDivider(color: dividerColor),
               // Color
-              _buildColorRow(surfaceColor: surfaceColor, textSecondaryColor: textSecondaryColor),
+              _buildColorRow(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
               const SizedBox(height: 8),
               // Note
-              _buildNoteField(surfaceColor: surfaceColor, textSecondaryColor: textSecondaryColor),
+              _buildNoteField(
+                surfaceColor: surfaceColor,
+                textSecondaryColor: textSecondaryColor,
+              ),
               const SizedBox(height: 16),
               // Edit history note (only when editing)
               if (_isEditing)
@@ -208,10 +241,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                   child: Center(
                     child: Text(
                       '*ยังไม่มีข้อมูลการแก้ไข',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textSecondaryColor,
-                      ),
+                      style: TextStyle(fontSize: 14, color: textSecondaryColor),
                     ),
                   ),
                 ),
@@ -251,7 +281,8 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     );
   }
 
-  Widget _buildDivider({required Color color}) => Divider(height: 1, indent: 16, color: color);
+  Widget _buildDivider({required Color color}) =>
+      Divider(height: 1, indent: 16, color: color);
 
   Widget _buildPickerRow({
     required String label,
@@ -270,32 +301,25 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 15,
-                color: textSecondaryColor,
-              ),
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
             const Spacer(),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 15,
-                color: textPrimaryColor,
-              ),
+              style: TextStyle(fontSize: 15, color: textPrimaryColor),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIconRow({required Color surfaceColor, required Color textSecondaryColor}) {
+  Widget _buildIconRow({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
     return InkWell(
       onTap: _pickIcon,
       child: Container(
@@ -318,18 +342,17 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               child: Icon(_selectedIcon, color: _selectedColor, size: 26),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildColorRow({required Color surfaceColor, required Color textSecondaryColor}) {
+  Widget _buildColorRow({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
     return InkWell(
       onTap: _pickColor,
       child: Container(
@@ -351,18 +374,17 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor,
-              size: 18,
-            ),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNoteField({required Color surfaceColor, required Color textSecondaryColor}) {
+  Widget _buildNoteField({
+    required Color surfaceColor,
+    required Color textSecondaryColor,
+  }) {
     return Container(
       color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -375,10 +397,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 'โน้ต',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: textSecondaryColor,
-                ),
+                style: TextStyle(fontSize: 15, color: textSecondaryColor),
               ),
             ),
           ),
@@ -398,11 +417,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
           ),
-          Icon(
-            Icons.drag_handle,
-            color: textSecondaryColor,
-            size: 20,
-          ),
+          Icon(Icons.drag_handle, color: textSecondaryColor, size: 20),
         ],
       ),
     );
@@ -415,10 +430,18 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-          final handleColor = isDarkMode ? AppColors.darkDivider : Colors.grey.shade300;
-          final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-          final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-          final headerColor = isDarkMode ? AppColors.darkIncome : AppColors.header;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final headerColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
 
           return DraggableScrollableSheet(
             initialChildSize: 0.5,
@@ -439,7 +462,11 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'เลือกหมวดหมู่หลัก',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: textColor),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: textColor,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Divider(color: dividerColor),
@@ -453,16 +480,25 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary).withValues(alpha: 0.1),
+                            color:
+                                (isDarkMode
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textSecondary)
+                                    .withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.category,
-                            color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                             size: 18,
                           ),
                         ),
-                        title: Text('(หมวดหมู่หลัก)', style: TextStyle(color: textColor)),
+                        title: Text(
+                          '(หมวดหมู่หลัก)',
+                          style: TextStyle(color: textColor),
+                        ),
                         trailing: _parentId == null
                             ? Icon(Icons.check, color: headerColor)
                             : null,
@@ -483,7 +519,10 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                             ),
                             child: Icon(cat.icon, color: cat.color, size: 18),
                           ),
-                          title: Text(cat.name, style: TextStyle(color: textColor)),
+                          title: Text(
+                            cat.name,
+                            style: TextStyle(color: textColor),
+                          ),
                           trailing: _parentId == cat.id
                               ? Icon(Icons.check, color: headerColor)
                               : null,
@@ -511,9 +550,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode ? AppColors.darkBackground : AppColors.background;
-          final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-          final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+          final bgColor = isDarkMode
+              ? AppColors.darkBackground
+              : AppColors.background;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final textSecondaryColor = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
 
           return SafeArea(
             child: Column(
@@ -523,18 +568,22 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Text(
                     'เลือกไอคอน',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: textPrimaryColor),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textPrimaryColor,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: 260,
+                Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
                     itemCount: AppColors.accountIcons.length,
                     itemBuilder: (_, i) {
                       final icon = AppColors.accountIcons[i];
@@ -580,7 +629,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final textPrimaryColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return SafeArea(
             child: Column(
@@ -590,18 +641,22 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Text(
                     'เลือกสี',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: textPrimaryColor),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textPrimaryColor,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: 200,
+                Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
                     itemCount: AppColors.accountColors.length,
                     itemBuilder: (_, i) {
                       final color = AppColors.accountColors[i];

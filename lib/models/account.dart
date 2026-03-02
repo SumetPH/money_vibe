@@ -61,6 +61,9 @@ class Account {
   double exchangeRate;
   bool autoUpdateRate;
 
+  // Credit card-specific fields
+  int? statementDay; // วันสรุปยอดบัตรเครดิต (1-31)
+
   Account({
     required this.id,
     required this.name,
@@ -76,6 +79,7 @@ class Account {
     this.cashBalance = 0,
     this.exchangeRate = 35.0,
     this.autoUpdateRate = true,
+    this.statementDay,
   }) : startDate = startDate ?? DateTime.now();
 
   bool get isPortfolio => type == AccountType.portfolio;
@@ -86,7 +90,7 @@ class Account {
     'type': type.name,
     'initial_balance': initialBalance,
     'currency': currency,
-    'start_date': startDate.millisecondsSinceEpoch,
+    'start_date': startDate.toIso8601String(),
     'icon': icon.codePoint,
     'color': color.toARGB32(),
     'exclude_from_net_worth': excludeFromNetWorth ? 1 : 0,
@@ -95,6 +99,7 @@ class Account {
     'cash_balance': cashBalance,
     'exchange_rate': exchangeRate,
     'auto_update_rate': autoUpdateRate ? 1 : 0,
+    'statement_day': statementDay,
   };
 
   static Account fromMap(Map<String, dynamic> m) => Account(
@@ -103,7 +108,7 @@ class Account {
     type: AccountType.values.firstWhere((e) => e.name == m['type'] as String),
     initialBalance: (m['initial_balance'] as num).toDouble(),
     currency: m['currency'] as String,
-    startDate: DateTime.fromMillisecondsSinceEpoch(m['start_date'] as int),
+    startDate: DateTime.parse(m['start_date'] as String),
     icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
     color: Color(m['color'] as int),
     excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
@@ -112,6 +117,7 @@ class Account {
     cashBalance: (m['cash_balance'] as num? ?? 0).toDouble(),
     exchangeRate: (m['exchange_rate'] as num? ?? 35.0).toDouble(),
     autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
+    statementDay: m['statement_day'] as int?,
   );
 
   Account copyWith({
@@ -124,7 +130,6 @@ class Account {
     Color? color,
     bool? autoClearTransaction,
     bool? showOnMain,
-    bool? isDefault,
     bool? excludeFromNetWorth,
     bool? isHidden,
     String? group,
@@ -133,6 +138,7 @@ class Account {
     double? cashBalance,
     double? exchangeRate,
     bool? autoUpdateRate,
+    int? statementDay,
   }) {
     return Account(
       id: id,
@@ -149,6 +155,7 @@ class Account {
       cashBalance: cashBalance ?? this.cashBalance,
       exchangeRate: exchangeRate ?? this.exchangeRate,
       autoUpdateRate: autoUpdateRate ?? this.autoUpdateRate,
+      statementDay: statementDay ?? this.statementDay,
     );
   }
 }

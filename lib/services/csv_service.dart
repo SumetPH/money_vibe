@@ -142,6 +142,7 @@ class CsvService {
         'cash_balance',
         'exchange_rate',
         'auto_update_rate',
+        'statement_day',
       ],
     ];
 
@@ -161,6 +162,7 @@ class CsvService {
         map['cash_balance'] ?? 0,
         map['exchange_rate'] ?? 35.0,
         map['auto_update_rate'] ?? 1,
+        map['statement_day'] ?? '',
       ]);
     }
 
@@ -181,7 +183,6 @@ class CsvService {
         'parent_id',
         'note',
         'sort_order',
-        'is_default',
       ],
     ];
 
@@ -195,7 +196,6 @@ class CsvService {
         map['parent_id'] ?? '',
         map['note'] ?? '',
         map['sort_order'],
-        map['is_default'] ?? 0,
       ]);
     }
 
@@ -240,14 +240,21 @@ class CsvService {
   // ========== Import Methods ==========
 
   Future<int> _importAccounts(String csvContent) async {
-    final rows = const CsvToListConverter().convert(csvContent);
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+    
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+    
     if (rows.length <= 1) return 0; // Only header or empty
 
     int count = 0;
     // Skip header row
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
-      if (row.isEmpty) continue;
+      if (row.isEmpty || row.length < 5) continue;
 
       final data = {
         'id': row[0]?.toString() ?? _uuid.v4(),
@@ -255,9 +262,7 @@ class CsvService {
         'type': row[2]?.toString() ?? 'cash',
         'initial_balance': double.tryParse(row[3]?.toString() ?? '0') ?? 0,
         'currency': row[4]?.toString() ?? 'THB',
-        'start_date':
-            int.tryParse(row[5]?.toString() ?? '') ??
-            DateTime.now().millisecondsSinceEpoch,
+        'start_date': row[5]?.toString() ?? DateTime.now().toIso8601String(),
         'icon':
             int.tryParse(row[6]?.toString() ?? '') ?? 0xe8a6, // default icon
         'color': int.tryParse(row[7]?.toString() ?? '') ?? 0xFF607D8B,
@@ -265,18 +270,18 @@ class CsvService {
         'is_hidden': int.tryParse(row[9]?.toString() ?? '') ?? 0,
         'sort_order': int.tryParse(row[10]?.toString() ?? '') ?? 0,
         // New fields (backward compatible — old CSVs won't have these columns)
-        'cash_balance':
-            row.length > 11
-                ? (double.tryParse(row[11]?.toString() ?? '') ?? 0)
-                : 0,
-        'exchange_rate':
-            row.length > 12
-                ? (double.tryParse(row[12]?.toString() ?? '') ?? 35.0)
-                : 35.0,
-        'auto_update_rate':
-            row.length > 13
-                ? (int.tryParse(row[13]?.toString() ?? '') ?? 1)
-                : 1,
+        'cash_balance': row.length > 11
+            ? (double.tryParse(row[11]?.toString() ?? '') ?? 0)
+            : 0,
+        'exchange_rate': row.length > 12
+            ? (double.tryParse(row[12]?.toString() ?? '') ?? 35.0)
+            : 35.0,
+        'auto_update_rate': row.length > 13
+            ? (int.tryParse(row[13]?.toString() ?? '') ?? 1)
+            : 1,
+        'statement_day': row.length > 14
+            ? int.tryParse(row[14]?.toString() ?? '')
+            : null,
       };
 
       await DatabaseHelper.instance.insertAccount(data);
@@ -287,19 +292,20 @@ class CsvService {
   }
 
   Future<int> _importCategories(String csvContent) async {
-    final rows = const CsvToListConverter().convert(csvContent);
-    if (rows.length <= 1) {
-      debugPrint('CSV Service: No category data rows found');
-      return 0;
-    }
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
 
-    debugPrint('CSV Service: Importing ${rows.length - 1} categories');
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
+    if (rows.length <= 1) return 0;
+
     int count = 0;
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.isEmpty) continue;
-
-      debugPrint('CSV Service: Row $i - $row');
 
       final data = {
         'id': row[0]?.toString() ?? _uuid.v4(),
@@ -312,26 +318,24 @@ class CsvService {
             : row[5]?.toString(),
         'note': row[6]?.toString() ?? '',
         'sort_order': int.tryParse(row[7]?.toString() ?? '') ?? 0,
-        // New field (backward compatible)
-        'is_default':
-            row.length > 8
-                ? (int.tryParse(row[8]?.toString() ?? '') ?? 0)
-                : 0,
       };
 
-      debugPrint(
-        'CSV Service: Inserting category: ${data['id']} - ${data['name']}',
-      );
       await DatabaseHelper.instance.insertCategory(data);
       count++;
     }
 
-    debugPrint('CSV Service: Imported $count categories');
     return count;
   }
 
   Future<int> _importTransactions(String csvContent) async {
-    final rows = const CsvToListConverter().convert(csvContent);
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
     if (rows.length <= 1) return 0;
 
     int count = 0;
@@ -358,16 +362,9 @@ class CsvService {
         'to_account_id': row[5]?.toString().isEmpty == true
             ? null
             : row[5]?.toString(),
-        'date_time':
-            int.tryParse(row[6]?.toString() ?? '') ??
-            DateTime.now().millisecondsSinceEpoch,
+        'date_time': row[6]?.toString() ?? DateTime.now().toIso8601String(),
         'note': row[7]?.toString() ?? '',
         'tags': tags,
-        // Fields not in CSV but in DB
-        'payee': '',
-        'location': '',
-        'is_cleared': 0,
-        'record_date': null,
       };
 
       await DatabaseHelper.instance.insertTransaction(data);
@@ -411,7 +408,14 @@ class CsvService {
   }
 
   Future<int> _importHoldings(String csvContent) async {
-    final rows = const CsvToListConverter().convert(csvContent);
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+    
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+    
     if (rows.length <= 1) return 0;
 
     int count = 0;
@@ -426,14 +430,12 @@ class CsvService {
         'name': row[3]?.toString() ?? '',
         'shares': double.tryParse(row[4]?.toString() ?? '0') ?? 0,
         'price_usd': double.tryParse(row[5]?.toString() ?? '0') ?? 0,
-        'cost_basis_usd':
-            row.length > 6
-                ? (double.tryParse(row[6]?.toString() ?? '0') ?? 0)
-                : 0,
-        'sort_order':
-            row.length > 7
-                ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
-                : 0,
+        'cost_basis_usd': row.length > 6
+            ? (double.tryParse(row[6]?.toString() ?? '0') ?? 0)
+            : 0,
+        'sort_order': row.length > 7
+            ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
+            : 0,
       };
 
       await DatabaseHelper.instance.insertHolding(data);

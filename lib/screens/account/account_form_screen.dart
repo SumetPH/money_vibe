@@ -29,6 +29,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late Color _selectedColor;
   late bool _excludeFromNetWorth;
   late bool _isHidden;
+  int? _statementDay;
 
   bool get _isEditing => widget.account != null;
   bool _isDarkMode = false;
@@ -45,6 +46,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _selectedColor = acc?.color ?? AppColors.accountColors.first;
     _excludeFromNetWorth = acc?.excludeFromNetWorth ?? false;
     _isHidden = acc?.isHidden ?? false;
+    _statementDay = acc?.statementDay;
 
     if (_selectedType == AccountType.portfolio) {
       _initialBalanceController.text = acc != null
@@ -109,6 +111,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               : _noteController.text.trim(),
           cashBalance: cashBalance,
           exchangeRate: exchangeRate,
+          statementDay: _selectedType == AccountType.creditCard
+              ? _statementDay
+              : null,
         ),
       );
     } else {
@@ -126,6 +131,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           isHidden: _isHidden,
           cashBalance: cashBalance,
           exchangeRate: exchangeRate,
+          statementDay: _selectedType == AccountType.creditCard
+              ? _statementDay
+              : null,
         ),
       );
     }
@@ -286,7 +294,17 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 textSecondaryColor: textSecondaryColor,
               ),
               const SizedBox(height: 8),
+              // Credit Card Statement Day
+              if (_selectedType == AccountType.creditCard) ...[
+                _buildDivider(color: dividerColor),
+                _buildStatementDayPicker(
+                  surfaceColor: surfaceColor,
+                  textPrimaryColor: textPrimaryColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+              ],
               // Switches
+              const SizedBox(height: 8),
               _buildSwitchRow(
                 label: 'ไม่รวมในทรัพย์สินสุทธิ',
                 value: _excludeFromNetWorth,
@@ -558,9 +576,45 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   Widget _buildDivider({required Color color}) =>
       Divider(height: 1, indent: 16, color: color);
 
-  void _pickAccountType() {
+  Widget _buildStatementDayPicker({
+    required Color surfaceColor,
+    required Color textPrimaryColor,
+    required Color textSecondaryColor,
+  }) {
+    return InkWell(
+      onTap: _pickStatementDay,
+      child: Container(
+        color: surfaceColor,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Text(
+              'วันสรุปยอด',
+              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+            ),
+            const Spacer(),
+            Text(
+              _statementDay != null ? 'วันที่ $_statementDay' : 'ไม่ระบุ',
+              style: TextStyle(fontSize: 15, color: textPrimaryColor),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _pickStatementDay() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -570,35 +624,180 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final textPrimaryColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondaryColor = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+
+          return SafeArea(
+            child: Container(
+              color: surfaceColor,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'เลือกวันสรุปยอด',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                      itemCount: 31,
+                      itemBuilder: (_, i) {
+                        final day = i + 1;
+                        final selected = _statementDay == day;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _statementDay = day);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? headerColor.withValues(alpha: 0.2)
+                                  : surfaceColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: selected
+                                  ? Border.all(color: headerColor, width: 2)
+                                  : Border.all(
+                                      color: textSecondaryColor.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$day',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: selected
+                                      ? headerColor
+                                      : textPrimaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (_statementDay != null)
+                    ListTile(
+                      tileColor: surfaceColor,
+                      title: Text(
+                        'ลบวันสรุปยอด',
+                        style: TextStyle(
+                          color: AppColors.getAmountColor(-1, isDarkMode),
+                        ),
+                      ),
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: AppColors.getAmountColor(-1, isDarkMode),
+                      ),
+                      onTap: () {
+                        setState(() => _statementDay = null);
+                        Navigator.pop(context);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _pickAccountType() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final surfaceColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final headerColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
 
           return SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: AccountType.values
-                  .map(
-                    (type) => ListTile(
-                      tileColor: surfaceColor,
-                      title: Text(
-                        type.label,
-                        style: TextStyle(color: textPrimaryColor),
-                      ),
-                      trailing: _selectedType == type
-                          ? Icon(Icons.check, color: headerColor)
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedType = type;
-                          // Clear balance field when switching type
-                          _initialBalanceController.clear();
-                        });
-                        Navigator.pop(context);
-                      },
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...AccountType.values.map(
+                  (type) => ListTile(
+                    tileColor: surfaceColor,
+                    title: Text(
+                      type.label,
+                      style: TextStyle(color: textPrimaryColor),
                     ),
-                  )
-                  .toList(),
+                    trailing: _selectedType == type
+                        ? Icon(Icons.check, color: headerColor)
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _selectedType = type;
+                        // Clear balance field when switching type
+                        _initialBalanceController.clear();
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -619,8 +818,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickIcon() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -633,11 +839,24 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final textSecondaryColor = isDarkMode
               ? AppColors.darkTextSecondary
               : AppColors.textSecondary;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
 
           return SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Text(
@@ -649,8 +868,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 250,
+                Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
@@ -699,19 +917,39 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickColor() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final textPrimaryColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
 
           return SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Text(
@@ -723,8 +961,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 200,
+                Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
@@ -786,6 +1023,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       'พฤศจิกายน',
       'ธันวาคม',
     ];
-    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year + 543}';
+    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year}';
   }
 }

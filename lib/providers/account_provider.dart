@@ -10,7 +10,8 @@ class AccountProvider extends ChangeNotifier {
   final _db = DatabaseHelper.instance;
 
   final List<Account> _accounts = [];
-  final Map<String, List<StockHolding>> _holdings = {}; // portfolioId → holdings
+  final Map<String, List<StockHolding>> _holdings =
+      {}; // portfolioId → holdings
 
   // ── Seed data (used only on first launch) ─────────────────────────────────
 
@@ -142,17 +143,17 @@ class AccountProvider extends ChangeNotifier {
   Future<void> init() async {
     final rows = await _db.getAccounts();
     if (rows.isEmpty) {
-      final seeds = _seedAccounts;
-      for (final acc in seeds) {
-        await _db.insertAccount(acc.toMap());
-      }
-      _accounts.addAll(seeds);
+      // final seeds = _seedAccounts;
+      // for (final acc in seeds) {
+      //   await _db.insertAccount(acc.toMap());
+      // }
+      // _accounts.addAll(seeds);
 
-      // Seed holdings
-      for (final h in _seedHoldings) {
-        await _db.insertHolding(h.toMap());
-        _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
-      }
+      // // Seed holdings
+      // for (final h in _seedHoldings) {
+      //   await _db.insertHolding(h.toMap());
+      //   _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+      // }
     } else {
       _accounts.addAll(rows.map(Account.fromMap));
 
