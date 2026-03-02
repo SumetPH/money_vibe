@@ -56,22 +56,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
-                title: GestureDetector(
-                  onTap: _showPeriodPicker,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${_filter.label} (${allTx.length})',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_filter.label} (${allTx.length})',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
                 ),
                 centerTitle: true,
                 actions: [
-                  IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-                  IconButton(icon: const Icon(Icons.tune), onPressed: () {}),
+                  IconButton(
+                    icon: const Icon(Icons.tune),
+                    onPressed: () {
+                      _showPeriodPicker(isDarkMode);
+                    },
+                  ),
                 ],
               ),
               body: allTx.isEmpty
@@ -148,6 +149,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     switch (_filter) {
       case _PeriodFilter.last30Days:
         return provider.getLast30Days();
+      case _PeriodFilter.last90Days:
+        return provider.getLast90Days();
+      case _PeriodFilter.last180Days:
+        return provider.getLast180Days();
       case _PeriodFilter.thisMonth:
         final from = DateTime(now.year, now.month, 1);
         return provider.getTransactionsForPeriod(from, now);
@@ -161,26 +166,42 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  void _showPeriodPicker() {
+  void _showPeriodPicker(bool isDarkMode) {
+    final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+
     showModalBottomSheet(
       context: context,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: _PeriodFilter.values
-              .map(
-                (f) => ListTile(
-                  title: Text(f.label),
-                  trailing: _filter == f
-                      ? const Icon(Icons.check, color: AppColors.header)
-                      : null,
-                  onTap: () {
-                    setState(() => _filter = f);
-                    Navigator.pop(context);
-                  },
-                ),
-              )
-              .toList(),
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: handleColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._PeriodFilter.values.map(
+              (f) => ListTile(
+                title: Text(f.label),
+                trailing: _filter == f
+                    ? const Icon(Icons.check, color: AppColors.header)
+                    : null,
+                onTap: () {
+                  setState(() => _filter = f);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -196,6 +217,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
 enum _PeriodFilter {
   last30Days('30 วันล่าสุด'),
+  last90Days('90 วันล่าสุด'),
+  last180Days('180 วันล่าสุด'),
   thisMonth('เดือนนี้'),
   lastMonth('เดือนที่แล้ว'),
   thisYear('ปีนี้');

@@ -148,6 +148,18 @@ class TransactionProvider extends ChangeNotifier {
     return getTransactionsForPeriod(from, now);
   }
 
+  List<AppTransaction> getLast90Days() {
+    final now = DateTime.now();
+    final from = now.subtract(const Duration(days: 90));
+    return getTransactionsForPeriod(from, now);
+  }
+
+  List<AppTransaction> getLast180Days() {
+    final now = DateTime.now();
+    final from = now.subtract(const Duration(days: 180));
+    return getTransactionsForPeriod(from, now);
+  }
+
   Map<DateTime, List<AppTransaction>> groupByDate(List<AppTransaction> txs) {
     final Map<DateTime, List<AppTransaction>> grouped = {};
     for (final tx in txs) {

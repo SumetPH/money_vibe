@@ -193,6 +193,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       builder: (context, accountProvider, txProvider, catProvider, _) {
         // Filter out debt accounts for Income/Expense transactions
         final allVisibleAccounts = accountProvider.visibleAccounts;
+
         final accounts =
             (_type == TransactionType.income ||
                 _type == TransactionType.expense ||
@@ -201,7 +202,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   .where(
                     (a) =>
                         a.type != AccountType.debt &&
-                        a.type != AccountType.investment &&
                         a.type != AccountType.portfolio,
                   )
                   .toList()
@@ -280,7 +280,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     return [
       // Amount section
       Container(
-        color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+        color:
+            theme.cardTheme.color ??
+            (isDarkMode ? AppColors.darkSurface : AppColors.surface),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
@@ -288,7 +290,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               isDebtRepay ? 'เงินต้น' : 'จำนวน',
               style: TextStyle(
                 fontSize: 14,
-                color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: 16),
@@ -307,14 +311,18 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   fontWeight: FontWeight.w300,
                   color: isDebtRepay
                       ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
-                      : (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      : (isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary),
                 ),
                 decoration: InputDecoration(
                   hintText: 'จำนวน',
                   hintStyle: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w300,
-                    color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+                    color: isDarkMode
+                        ? AppColors.darkDivider
+                        : AppColors.divider,
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -328,8 +336,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   suffixStyle: TextStyle(
                     fontSize: 14,
                     color: isDebtRepay
-                        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
-                        : (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        ? (isDarkMode
+                              ? AppColors.darkExpense
+                              : AppColors.expense)
+                        : (isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary),
                   ),
                 ),
                 autofocus: !_isEditing,
@@ -411,6 +423,27 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Group accounts by display group
+    final Map<String, List<Account>> groupedAccounts = {};
+    for (final account in accounts) {
+      final group = accountTypeDisplayGroup(account.type);
+      groupedAccounts.putIfAbsent(group, () => []).add(account);
+    }
+
+    // Sort each group by sortOrder
+    for (final group in groupedAccounts.keys) {
+      groupedAccounts[group]!.sort(
+        (a, b) => a.sortOrder.compareTo(b.sortOrder),
+      );
+    }
+
+    // Display order - use actual groups from groupedAccounts
+    const groupOrder = ['เงินสด / เงินฝาก', 'บัตรเครดิต', 'หนี้สิน', 'ลงทุน'];
+    final orderedGroups = groupOrder
+        .where(groupedAccounts.containsKey)
+        .toList();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -431,58 +464,161 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDarkMode
+                    ? AppColors.darkDivider
+                    : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               isTarget ? 'เลือกบัญชีปลายทาง' : 'เลือกบัญชี',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 12),
-            const Divider(),
+            const Divider(height: 1),
             Expanded(
               child: ListView.builder(
                 controller: scrollController,
-                itemCount: accounts.length,
-                itemBuilder: (_, i) {
-                  final acc = accounts[i];
-                  final balance = accountProvider.getBalance(acc.id, transactions);
-                  final selected =
-                      (isTarget ? _selectedToAccountId : _selectedAccountId) ==
-                      acc.id;
-                  return ListTile(
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: acc.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
+                itemCount: orderedGroups.length,
+                padding: EdgeInsets.zero,
+                itemBuilder: (ctx, groupIndex) {
+                  final groupName = orderedGroups[groupIndex];
+                  final groupAccounts = groupedAccounts[groupName]!;
+                  final headerBgColor = isDarkMode
+                      ? AppColors.darkBackground
+                      : AppColors.background;
+                  final headerTextColor = isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Section Header
+                      SizedBox(
+                        width: double.infinity,
+                        child: Container(
+                          color: headerBgColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            groupName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: headerTextColor,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Icon(acc.icon, color: acc.color, size: 20),
-                    ),
-                    title: Text(acc.name),
-                    subtitle: Text(
-                      formatAmount(balance),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.getAmountColor(balance, isDarkMode),
-                      ),
-                    ),
-                    trailing: selected
-                        ? Icon(Icons.check, color: colorScheme.primary)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        if (isTarget) {
-                          _selectedToAccountId = acc.id;
-                        } else {
-                          _selectedAccountId = acc.id;
-                        }
-                      });
-                      Navigator.pop(context);
-                    },
+                      // Account Items
+                      ...groupAccounts.map((acc) {
+                        final balance = accountProvider.getBalance(
+                          acc.id,
+                          transactions,
+                        );
+                        final selected =
+                            (isTarget
+                                ? _selectedToAccountId
+                                : _selectedAccountId) ==
+                            acc.id;
+                        final surfaceColor = isDarkMode
+                            ? AppColors.darkSurface
+                            : AppColors.surface;
+                        final textPrimaryColor = isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary;
+                        final dividerColor = isDarkMode
+                            ? AppColors.darkDivider
+                            : AppColors.divider;
+
+                        return Column(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  if (isTarget) {
+                                    _selectedToAccountId = acc.id;
+                                  } else {
+                                    _selectedAccountId = acc.id;
+                                  }
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                color: surfaceColor,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: acc.color.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        acc.icon,
+                                        color: acc.color,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            acc.name,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: textPrimaryColor,
+                                            ),
+                                          ),
+                                          Text(
+                                            formatAmount(balance),
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.getAmountColor(
+                                                balance,
+                                                isDarkMode,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (selected)
+                                      Icon(
+                                        Icons.check,
+                                        color: colorScheme.primary,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Divider(height: 1, color: dividerColor),
+                          ],
+                        );
+                      }),
+                    ],
                   );
                 },
               ),
@@ -717,10 +853,7 @@ class _TypeSelector extends StatelessWidget {
                 leading: Icon(icon, color: color),
                 title: Text(type.label),
                 trailing: selectedType == type
-                    ? Icon(
-                        Icons.check,
-                        color: colorScheme.primary,
-                      )
+                    ? Icon(Icons.check, color: colorScheme.primary)
                     : null,
                 onTap: () {
                   onChanged(type);
@@ -782,7 +915,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final theme = Theme.of(context);
     return Container(
-      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+      color:
+          theme.cardTheme.color ??
+          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -799,7 +934,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'หนี้สิน',
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -826,7 +963,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         selectedDebtAccount!.name,
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -837,13 +976,17 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         'เลือกบัญชีหนี้สิน',
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
-                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -864,7 +1007,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'บัญชี',
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -889,7 +1034,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         selectedAccount!.name,
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -900,13 +1047,17 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         'เลือกบัญชี',
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
-                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -927,7 +1078,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'หมวดหมู่',
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -952,7 +1105,9 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         selectedCategory!.name,
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -963,13 +1118,17 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         'เลือกหมวดหมู่ (ปล่อยว่างได้)',
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
-                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                     size: 20,
                   ),
                 ],
@@ -1018,7 +1177,9 @@ class _AccountCategorySelector extends StatelessWidget {
         : 0.0;
 
     return Container(
-      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+      color:
+          theme.cardTheme.color ??
+          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       child: Row(
         children: [
           // Account selector
@@ -1055,7 +1216,9 @@ class _AccountCategorySelector extends StatelessWidget {
                               selectedAccount!.name,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                color: isDarkMode
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.textPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1063,7 +1226,10 @@ class _AccountCategorySelector extends StatelessWidget {
                               formatAmount(balance),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.getAmountColor(balance, isDarkMode),
+                                color: AppColors.getAmountColor(
+                                  balance,
+                                  isDarkMode,
+                                ),
                               ),
                             ),
                           ],
@@ -1074,7 +1240,9 @@ class _AccountCategorySelector extends StatelessWidget {
                         'เลือกบัญชี',
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -1083,7 +1251,11 @@ class _AccountCategorySelector extends StatelessWidget {
             ),
           ),
           // Middle divider
-          Container(width: 1, height: 60, color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+          Container(
+            width: 1,
+            height: 60,
+            color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+          ),
           // Category / To-Account selector
           Expanded(
             child: InkWell(
@@ -1120,7 +1292,9 @@ class _AccountCategorySelector extends StatelessWidget {
                           selectedToAccount!.name,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1148,7 +1322,9 @@ class _AccountCategorySelector extends StatelessWidget {
                           selectedCategory!.name,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1160,7 +1336,9 @@ class _AccountCategorySelector extends StatelessWidget {
                             : 'เลือกหมวดหมู่',
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -1194,7 +1372,9 @@ class _FieldRow extends StatelessWidget {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final theme = Theme.of(context);
     return Container(
-      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+      color:
+          theme.cardTheme.color ??
+          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1205,7 +1385,9 @@ class _FieldRow extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 15,
-                color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -1225,7 +1407,13 @@ class _FieldRow extends StatelessWidget {
               style: const TextStyle(fontSize: 15),
             ),
           ),
-          Icon(icon, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 20),
+          Icon(
+            icon,
+            color: isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -1245,26 +1433,37 @@ class _DateTimeRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+        color:
+            theme.cardTheme.color ??
+            (isDarkMode ? AppColors.darkSurface : AppColors.surface),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Text(
               'วันและเวลา',
-              style: TextStyle(fontSize: 15, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 15,
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
             const Spacer(),
             Text(
               _formatThaiDateTime(dateTime),
               style: TextStyle(
                 fontSize: 15,
-                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 8),
             Icon(
               Icons.calendar_today_outlined,
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
               size: 18,
             ),
           ],
@@ -1306,7 +1505,9 @@ class _TagRow extends StatelessWidget {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final theme = Theme.of(context);
     return Container(
-      color: theme.cardTheme.color ?? (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+      color:
+          theme.cardTheme.color ??
+          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
@@ -1314,7 +1515,12 @@ class _TagRow extends StatelessWidget {
             width: 90,
             child: Text(
               'แท็ก',
-              style: TextStyle(fontSize: 15, color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 15,
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
           ),
           Expanded(
@@ -1325,7 +1531,9 @@ class _TagRow extends StatelessWidget {
                     'เพิ่มแท็กได้ตรงนี้ (พิมพ์ชื่อกดปุ่ม Enter เพื่อสร้างแท็ก)',
                 hintStyle: TextStyle(
                   fontSize: 12,
-                  color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -1339,7 +1547,9 @@ class _TagRow extends StatelessWidget {
           ),
           Icon(
             Icons.access_time,
-            color: isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            color: isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
             size: 20,
           ),
         ],

@@ -241,7 +241,12 @@ class _AccountListScreenState extends State<AccountListScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    _openForm(context, null);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AccountFormScreen(account: null),
+                      ),
+                    );
                   },
                 ),
                 ListTile(

@@ -93,10 +93,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             actions: [
               if (_isRefreshing)
                 const Padding(
-                  padding: EdgeInsets.all(14),
+                  padding: EdgeInsets.all(16),
                   child: SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: Colors.white,
@@ -123,13 +123,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                 onPressed: () => _showMenuSheet(context),
               ),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showHoldingSheet(context, provider, acc.id, null),
-            backgroundColor: isDarkMode
-                ? AppColors.darkFabYellow
-                : AppColors.fabYellow,
-            child: const Icon(Icons.add, color: Colors.white),
           ),
           body: SafeArea(
             child: ListView(
