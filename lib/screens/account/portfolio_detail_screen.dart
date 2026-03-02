@@ -790,10 +790,10 @@ class _HoldingItem extends StatelessWidget {
                     ),
                     if (hasCost)
                       Text(
-                        '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(1)}%)',
+                        '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: pnlTHB >= 0 ? incomeColor : expenseColor,
                         ),
                       )
