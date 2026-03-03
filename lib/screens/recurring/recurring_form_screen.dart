@@ -464,7 +464,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                 ),
               ),
-
+              Divider(height: 1, indent: 16, color: dividerColor),
               // ── Icon ──────────────────────────────────────────────────────
               InkWell(
                 onTap: () => _pickIcon(isDark),
@@ -575,6 +575,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -647,6 +648,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -772,6 +774,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -850,6 +853,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -941,6 +945,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1211,6 +1216,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1276,6 +1282,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

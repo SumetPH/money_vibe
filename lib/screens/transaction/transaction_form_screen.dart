@@ -669,8 +669,31 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   void _pickDebtAccount(BuildContext context, AccountProvider accountProvider) {
     final debtAccounts = accountProvider.debtAccounts;
+    final txProvider = context.read<TransactionProvider>();
+    final transactions = txProvider.transactions;
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Group debt accounts by display group
+    final Map<String, List<Account>> groupedAccounts = {};
+    for (final account in debtAccounts) {
+      final group = accountTypeDisplayGroup(account.type);
+      groupedAccounts.putIfAbsent(group, () => []).add(account);
+    }
+
+    // Sort each group by sortOrder
+    for (final group in groupedAccounts.keys) {
+      groupedAccounts[group]!.sort(
+        (a, b) => a.sortOrder.compareTo(b.sortOrder),
+      );
+    }
+
+    // Display order for debt accounts (บัตรเครดิต, หนี้สิน)
+    const groupOrder = ['บัตรเครดิต', 'หนี้สิน'];
+    final orderedGroups = groupOrder
+        .where(groupedAccounts.containsKey)
+        .toList();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -691,42 +714,151 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDarkMode
+                    ? AppColors.darkDivider
+                    : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'เลือกบัญชีหนี้สิน',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 12),
-            const Divider(),
+            const Divider(height: 1),
             Expanded(
               child: ListView.builder(
                 controller: scrollController,
-                itemCount: debtAccounts.length,
-                itemBuilder: (_, i) {
-                  final acc = debtAccounts[i];
-                  final selected = _selectedDebtAccountId == acc.id;
-                  return ListTile(
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: acc.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
+                itemCount: orderedGroups.length,
+                padding: EdgeInsets.zero,
+                itemBuilder: (ctx, groupIndex) {
+                  final groupName = orderedGroups[groupIndex];
+                  final groupAccounts = groupedAccounts[groupName]!;
+                  final headerBgColor = isDarkMode
+                      ? AppColors.darkBackground
+                      : AppColors.background;
+                  final headerTextColor = isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Section Header
+                      SizedBox(
+                        width: double.infinity,
+                        child: Container(
+                          color: headerBgColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            groupName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: headerTextColor,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Icon(acc.icon, color: acc.color, size: 20),
-                    ),
-                    title: Text(acc.name),
-                    trailing: selected
-                        ? Icon(Icons.check, color: colorScheme.primary)
-                        : null,
-                    onTap: () {
-                      setState(() => _selectedDebtAccountId = acc.id);
-                      Navigator.pop(context);
-                    },
+                      // Account Items
+                      ...groupAccounts.map((acc) {
+                        final balance = accountProvider.getBalance(
+                          acc.id,
+                          transactions,
+                        );
+                        final selected = _selectedDebtAccountId == acc.id;
+                        final surfaceColor = isDarkMode
+                            ? AppColors.darkSurface
+                            : AppColors.surface;
+                        final textPrimaryColor = isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary;
+                        final dividerColor = isDarkMode
+                            ? AppColors.darkDivider
+                            : AppColors.divider;
+
+                        return Column(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setState(() => _selectedDebtAccountId = acc.id);
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                color: surfaceColor,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: acc.color.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        acc.icon,
+                                        color: acc.color,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            acc.name,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: textPrimaryColor,
+                                            ),
+                                          ),
+                                          Text(
+                                            formatAmount(balance),
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.getAmountColor(
+                                                balance,
+                                                isDarkMode,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (selected)
+                                      Icon(
+                                        Icons.check,
+                                        color: colorScheme.primary,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Divider(height: 1, color: dividerColor),
+                          ],
+                        );
+                      }),
+                    ],
                   );
                 },
               ),
@@ -740,6 +872,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   void _pickCategory(BuildContext context, List<Category> categories) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
@@ -773,9 +906,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             const SizedBox(height: 12),
             const Divider(),
             Expanded(
-              child: ListView.builder(
+              child: ListView.separated(
                 controller: scrollController,
                 itemCount: categories.length,
+                separatorBuilder: (context, i) =>
+                    Divider(height: 1, color: dividerColor),
                 itemBuilder: (_, i) {
                   final cat = categories[i];
                   return ListTile(

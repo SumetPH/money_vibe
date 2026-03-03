@@ -379,9 +379,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => StatefulBuilder(
         builder: (context, setModalState) {
-          final bgColor = isDark ? AppColors.darkSurface : Colors.white;
           final handleColor = isDark
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -420,17 +420,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     color: textColor,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 12),
                 Divider(color: dividerColor),
                 Expanded(
-                  child: ListView.builder(
+                  child: ListView.separated(
                     controller: sc,
                     itemCount: categories.length,
+                    separatorBuilder: (context, i) =>
+                        Divider(height: 1, color: dividerColor),
                     itemBuilder: (_, i) {
                       final cat = categories[i];
                       final isSelected = _selectedCategoryIds.contains(cat.id);
                       return ListTile(
-                        tileColor: bgColor,
                         leading: Container(
                           width: 36,
                           height: 36,

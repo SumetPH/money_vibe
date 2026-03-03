@@ -424,8 +424,16 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }
 
   void _pickParent(BuildContext context, List<Category> candidates) {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -446,9 +454,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           return DraggableScrollableSheet(
             initialChildSize: 0.5,
             minChildSize: 0.3,
-            maxChildSize: 0.85,
+            maxChildSize: 0.8,
             expand: false,
-            builder: (_, sc) => Column(
+            builder: (_, scrollController) => Column(
               children: [
                 const SizedBox(height: 8),
                 Container(
@@ -471,71 +479,73 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 const SizedBox(height: 4),
                 Divider(color: dividerColor),
                 Expanded(
-                  child: ListView(
-                    controller: sc,
-                    children: [
-                      ListTile(
-                        tileColor: bgColor,
-                        leading: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color:
-                                (isDarkMode
-                                        ? AppColors.darkTextSecondary
-                                        : AppColors.textSecondary)
-                                    .withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.category,
-                            color: isDarkMode
-                                ? AppColors.darkTextSecondary
-                                : AppColors.textSecondary,
-                            size: 18,
-                          ),
-                        ),
-                        title: Text(
-                          '(หมวดหมู่หลัก)',
-                          style: TextStyle(color: textColor),
-                        ),
-                        trailing: _parentId == null
-                            ? Icon(Icons.check, color: headerColor)
-                            : null,
-                        onTap: () {
-                          setState(() => _parentId = null);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ...candidates.map(
-                        (cat) => ListTile(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: EdgeInsets.zero,
+                    itemCount: candidates.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return ListTile(
                           tileColor: bgColor,
                           leading: Container(
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: cat.color.withValues(alpha: 0.15),
+                              color:
+                                  (isDarkMode
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textSecondary)
+                                      .withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(cat.icon, color: cat.color, size: 18),
+                            child: Icon(
+                              Icons.category,
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                              size: 18,
+                            ),
                           ),
                           title: Text(
-                            cat.name,
+                            '(หมวดหมู่หลัก)',
                             style: TextStyle(color: textColor),
                           ),
-                          trailing: _parentId == cat.id
+                          trailing: _parentId == null
                               ? Icon(Icons.check, color: headerColor)
                               : null,
                           onTap: () {
-                            setState(() => _parentId = cat.id);
+                            setState(() => _parentId = null);
                             Navigator.pop(context);
                           },
+                        );
+                      }
+                      final cat = candidates[index - 1];
+                      return ListTile(
+                        tileColor: bgColor,
+                        leading: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: cat.color.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(cat.icon, color: cat.color, size: 18),
                         ),
-                      ),
-                    ],
+                        title: Text(
+                          cat.name,
+                          style: TextStyle(color: textColor),
+                        ),
+                        trailing: _parentId == cat.id
+                            ? Icon(Icons.check, color: headerColor)
+                            : null,
+                        onTap: () {
+                          setState(() => _parentId = cat.id);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
                   ),
                 ),
-                SafeArea(top: false, child: const SizedBox()),
               ],
             ),
           );

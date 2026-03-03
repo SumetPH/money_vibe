@@ -58,7 +58,10 @@ class _CreditCardBillDetailScreenState
           appBar: AppBar(
             backgroundColor: surfaceColor,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Column(

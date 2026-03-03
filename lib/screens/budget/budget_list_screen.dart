@@ -275,6 +275,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   void _showMenuBottomSheet(BuildContext context, bool isDarkMode) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDark = settingsProvider.isDarkMode;
@@ -411,8 +412,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 220,
+                Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,

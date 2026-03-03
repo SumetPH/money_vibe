@@ -21,8 +21,18 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
   bool _isReorderMode = false;
 
   static const _thaiMonths = [
-    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+    'ม.ค.',
+    'ก.พ.',
+    'มี.ค.',
+    'เม.ย.',
+    'พ.ค.',
+    'มิ.ย.',
+    'ก.ค.',
+    'ส.ค.',
+    'ก.ย.',
+    'ต.ค.',
+    'พ.ย.',
+    'ธ.ค.',
   ];
 
   String _formatDate(DateTime d) =>
@@ -33,16 +43,17 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
     return Consumer2<RecurringTransactionProvider, SettingsProvider>(
       builder: (context, provider, sp, _) {
         final isDark = sp.isDarkMode;
-        final bgColor =
-            isDark ? AppColors.darkBackground : AppColors.background;
-        final surfaceColor =
-            isDark ? AppColors.darkSurface : AppColors.surface;
-        final textPrimary =
-            isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
-        final textSecondary =
-            isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-        final dividerColor =
-            isDark ? AppColors.darkDivider : AppColors.divider;
+        final bgColor = isDark
+            ? AppColors.darkBackground
+            : AppColors.background;
+        final surfaceColor = isDark ? AppColors.darkSurface : AppColors.surface;
+        final textPrimary = isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final textSecondary = isDark
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
         final list = provider.recurring;
 
@@ -79,8 +90,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'ยังไม่มีรายการประจำ',
-                        style:
-                            TextStyle(color: textSecondary, fontSize: 15),
+                        style: TextStyle(color: textSecondary, fontSize: 15),
                       ),
                       const SizedBox(height: 8),
                       TextButton.icon(
@@ -95,14 +105,15 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   buildDefaultDragHandles: _isReorderMode,
                   onReorder: _isReorderMode
                       ? (oldIndex, newIndex) =>
-                          provider.reorderRecurring(oldIndex, newIndex)
+                            provider.reorderRecurring(oldIndex, newIndex)
                       : (oldIdx, newIdx) {},
                   proxyDecorator: (child, index, animation) {
                     return AnimatedBuilder(
                       animation: animation,
                       builder: (context, child) {
-                        final animValue =
-                            Curves.easeInOut.transform(animation.value);
+                        final animValue = Curves.easeInOut.transform(
+                          animation.value,
+                        );
                         final elevation = 1 + animValue * 8;
                         final scale = 1 + animValue * 0.02;
                         return Transform.scale(
@@ -158,15 +169,10 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color:
-                                        r.color.withValues(alpha: 0.15),
+                                    color: r.color.withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(
-                                    r.icon,
-                                    color: r.color,
-                                    size: 22,
-                                  ),
+                                  child: Icon(r.icon, color: r.color, size: 22),
                                 ),
                                 const SizedBox(width: 12),
                                 // Info
@@ -187,8 +193,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                       Row(
                                         children: [
                                           _TypeBadge(
-                                            label:
-                                                r.transactionType.label,
+                                            label: r.transactionType.label,
                                             color: typeColor,
                                           ),
                                           const SizedBox(width: 8),
@@ -217,8 +222,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                 // Amount + chevron
                                 if (!_isReorderMode)
                                   Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
                                         formatAmount(r.amount),
@@ -270,16 +274,18 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, sp, _) {
           final isDk = sp.isDarkMode;
           final bgColor = isDk ? AppColors.darkSurface : Colors.white;
-          final handleColor =
-              isDk ? AppColors.darkDivider : Colors.grey.shade300;
-          final textColor =
-              isDk ? AppColors.darkTextPrimary : AppColors.textPrimary;
-          final dividerColor =
-              isDk ? AppColors.darkDivider : AppColors.divider;
+          final handleColor = isDk
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDk
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final dividerColor = isDk ? AppColors.darkDivider : AppColors.divider;
 
           return SafeArea(
             child: Column(

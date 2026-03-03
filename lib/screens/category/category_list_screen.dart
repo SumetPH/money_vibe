@@ -184,8 +184,11 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   }
 
   void _showMenuBottomSheet(BuildContext context) {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;

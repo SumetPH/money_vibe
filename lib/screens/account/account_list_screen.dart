@@ -209,8 +209,11 @@ class _AccountListScreenState extends State<AccountListScreen> {
   }
 
   void _showAppMenu(BuildContext context) {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       builder: (_) => Consumer2<AccountProvider, SettingsProvider>(
         builder: (context, accountProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
