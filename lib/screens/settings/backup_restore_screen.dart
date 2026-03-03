@@ -5,6 +5,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/recurring_transaction_provider.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_backup_service.dart';
 
@@ -94,10 +95,15 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           context,
           listen: false,
         );
+        final recurringProvider = Provider.of<RecurringTransactionProvider>(
+          context,
+          listen: false,
+        );
         await accountProvider.reload();
         await budgetProvider.reload();
         await categoryProvider.reload();
         await transactionProvider.reload();
+        await recurringProvider.reload();
       }
     } catch (e) {
       if (mounted) {
@@ -139,10 +145,15 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           context,
           listen: false,
         );
+        final recurringProvider = Provider.of<RecurringTransactionProvider>(
+          context,
+          listen: false,
+        );
         await accountProvider.reload();
         await budgetProvider.reload();
         await categoryProvider.reload();
         await transactionProvider.reload();
+        await recurringProvider.reload();
         debugPrint('BackupRestore: Providers reloaded');
       } else {
         debugPrint('BackupRestore: No data to reload');
@@ -256,6 +267,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         context,
         listen: false,
       );
+      final recurringProvider = Provider.of<RecurringTransactionProvider>(
+        context,
+        listen: false,
+      );
 
       debugPrint('BackupRestore: Reloading accountProvider...');
       await accountProvider.reload();
@@ -272,6 +287,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       debugPrint('BackupRestore: Reloading transactionProvider...');
       await transactionProvider.reload();
       debugPrint('BackupRestore: transactionProvider reloaded');
+
+      debugPrint('BackupRestore: Reloading recurringProvider...');
+      await recurringProvider.reload();
+      debugPrint('BackupRestore: recurringProvider reloaded');
 
       debugPrint('BackupRestore: All providers reloaded');
 

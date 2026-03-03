@@ -6,6 +6,7 @@ import 'providers/budget_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/recurring_transaction_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/budget/budget_list_screen.dart';
 import 'screens/category/category_list_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/recurring/recurring_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +26,7 @@ void main() async {
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
   final settingsProvider = SettingsProvider();
+  final recurringProvider = RecurringTransactionProvider();
 
   try {
     await Future.wait([
@@ -32,6 +35,7 @@ void main() async {
       _initProvider('Category', categoryProvider.init),
       _initProvider('Transaction', transactionProvider.init),
       _initProvider('Settings', settingsProvider.loadSettings),
+      _initProvider('Recurring', recurringProvider.init),
     ]);
     debugPrint('Main: All providers initialized successfully');
   } catch (e, stackTrace) {
@@ -47,6 +51,7 @@ void main() async {
       categoryProvider: categoryProvider,
       transactionProvider: transactionProvider,
       settingsProvider: settingsProvider,
+      recurringProvider: recurringProvider,
     ),
   );
 }
@@ -69,6 +74,7 @@ class MyApp extends StatelessWidget {
   final CategoryProvider categoryProvider;
   final TransactionProvider transactionProvider;
   final SettingsProvider settingsProvider;
+  final RecurringTransactionProvider recurringProvider;
 
   const MyApp({
     super.key,
@@ -77,6 +83,7 @@ class MyApp extends StatelessWidget {
     required this.categoryProvider,
     required this.transactionProvider,
     required this.settingsProvider,
+    required this.recurringProvider,
   });
 
   @override
@@ -88,6 +95,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: categoryProvider),
         ChangeNotifierProvider.value(value: transactionProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
+        ChangeNotifierProvider.value(value: recurringProvider),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
@@ -100,6 +108,7 @@ class MyApp extends StatelessWidget {
               '/': (_) => const TransactionListScreen(),
               '/accounts': (_) => const AccountListScreen(),
               '/budgets': (_) => const BudgetListScreen(),
+              '/recurring': (_) => const RecurringListScreen(),
               '/categories': (_) => const CategoryListScreen(),
               '/settings': (_) => const SettingsScreen(),
             },

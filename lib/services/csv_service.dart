@@ -48,6 +48,16 @@ class CsvService {
     final budgetsCsv = await _exportBudgets();
     await budgetsFile.writeAsString(budgetsCsv, encoding: utf8);
 
+    // Export recurring transactions
+    final recurringFile = File('${tempDir.path}/recurring_$timestamp.csv');
+    final recurringCsv = await _exportRecurringTransactions();
+    await recurringFile.writeAsString(recurringCsv, encoding: utf8);
+
+    // Export recurring occurrences
+    final occurrencesFile = File('${tempDir.path}/occurrences_$timestamp.csv');
+    final occurrencesCsv = await _exportRecurringOccurrences();
+    await occurrencesFile.writeAsString(occurrencesCsv, encoding: utf8);
+
     // Share all files
     final files = [
       XFile(accountsFile.path),
@@ -55,6 +65,8 @@ class CsvService {
       XFile(transactionsFile.path),
       XFile(holdingsFile.path),
       XFile(budgetsFile.path),
+      XFile(recurringFile.path),
+      XFile(occurrencesFile.path),
     ];
 
     await Share.shareXFiles(
@@ -82,6 +94,8 @@ class CsvService {
     int transactionsCount = 0;
     int holdingsCount = 0;
     int budgetsCount = 0;
+    int recurringTransactionsCount = 0;
+    int recurringOccurrencesCount = 0;
     List<String> errors = [];
 
     for (final file in result.files) {
@@ -109,6 +123,16 @@ class CsvService {
         } else if (filename.contains('budget')) {
           debugPrint('CSV Service: Detected as BUDGETS file');
           budgetsCount = await _importBudgets(content);
+        } else if (filename.contains('recurring')) {
+          debugPrint('CSV Service: Detected as RECURRING TRANSACTIONS file');
+          recurringTransactionsCount = await _importRecurringTransactions(
+            content,
+          );
+        } else if (filename.contains('occurrence')) {
+          debugPrint('CSV Service: Detected as RECURRING OCCURRENCES file');
+          recurringOccurrencesCount = await _importRecurringOccurrences(
+            content,
+          );
         } else {
           debugPrint('CSV Service: Unknown file type, skipping');
         }
@@ -119,7 +143,7 @@ class CsvService {
     }
 
     debugPrint(
-      'CSV Service: Import complete - Accounts: $accountsCount, Categories: $categoriesCount, Transactions: $transactionsCount, Holdings: $holdingsCount, Budgets: $budgetsCount',
+      'CSV Service: Import complete - Accounts: $accountsCount, Categories: $categoriesCount, Transactions: $transactionsCount, Holdings: $holdingsCount, Budgets: $budgetsCount, Recurring Transactions: $recurringTransactionsCount, Recurring Occurrences: $recurringOccurrencesCount',
     );
     return ImportResult(
       accountsCount: accountsCount,
@@ -127,6 +151,8 @@ class CsvService {
       transactionsCount: transactionsCount,
       holdingsCount: holdingsCount,
       budgetsCount: budgetsCount,
+      recurringTransactionsCount: recurringTransactionsCount,
+      recurringOccurrencesCount: recurringOccurrencesCount,
       errors: errors,
     );
   }
@@ -528,6 +554,159 @@ class CsvService {
 
     return count;
   }
+
+  // ========== Recurring Transaction Methods ==========
+
+  Future<String> _exportRecurringTransactions() async {
+    final recurring = await DatabaseHelper.instance.getRecurringTransactions();
+
+    final rows = <List<dynamic>>[
+      // Header
+      [
+        'id',
+        'name',
+        'icon',
+        'color',
+        'start_date',
+        'end_date',
+        'day_of_month',
+        'transaction_type',
+        'amount',
+        'account_id',
+        'to_account_id',
+        'category_id',
+        'note',
+        'sort_order',
+      ],
+    ];
+
+    for (final map in recurring) {
+      rows.add([
+        map['id'],
+        map['name'],
+        map['icon'],
+        map['color'],
+        map['start_date'],
+        map['end_date'] ?? '',
+        map['day_of_month'],
+        map['transaction_type'],
+        map['amount'],
+        map['account_id'],
+        map['to_account_id'] ?? '',
+        map['category_id'] ?? '',
+        map['note'] ?? '',
+        map['sort_order'],
+      ]);
+    }
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  Future<String> _exportRecurringOccurrences() async {
+    final occurrences = await DatabaseHelper.instance.getRecurringOccurrences();
+
+    final rows = <List<dynamic>>[
+      // Header
+      ['id', 'recurring_id', 'due_date', 'transaction_id', 'status'],
+    ];
+
+    for (final map in occurrences) {
+      rows.add([
+        map['id'],
+        map['recurring_id'],
+        map['due_date'],
+        map['transaction_id'] ?? '',
+        map['status'],
+      ]);
+    }
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  Future<int> _importRecurringTransactions(String csvContent) async {
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
+    if (rows.length <= 1) return 0;
+
+    int count = 0;
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      if (row.isEmpty) continue;
+
+      final data = {
+        'id': row[0]?.toString() ?? _uuid.v4(),
+        'name': row[1]?.toString() ?? 'Unknown',
+        'icon': int.tryParse(row[2]?.toString() ?? '') ?? 0xe8a6,
+        'color': int.tryParse(row[3]?.toString() ?? '') ?? 0xFF607D8B,
+        'start_date': row[4]?.toString() ?? DateTime.now().toIso8601String(),
+        'end_date': row[5]?.toString().isEmpty == true
+            ? null
+            : row[5]?.toString(),
+        'day_of_month': int.tryParse(row[6]?.toString() ?? '') ?? 1,
+        'transaction_type': row[7]?.toString() ?? 'expense',
+        'amount': double.tryParse(row[8]?.toString() ?? '0') ?? 0,
+        'account_id': row[9]?.toString() ?? '',
+        'to_account_id': row[10]?.toString().isEmpty == true
+            ? null
+            : row[10]?.toString(),
+        'category_id': row[11]?.toString().isEmpty == true
+            ? null
+            : row[11]?.toString(),
+        'note': row[12]?.toString() ?? '',
+        'sort_order': int.tryParse(row[13]?.toString() ?? '') ?? 0,
+      };
+
+      await DatabaseHelper.instance.insertRecurringTransaction(data);
+      count++;
+    }
+
+    return count;
+  }
+
+  Future<int> _importRecurringOccurrences(String csvContent) async {
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
+    if (rows.length <= 1) return 0;
+
+    int count = 0;
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      if (row.isEmpty) continue;
+
+      final data = {
+        'id': row[0]?.toString() ?? _uuid.v4(),
+        'recurring_id': row[1]?.toString() ?? '',
+        'due_date': row[2]?.toString() ?? DateTime.now().toIso8601String(),
+        'transaction_id': row[3]?.toString().isEmpty == true
+            ? null
+            : row[3]?.toString(),
+        'status': row[4]?.toString() ?? 'done',
+      };
+
+      await DatabaseHelper.instance.insertRecurringOccurrence(data);
+      count++;
+    }
+
+    return count;
+  }
 }
 
 /// Result of import operation
@@ -537,6 +716,8 @@ class ImportResult {
   final int transactionsCount;
   final int holdingsCount;
   final int budgetsCount;
+  final int recurringTransactionsCount;
+  final int recurringOccurrencesCount;
   final List<String> errors;
   final bool canceled;
 
@@ -547,6 +728,8 @@ class ImportResult {
     required this.errors,
     this.holdingsCount = 0,
     this.budgetsCount = 0,
+    this.recurringTransactionsCount = 0,
+    this.recurringOccurrencesCount = 0,
     this.canceled = false,
   });
 
@@ -556,6 +739,8 @@ class ImportResult {
       transactionsCount = 0,
       holdingsCount = 0,
       budgetsCount = 0,
+      recurringTransactionsCount = 0,
+      recurringOccurrencesCount = 0,
       errors = const [],
       canceled = true;
 
@@ -565,7 +750,9 @@ class ImportResult {
       categoriesCount > 0 ||
       transactionsCount > 0 ||
       holdingsCount > 0 ||
-      budgetsCount > 0;
+      budgetsCount > 0 ||
+      recurringTransactionsCount > 0 ||
+      recurringOccurrencesCount > 0;
 
   String get summary {
     if (canceled) return 'ยกเลิก';
@@ -577,6 +764,12 @@ class ImportResult {
     if (transactionsCount > 0) parts.add('ธุรกรรม $transactionsCount รายการ');
     if (holdingsCount > 0) parts.add('หลักทรัพย์ $holdingsCount รายการ');
     if (budgetsCount > 0) parts.add('งบประมาณ $budgetsCount รายการ');
+    if (recurringTransactionsCount > 0) {
+      parts.add('รายการประจำ $recurringTransactionsCount รายการ');
+    }
+    if (recurringOccurrencesCount > 0) {
+      parts.add('การเกิดรายการ $recurringOccurrencesCount รายการ');
+    }
 
     var result = parts.join(' | ');
     if (hasError) {

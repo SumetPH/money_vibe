@@ -223,11 +223,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   List<Account> get debtAccounts => _accounts
-      .where(
-        (a) =>
-            (a.type == AccountType.debt || a.type == AccountType.creditCard) &&
-            !a.isHidden,
-      )
+      .where((a) => (a.type == AccountType.debt) && !a.isHidden)
       .toList();
 
   Account? findById(String id) {

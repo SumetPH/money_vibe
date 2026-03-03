@@ -512,11 +512,9 @@ class _MonthSelector extends StatelessWidget {
     final y = selectedMonth.year;
     final m = selectedMonth.month;
     final clampedStart = startDay.clamp(1, DateUtils.getDaysInMonth(y, m));
-    final nextMonth = DateTime(y, m + 1, 1);
-    final clampedEnd = clampedStart.clamp(
-      1,
-      DateUtils.getDaysInMonth(nextMonth.year, nextMonth.month),
-    );
+    final nextMonth = DateTime(y, m + 1, clampedStart - 1);
+
+    final clampedEnd = nextMonth.day;
     final startMonth = thaiMonths[m - 1];
     final endMonth = thaiMonths[nextMonth.month - 1];
     return '$clampedStart $startMonth - $clampedEnd $endMonth $y';

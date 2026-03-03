@@ -5,6 +5,7 @@ import 'package:path/path.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import '../database/database_helper.dart';
 
 /// Service สำหรับสำรองและกู้คืนฐานข้อมูล SQLite ทั้งไฟล์
 ///
@@ -130,6 +131,9 @@ class DatabaseBackupService {
 
       // เขียนทับไฟล์ฐานข้อมูลเดิม
       await dbFile.writeAsBytes(backupBytes);
+
+      // Reset database connection เพื่อเปิด connection ใหม่กับไฟล์ที่ restore
+      await DatabaseHelper.instance.resetDatabaseConnection();
 
       return RestoreResult(success: true, message: 'กู้คืนข้อมูลเรียบร้อยแล้ว');
     } catch (e) {

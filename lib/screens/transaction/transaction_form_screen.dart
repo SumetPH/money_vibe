@@ -8,13 +8,21 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/recurring_transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
+  final AppTransaction? initialValues; // pre-fill without triggering edit mode
+  final void Function(String transactionId)? onSaved;
 
-  const TransactionFormScreen({super.key, this.transaction});
+  const TransactionFormScreen({
+    super.key,
+    this.transaction,
+    this.initialValues,
+    this.onSaved,
+  });
 
   @override
   State<TransactionFormScreen> createState() => _TransactionFormScreenState();
@@ -37,7 +45,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   @override
   void initState() {
     super.initState();
-    final tx = widget.transaction;
+    final tx = widget.transaction ?? widget.initialValues;
     _type = tx?.type ?? TransactionType.expense;
     _selectedAccountId = tx?.accountId;
     _selectedCategoryId = tx?.categoryId;
@@ -48,7 +56,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ? tx?.toAccountId
         : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
-    _amountController.text = tx != null ? formatAmount(tx.amount) : '';
+    _amountController.text = (tx != null && tx.amount > 0)
+        ? formatAmount(tx.amount)
+        : '';
     _noteController.text = tx?.note ?? '';
 
     // WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -157,25 +167,52 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       txProvider.addTransaction(tx);
     }
 
+    widget.onSaved?.call(tx.id);
     Navigator.pop(context);
   }
 
   void _delete() {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('ลบรายการ'),
-        content: const Text('คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?'),
+        backgroundColor: bgColor,
+        title: Text('ลบรายการ', style: TextStyle(color: textColor)),
+        content: Text(
+          'คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?',
+          style: TextStyle(color: textColor),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ยกเลิก'),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
           ),
           TextButton(
             onPressed: () {
-              context.read<TransactionProvider>().deleteTransaction(
-                widget.transaction!.id,
+              final transactionId = widget.transaction!.id;
+
+              // Check if this transaction is linked to a recurring occurrence
+              final recurProvider = context
+                  .read<RecurringTransactionProvider>();
+              final occ = recurProvider.findOccurrenceByTransactionId(
+                transactionId,
               );
+
+              // Delete the transaction
+              context.read<TransactionProvider>().deleteTransaction(
+                transactionId,
+              );
+
+              // If linked to a recurring occurrence, undo it
+              if (occ != null) {
+                recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
+              }
+
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close form
             },

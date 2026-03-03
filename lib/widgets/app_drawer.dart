@@ -120,6 +120,21 @@ class AppDrawer extends StatelessWidget {
                           : AppColors.divider,
                     ),
                     _DrawerItem(
+                      icon: Icons.repeat,
+                      label: 'รายการประจำ',
+                      selected: currentRoute == '/recurring',
+                      onTap: () => _navigate(context, '/recurring'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
+                    _DrawerItem(
                       icon: Icons.category_outlined,
                       label: 'หมวดหมู่',
                       selected: currentRoute == '/categories',

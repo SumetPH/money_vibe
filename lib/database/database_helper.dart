@@ -44,10 +44,26 @@ class DatabaseHelper {
     debugPrint('DatabaseHelper: Database reinitialized');
   }
 
+  /// Reset database connection after restore
+  ///
+  /// ใช้หลังจาก restore database เพื่อปิด connection เก่าและเปิด connection ใหม่
+  /// ไปยังไฟล์ database ที่ถูกเขียนทับ
+  Future<void> resetDatabaseConnection() async {
+    debugPrint('DatabaseHelper: Resetting database connection...');
+    if (_db != null) {
+      debugPrint('DatabaseHelper: Closing existing database connection...');
+      await _db!.close();
+      _db = null;
+      debugPrint(
+        'DatabaseHelper: Database connection closed, will reconnect on next access',
+      );
+    }
+  }
+
   Future<Database> _initDb() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money.db');
-    const targetVersion = 2;
+    const targetVersion = 3;
 
     // Auto backup before migration
     final dbFile = File(path);
@@ -79,6 +95,35 @@ class DatabaseHelper {
               icon INTEGER NOT NULL,
               color INTEGER NOT NULL,
               sort_order INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+        }
+        if (oldVersion < 3) {
+          await db.execute('''
+            CREATE TABLE recurring_transactions (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              icon INTEGER NOT NULL,
+              color INTEGER NOT NULL,
+              start_date TEXT NOT NULL,
+              end_date TEXT,
+              day_of_month INTEGER NOT NULL DEFAULT 1,
+              transaction_type TEXT NOT NULL,
+              amount REAL NOT NULL DEFAULT 0,
+              account_id TEXT NOT NULL,
+              to_account_id TEXT,
+              category_id TEXT,
+              note TEXT,
+              sort_order INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE recurring_occurrences (
+              id TEXT PRIMARY KEY,
+              recurring_id TEXT NOT NULL,
+              due_date TEXT NOT NULL,
+              transaction_id TEXT,
+              status TEXT NOT NULL DEFAULT 'done'
             )
           ''');
         }
@@ -149,6 +194,33 @@ class DatabaseHelper {
             icon INTEGER NOT NULL,
             color INTEGER NOT NULL,
             sort_order INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE recurring_transactions (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            icon INTEGER NOT NULL,
+            color INTEGER NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT,
+            day_of_month INTEGER NOT NULL DEFAULT 1,
+            transaction_type TEXT NOT NULL,
+            amount REAL NOT NULL DEFAULT 0,
+            account_id TEXT NOT NULL,
+            to_account_id TEXT,
+            category_id TEXT,
+            note TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE recurring_occurrences (
+            id TEXT PRIMARY KEY,
+            recurring_id TEXT NOT NULL,
+            due_date TEXT NOT NULL,
+            transaction_id TEXT,
+            status TEXT NOT NULL DEFAULT 'done'
           )
         ''');
       },
@@ -337,5 +409,91 @@ class DatabaseHelper {
   Future<void> deleteBudget(String id) async {
     final db = await database;
     await db.delete('budgets', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ── Recurring Transactions ─────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getRecurringTransactions() async {
+    final db = await database;
+    return db.query(
+      'recurring_transactions',
+      orderBy: 'sort_order ASC, rowid ASC',
+    );
+  }
+
+  Future<void> insertRecurringTransaction(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert(
+      'recurring_transactions',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> updateRecurringTransaction(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update(
+      'recurring_transactions',
+      data,
+      where: 'id = ?',
+      whereArgs: [data['id']],
+    );
+  }
+
+  Future<void> deleteRecurringTransaction(String id) async {
+    final db = await database;
+    await db.delete('recurring_transactions', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateRecurringSortOrder(String id, int sortOrder) async {
+    final db = await database;
+    await db.update(
+      'recurring_transactions',
+      {'sort_order': sortOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ── Recurring Occurrences ──────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getRecurringOccurrences() async {
+    final db = await database;
+    return db.query('recurring_occurrences', orderBy: 'due_date ASC');
+  }
+
+  Future<List<Map<String, dynamic>>> getOccurrencesFor(
+    String recurringId,
+  ) async {
+    final db = await database;
+    return db.query(
+      'recurring_occurrences',
+      where: 'recurring_id = ?',
+      whereArgs: [recurringId],
+      orderBy: 'due_date ASC',
+    );
+  }
+
+  Future<void> insertRecurringOccurrence(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert(
+      'recurring_occurrences',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteOccurrence(String id) async {
+    final db = await database;
+    await db.delete('recurring_occurrences', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteOccurrencesByRecurring(String recurringId) async {
+    final db = await database;
+    await db.delete(
+      'recurring_occurrences',
+      where: 'recurring_id = ?',
+      whereArgs: [recurringId],
+    );
   }
 }
