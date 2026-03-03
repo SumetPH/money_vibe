@@ -103,10 +103,10 @@ class MyApp extends StatelessWidget {
             title: 'Money',
             theme: AppTheme.getTheme(settingsProvider.isDarkMode),
             debugShowCheckedModeBanner: false,
-            initialRoute: '/',
+            initialRoute: '/accounts',
             routes: {
-              '/': (_) => const TransactionListScreen(),
               '/accounts': (_) => const AccountListScreen(),
+              '/transactions': (_) => const TransactionListScreen(),
               '/budgets': (_) => const BudgetListScreen(),
               '/recurring': (_) => const RecurringListScreen(),
               '/categories': (_) => const CategoryListScreen(),

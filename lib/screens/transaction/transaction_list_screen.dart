@@ -64,8 +64,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 widget.fixedDateRange != null;
 
             return Scaffold(
-              drawer:
-                  isFiltered ? null : const AppDrawer(currentRoute: '/'),
+              drawer: isFiltered
+                  ? null
+                  : const AppDrawer(currentRoute: '/transactions'),
               appBar: AppBar(
                 leading: isFiltered
                     ? IconButton(
