@@ -35,10 +35,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
         title: const Text('บัญชี'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.pie_chart_outline),
-            onPressed: () {},
-          ),
-          IconButton(
             icon: const Icon(Icons.more_horiz),
             onPressed: () => _showAppMenu(context),
           ),

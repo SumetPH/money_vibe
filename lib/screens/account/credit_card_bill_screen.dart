@@ -8,6 +8,7 @@ import '../../providers/transaction_provider.dart';
 import '../../services/credit_card_bill_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import 'credit_card_bill_detail_screen.dart';
 
 // ฟังก์ชันระดับ top-level สำหรับ compute() isolate
 class _BillParams {
@@ -33,7 +34,6 @@ class CreditCardBillScreen extends StatefulWidget {
 }
 
 class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
-  CreditCardBill? _selectedBill;
   List<CreditCardBill> _bills = [];
   bool _loading = true;
   String _lastTxKey = '';
@@ -121,16 +121,8 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
               ? const Center(child: CircularProgressIndicator())
               : bills.isEmpty
               ? _buildEmptyState(isDarkMode, textSecondaryColor)
-              : _selectedBill == null
-              ? _buildBillList(
+              : _buildBillList(
                   bills,
-                  isDarkMode,
-                  surfaceColor,
-                  textPrimaryColor,
-                  textSecondaryColor,
-                )
-              : _buildBillDetail(
-                  _selectedBill!,
                   isDarkMode,
                   surfaceColor,
                   textPrimaryColor,
@@ -189,7 +181,18 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: InkWell(
-            onTap: () => setState(() => _selectedBill = bill),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreditCardBillDetailScreen(
+                    bill: bill,
+                    accountName: widget.account.name,
+                    statementDay: widget.account.statementDay,
+                  ),
+                ),
+              );
+            },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -295,14 +298,14 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                               ? 'คงเหลือที่ต้องชำระ'
                               : 'ชำระเกิน',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: textSecondaryColor,
                           ),
                         ),
                         Text(
                           '${formatAmount(bill.remainingAmount.abs())} บาท',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: bill.remainingAmount > 0
                                 ? AppColors.getAmountColor(
@@ -406,357 +409,5 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildBillDetail(
-    CreditCardBill bill,
-    bool isDarkMode,
-    Color surfaceColor,
-    Color textPrimaryColor,
-    Color textSecondaryColor,
-  ) {
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Column(
-      children: [
-        // Header with back button
-        Container(
-          color: surfaceColor,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() => _selectedBill = null),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bill.isOpen ? 'รอบปัจจุบัน' : 'รอบบิล ${bill.billName}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: textPrimaryColor,
-                      ),
-                    ),
-                    Text(
-                      bill.isOpen ? bill.dateRange : bill.dateRange,
-                      style: TextStyle(fontSize: 14, color: textSecondaryColor),
-                    ),
-                  ],
-                ),
-              ),
-              _buildStatusBadge(bill, isDarkMode),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: dividerColor),
-        // Summary Card
-        Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              _buildSummaryRow(
-                bill.isOpen ? 'ยอดใช้จ่ายถึงวันนี้' : 'ยอดใช้จ่ายในรอบ',
-                bill.expensesAmount,
-                isDarkMode,
-                textPrimaryColor,
-                textSecondaryColor,
-              ),
-              if (bill.carriedOverAmount != 0)
-                _buildSummaryRowWithSign(
-                  bill.carriedOverAmount > 0
-                      ? 'ยอดค้างยกมาจากรอบก่อน'
-                      : 'ยอดชำระเกินยกมา',
-                  bill.carriedOverAmount,
-                  isDarkMode,
-                  textPrimaryColor,
-                  textSecondaryColor,
-                ),
-              Divider(height: 24, color: dividerColor),
-              _buildSummaryRow(
-                bill.isOpen ? 'ยอดสะสมถึงวันนี้' : 'ยอดที่ต้องชำระรวม',
-                bill.totalAmount,
-                isDarkMode,
-                textPrimaryColor,
-                textSecondaryColor,
-                isBold: true,
-                valueColor: bill.totalAmount == 0
-                    ? AppColors.getAmountColor(0, isDarkMode)
-                    : AppColors.getAmountColor(-1, isDarkMode),
-              ),
-              const SizedBox(height: 12),
-              _buildSummaryRow(
-                'ชำระแล้ว',
-                bill.paidAmount,
-                isDarkMode,
-                textPrimaryColor,
-                textSecondaryColor,
-                valueColor: bill.paidAmount == 0
-                    ? AppColors.getAmountColor(0, isDarkMode)
-                    : AppColors.getAmountColor(1, isDarkMode),
-                isBold: true,
-              ),
-              Divider(height: 24, color: dividerColor),
-              _buildSummaryRow(
-                bill.remainingAmount > 0 ? 'คงเหลือที่ต้องชำระ' : 'ชำระเกิน',
-                bill.remainingAmount.abs(),
-                isDarkMode,
-                textPrimaryColor,
-                textSecondaryColor,
-                isBold: true,
-                valueColor: bill.remainingAmount == 0
-                    ? AppColors.getAmountColor(0, isDarkMode) // ชำระครบ = ดํา
-                    : bill.remainingAmount > 0
-                    ? AppColors.getAmountColor(-1, isDarkMode) // ค้างชำระ = แดง
-                    : AppColors.getAmountColor(
-                        1,
-                        isDarkMode,
-                      ), // ชำระเกิน = เขียว
-              ),
-            ],
-          ),
-        ),
-        // Transactions
-        Expanded(
-          child: DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                Container(
-                  color: surfaceColor,
-                  child: TabBar(
-                    indicatorColor: isDarkMode
-                        ? AppColors.darkIncome
-                        : AppColors.income,
-                    labelColor: textPrimaryColor,
-                    unselectedLabelColor: textSecondaryColor,
-                    tabs: [
-                      Tab(text: 'รายการใช้จ่าย (${bill.expenses.length})'),
-                      Tab(text: 'รายการชำระ (${bill.payments.length})'),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildTransactionList(
-                        bill.expenses,
-                        isDarkMode,
-                        surfaceColor,
-                        textPrimaryColor,
-                        textSecondaryColor,
-                        true,
-                      ),
-                      _buildTransactionList(
-                        bill.payments,
-                        isDarkMode,
-                        surfaceColor,
-                        textPrimaryColor,
-                        textSecondaryColor,
-                        false,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryRow(
-    String label,
-    double value,
-    bool isDarkMode,
-    Color textPrimaryColor,
-    Color textSecondaryColor, {
-    bool isBold = false,
-    Color? valueColor,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isBold ? 16 : 14,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
-              color: textSecondaryColor,
-            ),
-          ),
-          Text(
-            '${formatAmount(value)} บาท',
-            style: TextStyle(
-              fontSize: isBold ? 18 : 14,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-              color: valueColor ?? textPrimaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRowWithSign(
-    String label,
-    double value,
-    bool isDarkMode,
-    Color textPrimaryColor,
-    Color textSecondaryColor,
-  ) {
-    final isPositive = value > 0; // บวก = ค้างชำระ
-    final displayValue = value.abs();
-    // บวก (ค้างชำระ) = แดง, ลบ (ชำระเกิน) = เขียว
-    final color = isPositive
-        ? AppColors.getAmountColor(-1, isDarkMode) // ค้างชำระ = แดง
-        : AppColors.getAmountColor(1, isDarkMode); // ชำระเกิน = เขียว
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 14, color: textSecondaryColor),
-          ),
-          Text(
-            '${formatAmount(displayValue)} บาท',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionList(
-    List<AppTransaction> transactions,
-    bool isDarkMode,
-    Color surfaceColor,
-    Color textPrimaryColor,
-    Color textSecondaryColor,
-    bool isExpense,
-  ) {
-    if (transactions.isEmpty) {
-      return Center(
-        child: Text('ไม่มีรายการ', style: TextStyle(color: textSecondaryColor)),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        final tx = transactions[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color:
-                      (isExpense
-                              ? AppColors.getAmountColor(-1, isDarkMode)
-                              : AppColors.getAmountColor(1, isDarkMode))
-                          .withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isExpense
-                      ? Icons.shopping_bag_outlined
-                      : tx.type == TransactionType.income
-                      ? Icons.card_giftcard_outlined
-                      : Icons.payment_outlined,
-                  color: isExpense
-                      ? AppColors.getAmountColor(-1, isDarkMode)
-                      : AppColors.getAmountColor(1, isDarkMode),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tx.note ??
-                          (isExpense
-                              ? 'รายการใช้จ่าย'
-                              : tx.type == TransactionType.income
-                              ? 'รายรับ/เงินคืน'
-                              : 'ชำระบัตรเครดิต'),
-                      style: TextStyle(fontSize: 14, color: textPrimaryColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      _formatDate(tx.dateTime),
-                      style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                tx.amount == 0
-                    ? formatAmount(tx.amount)
-                    : '${isExpense ? '-' : ''}${formatAmount(tx.amount)}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: tx.amount == 0
-                      ? textPrimaryColor // 0 = สีข้อความปกติ
-                      : isExpense
-                      ? AppColors.getAmountColor(-1, isDarkMode)
-                      : AppColors.getAmountColor(1, isDarkMode),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    const thaiMonths = [
-      'ม.ค.',
-      'ก.พ.',
-      'มี.ค.',
-      'เม.ย.',
-      'พ.ค.',
-      'มิ.ย.',
-      'ก.ค.',
-      'ส.ค.',
-      'ก.ย.',
-      'ต.ค.',
-      'พ.ย.',
-      'ธ.ค.',
-    ];
-    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year}';
   }
 }

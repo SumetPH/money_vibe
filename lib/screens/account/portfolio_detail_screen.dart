@@ -217,7 +217,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         holding: h,
                         exchangeRate: acc.exchangeRate,
                         isReorderMode: _isReorderMode,
-                        onTap: () =>
+                        onLongPress: () =>
                             _showHoldingSheet(context, provider, acc.id, h),
                         onDelete: () => provider.deleteHolding(h.id, acc.id),
                         isDarkMode: isDarkMode,
@@ -668,7 +668,7 @@ class _HoldingItem extends StatelessWidget {
   final StockHolding holding;
   final double exchangeRate;
   final bool isReorderMode;
-  final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final VoidCallback onDelete;
   final bool isDarkMode;
 
@@ -677,7 +677,7 @@ class _HoldingItem extends StatelessWidget {
     required this.holding,
     required this.exchangeRate,
     this.isReorderMode = false,
-    required this.onTap,
+    required this.onLongPress,
     required this.onDelete,
     required this.isDarkMode,
   });
@@ -706,7 +706,7 @@ class _HoldingItem extends StatelessWidget {
     return Column(
       children: [
         InkWell(
-          onTap: isReorderMode ? null : onTap,
+          onLongPress: isReorderMode ? null : onLongPress,
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -838,9 +838,6 @@ class _HoldingItem extends StatelessWidget {
 
   void _confirmDelete(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     final handleColor = isDarkMode
         ? AppColors.darkDivider
@@ -877,18 +874,6 @@ class _HoldingItem extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 _showDeleteConfirmation(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.edit_outlined, color: textColor),
-              title: Text(
-                'แก้ไข ${holding.ticker}',
-                style: TextStyle(color: textColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                onTap();
               },
             ),
           ],

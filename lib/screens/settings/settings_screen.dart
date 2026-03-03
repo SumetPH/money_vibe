@@ -72,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.backup_outlined),
             title: const Text('สำรองและกู้คืนข้อมูล'),
-            subtitle: const Text('Backup/Restore ด้วย SQL'),
+            subtitle: const Text('Backup/Restore'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(

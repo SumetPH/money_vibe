@@ -5,6 +5,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
+import '../../services/database_backup_service.dart';
 
 class BackupRestoreScreen extends StatefulWidget {
   const BackupRestoreScreen({super.key});
@@ -29,6 +30,74 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('ส่งออกไม่สำเร็จ: $e')));
+      }
+    }
+  }
+
+  Future<void> _backupDatabase() async {
+    try {
+      final result = await DatabaseBackupService.instance.backupDatabase(
+        context: context,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('สำรองข้อมูลไม่สำเร็จ: $e')));
+      }
+    }
+  }
+
+  Future<void> _restoreDatabase() async {
+    try {
+      final result = await DatabaseBackupService.instance.restoreDatabase(
+        context: context,
+      );
+
+      if (!mounted) return;
+
+      if (result.canceled) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+          duration: Duration(seconds: result.success ? 2 : 5),
+        ),
+      );
+
+      // Reload all providers after successful restore
+      if (result.success) {
+        final accountProvider = Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        );
+        final categoryProvider = Provider.of<CategoryProvider>(
+          context,
+          listen: false,
+        );
+        final transactionProvider = Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        );
+        await accountProvider.reload();
+        await categoryProvider.reload();
+        await transactionProvider.reload();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('กู้คืนข้อมูลไม่สำเร็จ: $e')));
       }
     }
   }
@@ -97,6 +166,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             const Text('คุณต้องการล้างข้อมูลทั้งหมดหรือไม่?'),
             const SizedBox(height: 12),
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
@@ -191,11 +261,19 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('สำรองและกู้คืนข้อมูล')),
+      appBar: AppBar(
+        title: const Text('สำรองและกู้คืนข้อมูล'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: _clearData,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Export Section
+          // SQLite Backup Section (New)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -205,7 +283,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.upload_file,
+                        Icons.storage,
                         color: Theme.of(context).colorScheme.primary,
                         size: 32,
                       ),
@@ -215,12 +293,12 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ส่งออกข้อมูล',
+                              'สำรองฐานข้อมูล (SQLite)',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'ส่งออกข้อมูลทั้งหมดเป็นไฟล์ CSV 4',
+                              'สำรองฐานข้อมูลทั้งไฟล์ (ไม่รองรับข้าม Platform)',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
@@ -229,13 +307,29 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _exportData,
-                      icon: const Icon(Icons.backup),
-                      label: const Text('Backup'),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _backupDatabase,
+                          icon: const Icon(Icons.backup),
+                          label: const Text('Backup'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _restoreDatabase,
+                          icon: const Icon(Icons.restore),
+                          label: const Text('Restore'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -244,7 +338,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
           const SizedBox(height: 16),
 
-          // Import Section
+          // CSV Backup/Restore Section
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -254,8 +348,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.download,
-                        color: Theme.of(context).colorScheme.secondary,
+                        Icons.insert_drive_file,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 32,
                       ),
                       const SizedBox(width: 12),
@@ -264,12 +358,12 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'นำเข้าข้อมูล',
+                              'ส่งออก/นำเข้าข้อมูล (CSV)',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'นำเข้าข้อมูลจากไฟล์ CSV ที่ส่งออกไว้',
+                              'ส่งออกและนำเข้าข้อมูลเป็นไฟล์ CSV (รองรับข้าม Platform)',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
@@ -278,73 +372,36 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _importData,
-                      icon: const Icon(Icons.restore),
-                      label: const Text('Restore'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Clear Data Section
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
                   Row(
                     children: [
-                      Icon(Icons.delete_outline, color: Colors.red, size: 32),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _exportData,
+                          icon: const Icon(Icons.backup),
+                          label: const Text('Backup'),
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ล้างข้อมูล',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'ลบข้อมูลทั้งหมดออกจากฐานข้อมูล',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FilledButton.icon(
+                          onPressed: _importData,
+                          icon: const Icon(Icons.restore),
+                          label: const Text('Restore'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.secondary,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _clearData,
-                      icon: const Icon(Icons.delete_forever),
-                      label: const Text('ล้างข้อมูล'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.red,
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // Warning
           Container(
@@ -372,9 +429,14 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '• การนำเข้าข้อมูลจะแทนที่ข้อมูลที่มีอยู่ถ้า ID ซ้ำกัน\n'
-                  '• ควรส่งออกข้อมูลสำรองก่อนนำเข้าข้อมูลใหม่\n'
-                  '• รองรับการ Backup/Restore ข้ามอุปกรณ์ (Android ↔ iOS)',
+                  'SQLite Backup/Restore:\n'
+                  '• สำรอง/กู้คืนฐานข้อมูลทั้งไฟล์\n'
+                  '• ❌ ไม่รองรับข้าม Platform (Android ↔ iOS)\n'
+                  '• ✅ รวดเร็วและได้ข้อมูลครบถ้วน\n\n'
+                  'CSV Export/Import:\n'
+                  '• ส่งออก/นำเข้าข้อมูลเป็นไฟล์ CSV\n'
+                  '• ✅ รองรับข้าม Platform\n'
+                  '• อ่านข้อมูลด้วยมนุษย์ได้',
                   style: TextStyle(fontSize: 13, color: Colors.orange.shade900),
                 ),
               ],
