@@ -645,12 +645,12 @@ class _CashRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'เงินสด',
+                'เงินสด (USD)',
                 style: TextStyle(fontSize: 15, color: textPrimaryColor),
               ),
             ),
             Text(
-              '${formatAmount(cashBalance)} บาท',
+              '${formatAmount(cashBalance)} USD',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

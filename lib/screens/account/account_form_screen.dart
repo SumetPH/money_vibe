@@ -6,6 +6,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../utils/currency_utils.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -265,8 +266,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               // Currency
               _buildPickerRow(
                 label: 'สกุลเงิน',
-                value: 'สกุลเงินหลัก ($_selectedCurrency)',
-                onTap: () {},
+                value: _getCurrencyDisplay(_selectedCurrency),
+                onTap: _pickCurrency,
                 surfaceColor: surfaceColor,
                 textPrimaryColor: textPrimaryColor,
                 textSecondaryColor: textSecondaryColor,
@@ -359,6 +360,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required Color surfaceColor,
     required Color textSecondaryColor,
   }) {
+    final isPortfolio = _selectedType == AccountType.portfolio;
     return Container(
       color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -367,9 +369,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           SizedBox(
             width: 130,
             child: Text(
-              _selectedType == AccountType.portfolio
-                  ? 'เงินสดใน Broker'
-                  : 'ยอดเริ่มต้น',
+              isPortfolio ? 'เงินสดใน Broker' : 'ยอดเริ่มต้น',
               style: TextStyle(fontSize: 15, color: textSecondaryColor),
             ),
           ),
@@ -385,10 +385,14 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ],
               textAlign: TextAlign.right,
               decoration: InputDecoration(
-                hintText: _selectedType == AccountType.portfolio
-                    ? '0'
-                    : 'ยอดเริ่มต้น',
+                hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',
                 hintStyle: TextStyle(color: textSecondaryColor),
+                suffixText: isPortfolio ? 'USD' : null,
+                suffixStyle: TextStyle(
+                  color: textSecondaryColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -794,6 +798,108 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         _initialBalanceController.clear();
                       });
                       Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _getCurrencyDisplay(String code) {
+    return CurrencyUtils.getCurrencyDisplay(code);
+  }
+
+  void _pickCurrency() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final surfaceColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final textSecondaryColor = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final headerColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
+          final handleColor = isDarkMode
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'เลือกสกุลเงิน',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimaryColor,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: CurrencyUtils.currencies.length,
+                    itemBuilder: (_, i) {
+                      final currency = CurrencyUtils.currencies[i];
+                      final code = currency['code']!;
+                      final symbol = currency['symbol']!;
+                      final name = currency['name']!;
+                      final selected = code == _selectedCurrency;
+                      return ListTile(
+                        tileColor: surfaceColor,
+                        title: Text(
+                          '$code - $name',
+                          style: TextStyle(
+                            color: textPrimaryColor,
+                            fontSize: 15,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'สัญลักษณ์: $symbol',
+                          style: TextStyle(
+                            color: textSecondaryColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                        trailing: selected
+                            ? Icon(Icons.check, color: headerColor)
+                            : null,
+                        onTap: () {
+                          setState(() => _selectedCurrency = code);
+                          Navigator.pop(context);
+                        },
+                      );
                     },
                   ),
                 ),

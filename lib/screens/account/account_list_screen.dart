@@ -10,6 +10,7 @@ import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
 import 'credit_card_bill_screen.dart';
+import '../transaction/transaction_list_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
   const AccountListScreen({super.key});
@@ -187,6 +188,14 @@ class _AccountListScreenState extends State<AccountListScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => CreditCardBillScreen(account: account),
+        ),
+      );
+    } else if (account != null) {
+      // cash, bankAccount, debt → ไปดู transaction ของ account นี้
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TransactionListScreen(accountId: account.id),
         ),
       );
     }

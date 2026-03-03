@@ -224,9 +224,9 @@ class AccountProvider extends ChangeNotifier {
     final account = findById(accountId);
     if (account == null) return 0;
 
-    // Portfolio: balance = cashBalance + sum of holdings value in THB
+    // Portfolio: balance = (cashBalance in USD * exchangeRate) + sum of holdings value in THB
     if (account.type == AccountType.portfolio) {
-      double total = account.cashBalance;
+      double total = account.cashBalance * account.exchangeRate;
       for (final h in (_holdings[accountId] ?? [])) {
         total += h.shares * h.priceUsd * account.exchangeRate;
       }

@@ -12,7 +12,9 @@ import '../../widgets/app_drawer.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
-  const TransactionListScreen({super.key});
+  final String? accountId;
+
+  const TransactionListScreen({super.key, this.accountId});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -46,16 +48,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
             final totalIncome = txProvider.getTotalIncome(allTx);
             final totalExpense = txProvider.getTotalExpense(allTx);
+            final isFromAccount = widget.accountId != null;
 
             return Scaffold(
-              drawer: const AppDrawer(currentRoute: '/'),
+              drawer: isFromAccount ? null : const AppDrawer(currentRoute: '/'),
               appBar: AppBar(
-                leading: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  ),
-                ),
+                leading: isFromAccount
+                    ? IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    : Builder(
+                        builder: (ctx) => IconButton(
+                          icon: const Icon(Icons.menu),
+                          onPressed: () => Scaffold.of(ctx).openDrawer(),
+                        ),
+                      ),
                 title: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -146,24 +154,38 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   List<AppTransaction> _getFilteredTransactions(TransactionProvider provider) {
     final now = DateTime.now();
+    final accountId = widget.accountId;
+    List<AppTransaction> transactions;
+
     switch (_filter) {
       case _PeriodFilter.last30Days:
-        return provider.getLast30Days();
+        transactions = provider.getLast30Days();
       case _PeriodFilter.last90Days:
-        return provider.getLast90Days();
+        transactions = provider.getLast90Days();
       case _PeriodFilter.last180Days:
-        return provider.getLast180Days();
+        transactions = provider.getLast180Days();
       case _PeriodFilter.thisMonth:
         final from = DateTime(now.year, now.month, 1);
-        return provider.getTransactionsForPeriod(from, now);
+        transactions = provider.getTransactionsForPeriod(from, now);
       case _PeriodFilter.lastMonth:
         final from = DateTime(now.year, now.month - 1, 1);
         final to = DateTime(now.year, now.month, 0);
-        return provider.getTransactionsForPeriod(from, to);
+        transactions = provider.getTransactionsForPeriod(from, to);
       case _PeriodFilter.thisYear:
         final from = DateTime(now.year, 1, 1);
-        return provider.getTransactionsForPeriod(from, now);
+        transactions = provider.getTransactionsForPeriod(from, now);
     }
+
+    // กรองตาม accountId ถ้ามีการระบุ
+    if (accountId != null) {
+      transactions = transactions
+          .where(
+            (tx) => tx.accountId == accountId || tx.toAccountId == accountId,
+          )
+          .toList();
+    }
+
+    return transactions;
   }
 
   void _showPeriodPicker(bool isDarkMode) {
