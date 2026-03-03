@@ -121,10 +121,27 @@ class TransactionProvider extends ChangeNotifier {
 
   /// Reload transactions from database (used after restore)
   Future<void> reload() async {
+    debugPrint('TransactionProvider: Reloading...');
     _transactions.clear();
-    final rows = await _db.getTransactions();
-    _transactions.addAll(rows.map(AppTransaction.fromMap));
-    notifyListeners();
+    try {
+      final rows = await _db.getTransactions();
+      debugPrint(
+        'TransactionProvider: Loaded ${rows.length} transactions from DB',
+      );
+      for (final row in rows) {
+        try {
+          _transactions.add(AppTransaction.fromMap(row));
+        } catch (e) {
+          debugPrint('TransactionProvider: Error parsing transaction: $e');
+          debugPrint('TransactionProvider: Transaction data: $row');
+        }
+      }
+      notifyListeners();
+      debugPrint('TransactionProvider: Reload complete');
+    } catch (e) {
+      debugPrint('TransactionProvider: Reload failed: $e');
+      rethrow;
+    }
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────

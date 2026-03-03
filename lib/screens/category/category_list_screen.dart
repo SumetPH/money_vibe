@@ -328,6 +328,7 @@ class _CategoryItem extends StatelessWidget {
                           '${formatAmount(displayAmount)} บาท',
                           style: TextStyle(
                             fontSize: 13,
+                            fontWeight: FontWeight.w600,
                             color: AppColors.getAmountColor(
                               displayAmount,
                               isDarkMode,

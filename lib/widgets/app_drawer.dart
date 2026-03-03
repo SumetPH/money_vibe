@@ -13,10 +13,19 @@ class AppDrawer extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
-        final drawerHeaderColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
-        final drawerItemSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
-        final selectedColor = isDarkMode ? AppColors.darkIncome : AppColors.header;
-        final selectedTileColor = (isDarkMode ? AppColors.darkHeader : AppColors.header).withValues(alpha: 0.08);
+        final drawerHeaderColor = isDarkMode
+            ? AppColors.darkHeader
+            : AppColors.header;
+        final drawerItemSecondaryColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final selectedColor = isDarkMode
+            ? AppColors.darkIncome
+            : AppColors.header;
+        final selectedTileColor =
+            (isDarkMode ? AppColors.darkHeader : AppColors.header).withValues(
+              alpha: 0.08,
+            );
 
         return Drawer(
           child: Column(
@@ -75,7 +84,11 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
                     _DrawerItem(
                       icon: Icons.account_balance_wallet,
                       label: 'บัญชี',
@@ -86,7 +99,26 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
+                    _DrawerItem(
+                      icon: Icons.account_balance_outlined,
+                      label: 'งบประมาณ',
+                      selected: currentRoute == '/budgets',
+                      onTap: () => _navigate(context, '/budgets'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
                     _DrawerItem(
                       icon: Icons.category_outlined,
                       label: 'หมวดหมู่',
@@ -97,7 +129,11 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
                     _DrawerItem(
                       icon: Icons.pie_chart_outline,
                       label: 'สถิติ',
@@ -108,7 +144,11 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
                     _DrawerItem(
                       icon: Icons.settings_outlined,
                       label: 'การตั้งค่า',
@@ -161,14 +201,15 @@ class _DrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: selected ? selectedColor : unselectedColor,
-      ),
+      leading: Icon(icon, color: selected ? selectedColor : unselectedColor),
       title: Text(
         label,
         style: TextStyle(
-          color: selected ? selectedColor : (isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          color: selected
+              ? selectedColor
+              : (isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary),
           fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
         ),
       ),

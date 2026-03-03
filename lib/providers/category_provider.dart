@@ -175,13 +175,25 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> reload() async {
     debugPrint('CategoryProvider: Reloading...');
     _categories.clear();
-    final rows = await _db.getCategories();
-    debugPrint('CategoryProvider: Loaded ${rows.length} categories from DB');
-    _categories.addAll(rows.map(Category.fromMap));
-    notifyListeners();
-    debugPrint(
-      'CategoryProvider: Reload complete, total: ${_categories.length}',
-    );
+    try {
+      final rows = await _db.getCategories();
+      debugPrint('CategoryProvider: Loaded ${rows.length} categories from DB');
+      for (final row in rows) {
+        try {
+          _categories.add(Category.fromMap(row));
+        } catch (e) {
+          debugPrint('CategoryProvider: Error parsing category: $e');
+          debugPrint('CategoryProvider: Category data: $row');
+        }
+      }
+      notifyListeners();
+      debugPrint(
+        'CategoryProvider: Reload complete, total: ${_categories.length}',
+      );
+    } catch (e) {
+      debugPrint('CategoryProvider: Reload failed: $e');
+      rethrow;
+    }
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────

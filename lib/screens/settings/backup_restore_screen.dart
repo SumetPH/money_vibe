@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money_flutter/database/database_helper.dart';
 import 'package:provider/provider.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/budget_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
@@ -81,6 +82,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           context,
           listen: false,
         );
+        final budgetProvider = Provider.of<BudgetProvider>(
+          context,
+          listen: false,
+        );
         final categoryProvider = Provider.of<CategoryProvider>(
           context,
           listen: false,
@@ -90,6 +95,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           listen: false,
         );
         await accountProvider.reload();
+        await budgetProvider.reload();
         await categoryProvider.reload();
         await transactionProvider.reload();
       }
@@ -129,7 +135,12 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           context,
           listen: false,
         );
+        final budgetProvider = Provider.of<BudgetProvider>(
+          context,
+          listen: false,
+        );
         await accountProvider.reload();
+        await budgetProvider.reload();
         await categoryProvider.reload();
         await transactionProvider.reload();
         debugPrint('BackupRestore: Providers reloaded');
@@ -185,6 +196,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '• บัญชีทั้งหมด\n'
+                    '• งบประมาณทั้งหมด\n'
                     '• หมวดหมู่ทั้งหมด\n'
                     '• ธุรกรรมทั้งหมด\n'
                     '• หลักทรัพย์ทั้งหมด',
@@ -220,12 +232,19 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     if (confirmed != true) return;
 
     try {
+      debugPrint('BackupRestore: Starting clear data...');
       await DatabaseHelper.instance.clearDatabase();
+      debugPrint('BackupRestore: Database cleared');
 
       if (!mounted) return;
 
       // Reload all providers
+      debugPrint('BackupRestore: Reloading providers...');
       final accountProvider = Provider.of<AccountProvider>(
+        context,
+        listen: false,
+      );
+      final budgetProvider = Provider.of<BudgetProvider>(
         context,
         listen: false,
       );
@@ -237,9 +256,24 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         context,
         listen: false,
       );
+
+      debugPrint('BackupRestore: Reloading accountProvider...');
       await accountProvider.reload();
+      debugPrint('BackupRestore: accountProvider reloaded');
+
+      debugPrint('BackupRestore: Reloading budgetProvider...');
+      await budgetProvider.reload();
+      debugPrint('BackupRestore: budgetProvider reloaded');
+
+      debugPrint('BackupRestore: Reloading categoryProvider...');
       await categoryProvider.reload();
+      debugPrint('BackupRestore: categoryProvider reloaded');
+
+      debugPrint('BackupRestore: Reloading transactionProvider...');
       await transactionProvider.reload();
+      debugPrint('BackupRestore: transactionProvider reloaded');
+
+      debugPrint('BackupRestore: All providers reloaded');
 
       if (!mounted) return;
 

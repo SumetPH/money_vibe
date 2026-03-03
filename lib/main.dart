@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'providers/account_provider.dart';
+import 'providers/budget_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
+import 'screens/budget/budget_list_screen.dart';
 import 'screens/category/category_list_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'screens/settings/settings_screen.dart';
@@ -15,21 +17,33 @@ import 'screens/settings/settings_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  debugPrint('Main: Starting app initialization...');
+
   final accountProvider = AccountProvider();
+  final budgetProvider = BudgetProvider();
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
   final settingsProvider = SettingsProvider();
 
-  await Future.wait([
-    accountProvider.init(),
-    categoryProvider.init(),
-    transactionProvider.init(),
-    settingsProvider.loadSettings(),
-  ]);
+  try {
+    await Future.wait([
+      _initProvider('Account', accountProvider.init),
+      _initProvider('Budget', budgetProvider.init),
+      _initProvider('Category', categoryProvider.init),
+      _initProvider('Transaction', transactionProvider.init),
+      _initProvider('Settings', settingsProvider.loadSettings),
+    ]);
+    debugPrint('Main: All providers initialized successfully');
+  } catch (e, stackTrace) {
+    debugPrint('Main: Fatal error during initialization: $e');
+    debugPrint('Main: Stack trace: $stackTrace');
+    // Continue running app anyway - providers may partially work
+  }
 
   runApp(
     MyApp(
       accountProvider: accountProvider,
+      budgetProvider: budgetProvider,
       categoryProvider: categoryProvider,
       transactionProvider: transactionProvider,
       settingsProvider: settingsProvider,
@@ -37,8 +51,21 @@ void main() async {
   );
 }
 
+Future<void> _initProvider(String name, Future<void> Function() initFn) async {
+  try {
+    debugPrint('Main: Initializing $name provider...');
+    await initFn();
+    debugPrint('Main: $name provider initialized');
+  } catch (e, stackTrace) {
+    debugPrint('Main: Error initializing $name provider: $e');
+    debugPrint('Main: Stack trace for $name: $stackTrace');
+    rethrow;
+  }
+}
+
 class MyApp extends StatelessWidget {
   final AccountProvider accountProvider;
+  final BudgetProvider budgetProvider;
   final CategoryProvider categoryProvider;
   final TransactionProvider transactionProvider;
   final SettingsProvider settingsProvider;
@@ -46,6 +73,7 @@ class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
     required this.accountProvider,
+    required this.budgetProvider,
     required this.categoryProvider,
     required this.transactionProvider,
     required this.settingsProvider,
@@ -56,6 +84,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: accountProvider),
+        ChangeNotifierProvider.value(value: budgetProvider),
         ChangeNotifierProvider.value(value: categoryProvider),
         ChangeNotifierProvider.value(value: transactionProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
@@ -70,6 +99,7 @@ class MyApp extends StatelessWidget {
             routes: {
               '/': (_) => const TransactionListScreen(),
               '/accounts': (_) => const AccountListScreen(),
+              '/budgets': (_) => const BudgetListScreen(),
               '/categories': (_) => const CategoryListScreen(),
               '/settings': (_) => const SettingsScreen(),
             },

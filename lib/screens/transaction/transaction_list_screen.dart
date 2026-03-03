@@ -13,8 +13,17 @@ import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final String? accountId;
+  final List<String>? categoryIds;
+  final DateTimeRange? fixedDateRange;
+  final String? title;
 
-  const TransactionListScreen({super.key, this.accountId});
+  const TransactionListScreen({
+    super.key,
+    this.accountId,
+    this.categoryIds,
+    this.fixedDateRange,
+    this.title,
+  });
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -49,11 +58,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final totalIncome = txProvider.getTotalIncome(allTx);
             final totalExpense = txProvider.getTotalExpense(allTx);
             final isFromAccount = widget.accountId != null;
+            final isFiltered =
+                isFromAccount ||
+                widget.categoryIds != null ||
+                widget.fixedDateRange != null;
 
             return Scaffold(
-              drawer: isFromAccount ? null : const AppDrawer(currentRoute: '/'),
+              drawer:
+                  isFiltered ? null : const AppDrawer(currentRoute: '/'),
               appBar: AppBar(
-                leading: isFromAccount
+                leading: isFiltered
                     ? IconButton(
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () => Navigator.pop(context),
@@ -64,23 +78,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           onPressed: () => Scaffold.of(ctx).openDrawer(),
                         ),
                       ),
-                title: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${_filter.label} (${allTx.length})',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+                title: Text(
+                  widget.title != null
+                      ? '${widget.title} (${allTx.length})'
+                      : '${_filter.label} (${allTx.length})',
+                  style: const TextStyle(fontSize: 16),
                 ),
                 centerTitle: true,
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.tune),
-                    onPressed: () {
-                      _showPeriodPicker(isDarkMode);
-                    },
-                  ),
+                  if (widget.fixedDateRange == null)
+                    IconButton(
+                      icon: const Icon(Icons.tune),
+                      onPressed: () => _showPeriodPicker(isDarkMode),
+                    ),
                 ],
               ),
               body: allTx.isEmpty
@@ -157,31 +167,47 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final accountId = widget.accountId;
     List<AppTransaction> transactions;
 
-    switch (_filter) {
-      case _PeriodFilter.last30Days:
-        transactions = provider.getLast30Days();
-      case _PeriodFilter.last90Days:
-        transactions = provider.getLast90Days();
-      case _PeriodFilter.last180Days:
-        transactions = provider.getLast180Days();
-      case _PeriodFilter.thisMonth:
-        final from = DateTime(now.year, now.month, 1);
-        transactions = provider.getTransactionsForPeriod(from, now);
-      case _PeriodFilter.lastMonth:
-        final from = DateTime(now.year, now.month - 1, 1);
-        final to = DateTime(now.year, now.month, 0);
-        transactions = provider.getTransactionsForPeriod(from, to);
-      case _PeriodFilter.thisYear:
-        final from = DateTime(now.year, 1, 1);
-        transactions = provider.getTransactionsForPeriod(from, now);
+    // ถ้ามี fixedDateRange (เช่น จากงบประมาณ) ใช้ช่วงนั้นโดยตรง
+    if (widget.fixedDateRange != null) {
+      transactions = provider.getTransactionsForPeriod(
+        widget.fixedDateRange!.start,
+        widget.fixedDateRange!.end,
+      );
+    } else {
+      switch (_filter) {
+        case _PeriodFilter.last30Days:
+          transactions = provider.getLast30Days();
+        case _PeriodFilter.last90Days:
+          transactions = provider.getLast90Days();
+        case _PeriodFilter.last180Days:
+          transactions = provider.getLast180Days();
+        case _PeriodFilter.thisMonth:
+          final from = DateTime(now.year, now.month, 1);
+          transactions = provider.getTransactionsForPeriod(from, now);
+        case _PeriodFilter.lastMonth:
+          final from = DateTime(now.year, now.month - 1, 1);
+          final to = DateTime(now.year, now.month, 0);
+          transactions = provider.getTransactionsForPeriod(from, to);
+        case _PeriodFilter.thisYear:
+          final from = DateTime(now.year, 1, 1);
+          transactions = provider.getTransactionsForPeriod(from, now);
+      }
     }
 
-    // กรองตาม accountId ถ้ามีการระบุ
+    // กรองตาม accountId
     if (accountId != null) {
       transactions = transactions
           .where(
             (tx) => tx.accountId == accountId || tx.toAccountId == accountId,
           )
+          .toList();
+    }
+
+    // กรองตาม categoryIds (จากงบประมาณ)
+    final categoryIds = widget.categoryIds;
+    if (categoryIds != null && categoryIds.isNotEmpty) {
+      transactions = transactions
+          .where((tx) => categoryIds.contains(tx.categoryId))
           .toList();
     }
 

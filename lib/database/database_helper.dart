@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -14,19 +16,73 @@ class DatabaseHelper {
 
   /// Clear database by deleting and recreating it
   Future<void> clearDatabase() async {
+    debugPrint('DatabaseHelper: Starting clearDatabase...');
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money.db');
+    debugPrint('DatabaseHelper: Database path = $path');
+
+    // Close database connection first
+    if (_db != null) {
+      debugPrint('DatabaseHelper: Closing existing database connection...');
+      await _db!.close();
+      _db = null;
+    }
+
+    // Delete database file
+    debugPrint('DatabaseHelper: Deleting database file...');
     await deleteDatabase(path);
+
+    // Verify deletion
+    final dbFile = File(path);
+    final exists = await dbFile.exists();
+    debugPrint('DatabaseHelper: Database file exists after delete = $exists');
+
+    // Reset and recreate
     _db = null;
+    debugPrint('DatabaseHelper: Reinitializing database...');
     await _initDb();
+    debugPrint('DatabaseHelper: Database reinitialized');
   }
 
   Future<Database> _initDb() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money.db');
+    const targetVersion = 2;
+
+    // Auto backup before migration
+    final dbFile = File(path);
+    if (await dbFile.exists()) {
+      final tempDb = await openDatabase(path, singleInstance: false);
+      final currentVersion = await tempDb.getVersion();
+      await tempDb.close();
+      if (currentVersion > 0 && currentVersion < targetVersion) {
+        final now = DateTime.now();
+        final ts =
+            '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
+            '_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+        final backupPath = join(dbPath, 'money_v${currentVersion}_$ts.db');
+        await dbFile.copy(backupPath);
+      }
+    }
+
     return openDatabase(
       path,
-      version: 1,
+      version: targetVersion,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+            CREATE TABLE budgets (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              amount REAL NOT NULL DEFAULT 0,
+              category_ids TEXT NOT NULL DEFAULT '[]',
+              icon INTEGER NOT NULL,
+              color INTEGER NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+        }
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE accounts (
@@ -81,6 +137,17 @@ class DatabaseHelper {
             shares REAL NOT NULL DEFAULT 0,
             price_usd REAL NOT NULL DEFAULT 0,
             cost_basis_usd REAL NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE budgets (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            amount REAL NOT NULL DEFAULT 0,
+            category_ids TEXT NOT NULL DEFAULT '[]',
+            icon INTEGER NOT NULL,
+            color INTEGER NOT NULL,
             sort_order INTEGER NOT NULL DEFAULT 0
           )
         ''');
@@ -234,5 +301,41 @@ class DatabaseHelper {
       where: 'portfolio_id = ?',
       whereArgs: [portfolioId],
     );
+  }
+
+  // ── Budgets ────────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getBudgets() async {
+    final db = await database;
+    return db.query('budgets', orderBy: 'sort_order ASC, rowid ASC');
+  }
+
+  Future<void> insertBudget(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert(
+      'budgets',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> updateBudget(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update('budgets', data, where: 'id = ?', whereArgs: [data['id']]);
+  }
+
+  Future<void> updateBudgetSortOrder(String id, int sortOrder) async {
+    final db = await database;
+    await db.update(
+      'budgets',
+      {'sort_order': sortOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final db = await database;
+    await db.delete('budgets', where: 'id = ?', whereArgs: [id]);
   }
 }

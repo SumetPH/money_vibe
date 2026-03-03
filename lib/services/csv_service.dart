@@ -43,12 +43,18 @@ class CsvService {
     final holdingsCsv = await _exportHoldings();
     await holdingsFile.writeAsString(holdingsCsv, encoding: utf8);
 
+    // Export budgets
+    final budgetsFile = File('${tempDir.path}/budgets_$timestamp.csv');
+    final budgetsCsv = await _exportBudgets();
+    await budgetsFile.writeAsString(budgetsCsv, encoding: utf8);
+
     // Share all files
     final files = [
       XFile(accountsFile.path),
       XFile(categoriesFile.path),
       XFile(transactionsFile.path),
       XFile(holdingsFile.path),
+      XFile(budgetsFile.path),
     ];
 
     await Share.shareXFiles(
@@ -75,6 +81,7 @@ class CsvService {
     int categoriesCount = 0;
     int transactionsCount = 0;
     int holdingsCount = 0;
+    int budgetsCount = 0;
     List<String> errors = [];
 
     for (final file in result.files) {
@@ -99,6 +106,9 @@ class CsvService {
         } else if (filename.contains('holding')) {
           debugPrint('CSV Service: Detected as HOLDINGS file');
           holdingsCount = await _importHoldings(content);
+        } else if (filename.contains('budget')) {
+          debugPrint('CSV Service: Detected as BUDGETS file');
+          budgetsCount = await _importBudgets(content);
         } else {
           debugPrint('CSV Service: Unknown file type, skipping');
         }
@@ -109,13 +119,14 @@ class CsvService {
     }
 
     debugPrint(
-      'CSV Service: Import complete - Accounts: $accountsCount, Categories: $categoriesCount, Transactions: $transactionsCount, Holdings: $holdingsCount',
+      'CSV Service: Import complete - Accounts: $accountsCount, Categories: $categoriesCount, Transactions: $transactionsCount, Holdings: $holdingsCount, Budgets: $budgetsCount',
     );
     return ImportResult(
       accountsCount: accountsCount,
       categoriesCount: categoriesCount,
       transactionsCount: transactionsCount,
       holdingsCount: holdingsCount,
+      budgetsCount: budgetsCount,
       errors: errors,
     );
   }
@@ -241,13 +252,16 @@ class CsvService {
 
   Future<int> _importAccounts(String csvContent) async {
     // Fix: Split by newline first to handle different line endings
-    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
-    
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
     // Re-parse each line individually
     final rows = lines.map((line) {
       return const CsvToListConverter().convert(line)[0];
     }).toList();
-    
+
     if (rows.length <= 1) return 0; // Only header or empty
 
     int count = 0;
@@ -293,7 +307,10 @@ class CsvService {
 
   Future<int> _importCategories(String csvContent) async {
     // Fix: Split by newline first to handle different line endings
-    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
 
     // Re-parse each line individually
     final rows = lines.map((line) {
@@ -329,7 +346,10 @@ class CsvService {
 
   Future<int> _importTransactions(String csvContent) async {
     // Fix: Split by newline first to handle different line endings
-    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
 
     // Re-parse each line individually
     final rows = lines.map((line) {
@@ -409,13 +429,16 @@ class CsvService {
 
   Future<int> _importHoldings(String csvContent) async {
     // Fix: Split by newline first to handle different line endings
-    final lines = csvContent.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
-    
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
     // Re-parse each line individually
     final rows = lines.map((line) {
       return const CsvToListConverter().convert(line)[0];
     }).toList();
-    
+
     if (rows.length <= 1) return 0;
 
     int count = 0;
@@ -444,6 +467,67 @@ class CsvService {
 
     return count;
   }
+
+  // ========== Budget Methods ==========
+
+  Future<String> _exportBudgets() async {
+    final budgets = await DatabaseHelper.instance.getBudgets();
+
+    final rows = <List<dynamic>>[
+      // Header
+      ['id', 'name', 'amount', 'category_ids', 'icon', 'color', 'sort_order'],
+    ];
+
+    for (final map in budgets) {
+      rows.add([
+        map['id'],
+        map['name'],
+        map['amount'],
+        map['category_ids'] ?? '[]',
+        map['icon'],
+        map['color'],
+        map['sort_order'],
+      ]);
+    }
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  Future<int> _importBudgets(String csvContent) async {
+    // Fix: Split by newline first to handle different line endings
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
+    // Re-parse each line individually
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
+    if (rows.length <= 1) return 0;
+
+    int count = 0;
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      if (row.isEmpty) continue;
+
+      final data = {
+        'id': row[0]?.toString() ?? _uuid.v4(),
+        'name': row[1]?.toString() ?? 'Unknown',
+        'amount': double.tryParse(row[2]?.toString() ?? '0') ?? 0,
+        'category_ids': row[3]?.toString() ?? '[]',
+        'icon': int.tryParse(row[4]?.toString() ?? '') ?? 0xe8a6,
+        'color': int.tryParse(row[5]?.toString() ?? '') ?? 0xFF607D8B,
+        'sort_order': int.tryParse(row[6]?.toString() ?? '') ?? 0,
+      };
+
+      await DatabaseHelper.instance.insertBudget(data);
+      count++;
+    }
+
+    return count;
+  }
 }
 
 /// Result of import operation
@@ -452,6 +536,7 @@ class ImportResult {
   final int categoriesCount;
   final int transactionsCount;
   final int holdingsCount;
+  final int budgetsCount;
   final List<String> errors;
   final bool canceled;
 
@@ -461,6 +546,7 @@ class ImportResult {
     required this.transactionsCount,
     required this.errors,
     this.holdingsCount = 0,
+    this.budgetsCount = 0,
     this.canceled = false,
   });
 
@@ -469,6 +555,7 @@ class ImportResult {
       categoriesCount = 0,
       transactionsCount = 0,
       holdingsCount = 0,
+      budgetsCount = 0,
       errors = const [],
       canceled = true;
 
@@ -477,7 +564,8 @@ class ImportResult {
       accountsCount > 0 ||
       categoriesCount > 0 ||
       transactionsCount > 0 ||
-      holdingsCount > 0;
+      holdingsCount > 0 ||
+      budgetsCount > 0;
 
   String get summary {
     if (canceled) return 'ยกเลิก';
@@ -488,6 +576,7 @@ class ImportResult {
     if (categoriesCount > 0) parts.add('หมวดหมู่ $categoriesCount รายการ');
     if (transactionsCount > 0) parts.add('ธุรกรรม $transactionsCount รายการ');
     if (holdingsCount > 0) parts.add('หลักทรัพย์ $holdingsCount รายการ');
+    if (budgetsCount > 0) parts.add('งบประมาณ $budgetsCount รายการ');
 
     var result = parts.join(' | ');
     if (hasError) {

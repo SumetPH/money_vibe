@@ -176,16 +176,39 @@ class AccountProvider extends ChangeNotifier {
 
   /// Reload accounts from database (used after restore)
   Future<void> reload() async {
+    debugPrint('AccountProvider: Reloading...');
     _accounts.clear();
     _holdings.clear();
-    final rows = await _db.getAccounts();
-    _accounts.addAll(rows.map(Account.fromMap));
-    final holdingRows = await _db.getPortfolioHoldings();
-    for (final row in holdingRows) {
-      final h = StockHolding.fromMap(row);
-      _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+    try {
+      final rows = await _db.getAccounts();
+      debugPrint('AccountProvider: Loaded ${rows.length} accounts from DB');
+      for (final row in rows) {
+        try {
+          _accounts.add(Account.fromMap(row));
+        } catch (e) {
+          debugPrint('AccountProvider: Error parsing account: $e');
+          debugPrint('AccountProvider: Account data: $row');
+        }
+      }
+      final holdingRows = await _db.getPortfolioHoldings();
+      debugPrint(
+        'AccountProvider: Loaded ${holdingRows.length} holdings from DB',
+      );
+      for (final row in holdingRows) {
+        try {
+          final h = StockHolding.fromMap(row);
+          _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+        } catch (e) {
+          debugPrint('AccountProvider: Error parsing holding: $e');
+          debugPrint('AccountProvider: Holding data: $row');
+        }
+      }
+      notifyListeners();
+      debugPrint('AccountProvider: Reload complete');
+    } catch (e) {
+      debugPrint('AccountProvider: Reload failed: $e');
+      rethrow;
     }
-    notifyListeners();
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
