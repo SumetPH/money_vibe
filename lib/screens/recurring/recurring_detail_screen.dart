@@ -21,13 +21,22 @@ class RecurringDetailScreen extends StatefulWidget {
   State<RecurringDetailScreen> createState() => _RecurringDetailScreenState();
 }
 
-class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
+class _RecurringDetailScreenState extends State<RecurringDetailScreen>
+    with SingleTickerProviderStateMixin {
   late RecurringTransaction _recurring;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _recurring = widget.recurring;
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   static const _thaiMonths = [
@@ -346,8 +355,8 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
               ),
             ],
           ),
-          body: CustomScrollView(
-            slivers: [
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
               // ── Header card ──────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Container(
@@ -521,103 +530,137 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
                           style: TextStyle(fontSize: 13, color: textSecondary),
                         ),
                       ],
+                      // ── Summary ───────────────────────────────────────────
+                      const SizedBox(height: 12),
+                      Divider(height: 1, color: dividerColor),
+                      const SizedBox(height: 12),
+                      _RemainingSummary(
+                        upcoming: upcoming,
+                        past: past,
+                        recurring: recurring,
+                        recurProvider: recurProvider,
+                        isDark: isDark,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        typeColor: typeColor,
+                        hasEndDate: recurring.endDate != null,
+                      ),
                     ],
                   ),
                 ),
               ),
-
-              // ── Upcoming section ─────────────────────────────────────────
-              if (upcoming.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    title: 'รายการที่จะเกิดขึ้น',
-                    bgColor: bgColor,
-                    textSecondary: textSecondary,
+              // ── Tab bar ──────────────────────────────────────────────────
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: textPrimary,
+                    unselectedLabelColor: textSecondary,
+                    indicatorColor: typeColor,
+                    tabs: [
+                      Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
+                      Tab(text: 'รายการที่ผ่านมา (${past.length})'),
+                    ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((_, i) {
-                    final date = upcoming[i];
-                    final occ = recurProvider.findOccurrence(
-                      recurring.id,
-                      date,
-                    );
-                    final linkedTx = occ?.transactionId != null
-                        ? txProvider.transactions
-                              .where((t) => t.id == occ!.transactionId)
-                              .firstOrNull
-                        : null;
-                    return _OccurrenceItem(
-                      date: date,
-                      occurrence: occ,
-                      linkedTransaction: linkedTx,
-                      recurring: recurring,
-                      isDark: isDark,
-                      surfaceColor: surfaceColor,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
-                      dividerColor: dividerColor,
-                      typeColor: typeColor,
-                      formatDate: _formatDateLong,
-                      onCreateTap: () =>
-                          _createTransaction(context, date, isDark),
-                      onSkipTap: () => _skipOccurrence(context, date, isDark),
-                      onUndoTap: () => _undoOccurrence(context, date, isDark),
-                      onEditTap: linkedTx != null
-                          ? () => _editTransaction(context, linkedTx, date)
-                          : null,
-                    );
-                  }, childCount: upcoming.length),
-                ),
-              ],
-
-              // ── Past section ─────────────────────────────────────────────
-              if (past.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    title: 'รายการที่ผ่านมา',
-                    bgColor: bgColor,
-                    textSecondary: textSecondary,
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((_, i) {
-                    final date = past[i];
-                    final occ = recurProvider.findOccurrence(
-                      recurring.id,
-                      date,
-                    );
-                    final linkedTx = occ?.transactionId != null
-                        ? txProvider.transactions
-                              .where((t) => t.id == occ!.transactionId)
-                              .firstOrNull
-                        : null;
-                    return _OccurrenceItem(
-                      date: date,
-                      occurrence: occ,
-                      linkedTransaction: linkedTx,
-                      recurring: recurring,
-                      isDark: isDark,
-                      surfaceColor: surfaceColor,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
-                      dividerColor: dividerColor,
-                      typeColor: typeColor,
-                      formatDate: _formatDateLong,
-                      onCreateTap: () =>
-                          _createTransaction(context, date, isDark),
-                      onSkipTap: () => _skipOccurrence(context, date, isDark),
-                      onUndoTap: () => _undoOccurrence(context, date, isDark),
-                      onEditTap: linkedTx != null
-                          ? () => _editTransaction(context, linkedTx, date)
-                          : null,
-                    );
-                  }, childCount: past.length),
-                ),
-              ],
-
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ),
             ],
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                // ── Upcoming tab ─────────────────────────────────────────
+                upcoming.isEmpty
+                    ? _EmptyState(
+                        message: 'ไม่มีรายการที่จะเกิดขึ้น',
+                        isDark: isDark,
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: upcoming.length,
+                        itemBuilder: (context, i) {
+                          final date = upcoming[i];
+                          final occ = recurProvider.findOccurrence(
+                            recurring.id,
+                            date,
+                          );
+                          final linkedTx = occ?.transactionId != null
+                              ? txProvider.transactions
+                                    .where((t) => t.id == occ!.transactionId)
+                                    .firstOrNull
+                              : null;
+                          return _OccurrenceItem(
+                            date: date,
+                            occurrence: occ,
+                            linkedTransaction: linkedTx,
+                            recurring: recurring,
+                            isDark: isDark,
+                            surfaceColor: surfaceColor,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                            dividerColor: dividerColor,
+                            typeColor: typeColor,
+                            formatDate: _formatDateLong,
+                            onCreateTap: () =>
+                                _createTransaction(context, date, isDark),
+                            onSkipTap: () =>
+                                _skipOccurrence(context, date, isDark),
+                            onUndoTap: () =>
+                                _undoOccurrence(context, date, isDark),
+                            onEditTap: linkedTx != null
+                                ? () =>
+                                      _editTransaction(context, linkedTx, date)
+                                : null,
+                          );
+                        },
+                      ),
+                // ── Past tab ─────────────────────────────────────────────
+                past.isEmpty
+                    ? _EmptyState(
+                        message: 'ไม่มีรายการที่ผ่านมา',
+                        isDark: isDark,
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: past.length,
+                        itemBuilder: (context, i) {
+                          final date = past[i];
+                          final occ = recurProvider.findOccurrence(
+                            recurring.id,
+                            date,
+                          );
+                          final linkedTx = occ?.transactionId != null
+                              ? txProvider.transactions
+                                    .where((t) => t.id == occ!.transactionId)
+                                    .firstOrNull
+                              : null;
+                          return _OccurrenceItem(
+                            date: date,
+                            occurrence: occ,
+                            linkedTransaction: linkedTx,
+                            recurring: recurring,
+                            isDark: isDark,
+                            surfaceColor: surfaceColor,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                            dividerColor: dividerColor,
+                            typeColor: typeColor,
+                            formatDate: _formatDateLong,
+                            onCreateTap: () =>
+                                _createTransaction(context, date, isDark),
+                            onSkipTap: () =>
+                                _skipOccurrence(context, date, isDark),
+                            onUndoTap: () =>
+                                _undoOccurrence(context, date, isDark),
+                            onEditTap: linkedTx != null
+                                ? () =>
+                                      _editTransaction(context, linkedTx, date)
+                                : null,
+                          );
+                        },
+                      ),
+              ],
+            ),
           ),
         );
       },
@@ -894,35 +937,6 @@ class _ActionButton extends StatelessWidget {
 
 // ── Supporting widgets ────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final Color bgColor;
-  final Color textSecondary;
-
-  const _SectionHeader({
-    required this.title,
-    required this.bgColor,
-    required this.textSecondary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: bgColor,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textSecondary,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -989,6 +1003,342 @@ class _TypeBadge extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: color,
         ),
+      ),
+    );
+  }
+}
+
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _SliverTabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
+    return false;
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+  final bool isDark;
+
+  const _EmptyState({required this.message, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_note_outlined,
+            size: 64,
+            color: textSecondary.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(message, style: TextStyle(fontSize: 16, color: textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _RemainingSummary extends StatelessWidget {
+  final List<DateTime> upcoming;
+  final List<DateTime> past;
+  final RecurringTransaction recurring;
+  final RecurringTransactionProvider recurProvider;
+  final bool isDark;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color typeColor;
+  final bool hasEndDate;
+
+  const _RemainingSummary({
+    required this.upcoming,
+    required this.past,
+    required this.recurring,
+    required this.recurProvider,
+    required this.isDark,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.typeColor,
+    required this.hasEndDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate occurrences by status (both upcoming and past)
+    int doneCount = 0;
+    int pendingCount = 0;
+    int skippedCount = 0;
+    double doneAmount = 0;
+    double pendingAmount = 0;
+    double skippedAmount = 0;
+
+    // Process all dates (upcoming + past)
+    final allDates = [...upcoming, ...past];
+    for (final date in allDates) {
+      final occ = recurProvider.findOccurrence(recurring.id, date);
+      final status = occ?.status ?? OccurrenceStatus.pending;
+      switch (status) {
+        case OccurrenceStatus.done:
+          doneCount++;
+          doneAmount += recurring.amount;
+        case OccurrenceStatus.pending:
+          pendingCount++;
+          pendingAmount += recurring.amount;
+        case OccurrenceStatus.skipped:
+          skippedCount++;
+          skippedAmount += recurring.amount;
+      }
+    }
+
+    final totalCount = doneCount + pendingCount + skippedCount;
+
+    // Only show summary if there are done or skipped items
+    if (totalCount == 0 || (doneCount == 0 && skippedCount == 0)) {
+      return const SizedBox.shrink();
+    }
+
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.surface;
+    final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDark ? AppColors.darkExpense : AppColors.expense;
+    final isIncome = recurring.transactionType == TransactionType.income;
+    final actionWord = isIncome ? 'รับ' : 'จ่าย';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: typeColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: typeColor),
+              const SizedBox(width: 8),
+              Text(
+                'สรุปยอดทั้งหมด',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Done
+          if (doneCount > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: incomeColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$actionWord แล้ว',
+                      style: TextStyle(fontSize: 13, color: textSecondary),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$doneCount รายการ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${formatAmount(doneAmount)} บาท',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: incomeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Pending (only show if has end date)
+          if (pendingCount > 0 && hasEndDate) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'รอ$actionWord',
+                      style: TextStyle(fontSize: 13, color: textSecondary),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$pendingCount รายการ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${formatAmount(pendingAmount)} บาท',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: expenseColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Skipped
+          if (skippedCount > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'ข้ามแล้ว',
+                      style: TextStyle(fontSize: 13, color: textSecondary),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$skippedCount รายการ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${formatAmount(skippedAmount)} บาท',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Divider (only show if has end date)
+          if (hasEndDate) ...[
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.darkDivider : AppColors.divider,
+            ),
+            const SizedBox(height: 8),
+            // Total
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'รวมทั้งหมด',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$totalCount รายการ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${formatAmount(recurring.amount * totalCount)} บาท',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: typeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

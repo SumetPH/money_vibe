@@ -177,21 +177,41 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     } else {
       switch (_filter) {
         case _PeriodFilter.last30Days:
-          transactions = provider.getLast30Days();
+          final from = now.subtract(const Duration(days: 30));
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
         case _PeriodFilter.last90Days:
-          transactions = provider.getLast90Days();
+          final from = now.subtract(const Duration(days: 90));
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
         case _PeriodFilter.last180Days:
-          transactions = provider.getLast180Days();
+          final from = now.subtract(const Duration(days: 180));
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
         case _PeriodFilter.thisMonth:
           final from = DateTime(now.year, now.month, 1);
-          transactions = provider.getTransactionsForPeriod(from, now);
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
         case _PeriodFilter.lastMonth:
           final from = DateTime(now.year, now.month - 1, 1);
-          final to = DateTime(now.year, now.month, 0);
-          transactions = provider.getTransactionsForPeriod(from, to);
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
         case _PeriodFilter.thisYear:
           final from = DateTime(now.year, 1, 1);
-          transactions = provider.getTransactionsForPeriod(from, now);
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
       }
     }
 

@@ -772,6 +772,26 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
+    // Group debt accounts by display group
+    final Map<String, List<Account>> groupedAccounts = {};
+    for (final account in debtAccounts) {
+      final group = accountTypeDisplayGroup(account.type);
+      groupedAccounts.putIfAbsent(group, () => []).add(account);
+    }
+
+    // Sort each group by sortOrder
+    for (final group in groupedAccounts.keys) {
+      groupedAccounts[group]!.sort(
+        (a, b) => a.sortOrder.compareTo(b.sortOrder),
+      );
+    }
+
+    // Display order for debt accounts (บัตรเครดิต, หนี้สิน)
+    const groupOrder = ['บัตรเครดิต', 'หนี้สิน'];
+    final orderedGroups = groupOrder
+        .where(groupedAccounts.containsKey)
+        .toList();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -799,38 +819,77 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             Expanded(
               child: ListView.builder(
                 controller: sc,
-                itemCount: debtAccounts.length,
-                itemBuilder: (context, index) {
-                  final acc = debtAccounts[index];
-                  final isSelected = _debtAccountId == acc.id;
+                itemCount: orderedGroups.length,
+                itemBuilder: (context, groupIndex) {
+                  final groupName = orderedGroups[groupIndex];
+                  final groupAccounts = groupedAccounts[groupName]!;
+                  final headerBgColor = isDark
+                      ? AppColors.darkBackground
+                      : AppColors.background;
+                  final headerTextColor = isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary;
+
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ListTile(
-                        tileColor: bgColor,
-                        leading: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: acc.color.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
+                      // Section Header
+                      SizedBox(
+                        width: double.infinity,
+                        child: Container(
+                          color: headerBgColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          child: Icon(acc.icon, color: acc.color, size: 18),
+                          child: Text(
+                            groupName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: headerTextColor,
+                            ),
+                          ),
                         ),
-                        title: Text(
-                          acc.name,
-                          style: TextStyle(color: textColor),
-                        ),
-                        trailing: isSelected
-                            ? Icon(Icons.check, color: selectedColor)
-                            : null,
-                        onTap: () {
-                          setState(() {
-                            _debtAccountId = acc.id;
-                          });
-                          Navigator.pop(context);
-                        },
                       ),
-                      Divider(height: 1, indent: 68, color: dividerColor),
+                      // Account items
+                      ...groupAccounts.map((acc) {
+                        final isSelected = _debtAccountId == acc.id;
+                        return Column(
+                          children: [
+                            ListTile(
+                              tileColor: bgColor,
+                              leading: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: acc.color.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  acc.icon,
+                                  color: acc.color,
+                                  size: 18,
+                                ),
+                              ),
+                              title: Text(
+                                acc.name,
+                                style: TextStyle(color: textColor),
+                              ),
+                              trailing: isSelected
+                                  ? Icon(Icons.check, color: selectedColor)
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _debtAccountId = acc.id;
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                            Divider(height: 1, indent: 68, color: dividerColor),
+                          ],
+                        );
+                      }),
                     ],
                   );
                 },

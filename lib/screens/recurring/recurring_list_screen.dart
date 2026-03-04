@@ -135,6 +135,46 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                     final next = r.nextOccurrence;
                     final typeColor = _typeColor(r.transactionType, isDark);
 
+                    // Get occurrence status for current month only
+                    final now = DateTime.now();
+                    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+                    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+
+                    // Generate dates for current month
+                    final monthDates = r
+                        .generateOccurrenceDates(upTo: lastDayOfMonth)
+                        .where(
+                          (d) =>
+                              !d.isBefore(firstDayOfMonth) &&
+                              !d.isAfter(lastDayOfMonth),
+                        )
+                        .toList();
+
+                    // Determine current month status
+                    String? statusLabel;
+                    Color? statusColor;
+
+                    if (monthDates.isNotEmpty) {
+                      final occ = provider.findOccurrence(
+                        r.id,
+                        monthDates.first,
+                      );
+                      final status = occ?.status ?? OccurrenceStatus.pending;
+                      switch (status) {
+                        case OccurrenceStatus.done:
+                          statusLabel = 'เสร็จแล้ว';
+                          statusColor = isDark
+                              ? AppColors.darkIncome
+                              : AppColors.income;
+                        case OccurrenceStatus.pending:
+                          statusLabel = 'รอดำเนินการ';
+                          statusColor = Colors.grey;
+                        case OccurrenceStatus.skipped:
+                          statusLabel = 'ข้ามแล้ว';
+                          statusColor = Colors.orange;
+                      }
+                    }
+
                     return Column(
                       key: ValueKey(r.id),
                       mainAxisSize: MainAxisSize.min,
@@ -214,6 +254,15 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                             fontSize: 12,
                                             color: textSecondary,
                                           ),
+                                        ),
+                                      ],
+                                      // Status row (current month only)
+                                      if (statusLabel != null &&
+                                          statusColor != null) ...[
+                                        const SizedBox(height: 4),
+                                        _StatusChip(
+                                          label: statusLabel,
+                                          color: statusColor,
                                         ),
                                       ],
                                     ],
@@ -385,6 +434,32 @@ class _TypeBadge extends StatelessWidget {
         label,
         style: TextStyle(
           fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
           fontWeight: FontWeight.w600,
           color: color,
         ),
