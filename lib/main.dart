@@ -100,7 +100,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           return MaterialApp(
-            title: 'Money',
+            title: 'Money Vibe',
             theme: AppTheme.getTheme(settingsProvider.isDarkMode),
             debugShowCheckedModeBanner: false,
             initialRoute: '/accounts',

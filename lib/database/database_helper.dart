@@ -1,15 +1,29 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
   static Database? _db;
+  static bool _initialized = false;
 
   DatabaseHelper._();
 
+  /// Initialize sqflite for desktop platforms (macOS, Windows, Linux)
+  static void initialize() {
+    if (_initialized) return;
+
+    // Use FFI for desktop platforms
+    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+    _initialized = true;
+  }
+
   Future<Database> get database async {
+    initialize(); // Ensure initialization before use
     _db ??= await _initDb();
     return _db!;
   }
