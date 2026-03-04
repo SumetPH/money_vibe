@@ -369,9 +369,8 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 Divider(height: 1, indent: 16, color: dividerColor),
               ],
 
-              // ── Category (non-transfer, non-debtRepay) ────────────────────
-              if (_type != TransactionType.transfer &&
-                  _type != TransactionType.debtRepay) ...[
+              // ── Category (non-transfer) ────────────────────────────────────
+              if (_type != TransactionType.transfer) ...[
                 _RowTile(
                   label: 'หมวดหมู่',
                   value: selectedCategory?.name ?? 'ไม่ได้เลือก',
