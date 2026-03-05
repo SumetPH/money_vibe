@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../repositories/database_repository.dart';
 import '../repositories/sqlite_repository.dart';
 import '../repositories/supabase_repository.dart';
-import '../models/account.dart';
 
 /// Service สำหรับจัดการ Database Repository
 /// - เลือกใช้ SQLite หรือ Supabase
@@ -23,7 +22,7 @@ class DatabaseManager extends ChangeNotifier {
   SupabaseRepository? _supabaseRepo;
 
   DatabaseMode _currentMode = DatabaseMode.sqlite;
-  
+
   String? _supabaseUrl;
   String? _supabaseAnonKey;
 
@@ -61,7 +60,7 @@ class DatabaseManager extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // โหลดค่าตั้งค่า
       final modeIndex = prefs.getInt(_modeKey) ?? 0;
       final savedMode = DatabaseMode.values[modeIndex];
@@ -70,7 +69,9 @@ class DatabaseManager extends ChangeNotifier {
 
       debugPrint('[DatabaseManager] Saved mode: $savedMode');
       debugPrint('[DatabaseManager] Supabase URL set: ${_supabaseUrl != null}');
-      debugPrint('[DatabaseManager] Supabase Key set: ${_supabaseAnonKey != null}');
+      debugPrint(
+        '[DatabaseManager] Supabase Key set: ${_supabaseAnonKey != null}',
+      );
 
       // Initialize SQLite (always available)
       _sqliteRepo = SQLiteRepository();
@@ -88,17 +89,21 @@ class DatabaseManager extends ChangeNotifier {
             supabaseAnonKey: _supabaseAnonKey!,
           );
           await _supabaseRepo!.init();
-          
+
           // ตรวจสอบว่ามี session อยู่หรือไม่ (login แล้ว)
           final client = _supabaseRepo!.client;
           if (client.auth.currentSession != null) {
             // Login แล้ว → switch ไป Supabase mode เลย
             _currentRepository = _supabaseRepo;
             _currentMode = DatabaseMode.supabase;
-            debugPrint('[DatabaseManager] Restored Supabase mode (already logged in)');
+            debugPrint(
+              '[DatabaseManager] Restored Supabase mode (already logged in)',
+            );
           } else {
             // ยังไม่ได้ login → ใช้ SQLite ไปก่อน แต่เก็บ Supabase ไว้รอ
-            debugPrint('[DatabaseManager] Supabase ready but not logged in, using SQLite');
+            debugPrint(
+              '[DatabaseManager] Supabase ready but not logged in, using SQLite',
+            );
           }
         } catch (e) {
           debugPrint('[DatabaseManager] Failed to init Supabase: $e');
@@ -107,7 +112,9 @@ class DatabaseManager extends ChangeNotifier {
       }
 
       _error = null;
-      debugPrint('[DatabaseManager] Initialized successfully in SQLite mode (Supabase ready: ${_supabaseRepo != null})');
+      debugPrint(
+        '[DatabaseManager] Initialized successfully in SQLite mode (Supabase ready: ${_supabaseRepo != null})',
+      );
     } catch (e, stackTrace) {
       debugPrint('[DatabaseManager] Initialization error: $e');
       debugPrint('[DatabaseManager] Stack trace: $stackTrace');
@@ -147,11 +154,13 @@ class DatabaseManager extends ChangeNotifier {
 
         case DatabaseMode.supabase:
           if (!canUseSupabase) {
-            throw Exception('Supabase not configured. Please set URL and API Key first.');
+            throw Exception(
+              'Supabase not configured. Please set URL and API Key first.',
+            );
           }
 
           // Create new Supabase repository if needed
-          if (_supabaseRepo == null || 
+          if (_supabaseRepo == null ||
               _supabaseRepo!.supabaseUrl != _supabaseUrl ||
               _supabaseRepo!.supabaseAnonKey != _supabaseAnonKey) {
             _supabaseRepo = SupabaseRepository(
@@ -194,7 +203,7 @@ class DatabaseManager extends ChangeNotifier {
     required String anonKey,
   }) async {
     _setLoading(true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_supabaseUrlKey, url);
@@ -222,7 +231,7 @@ class DatabaseManager extends ChangeNotifier {
   /// ลบการตั้งค่า Supabase
   Future<void> clearSupabaseConfig() async {
     _setLoading(true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_supabaseUrlKey);
@@ -325,18 +334,20 @@ class DatabaseManager extends ChangeNotifier {
       // สร้าง set ของ valid IDs สำหรับเช็ค foreign keys
       final validAccountIds = accounts.map((a) => a.id).toSet();
       final validCategoryIds = categories.map((c) => c.id).toSet();
-      
+
       onProgress?.call('Migrating recurring transactions...', 0.90);
-      
+
       // กรอง recurring ที่มี account_id ไม่ valid ออก (เป็น data ของ user อื่น)
       final validRecurring = recurring.where((r) {
         if (!validAccountIds.contains(r.accountId)) {
-          debugPrint('[DatabaseManager] Skipping recurring ${r.id}: account ${r.accountId} not found (different user)');
+          debugPrint(
+            '[DatabaseManager] Skipping recurring ${r.id}: account ${r.accountId} not found (different user)',
+          );
           return false;
         }
         return true;
       }).toList();
-      
+
       if (validRecurring.isNotEmpty) {
         await _supabaseRepo!.bulkInsertRecurring(validRecurring);
       }
@@ -344,57 +355,78 @@ class DatabaseManager extends ChangeNotifier {
       results['recurring_skipped'] = recurring.length - validRecurring.length;
 
       onProgress?.call('Validating transactions...', 0.91);
-      
+
       // กรอง transactions ที่มี account_id ไม่ valid ออก (should be none now)
       // และ set null ให้กับ category_id ที่ไม่ valid
-      final validTransactions = transactions.where((t) {
-        if (!validAccountIds.contains(t.accountId)) {
-          debugPrint('[DatabaseManager] Skipping transaction ${t.id}: account ${t.accountId} still not found');
-          return false;
-        }
-        return true;
-      }).map((t) {
-        var result = t;
-        // ถ้า category_id ไม่ valid, set เป็น null
-        if (t.categoryId != null && !validCategoryIds.contains(t.categoryId)) {
-          debugPrint('[DatabaseManager] Clearing category for transaction ${t.id}: category ${t.categoryId} not found');
-          result = result.copyWith(clearCategoryId: true);
-        }
-        return result;
-      }).toList();
-      
-      onProgress?.call('Migrating ${validTransactions.length} transactions...', 0.92);
+      final validTransactions = transactions
+          .where((t) {
+            if (!validAccountIds.contains(t.accountId)) {
+              debugPrint(
+                '[DatabaseManager] Skipping transaction ${t.id}: account ${t.accountId} still not found',
+              );
+              return false;
+            }
+            return true;
+          })
+          .map((t) {
+            var result = t;
+            // ถ้า category_id ไม่ valid, set เป็น null
+            if (t.categoryId != null &&
+                !validCategoryIds.contains(t.categoryId)) {
+              debugPrint(
+                '[DatabaseManager] Clearing category for transaction ${t.id}: category ${t.categoryId} not found',
+              );
+              result = result.copyWith(clearCategoryId: true);
+            }
+            return result;
+          })
+          .toList();
+
+      onProgress?.call(
+        'Migrating ${validTransactions.length} transactions...',
+        0.92,
+      );
       if (validTransactions.isNotEmpty) {
         await _supabaseRepo!.bulkInsertTransactions(validTransactions);
       }
       results['transactions'] = validTransactions.length;
-      results['transactions_skipped'] = transactions.length - validTransactions.length;
+      results['transactions_skipped'] =
+          transactions.length - validTransactions.length;
 
       onProgress?.call('Validating occurrences...', 0.95);
       // สร้าง set ของ valid recurring IDs (จาก validRecurring ที่กรองแล้ว)
       final validRecurringIds = validRecurring.map((r) => r.id).toSet();
       final validTransactionIds = validTransactions.map((t) => t.id).toSet();
-      
+
       // กรอง occurrences ที่มี recurring_id หรือ transaction_id ไม่ valid ออก
       final validOccurrences = occurrences.where((o) {
         if (!validRecurringIds.contains(o.recurringId)) {
-          debugPrint('[DatabaseManager] Skipping occurrence ${o.id}: recurring ${o.recurringId} not found');
+          debugPrint(
+            '[DatabaseManager] Skipping occurrence ${o.id}: recurring ${o.recurringId} not found',
+          );
           return false;
         }
         // ถ้ามี transaction_id ต้องเช็คว่า valid ด้วย
-        if (o.transactionId != null && !validTransactionIds.contains(o.transactionId)) {
-          debugPrint('[DatabaseManager] Clearing transaction for occurrence ${o.id}: transaction ${o.transactionId} not found');
+        if (o.transactionId != null &&
+            !validTransactionIds.contains(o.transactionId)) {
+          debugPrint(
+            '[DatabaseManager] Clearing transaction for occurrence ${o.id}: transaction ${o.transactionId} not found',
+          );
           // จะไม่ skip แต่จะ clear transaction_id ใน Supabase แทน
         }
         return true;
       }).toList();
-      
-      onProgress?.call('Migrating ${validOccurrences.length} occurrences...', 0.96);
+
+      onProgress?.call(
+        'Migrating ${validOccurrences.length} occurrences...',
+        0.96,
+      );
       if (validOccurrences.isNotEmpty) {
         await _supabaseRepo!.bulkInsertOccurrences(validOccurrences);
       }
       results['occurrences'] = validOccurrences.length;
-      results['occurrences_skipped'] = occurrences.length - validOccurrences.length;
+      results['occurrences_skipped'] =
+          occurrences.length - validOccurrences.length;
 
       onProgress?.call('Migration complete!', 1.0);
 
@@ -433,19 +465,19 @@ class DatabaseManager extends ChangeNotifier {
   }) async {
     try {
       debugPrint('[DatabaseManager] Testing connection to: $url');
-      
+
       // สร้าง repository ใหม่เพื่อเทส
       final testRepo = SupabaseRepository(
         supabaseUrl: url,
         supabaseAnonKey: anonKey,
       );
-      
+
       debugPrint('[DatabaseManager] Initializing Supabase...');
       await testRepo.init();
-      
+
       debugPrint('[DatabaseManager] Checking connection...');
       final result = await testRepo.isConnected();
-      
+
       debugPrint('[DatabaseManager] Connection test result: $result');
       return result;
     } catch (e, stackTrace) {
@@ -552,7 +584,9 @@ class DatabaseManager extends ChangeNotifier {
 
       onProgress?.call('Migration complete!', 1.0);
 
-      debugPrint('[DatabaseManager] Migration from Supabase complete: $results');
+      debugPrint(
+        '[DatabaseManager] Migration from Supabase complete: $results',
+      );
       return results;
     } catch (e, stackTrace) {
       debugPrint('[DatabaseManager] Migration from Supabase error: $e');

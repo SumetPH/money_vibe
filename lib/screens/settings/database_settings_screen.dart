@@ -362,6 +362,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
         }
       }
 
+      // Check mounted before using context after async operations above
+      if (!mounted) return;
+
       // ไปหน้า login
       debugPrint('[DatabaseSettings] Navigating to AuthScreen...');
       final loginSuccess = await Navigator.push<bool>(
@@ -371,6 +374,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
       debugPrint(
         '[DatabaseSettings] Returned from AuthScreen: loginSuccess=$loginSuccess, isLoggedIn=${authProvider.isLoggedIn}',
       );
+
+      // Check mounted after await
+      if (!mounted) return;
 
       // ถ้า login ไม่สำเร็จ (กด back หรือ error) → ไม่ต้อง switch mode
       if (loginSuccess != true && !authProvider.isLoggedIn) {

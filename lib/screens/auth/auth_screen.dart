@@ -71,7 +71,9 @@ class _AuthScreenState extends State<AuthScreen> {
       ]);
       
       debugPrint('[AuthScreen] Providers reloaded, navigating back');
-      Navigator.of(context).pop(true);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
     } else if (!success && mounted) {
       // Error จะแสดงผ่าน authProvider.error
       ScaffoldMessenger.of(context).showSnackBar(
