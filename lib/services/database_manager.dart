@@ -64,11 +64,11 @@ class DatabaseManager extends ChangeNotifier {
       
       // โหลดค่าตั้งค่า
       final modeIndex = prefs.getInt(_modeKey) ?? 0;
-      _currentMode = DatabaseMode.values[modeIndex];
+      final savedMode = DatabaseMode.values[modeIndex];
       _supabaseUrl = prefs.getString(_supabaseUrlKey);
       _supabaseAnonKey = prefs.getString(_supabaseKeyKey);
 
-      debugPrint('[DatabaseManager] Loaded mode: $_currentMode');
+      debugPrint('[DatabaseManager] Saved mode: $savedMode');
       debugPrint('[DatabaseManager] Supabase URL set: ${_supabaseUrl != null}');
       debugPrint('[DatabaseManager] Supabase Key set: ${_supabaseAnonKey != null}');
 
@@ -76,11 +76,38 @@ class DatabaseManager extends ChangeNotifier {
       _sqliteRepo = SQLiteRepository();
       await _sqliteRepo!.init();
 
-      // Initialize current mode
-      await _switchToMode(_currentMode, force: true);
+      // เริ่มต้นด้วย SQLite mode (default)
+      _currentMode = DatabaseMode.sqlite;
+      _currentRepository = _sqliteRepo;
+
+      // ถ้าเคยตั้งค่าเป็น Supabase ให้ลอง initialize Supabase ด้วย
+      if (savedMode == DatabaseMode.supabase && canUseSupabase) {
+        try {
+          _supabaseRepo = SupabaseRepository(
+            supabaseUrl: _supabaseUrl!,
+            supabaseAnonKey: _supabaseAnonKey!,
+          );
+          await _supabaseRepo!.init();
+          
+          // ตรวจสอบว่ามี session อยู่หรือไม่ (login แล้ว)
+          final client = _supabaseRepo!.client;
+          if (client.auth.currentSession != null) {
+            // Login แล้ว → switch ไป Supabase mode เลย
+            _currentRepository = _supabaseRepo;
+            _currentMode = DatabaseMode.supabase;
+            debugPrint('[DatabaseManager] Restored Supabase mode (already logged in)');
+          } else {
+            // ยังไม่ได้ login → ใช้ SQLite ไปก่อน แต่เก็บ Supabase ไว้รอ
+            debugPrint('[DatabaseManager] Supabase ready but not logged in, using SQLite');
+          }
+        } catch (e) {
+          debugPrint('[DatabaseManager] Failed to init Supabase: $e');
+          _supabaseRepo = null;
+        }
+      }
 
       _error = null;
-      debugPrint('[DatabaseManager] Initialized successfully');
+      debugPrint('[DatabaseManager] Initialized successfully in SQLite mode (Supabase ready: ${_supabaseRepo != null})');
     } catch (e, stackTrace) {
       debugPrint('[DatabaseManager] Initialization error: $e');
       debugPrint('[DatabaseManager] Stack trace: $stackTrace');
@@ -295,53 +322,26 @@ class DatabaseManager extends ChangeNotifier {
       }
       results['holdings'] = holdings.length;
 
-      // สร้าง set ของ valid IDs สำหรับเช็ค foreign keys (ใช้ร่วมกันทั้งหมด)
+      // สร้าง set ของ valid IDs สำหรับเช็ค foreign keys
       final validAccountIds = accounts.map((a) => a.id).toSet();
       final validCategoryIds = categories.map((c) => c.id).toSet();
       
-      onProgress?.call('Checking orphaned references...', 0.88);
-      
-      // หา accounts ที่อ้างอิงโดย transactions และ recurring แต่ไม่มีใน accounts list
-      final referencedAccountIds = <String>{};
-      for (final t in transactions) {
-        referencedAccountIds.add(t.accountId);
-        if (t.toAccountId != null) referencedAccountIds.add(t.toAccountId!);
-      }
-      for (final r in recurring) {
-        referencedAccountIds.add(r.accountId);
-        if (r.toAccountId != null) referencedAccountIds.add(r.toAccountId!);
-      }
-      
-      final missingAccountIds = referencedAccountIds.difference(validAccountIds);
-      
-      // สร้าง placeholder accounts สำหรับ accounts ที่หายไป
-      final placeholderAccounts = <Account>[];
-      for (final missingId in missingAccountIds) {
-        debugPrint('[DatabaseManager] Creating placeholder account: $missingId');
-        placeholderAccounts.add(Account(
-          id: missingId,
-          name: '(Unknown)',
-          type: AccountType.cash,
-          initialBalance: 0,
-          currency: 'THB',
-          icon: Icons.account_balance_wallet,
-          color: Colors.grey,
-          isHidden: true, // ซ่อนไว้เพราะเป็น placeholder
-        ));
-      }
-      
-      // Insert placeholder accounts เพิ่ม
-      if (placeholderAccounts.isNotEmpty) {
-        onProgress?.call('Creating ${placeholderAccounts.length} placeholder accounts...', 0.89);
-        await _supabaseRepo!.bulkInsertAccounts(placeholderAccounts);
-        validAccountIds.addAll(missingAccountIds); // เพิ่มเข้า set
-      }
-      
       onProgress?.call('Migrating recurring transactions...', 0.90);
-      // ตอนนี้ทุก recurring ควรมี account valid แล้ว (เพราะสร้าง placeholder แล้ว)
-      await _supabaseRepo!.bulkInsertRecurring(recurring);
-      results['recurring'] = recurring.length;
-      results['placeholder_accounts'] = placeholderAccounts.length;
+      
+      // กรอง recurring ที่มี account_id ไม่ valid ออก (เป็น data ของ user อื่น)
+      final validRecurring = recurring.where((r) {
+        if (!validAccountIds.contains(r.accountId)) {
+          debugPrint('[DatabaseManager] Skipping recurring ${r.id}: account ${r.accountId} not found (different user)');
+          return false;
+        }
+        return true;
+      }).toList();
+      
+      if (validRecurring.isNotEmpty) {
+        await _supabaseRepo!.bulkInsertRecurring(validRecurring);
+      }
+      results['recurring'] = validRecurring.length;
+      results['recurring_skipped'] = recurring.length - validRecurring.length;
 
       onProgress?.call('Validating transactions...', 0.91);
       
@@ -368,12 +368,11 @@ class DatabaseManager extends ChangeNotifier {
         await _supabaseRepo!.bulkInsertTransactions(validTransactions);
       }
       results['transactions'] = validTransactions.length;
-      results['placeholder_accounts'] = placeholderAccounts.length;
       results['transactions_skipped'] = transactions.length - validTransactions.length;
 
       onProgress?.call('Validating occurrences...', 0.95);
-      // สร้าง set ของ valid recurring IDs
-      final validRecurringIds = recurring.map((r) => r.id).toSet();
+      // สร้าง set ของ valid recurring IDs (จาก validRecurring ที่กรองแล้ว)
+      final validRecurringIds = validRecurring.map((r) => r.id).toSet();
       final validTransactionIds = validTransactions.map((t) => t.id).toSet();
       
       // กรอง occurrences ที่มี recurring_id หรือ transaction_id ไม่ valid ออก

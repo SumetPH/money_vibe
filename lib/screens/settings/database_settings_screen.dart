@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_manager.dart';
 import '../../repositories/database_repository.dart';
+import '../../repositories/supabase_repository.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../auth/auth_screen.dart';
 
 class DatabaseSettingsScreen extends StatefulWidget {
   const DatabaseSettingsScreen({super.key});
@@ -64,22 +67,37 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
       _connectionStatus = null;
     });
 
+    debugPrint('[DatabaseSettings] Testing connection to: $url');
+
     // ทดสอบด้วยค่าจาก TextField โดยตรง ไม่ต้องบันทึกก่อน
     final dbManager = DatabaseManager();
-    final success = await dbManager.testSupabaseConnectionWithCredentials(
-      url: url,
-      anonKey: key,
-    );
+    bool success = false;
+    String? errorMessage;
+    
+    try {
+      success = await dbManager.testSupabaseConnectionWithCredentials(
+        url: url,
+        anonKey: key,
+      );
+    } catch (e) {
+      debugPrint('[DatabaseSettings] Connection test error: $e');
+      errorMessage = e.toString();
+      success = false;
+    }
 
     setState(() {
       _isTestingConnection = false;
-      _connectionStatus = success ? 'เชื่อมต่อสำเร็จ!' : 'เชื่อมต่อไม่สำเร็จ';
+      _connectionStatus = success ? 'เชื่อมต่อสำเร็จ' : 'เชื่อมต่อไม่สำเร็จ';
     });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'เชื่อมต่อ Supabase สำเร็จ!' : 'เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบ URL และ API Key'),
+          content: Text(
+            success
+                ? 'เชื่อมต่อ Supabase สำเร็จ!'
+                : 'เชื่อมต่อไม่สำเร็จ${errorMessage != null ? ': $errorMessage' : ''}',
+          ),
           backgroundColor: success ? AppColors.income : AppColors.expense,
         ),
       );
@@ -106,7 +124,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'บันทึกการตั้งค่าเรียบร้อย' : 'ไม่สามารถบันทึกได้'),
+          content: Text(
+            success ? 'บันทึกการตั้งค่าเรียบร้อย' : 'ไม่สามารถบันทึกได้',
+          ),
           backgroundColor: success ? AppColors.income : AppColors.expense,
         ),
       );
@@ -118,7 +138,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('ยืนยันการลบ'),
-        content: const Text('ต้องการลบการตั้งค่า Supabase และกลับไปใช้ SQLite ใช่หรือไม่?'),
+        content: const Text(
+          'ต้องการลบการตั้งค่า Supabase และกลับไปใช้ SQLite ใช่หรือไม่?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -142,9 +164,7 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ลบการตั้งค่าเรียบร้อย กลับไปใช้ SQLite'),
-        ),
+        const SnackBar(content: Text('ลบการตั้งค่าเรียบร้อย กลับไปใช้ SQLite')),
       );
     }
   }
@@ -165,7 +185,10 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('ย้ายข้อมูล', style: TextStyle(color: Colors.blue)),
+            child: const Text(
+              'ย้ายข้อมูล',
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
         ],
       ),
@@ -237,7 +260,10 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('ดึงข้อมูล', style: TextStyle(color: Colors.orange)),
+            child: const Text(
+              'ดึงข้อมูล',
+              style: TextStyle(color: Colors.orange),
+            ),
           ),
         ],
       ),
@@ -295,7 +321,8 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
 
   Future<void> _switchMode(DatabaseMode mode) async {
     final dbManager = DatabaseManager();
-    
+    final authProvider = context.read<AuthProvider>();
+
     if (mode == DatabaseMode.supabase && !dbManager.canUseSupabase) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -306,10 +333,55 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
       return;
     }
 
+    // ถ้า switch ไป Supabase แต่ยังไม่ได้ login
+    // → ต้อง initialize Supabase ก่อน แล้วค่อยไปหน้า login
+    if (mode == DatabaseMode.supabase && !authProvider.isLoggedIn) {
+      // Initialize Supabase ก่อน (สร้าง SupabaseRepository)
+      if (dbManager.supabaseUrl != null && dbManager.supabaseAnonKey != null) {
+        try {
+          // สร้าง SupabaseRepository ชั่วคราวเพื่อ initialize Supabase
+          final tempRepo = SupabaseRepository(
+            supabaseUrl: dbManager.supabaseUrl!,
+            supabaseAnonKey: dbManager.supabaseAnonKey!,
+          );
+          await tempRepo.init();
+
+          // Initialize AuthProvider หลังจาก Supabase พร้อม
+          await authProvider.init();
+        } catch (e) {
+          debugPrint('[DatabaseSettings] Error initializing Supabase: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('ไม่สามารถเชื่อมต่อ Supabase ได้: $e'),
+                backgroundColor: AppColors.expense,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // ไปหน้า login
+      debugPrint('[DatabaseSettings] Navigating to AuthScreen...');
+      final loginSuccess = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
+      debugPrint(
+        '[DatabaseSettings] Returned from AuthScreen: loginSuccess=$loginSuccess, isLoggedIn=${authProvider.isLoggedIn}',
+      );
+
+      // ถ้า login ไม่สำเร็จ (กด back หรือ error) → ไม่ต้อง switch mode
+      if (loginSuccess != true && !authProvider.isLoggedIn) {
+        return;
+      }
+    }
+
     final success = await dbManager.switchMode(mode);
-    
+
     if (success) {
-      // Reload all providers after switching mode
+      // Reload all providers after switching mode (เฉพาะถ้าเป็น SQLite หรือ login แล้ว)
       if (mounted) {
         await _reloadAllProviders(context);
       }
@@ -325,10 +397,21 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
 
   Future<void> _reloadAllProviders(BuildContext context) async {
     debugPrint('[DatabaseSettings] Reloading all providers...');
-    
+
+    final dbManager = DatabaseManager();
+    final authProvider = context.read<AuthProvider>();
+
+    // ถ้าเป็น Supabase mode แต่ยังไม่ได้ login → ไม่ต้อง reload providers
+    if (dbManager.isSupabaseMode && !authProvider.isLoggedIn) {
+      debugPrint(
+        '[DatabaseSettings] Skipping reload - not logged in to Supabase',
+      );
+      return;
+    }
+
     // เก็บ ScaffoldMessenger ไว้ก่อนเข้า async
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     try {
       await Future.wait([
         context.read<AccountProvider>().reload(),
@@ -337,9 +420,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
         context.read<BudgetProvider>().reload(),
         context.read<RecurringTransactionProvider>().reload(),
       ]);
-      
+
       debugPrint('[DatabaseSettings] All providers reloaded');
-      
+
       if (mounted) {
         scaffoldMessenger.showSnackBar(
           const SnackBar(
@@ -364,17 +447,23 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode ? AppColors.darkBackground : AppColors.background;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-    final textColor = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-    final secondaryTextColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryTextColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: AppColors.header,
         foregroundColor: textColor,
-        title: Text('ตั้งค่า Database', style: TextStyle(color: textColor)),
+        title: Text('ตั้งค่า Database'),
         elevation: 0,
       ),
       body: Consumer<DatabaseManager>(
@@ -402,7 +491,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                       children: [
                         Icon(
                           dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
-                          color: dbManager.isSqliteMode ? Colors.orange : Colors.blue,
+                          color: dbManager.isSqliteMode
+                              ? Colors.orange
+                              : Colors.blue,
                           size: 32,
                         ),
                         const SizedBox(width: 12),
@@ -410,7 +501,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              dbManager.isSqliteMode ? 'SQLite (Local)' : 'Supabase (Cloud)',
+                              dbManager.isSqliteMode
+                                  ? 'SQLite (Local)'
+                                  : 'Supabase (Cloud)',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -418,9 +511,9 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                               ),
                             ),
                             Text(
-                              dbManager.isSqliteMode 
-                                ? 'เก็บข้อมูลในเครื่อง' 
-                                : 'เก็บข้อมูลบน Cloud',
+                              dbManager.isSqliteMode
+                                  ? 'เก็บข้อมูลในเครื่อง'
+                                  : 'เก็บข้อมูลบน Cloud',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: secondaryTextColor,
@@ -482,10 +575,16 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                         labelText: 'Supabase URL',
                         hintText: 'https://your-project.supabase.co',
                         labelStyle: TextStyle(color: secondaryTextColor),
-                        hintStyle: TextStyle(color: secondaryTextColor.withAlpha(128)),
+                        hintStyle: TextStyle(
+                          color: secondaryTextColor.withAlpha(128),
+                        ),
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                          borderSide: BorderSide(
+                            color: isDarkMode
+                                ? AppColors.darkDivider
+                                : AppColors.divider,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: AppColors.header),
@@ -500,10 +599,16 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                         labelText: 'Anon Key',
                         hintText: 'your-anon-key',
                         labelStyle: TextStyle(color: secondaryTextColor),
-                        hintStyle: TextStyle(color: secondaryTextColor.withAlpha(128)),
+                        hintStyle: TextStyle(
+                          color: secondaryTextColor.withAlpha(128),
+                        ),
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDarkMode ? AppColors.darkDivider : AppColors.divider),
+                          borderSide: BorderSide(
+                            color: isDarkMode
+                                ? AppColors.darkDivider
+                                : AppColors.divider,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: AppColors.header),
@@ -517,12 +622,16 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _isTestingConnection ? null : _testConnection,
+                            onPressed: _isTestingConnection
+                                ? null
+                                : _testConnection,
                             icon: _isTestingConnection
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Icon(Icons.network_check, size: 18),
                             label: const Text('ทดสอบ'),
@@ -550,7 +659,7 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                       Text(
                         _connectionStatus!,
                         style: TextStyle(
-                          color: _connectionStatus!.contains('สำเร็จ')
+                          color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
                               ? AppColors.income
                               : AppColors.expense,
                           fontSize: 12,
@@ -594,8 +703,12 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                       if (_isMigrating) ...[
                         LinearProgressIndicator(
                           value: _migrationProgress,
-                          backgroundColor: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.header),
+                          backgroundColor: isDarkMode
+                              ? AppColors.darkDivider
+                              : AppColors.divider,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.header,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -685,7 +798,8 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                     _buildInfoItem(
                       icon: Icons.storage,
                       title: 'SQLite',
-                      description: 'เหมาะสำหรับใช้งานคนเดียว ไม่ต้องการ internet',
+                      description:
+                          'เหมาะสำหรับใช้งานคนเดียว ไม่ต้องการ internet',
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
                     ),
@@ -693,7 +807,8 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                     _buildInfoItem(
                       icon: Icons.cloud,
                       title: 'Supabase',
-                      description: 'เหมาะสำหรับต้องการ sync ข้อมูลข้ามอุปกรณ์ ต้องมี internet',
+                      description:
+                          'เหมาะสำหรับต้องการ sync ข้อมูลข้ามอุปกรณ์ ต้องมี internet',
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
                     ),
@@ -784,17 +899,11 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w500, color: textColor),
               ),
               Text(
                 description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: secondaryTextColor,
-                ),
+                style: TextStyle(fontSize: 12, color: secondaryTextColor),
               ),
             ],
           ),

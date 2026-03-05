@@ -1,5 +1,5 @@
 -- Supabase Schema for Money Flutter App
--- สร้าง tables สำหรับเก็บข้อมูลการเงิน
+-- สร้าง tables สำหรับเก็บข้อมูลการเงิน (แยกตาม user)
 
 -- ============================================
 -- ACCOUNTS TABLE
@@ -7,6 +7,7 @@
 -- ============================================
 create table if not exists public.accounts (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
     type text not null check (type in ('cash', 'bankAccount', 'creditCard', 'debt', 'investment', 'portfolio')),
     initial_balance numeric(15,2) not null default 0,
@@ -26,15 +27,16 @@ create table if not exists public.accounts (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON public.accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_type ON public.accounts(type);
 CREATE INDEX IF NOT EXISTS idx_accounts_sort_order ON public.accounts(sort_order);
 
 -- Enable RLS
 ALTER TABLE public.accounts ENABLE ROW LEVEL SECURITY;
 
--- Policy: Allow all operations (for anonymous auth)
-CREATE POLICY "Allow all" ON public.accounts
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own accounts" ON public.accounts
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- CATEGORIES TABLE
@@ -42,6 +44,7 @@ CREATE POLICY "Allow all" ON public.accounts
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.categories (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
     type text not null check (type in ('expense', 'income')),
     icon integer not null,
@@ -54,6 +57,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_categories_user_id ON public.categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_categories_type ON public.categories(type);
 CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON public.categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON public.categories(sort_order);
@@ -61,8 +65,9 @@ CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON public.categories(sort_o
 -- Enable RLS
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.categories
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own categories" ON public.categories
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- TRANSACTIONS TABLE
@@ -70,6 +75,7 @@ CREATE POLICY "Allow all" ON public.categories
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.transactions (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     type text not null check (type in ('expense', 'income', 'transfer', 'debtRepay')),
     amount numeric(15,2) not null,
     account_id text not null references public.accounts(id) on delete cascade,
@@ -83,6 +89,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON public.transactions(account_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON public.transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_to_account_id ON public.transactions(to_account_id);
@@ -92,8 +99,9 @@ CREATE INDEX IF NOT EXISTS idx_transactions_type ON public.transactions(type);
 -- Enable RLS
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.transactions
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own transactions" ON public.transactions
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- PORTFOLIO HOLDINGS TABLE
@@ -101,6 +109,7 @@ CREATE POLICY "Allow all" ON public.transactions
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.portfolio_holdings (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     portfolio_id text not null references public.accounts(id) on delete cascade,
     ticker text not null,
     name text not null default '',
@@ -113,14 +122,16 @@ CREATE TABLE IF NOT EXISTS public.portfolio_holdings (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_holdings_user_id ON public.portfolio_holdings(user_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_portfolio_id ON public.portfolio_holdings(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_sort_order ON public.portfolio_holdings(sort_order);
 
 -- Enable RLS
 ALTER TABLE public.portfolio_holdings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.portfolio_holdings
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own holdings" ON public.portfolio_holdings
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- BUDGETS TABLE
@@ -128,6 +139,7 @@ CREATE POLICY "Allow all" ON public.portfolio_holdings
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.budgets (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
     amount numeric(15,2) not null default 0,
     category_ids text not null default '[]',
@@ -139,13 +151,15 @@ CREATE TABLE IF NOT EXISTS public.budgets (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON public.budgets(user_id);
 CREATE INDEX IF NOT EXISTS idx_budgets_sort_order ON public.budgets(sort_order);
 
 -- Enable RLS
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.budgets
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own budgets" ON public.budgets
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- RECURRING TRANSACTIONS TABLE
@@ -153,6 +167,7 @@ CREATE POLICY "Allow all" ON public.budgets
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.recurring_transactions (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
     icon integer not null,
     color integer not null,
@@ -171,6 +186,7 @@ CREATE TABLE IF NOT EXISTS public.recurring_transactions (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_recurring_user_id ON public.recurring_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_account_id ON public.recurring_transactions(account_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_to_account_id ON public.recurring_transactions(to_account_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_category_id ON public.recurring_transactions(category_id);
@@ -179,8 +195,9 @@ CREATE INDEX IF NOT EXISTS idx_recurring_sort_order ON public.recurring_transact
 -- Enable RLS
 ALTER TABLE public.recurring_transactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.recurring_transactions
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own recurring" ON public.recurring_transactions
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- RECURRING OCCURRENCES TABLE
@@ -188,6 +205,7 @@ CREATE POLICY "Allow all" ON public.recurring_transactions
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.recurring_occurrences (
     id text primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
     recurring_id text not null references public.recurring_transactions(id) on delete cascade,
     due_date timestamp without time zone not null,
     transaction_id text references public.transactions(id) on delete set null,
@@ -197,6 +215,7 @@ CREATE TABLE IF NOT EXISTS public.recurring_occurrences (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_occurrences_user_id ON public.recurring_occurrences(user_id);
 CREATE INDEX IF NOT EXISTS idx_occurrences_recurring_id ON public.recurring_occurrences(recurring_id);
 CREATE INDEX IF NOT EXISTS idx_occurrences_due_date ON public.recurring_occurrences(due_date);
 CREATE INDEX IF NOT EXISTS idx_occurrences_transaction_id ON public.recurring_occurrences(transaction_id);
@@ -204,8 +223,9 @@ CREATE INDEX IF NOT EXISTS idx_occurrences_transaction_id ON public.recurring_oc
 -- Enable RLS
 ALTER TABLE public.recurring_occurrences ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all" ON public.recurring_occurrences
-    FOR ALL USING (true) WITH CHECK (true);
+-- Policy: Users can only access their own data
+CREATE POLICY "Users can only access their own occurrences" ON public.recurring_occurrences
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- TRIGGERS FOR UPDATED_AT
@@ -246,3 +266,49 @@ CREATE TRIGGER handle_recurring_transactions_updated_at BEFORE UPDATE ON public.
 DROP TRIGGER IF EXISTS handle_recurring_occurrences_updated_at ON public.recurring_occurrences;
 CREATE TRIGGER handle_recurring_occurrences_updated_at BEFORE UPDATE ON public.recurring_occurrences
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ============================================
+-- FUNCTION: Delete User (สำหรับลบบัญชีผู้ใช้)
+-- ============================================
+CREATE OR REPLACE FUNCTION public.delete_user()
+RETURNS void AS $$
+DECLARE
+    user_uuid uuid;
+BEGIN
+    -- ดึง user_id ของผู้ใช้ปัจจุบัน
+    user_uuid := auth.uid();
+    
+    -- ลบข้อมูลทั้งหมดของผู้ใช้ (RLS จะตรวจสอบว่าเป็นเจ้าของ)
+    DELETE FROM public.recurring_occurrences WHERE user_id = user_uuid;
+    DELETE FROM public.recurring_transactions WHERE user_id = user_uuid;
+    DELETE FROM public.transactions WHERE user_id = user_uuid;
+    DELETE FROM public.portfolio_holdings WHERE user_id = user_uuid;
+    DELETE FROM public.budgets WHERE user_id = user_uuid;
+    DELETE FROM public.categories WHERE user_id = user_uuid;
+    DELETE FROM public.accounts WHERE user_id = user_uuid;
+    
+    -- ลบ user จาก auth.users (ต้องใช้ service role หรือ admin privileges)
+    -- หมายเหตุ: การลบ user จาก auth.users ต้องทำผ่าน Admin API หรือ Edge Function
+    -- เนื่องจากต้องใช้ service_role key
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- FUNCTION: Get User Statistics
+-- ============================================
+CREATE OR REPLACE FUNCTION public.get_user_stats()
+RETURNS TABLE (
+    total_accounts bigint,
+    total_categories bigint,
+    total_transactions bigint,
+    total_budgets bigint
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        (SELECT count(*) FROM public.accounts WHERE user_id = auth.uid()),
+        (SELECT count(*) FROM public.categories WHERE user_id = auth.uid()),
+        (SELECT count(*) FROM public.transactions WHERE user_id = auth.uid()),
+        (SELECT count(*) FROM public.budgets WHERE user_id = auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

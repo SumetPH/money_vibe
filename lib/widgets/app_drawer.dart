@@ -231,7 +231,10 @@ class _DrawerItem extends StatelessWidget {
       selected: selected,
       selectedTileColor: selectedTileColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      mouseCursor: SystemMouseCursors.click,
+      visualDensity: VisualDensity.comfortable,
+      minLeadingWidth: 24,
       onTap: onTap,
     );
   }
