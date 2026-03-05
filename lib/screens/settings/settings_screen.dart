@@ -12,9 +12,8 @@ import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
 import '../auth/auth_screen.dart';
-import 'backup_restore_screen.dart';
 import 'api_key_settings_screen.dart';
-import 'database_settings_screen.dart';
+import 'data_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -174,21 +173,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Divider(color: dividerColor),
 
-                // Database Section
-                _buildSectionHeader('ฐานข้อมูล', textColor),
+                // Data Management Section
+                _buildSectionHeader('ข้อมูล', textColor),
                 ListTile(
                   leading: Icon(
                     dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
                     color: dbManager.isSqliteMode ? Colors.orange : Colors.blue,
                   ),
                   title: Text(
-                    'ตั้งค่า Database',
+                    'จัดการข้อมูล',
                     style: TextStyle(color: textColor),
                   ),
                   subtitle: Text(
                     dbManager.isSqliteMode
-                        ? 'SQLite (Local) - แตะเพื่อเปลี่ยน'
-                        : 'Supabase (Cloud) - แตะเพื่อเปลี่ยน',
+                        ? 'ฐานข้อมูล: SQLite (Local) - แตะเพื่อตั้งค่า'
+                        : 'ฐานข้อมูล: Supabase (Cloud) - แตะเพื่อตั้งค่า',
                     style: TextStyle(color: secondaryTextColor),
                   ),
                   trailing: Icon(
@@ -199,37 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const DatabaseSettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                // Backup/Restore Section
-                _buildSectionHeader('ข้อมูล', textColor),
-                ListTile(
-                  leading: Icon(
-                    Icons.backup_outlined,
-                    color: secondaryTextColor,
-                  ),
-                  title: Text(
-                    'สำรองและกู้คืนข้อมูล',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'Backup/Restore',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BackupRestoreScreen(),
+                        builder: (context) => const DataManagementScreen(),
                       ),
                     );
                   },

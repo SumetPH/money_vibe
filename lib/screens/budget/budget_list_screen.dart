@@ -526,7 +526,7 @@ class _MonthSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
