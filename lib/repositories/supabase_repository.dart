@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_repository.dart';
@@ -236,7 +237,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'user_id': currentUserId,
       'name': budget.name,
       'amount': budget.amount,
-      'category_ids': budget.categoryIds.join(','),
+      'category_ids': jsonEncode(budget.categoryIds),
       'icon': budget.icon.codePoint,
       'color': _colorToSupabase(budget.color.toARGB32()),
       'sort_order': budget.sortOrder,

@@ -71,8 +71,11 @@ class Budget {
         } catch (_) {
           categoryIds = [];
         }
+      } else if (categoryIdsRaw.contains(',')) {
+        // Comma-separated format: "uuid1,uuid2" (legacy Supabase format)
+        categoryIds = categoryIdsRaw.split(',').where((s) => s.isNotEmpty).toList();
       } else {
-        // Single UUID format: "uuid1" (legacy/incorrect format)
+        // Single UUID format: "uuid1"
         categoryIds = categoryIdsRaw.isNotEmpty ? [categoryIdsRaw] : [];
       }
     } else {

@@ -187,7 +187,9 @@ class AppDrawer extends StatelessWidget {
   void _navigate(BuildContext context, String route) {
     Navigator.pop(context); // close drawer
     if (currentRoute != route) {
-      Navigator.pushReplacementNamed(context, route);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, route);
+      });
     }
   }
 }
