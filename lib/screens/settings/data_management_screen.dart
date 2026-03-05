@@ -750,9 +750,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           content: Text(
             selectedTarget == 'both'
                 ? 'คุณต้องการล้างข้อมูลทั้งใน SQLite และ Supabase ใช่หรือไม่?\n\n'
-                    'ข้อมูลทั้งหมดจะถูกลบถาวร!'
+                      'ข้อมูลทั้งหมดจะถูกลบถาวร!'
                 : 'คุณต้องการล้างข้อมูลใน ${selectedTarget == 'sqlite' ? 'SQLite' : 'Supabase'} ใช่หรือไม่?\n\n'
-                    'ข้อมูลทั้งหมดจะถูกลบถาวร!',
+                      'ข้อมูลทั้งหมดจะถูกลบถาวร!',
           ),
           actions: [
             TextButton(
@@ -913,13 +913,16 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final backgroundColor =
-        isDarkMode ? AppColors.darkBackground : AppColors.background;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-    final textColor =
-        isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
-    final secondaryTextColor =
-        isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryTextColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Scaffold(
@@ -948,7 +951,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                       Row(
                         children: [
                           Icon(
-                            dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
+                            dbManager.isSqliteMode
+                                ? Icons.storage
+                                : Icons.cloud,
                             color: dbManager.isSqliteMode
                                 ? Colors.orange
                                 : Colors.blue,
@@ -1275,9 +1280,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               onPressed: _backupDatabase,
                               icon: const Icon(Icons.backup, size: 18),
                               label: const Text('Backup'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.header,
-                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -1287,7 +1289,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               icon: const Icon(Icons.restore, size: 18),
                               label: const Text('Restore'),
                               style: FilledButton.styleFrom(
-                                backgroundColor: Colors.orange,
+                                backgroundColor: Colors.teal,
                               ),
                             ),
                           ),
@@ -1299,7 +1301,73 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
                 const SizedBox(height: 12),
 
+                // CSV Export/Import
+                _buildCard(
+                  surfaceColor: surfaceColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.insert_drive_file,
+                            color: Colors.green,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ส่งออก/นำเข้า (CSV)',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: textColor,
+                                  ),
+                                ),
+                                Text(
+                                  'รองรับข้าม Platform (Android ↔ iOS)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _exportData,
+                              icon: const Icon(Icons.cloud_upload, size: 18),
+                              label: const Text('Bckup'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _importData,
+                              icon: const Icon(Icons.restore, size: 18),
+                              label: const Text('Restore'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.teal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
                 // Backup from Supabase
+                if (dbManager.canUseSupabase) const SizedBox(height: 12),
                 if (dbManager.canUseSupabase)
                   _buildCard(
                     surfaceColor: surfaceColor,
@@ -1354,84 +1422,10 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                     ),
                   ),
 
-                if (dbManager.canUseSupabase) const SizedBox(height: 12),
-
-                // CSV Export/Import
-                _buildCard(
-                  surfaceColor: surfaceColor,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.insert_drive_file,
-                            color: Colors.green,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ส่งออก/นำเข้า (CSV)',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: textColor,
-                                  ),
-                                ),
-                                Text(
-                                  'รองรับข้าม Platform (Android ↔ iOS)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: secondaryTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _exportData,
-                              icon: const Icon(Icons.upload, size: 18),
-                              label: const Text('ส่งออก'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.green,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _importData,
-                              icon: const Icon(Icons.download, size: 18),
-                              label: const Text('นำเข้า'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.teal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: 24),
 
                 // ========== SECTION: CLEAR DATA ==========
-                _buildSectionTitle(
-                  'ล้างข้อมูล',
-                  textColor,
-                  secondaryTextColor,
-                ),
+                _buildSectionTitle('ล้างข้อมูล', textColor, secondaryTextColor),
                 const SizedBox(height: 8),
                 _buildCard(
                   surfaceColor: surfaceColor,
@@ -1446,10 +1440,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.warning_amber,
-                              color: AppColors.expense,
-                            ),
+                            Icon(Icons.warning_amber, color: AppColors.expense),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -1505,7 +1496,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                       _buildInfoItem(
                         icon: Icons.storage,
                         title: 'SQLite',
-                        description: 'เหมาะสำหรับใช้งานคนเดียว ไม่ต้องการ internet',
+                        description:
+                            'เหมาะสำหรับใช้งานคนเดียว ไม่ต้องการ internet',
                         textColor: textColor,
                         secondaryTextColor: secondaryTextColor,
                       ),
