@@ -52,6 +52,10 @@ class AccountProvider extends ChangeNotifier {
       for (final holding in holdings) {
         _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
       }
+      // Sort holdings in each portfolio by sortOrder
+      for (final portfolioId in _holdings.keys) {
+        _holdings[portfolioId]!.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      }
 
       debugPrint('AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings');
     } catch (e) {
@@ -365,7 +369,7 @@ class AccountProvider extends ChangeNotifier {
 
     try {
       for (var i = 0; i < holdings.length; i++) {
-        await _db.updateHolding(holdings[i]);
+        await _db.updateHoldingSortOrder(holdings[i].id, holdings[i].sortOrder);
       }
     } catch (e) {
       debugPrint('AccountProvider: Error reordering holdings: $e');

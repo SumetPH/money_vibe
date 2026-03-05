@@ -474,9 +474,11 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
       ),
       body: Consumer<DatabaseManager>(
         builder: (context, dbManager, _) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
+          return SafeArea(
+            top: false,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
               // Current Mode Card
               _buildCard(
                 surfaceColor: surfaceColor,
@@ -822,6 +824,7 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
                 ),
               ),
             ],
+            ),
           );
         },
       ),

@@ -50,8 +50,10 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Finnhub API Key')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Card(
@@ -218,6 +220,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

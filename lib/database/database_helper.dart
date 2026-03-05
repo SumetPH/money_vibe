@@ -375,6 +375,16 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> updateHoldingSortOrder(String id, int sortOrder) async {
+    final db = await database;
+    await db.update(
+      'portfolio_holdings',
+      {'sort_order': sortOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> deleteHolding(String id) async {
     final db = await database;
     await db.delete('portfolio_holdings', where: 'id = ?', whereArgs: [id]);

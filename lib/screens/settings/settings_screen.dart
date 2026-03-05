@@ -49,7 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       drawer: const AppDrawer(currentRoute: '/settings'),
       body: Consumer<DatabaseManager>(
         builder: (context, dbManager, _) {
-          return ListView(
+          return SafeArea(
+            top: false,
+            child: ListView(
             children: [
               // Appearance Section
               _buildSectionHeader('ลักษณะ', textColor),
@@ -218,6 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Divider(color: dividerColor),
               ],
             ],
+            ),
           );
         },
       ),

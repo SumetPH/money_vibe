@@ -117,17 +117,20 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
               ],
             ),
           ),
-          body: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : bills.isEmpty
-              ? _buildEmptyState(isDarkMode, textSecondaryColor)
-              : _buildBillList(
-                  bills,
-                  isDarkMode,
-                  surfaceColor,
-                  textPrimaryColor,
-                  textSecondaryColor,
-                ),
+          body: SafeArea(
+            top: false,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : bills.isEmpty
+                ? _buildEmptyState(isDarkMode, textSecondaryColor)
+                : _buildBillList(
+                    bills,
+                    isDarkMode,
+                    surfaceColor,
+                    textPrimaryColor,
+                    textSecondaryColor,
+                  ),
+          ),
         );
       },
     );

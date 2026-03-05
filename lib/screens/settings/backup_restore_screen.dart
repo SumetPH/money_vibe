@@ -543,9 +543,11 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
           // SQLite Backup Section (New)
           Card(
             child: Padding(
@@ -777,7 +779,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               ],
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

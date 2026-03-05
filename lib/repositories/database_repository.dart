@@ -76,6 +76,7 @@ abstract class DatabaseRepository {
   Future<List<StockHolding>> getPortfolioHoldings();
   Future<void> insertHolding(StockHolding holding);
   Future<void> updateHolding(StockHolding holding);
+  Future<void> updateHoldingSortOrder(String id, int sortOrder);
   Future<void> deleteHolding(String id);
   Future<void> deleteHoldingsByPortfolio(String portfolioId);
 

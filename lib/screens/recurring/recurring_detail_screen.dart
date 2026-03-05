@@ -355,7 +355,9 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
               ),
             ],
           ),
-          body: NestedScrollView(
+          body: SafeArea(
+            top: false,
+            child: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => [
               // ── Header card ──────────────────────────────────────────────
               SliverToBoxAdapter(
@@ -660,6 +662,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                         },
                       ),
               ],
+            ),
             ),
           ),
         );

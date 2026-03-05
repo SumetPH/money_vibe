@@ -549,6 +549,28 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   }
 
   @override
+  Future<void> updateHoldingSortOrder(String id, int sortOrder) async {
+    _requireAuth();
+    log('Updating holding sort order: $id -> $sortOrder');
+    try {
+      final response = await client
+          .from('portfolio_holdings')
+          .update({'sort_order': sortOrder})
+          .eq('id', id)
+          .eq('user_id', currentUserId!)
+          .select();
+      
+      if ((response as List).isEmpty) {
+        throw Exception('Failed to update holding sort order: No rows affected');
+      }
+      log('Updated holding sort order successfully: $id');
+    } catch (e) {
+      logError('Error updating holding sort order', e);
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> deleteHolding(String id) async {
     _requireAuth();
     log('Deleting holding: $id for user: $currentUserId');

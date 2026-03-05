@@ -88,8 +88,10 @@ class _CreditCardBillDetailScreenState
               ),
             ],
           ),
-          body: Column(
-            children: [
+          body: SafeArea(
+            top: false,
+            child: Column(
+              children: [
               // Summary Card
               Container(
                 margin: const EdgeInsets.all(16),
@@ -213,6 +215,7 @@ class _CreditCardBillDetailScreenState
                 ),
               ),
             ],
+            ),
           ),
         );
       },

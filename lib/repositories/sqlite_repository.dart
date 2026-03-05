@@ -131,6 +131,11 @@ class SQLiteRepository with RepositoryLogger implements DatabaseRepository {
   }
 
   @override
+  Future<void> updateHoldingSortOrder(String id, int sortOrder) async {
+    await _dbHelper.updateHoldingSortOrder(id, sortOrder);
+  }
+
+  @override
   Future<void> deleteHolding(String id) async {
     await _dbHelper.deleteHolding(id);
   }
