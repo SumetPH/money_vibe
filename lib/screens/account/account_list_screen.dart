@@ -385,6 +385,7 @@ class _TotalRow extends StatelessWidget {
   void _showTotalMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -400,7 +401,7 @@ class _TotalRow extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Container(
                   width: 36,
                   height: 4,
@@ -409,6 +410,7 @@ class _TotalRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+                SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.info_outline, color: textColor),

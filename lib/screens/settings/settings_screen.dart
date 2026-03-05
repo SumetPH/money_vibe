@@ -52,174 +52,189 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return SafeArea(
             top: false,
             child: ListView(
-            children: [
-              // Appearance Section
-              _buildSectionHeader('ลักษณะ', textColor),
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, _) {
-                  return SwitchListTile(
-                    secondary: Icon(
-                      Icons.dark_mode_outlined,
-                      color: secondaryTextColor,
-                    ),
-                    title: Text('โหมดมืด', style: TextStyle(color: textColor)),
-                    subtitle: Text(
-                      'ใช้ธีมสีเข้ม',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    value: settingsProvider.isDarkMode,
-                    onChanged: (value) {
-                      settingsProvider.setDarkMode(value);
+              children: [
+                // Account Section (สำหรับ Supabase mode)
+                if (dbManager.currentMode == DatabaseMode.supabase) ...[
+                  _buildSectionHeader('บัญชีผู้ใช้', textColor),
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, _) {
+                      if (authProvider.isLoggedIn) {
+                        // แสดงเมื่อ login แล้ว
+                        return Column(
+                          children: [
+                            ListTile(
+                              leading: Icon(
+                                Icons.person,
+                                color: secondaryTextColor,
+                              ),
+                              title: Text(
+                                authProvider.userEmail ?? 'ผู้ใช้',
+                                style: TextStyle(color: textColor),
+                              ),
+                              subtitle: Text(
+                                'อีเมลปัจจุบัน',
+                                style: TextStyle(color: secondaryTextColor),
+                              ),
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                Icons.logout,
+                                color: AppColors.expense,
+                              ),
+                              title: Text(
+                                'ออกจากระบบ',
+                                style: TextStyle(color: AppColors.expense),
+                              ),
+                              onTap: () => _showLogoutDialog(context),
+                            ),
+                          ],
+                        );
+                      } else {
+                        // แสดงเมื่อยังไม่ได้ login
+                        return ListTile(
+                          leading: Icon(Icons.login, color: AppColors.income),
+                          title: Text(
+                            'เข้าสู่ระบบ',
+                            style: TextStyle(color: AppColors.income),
+                          ),
+                          subtitle: Text(
+                            'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
+                            style: TextStyle(color: secondaryTextColor),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right,
+                            color: secondaryTextColor,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AuthScreen(),
+                              ),
+                            );
+                          },
+                        );
+                      }
                     },
-                  );
-                },
-              ),
-              Divider(color: dividerColor),
+                  ),
+                  Divider(color: dividerColor),
+                ],
+                Divider(color: dividerColor),
 
-              // API Section
-              _buildSectionHeader('API', textColor),
-              ListTile(
-                leading: Icon(Icons.api, color: secondaryTextColor),
-                title: Text(
-                  'Finnhub API Key',
-                  style: TextStyle(color: textColor),
-                ),
-                subtitle: Text(
-                  'ตั้งค่า API key สำหรับดึงราคาหุ้น',
-                  style: TextStyle(color: secondaryTextColor),
-                ),
-                trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ApiKeySettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              Divider(color: dividerColor),
-
-              // Database Section
-              _buildSectionHeader('ฐานข้อมูล', textColor),
-              ListTile(
-                leading: Icon(
-                  dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
-                  color: dbManager.isSqliteMode ? Colors.orange : Colors.blue,
-                ),
-                title: Text(
-                  'ตั้งค่า Database',
-                  style: TextStyle(color: textColor),
-                ),
-                subtitle: Text(
-                  dbManager.isSqliteMode
-                      ? 'SQLite (Local) - แตะเพื่อเปลี่ยน'
-                      : 'Supabase (Cloud) - แตะเพื่อเปลี่ยน',
-                  style: TextStyle(color: secondaryTextColor),
-                ),
-                trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DatabaseSettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              Divider(color: dividerColor),
-
-              // Backup/Restore Section
-              _buildSectionHeader('ข้อมูล', textColor),
-              ListTile(
-                leading: Icon(Icons.backup_outlined, color: secondaryTextColor),
-                title: Text(
-                  'สำรองและกู้คืนข้อมูล',
-                  style: TextStyle(color: textColor),
-                ),
-                subtitle: Text(
-                  'Backup/Restore',
-                  style: TextStyle(color: secondaryTextColor),
-                ),
-                trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BackupRestoreScreen(),
-                    ),
-                  );
-                },
-              ),
-              Divider(color: dividerColor),
-
-              // Account Section (สำหรับ Supabase mode)
-              if (dbManager.currentMode == DatabaseMode.supabase) ...[
-                _buildSectionHeader('บัญชีผู้ใช้', textColor),
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, _) {
-                    if (authProvider.isLoggedIn) {
-                      // แสดงเมื่อ login แล้ว
-                      return Column(
-                        children: [
-                          ListTile(
-                            leading: Icon(
-                              Icons.person,
-                              color: secondaryTextColor,
-                            ),
-                            title: Text(
-                              authProvider.userEmail ?? 'ผู้ใช้',
-                              style: TextStyle(color: textColor),
-                            ),
-                            subtitle: Text(
-                              'อีเมลปัจจุบัน',
-                              style: TextStyle(color: secondaryTextColor),
-                            ),
-                          ),
-                          ListTile(
-                            leading: Icon(
-                              Icons.logout,
-                              color: AppColors.expense,
-                            ),
-                            title: Text(
-                              'ออกจากระบบ',
-                              style: TextStyle(color: AppColors.expense),
-                            ),
-                            onTap: () => _showLogoutDialog(context),
-                          ),
-                        ],
-                      );
-                    } else {
-                      // แสดงเมื่อยังไม่ได้ login
-                      return ListTile(
-                        leading: Icon(Icons.login, color: AppColors.income),
-                        title: Text(
-                          'เข้าสู่ระบบ',
-                          style: TextStyle(color: AppColors.income),
-                        ),
-                        subtitle: Text(
-                          'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
-                          style: TextStyle(color: secondaryTextColor),
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          color: secondaryTextColor,
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AuthScreen(),
-                            ),
-                          );
-                        },
-                      );
-                    }
+                // Appearance Section
+                _buildSectionHeader('ลักษณะ', textColor),
+                Consumer<SettingsProvider>(
+                  builder: (context, settingsProvider, _) {
+                    return SwitchListTile(
+                      secondary: Icon(
+                        Icons.dark_mode_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'โหมดมืด',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        'ใช้ธีมสีเข้ม',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      value: settingsProvider.isDarkMode,
+                      onChanged: (value) {
+                        settingsProvider.setDarkMode(value);
+                      },
+                    );
                   },
                 ),
                 Divider(color: dividerColor),
+
+                // API Section
+                _buildSectionHeader('API', textColor),
+                ListTile(
+                  leading: Icon(Icons.api, color: secondaryTextColor),
+                  title: Text(
+                    'Finnhub API Key',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    'ตั้งค่า API key สำหรับดึงราคาหุ้น',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ApiKeySettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
+                // Database Section
+                _buildSectionHeader('ฐานข้อมูล', textColor),
+                ListTile(
+                  leading: Icon(
+                    dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
+                    color: dbManager.isSqliteMode ? Colors.orange : Colors.blue,
+                  ),
+                  title: Text(
+                    'ตั้งค่า Database',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    dbManager.isSqliteMode
+                        ? 'SQLite (Local) - แตะเพื่อเปลี่ยน'
+                        : 'Supabase (Cloud) - แตะเพื่อเปลี่ยน',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DatabaseSettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
+                // Backup/Restore Section
+                _buildSectionHeader('ข้อมูล', textColor),
+                ListTile(
+                  leading: Icon(
+                    Icons.backup_outlined,
+                    color: secondaryTextColor,
+                  ),
+                  title: Text(
+                    'สำรองและกู้คืนข้อมูล',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    'Backup/Restore',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BackupRestoreScreen(),
+                      ),
+                    );
+                  },
+                ),
               ],
-            ],
             ),
           );
         },
@@ -251,15 +266,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              
+
               // Logout
               await context.read<AuthProvider>().signOut();
-              
+
               // Clear all providers (ข้อมูลเก่าของ user ก่อนหน้า)
               if (context.mounted) {
                 await _clearAllProviders(context);
               }
-              
+
               // Switch back to SQLite mode (ไม่บังคับ login)
               final dbManager = DatabaseManager();
               await dbManager.switchMode(DatabaseMode.sqlite);
@@ -277,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _clearAllProviders(BuildContext context) async {
     debugPrint('[SettingsScreen] Clearing all providers...');
-    
+
     try {
       // Reload providers ด้วยข้อมูลว่าง (SQLite mode หลัง logout)
       await Future.wait([
@@ -287,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context.read<BudgetProvider>().reload(),
         context.read<RecurringTransactionProvider>().reload(),
       ]);
-      
+
       debugPrint('[SettingsScreen] Providers cleared and reloaded');
     } catch (e) {
       debugPrint('[SettingsScreen] Error clearing providers: $e');

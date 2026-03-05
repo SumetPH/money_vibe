@@ -155,94 +155,96 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ),
             ],
           ),
-          body: budgets.isEmpty
-              ? Center(
-                  child: Text(
-                    'ยังไม่มีงบประมาณ',
-                    style: TextStyle(color: textSecondary),
-                  ),
-                )
-              : Column(
-                  children: [
-                    // ── Month selector ──────────────────────────────────────
-                    _MonthSelector(
-                      selectedMonth: _selectedMonth,
-                      onPrevMonth: _prevMonth,
-                      onNextMonth: _nextMonth,
-                      isDarkMode: isDarkMode,
-                      surfaceColor: surfaceColor,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
+          body: SafeArea(
+            child: budgets.isEmpty
+                ? Center(
+                    child: Text(
+                      'ยังไม่มีงบประมาณ',
+                      style: TextStyle(color: textSecondary),
                     ),
-                    // ── Header summary ──────────────────────────────────────
-                    _SummaryHeader(
-                      totalBudget: totalBudget,
-                      totalSpent: totalSpent,
-                      totalRemaining: totalRemaining,
-                      progress: overallProgress,
-                      isDarkMode: isDarkMode,
-                      surfaceColor: surfaceColor,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
-                      dividerColor: dividerColor,
-                    ),
-                    // ── Budget list ─────────────────────────────────────────
-                    Expanded(
-                      child: ReorderableListView.builder(
-                        buildDefaultDragHandles: _isReorderMode,
-                        onReorder: _isReorderMode
-                            ? (oldIndex, newIndex) {
-                                budgetProvider.reorderBudgets(
-                                  oldIndex,
-                                  newIndex,
-                                );
-                              }
-                            : (oldIdx, newIdx) {},
-                        proxyDecorator: (child, index, animation) {
-                          return AnimatedBuilder(
-                            animation: animation,
-                            builder: (context, child) {
-                              final animValue = Curves.easeInOut.transform(
-                                animation.value,
-                              );
-                              final elevation = 1 + animValue * 8;
-                              final scale = 1 + animValue * 0.02;
-                              return Transform.scale(
-                                scale: scale,
-                                child: Material(
-                                  elevation: elevation,
-                                  color: surfaceColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: child,
-                          );
-                        },
-                        itemCount: budgets.length,
-                        itemBuilder: (context, i) {
-                          final budget = budgets[i];
-                          final spent = _getSpent(budget, allTx, period);
-                          return _BudgetItem(
-                            key: ValueKey(budget.id),
-                            budget: budget,
-                            spent: spent,
-                            isReorderMode: _isReorderMode,
-                            isDarkMode: isDarkMode,
-                            surfaceColor: surfaceColor,
-                            textPrimary: textPrimary,
-                            textSecondary: textSecondary,
-                            dividerColor: dividerColor,
-                            onTap: () =>
-                                _openTransactions(context, budget, period),
-                            onLongPress: () => _openForm(context, budget),
-                          );
-                        },
+                  )
+                : Column(
+                    children: [
+                      // ── Month selector ──────────────────────────────────────
+                      _MonthSelector(
+                        selectedMonth: _selectedMonth,
+                        onPrevMonth: _prevMonth,
+                        onNextMonth: _nextMonth,
+                        isDarkMode: isDarkMode,
+                        surfaceColor: surfaceColor,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
                       ),
-                    ),
-                  ],
-                ),
+                      // ── Header summary ──────────────────────────────────────
+                      _SummaryHeader(
+                        totalBudget: totalBudget,
+                        totalSpent: totalSpent,
+                        totalRemaining: totalRemaining,
+                        progress: overallProgress,
+                        isDarkMode: isDarkMode,
+                        surfaceColor: surfaceColor,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        dividerColor: dividerColor,
+                      ),
+                      // ── Budget list ─────────────────────────────────────────
+                      Expanded(
+                        child: ReorderableListView.builder(
+                          buildDefaultDragHandles: _isReorderMode,
+                          onReorder: _isReorderMode
+                              ? (oldIndex, newIndex) {
+                                  budgetProvider.reorderBudgets(
+                                    oldIndex,
+                                    newIndex,
+                                  );
+                                }
+                              : (oldIdx, newIdx) {},
+                          proxyDecorator: (child, index, animation) {
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (context, child) {
+                                final animValue = Curves.easeInOut.transform(
+                                  animation.value,
+                                );
+                                final elevation = 1 + animValue * 8;
+                                final scale = 1 + animValue * 0.02;
+                                return Transform.scale(
+                                  scale: scale,
+                                  child: Material(
+                                    elevation: elevation,
+                                    color: surfaceColor,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: child,
+                            );
+                          },
+                          itemCount: budgets.length,
+                          itemBuilder: (context, i) {
+                            final budget = budgets[i];
+                            final spent = _getSpent(budget, allTx, period);
+                            return _BudgetItem(
+                              key: ValueKey(budget.id),
+                              budget: budget,
+                              spent: spent,
+                              isReorderMode: _isReorderMode,
+                              isDarkMode: isDarkMode,
+                              surfaceColor: surfaceColor,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              dividerColor: dividerColor,
+                              onTap: () =>
+                                  _openTransactions(context, budget, period),
+                              onLongPress: () => _openForm(context, budget),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         );
       },
     );

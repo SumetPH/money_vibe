@@ -77,240 +77,251 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ),
             ],
           ),
-          body: list.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.repeat,
-                        size: 64,
-                        color: textSecondary.withValues(alpha: 0.4),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'ยังไม่มีรายการประจำ',
-                        style: TextStyle(color: textSecondary, fontSize: 15),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () => _openForm(context, null),
-                        icon: const Icon(Icons.add),
-                        label: const Text('เพิ่มรายการประจำ'),
-                      ),
-                    ],
-                  ),
-                )
-              : ReorderableListView.builder(
-                  buildDefaultDragHandles: _isReorderMode,
-                  onReorder: _isReorderMode
-                      ? (oldIndex, newIndex) =>
-                            provider.reorderRecurring(oldIndex, newIndex)
-                      : (oldIdx, newIdx) {},
-                  proxyDecorator: (child, index, animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        final animValue = Curves.easeInOut.transform(
-                          animation.value,
-                        );
-                        final elevation = 1 + animValue * 8;
-                        final scale = 1 + animValue * 0.02;
-                        return Transform.scale(
-                          scale: scale,
-                          child: Material(
-                            elevation: elevation,
-                            color: surfaceColor,
-                            borderRadius: BorderRadius.circular(8),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: child,
-                    );
-                  },
-                  itemCount: list.length,
-                  itemBuilder: (_, i) {
-                    final r = list[i];
-                    final next = r.nextOccurrence;
-                    final typeColor = _typeColor(r.transactionType, isDark);
-
-                    // Get occurrence status for current month only
-                    final now = DateTime.now();
-                    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-                    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-
-                    // Generate dates for current month
-                    final monthDates = r
-                        .generateOccurrenceDates(upTo: lastDayOfMonth)
-                        .where(
-                          (d) =>
-                              !d.isBefore(firstDayOfMonth) &&
-                              !d.isAfter(lastDayOfMonth),
-                        )
-                        .toList();
-
-                    // Determine current month status
-                    String? statusLabel;
-                    Color? statusColor;
-
-                    if (monthDates.isNotEmpty) {
-                      final occ = provider.findOccurrence(
-                        r.id,
-                        monthDates.first,
-                      );
-                      final status = occ?.status ?? OccurrenceStatus.pending;
-                      switch (status) {
-                        case OccurrenceStatus.done:
-                          statusLabel = 'เสร็จแล้ว';
-                          statusColor = isDark
-                              ? AppColors.darkIncome
-                              : AppColors.income;
-                        case OccurrenceStatus.pending:
-                          statusLabel = 'รอดำเนินการ';
-                          statusColor = Colors.grey;
-                        case OccurrenceStatus.skipped:
-                          statusLabel = 'ข้ามแล้ว';
-                          statusColor = Colors.orange;
-                      }
-                    }
-
-                    return Column(
-                      key: ValueKey(r.id),
+          body: SafeArea(
+            child: list.isEmpty
+                ? Center(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        InkWell(
-                          onTap: _isReorderMode
-                              ? null
-                              : () => _openDetail(context, r),
-                          onLongPress: _isReorderMode
-                              ? null
-                              : () => _openForm(context, r),
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                        Icon(
+                          Icons.repeat,
+                          size: 64,
+                          color: textSecondary.withValues(alpha: 0.4),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'ยังไม่มีรายการประจำ',
+                          style: TextStyle(color: textSecondary, fontSize: 15),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () => _openForm(context, null),
+                          icon: const Icon(Icons.add),
+                          label: const Text('เพิ่มรายการประจำ'),
+                        ),
+                      ],
+                    ),
+                  )
+                : ReorderableListView.builder(
+                    buildDefaultDragHandles: _isReorderMode,
+                    onReorder: _isReorderMode
+                        ? (oldIndex, newIndex) =>
+                              provider.reorderRecurring(oldIndex, newIndex)
+                        : (oldIdx, newIdx) {},
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) {
+                          final animValue = Curves.easeInOut.transform(
+                            animation.value,
+                          );
+                          final elevation = 1 + animValue * 8;
+                          final scale = 1 + animValue * 0.02;
+                          return Transform.scale(
+                            scale: scale,
+                            child: Material(
+                              elevation: elevation,
+                              color: surfaceColor,
+                              borderRadius: BorderRadius.circular(8),
+                              child: child,
                             ),
-                            child: Row(
-                              children: [
-                                if (_isReorderMode) ...[
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 8),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    itemCount: list.length,
+                    itemBuilder: (_, i) {
+                      final r = list[i];
+                      final next = r.nextOccurrence;
+                      final typeColor = _typeColor(r.transactionType, isDark);
+
+                      // Get occurrence status for current month only
+                      final now = DateTime.now();
+                      final firstDayOfMonth = DateTime(now.year, now.month, 1);
+                      final lastDayOfMonth = DateTime(
+                        now.year,
+                        now.month + 1,
+                        0,
+                      );
+
+                      // Generate dates for current month
+                      final monthDates = r
+                          .generateOccurrenceDates(upTo: lastDayOfMonth)
+                          .where(
+                            (d) =>
+                                !d.isBefore(firstDayOfMonth) &&
+                                !d.isAfter(lastDayOfMonth),
+                          )
+                          .toList();
+
+                      // Determine current month status
+                      String? statusLabel;
+                      Color? statusColor;
+
+                      if (monthDates.isNotEmpty) {
+                        final occ = provider.findOccurrence(
+                          r.id,
+                          monthDates.first,
+                        );
+                        final status = occ?.status ?? OccurrenceStatus.pending;
+                        switch (status) {
+                          case OccurrenceStatus.done:
+                            statusLabel = 'เสร็จแล้ว';
+                            statusColor = isDark
+                                ? AppColors.darkIncome
+                                : AppColors.income;
+                          case OccurrenceStatus.pending:
+                            statusLabel = 'รอดำเนินการ';
+                            statusColor = Colors.grey;
+                          case OccurrenceStatus.skipped:
+                            statusLabel = 'ข้ามแล้ว';
+                            statusColor = Colors.orange;
+                        }
+                      }
+
+                      return Column(
+                        key: ValueKey(r.id),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: _isReorderMode
+                                ? null
+                                : () => _openDetail(context, r),
+                            onLongPress: _isReorderMode
+                                ? null
+                                : () => _openForm(context, r),
+                            child: Container(
+                              color: surfaceColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  if (_isReorderMode) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Icon(
+                                        Icons.drag_indicator,
+                                        color: dividerColor,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ],
+                                  // Icon
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: r.color.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
                                     child: Icon(
-                                      Icons.drag_indicator,
-                                      color: dividerColor,
-                                      size: 20,
+                                      r.icon,
+                                      color: r.color,
+                                      size: 22,
                                     ),
                                   ),
-                                ],
-                                // Icon
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: r.color.withValues(alpha: 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(r.icon, color: r.color, size: 22),
-                                ),
-                                const SizedBox(width: 12),
-                                // Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        r.name,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          _TypeBadge(
-                                            label: r.transactionType.label,
-                                            color: typeColor,
+                                  const SizedBox(width: 12),
+                                  // Info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          r.name,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: textPrimary,
                                           ),
-                                          const SizedBox(width: 8),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            _TypeBadge(
+                                              label: r.transactionType.label,
+                                              color: typeColor,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'ทุกวันที่ ${r.dayOfMonth == 0 ? 'สิ้นเดือน' : r.dayOfMonth}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (next != null) ...[
+                                          const SizedBox(height: 2),
                                           Text(
-                                            'ทุกวันที่ ${r.dayOfMonth == 0 ? 'สิ้นเดือน' : r.dayOfMonth}',
+                                            'ครั้งถัดไป: ${_formatDate(next)}',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: textSecondary,
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      if (next != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'ครั้งถัดไป: ${_formatDate(next)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: textSecondary,
+                                        // Status row (current month only)
+                                        if (statusLabel != null &&
+                                            statusColor != null) ...[
+                                          const SizedBox(height: 4),
+                                          _StatusChip(
+                                            label: statusLabel,
+                                            color: statusColor,
                                           ),
-                                        ),
+                                        ],
                                       ],
-                                      // Status row (current month only)
-                                      if (statusLabel != null &&
-                                          statusColor != null) ...[
-                                        const SizedBox(height: 4),
-                                        _StatusChip(
-                                          label: statusLabel,
-                                          color: statusColor,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                // Amount + chevron
-                                if (!_isReorderMode)
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        formatAmount(r.amount),
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: typeColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        color: textSecondary,
-                                        size: 18,
-                                      ),
-                                    ],
-                                  )
-                                else
-                                  Text(
-                                    formatAmount(r.amount),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: typeColor,
                                     ),
                                   ),
-                              ],
+                                  // Amount + chevron
+                                  if (!_isReorderMode)
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          formatAmount(r.amount),
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: typeColor,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          color: textSecondary,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      formatAmount(r.amount),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: typeColor,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Divider(
-                          height: 1,
-                          indent: _isReorderMode ? 68 : 72,
-                          color: dividerColor,
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                          Divider(
+                            height: 1,
+                            indent: _isReorderMode ? 68 : 72,
+                            color: dividerColor,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
         );
       },
     );
