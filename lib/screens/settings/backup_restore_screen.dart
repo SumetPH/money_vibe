@@ -6,8 +6,11 @@ import '../../providers/budget_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../../repositories/database_repository.dart';
+import '../../repositories/supabase_repository.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_backup_service.dart';
+import '../../services/database_manager.dart';
 
 class BackupRestoreScreen extends StatefulWidget {
   const BackupRestoreScreen({super.key});
@@ -55,6 +58,91 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('สำรองข้อมูลไม่สำเร็จ: $e')));
+      }
+    }
+  }
+
+  Future<void> _backupFromSupabase() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ยืนยันการ Backup จาก Supabase'),
+        content: const Text(
+          'การ Backup จาก Supabase จะ:\n\n'
+          '1. ดึงข้อมูลทั้งหมดจาก Supabase มายัง SQLite\n'
+          '2. สำรองไฟล์ SQLite เป็น .db\n\n'
+          '⚠️ ข้อมูลเดิมใน SQLite จะถูกแทนที่ด้วยข้อมูลจาก Supabase',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Backup', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    // แสดง loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('กำลังดึงข้อมูลจาก Supabase...'),
+          ],
+        ),
+      ),
+    );
+
+    final dbManager = DatabaseManager();
+    try {
+      // 1. ดึงข้อมูลจาก Supabase มา SQLite
+      await dbManager.migrateFromSupabase(
+        onProgress: (status, progress) {
+          debugPrint('[BackupFromSupabase] $status - ${(progress * 100).toInt()}%');
+        },
+      );
+
+      // ปิด loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      if (!mounted) return;
+
+      // 2. Backup ไฟล์ SQLite
+      final result = await DatabaseBackupService.instance.backupDatabase(
+        context: context,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      // ปิด loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Backup จาก Supabase ไม่สำเร็จ: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -177,75 +265,207 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   }
 
   Future<void> _clearData() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ยืนยันการล้างข้อมูล'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('คุณต้องการล้างข้อมูลทั้งหมดหรือไม่?'),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ข้อมูลที่จะถูกลบ:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade800,
+    final dbManager = DatabaseManager();
+    final canUseSupabase = dbManager.canUseSupabase;
+
+    // ถ้ามี Supabase ให้เลือกก่อน ถ้าไม่มีให้ลบ SQLite เลย
+    if (canUseSupabase) {
+      final selectedTarget = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('เลือกที่จะล้างข้อมูล'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('คุณต้องการล้างข้อมูลที่ไหน?'),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ คำเตือน:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '• บัญชีทั้งหมด\n'
-                    '• งบประมาณทั้งหมด\n'
-                    '• หมวดหมู่ทั้งหมด\n'
-                    '• ธุรกรรมทั้งหมด\n'
-                    '• หลักทรัพย์ทั้งหมด',
-                    style: TextStyle(color: Colors.red.shade900),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'การกระทำนี้ไม่สามารถย้อนกลับได้',
+                      style: TextStyle(color: Colors.red.shade900),
+                    ),
+                  ],
+                ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('ยกเลิก'),
             ),
-            const SizedBox(height: 12),
-            Text(
-              '⚠️ การกระทำนี้ไม่สามารถย้อนกลับได้',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade800,
-              ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'sqlite'),
+              icon: const Icon(Icons.storage),
+              style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+              label: const Text('SQLite เท่านั้น'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'supabase'),
+              icon: const Icon(Icons.cloud),
+              style: FilledButton.styleFrom(backgroundColor: Colors.blue),
+              label: const Text('Supabase เท่านั้น'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'both'),
+              icon: const Icon(Icons.delete_forever),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              label: const Text('ทั้งสองที่'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ล้างข้อมูล'),
-          ),
-        ],
-      ),
-    );
+      );
 
-    if (confirmed != true) return;
+      if (selectedTarget == null || selectedTarget == 'cancel') return;
+      if (!mounted) return;
 
+      // ยืนยันอีกครั้ง
+      final confirmTarget = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('ยืนยันการล้างข้อมูล'),
+          content: Text(
+            selectedTarget == 'both'
+                ? 'คุณต้องการล้างข้อมูลทั้งใน SQLite และ Supabase ใช่หรือไม่?\n\n'
+                    'ข้อมูลทั้งหมดจะถูกลบถาวร!'
+                : 'คุณต้องการล้างข้อมูลใน ${selectedTarget == 'sqlite' ? 'SQLite' : 'Supabase'} ใช่หรือไม่?\n\n'
+                    'ข้อมูลทั้งหมดจะถูกลบถาวร!',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('ล้างข้อมูล'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmTarget != true) return;
+
+      // ล้างข้อมูลตามที่เลือก
+      await _executeClearData(selectedTarget);
+    } else {
+      // ไม่มี Supabase ให้ลบ SQLite ตามปกติ
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('ยืนยันการล้างข้อมูล'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('คุณต้องการล้างข้อมูลทั้งหมดใน SQLite หรือไม่?'),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ข้อมูลที่จะถูกลบ:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '• บัญชีทั้งหมด\n'
+                      '• งบประมาณทั้งหมด\n'
+                      '• หมวดหมู่ทั้งหมด\n'
+                      '• ธุรกรรมทั้งหมด\n'
+                      '• หลักทรัพย์ทั้งหมด',
+                      style: TextStyle(color: Colors.red.shade900),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '⚠️ การกระทำนี้ไม่สามารถย้อนกลับได้',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade800,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('ล้างข้อมูล'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      await _executeClearData('sqlite');
+    }
+  }
+
+  Future<void> _executeClearData(String target) async {
     try {
-      debugPrint('BackupRestore: Starting clear data...');
-      await DatabaseHelper.instance.clearDatabase();
-      debugPrint('BackupRestore: Database cleared');
+      debugPrint('BackupRestore: Starting clear data for $target...');
+      final dbManager = DatabaseManager();
+
+      if (target == 'sqlite' || target == 'both') {
+        await DatabaseHelper.instance.clearDatabase();
+        debugPrint('BackupRestore: SQLite cleared');
+      }
+
+      if (target == 'supabase' || target == 'both') {
+        if (dbManager.canUseSupabase) {
+          // สร้าง Supabase repository ถ้ายังไม่มี
+          if (dbManager.currentMode == DatabaseMode.sqlite) {
+            // ถ้าอยู่ใน SQLite mode ต้องสร้าง supabase repo ชั่วคราว
+            final supabaseRepo = SupabaseRepository(
+              supabaseUrl: dbManager.supabaseUrl!,
+              supabaseAnonKey: dbManager.supabaseAnonKey!,
+            );
+            await supabaseRepo.init();
+            await supabaseRepo.clearAllData();
+          } else {
+            // ถ้าอยู่ใน Supabase mode ใช้ repo ปัจจุบันได้เลย
+            await dbManager.repository.clearAllData();
+          }
+          debugPrint('BackupRestore: Supabase cleared');
+        }
+      }
 
       if (!mounted) return;
 
@@ -390,6 +610,69 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
 
           const SizedBox(height: 16),
+
+          // Backup from Supabase Section
+          if (DatabaseManager().canUseSupabase)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cloud_download,
+                          color: Colors.orange,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Backup จาก Supabase',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'ดึงข้อมูลจาก Supabase แล้วสำรองเป็นไฟล์',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _backupFromSupabase,
+                        icon: const Icon(Icons.cloud_download),
+                        label: const Text('Backup จาก Supabase'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '⚠️ ข้อมูลเดิมใน SQLite จะถูกแทนที่ด้วยข้อมูลจาก Supabase',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          if (DatabaseManager().canUseSupabase)
+            const SizedBox(height: 16),
 
           // CSV Backup/Restore Section
           Card(

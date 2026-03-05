@@ -1,214 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../database/database_helper.dart';
+import '../repositories/database_repository.dart';
+import '../services/database_manager.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/transaction.dart';
 
 class AccountProvider extends ChangeNotifier {
   final _uuid = const Uuid();
-  final _db = DatabaseHelper.instance;
+  final DatabaseManager _dbManager = DatabaseManager();
 
   final List<Account> _accounts = [];
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
 
   bool _showHiddenAccounts = false;
+  bool _isLoading = false;
 
   bool get showHiddenAccounts => _showHiddenAccounts;
+  bool get isLoading => _isLoading;
 
   void toggleShowHiddenAccounts() {
     _showHiddenAccounts = !_showHiddenAccounts;
     notifyListeners();
   }
 
-  // ── Seed data (used only on first launch) ─────────────────────────────────
+  // ── Helper ────────────────────────────────────────────────────────────────
 
-  // static List<Account> get _seedAccounts => [
-  //   Account(
-  //     id: 'acc_cash',
-  //     name: 'เงินสด',
-  //     type: AccountType.cash,
-  //     initialBalance: 970,
-  //     icon: Icons.account_balance_wallet,
-  //     color: const Color(0xFF8D6E63),
-  //   ),
-  //   Account(
-  //     id: 'acc_kbank_main',
-  //     name: 'KBank Main',
-  //     type: AccountType.bankAccount,
-  //     initialBalance: 500,
-  //     icon: Icons.account_balance,
-  //     color: const Color(0xFF4CAF50),
-  //   ),
-  //   Account(
-  //     id: 'acc_ktb_main',
-  //     name: 'KTB Main',
-  //     type: AccountType.bankAccount,
-  //     initialBalance: 883.64,
-  //     icon: Icons.account_balance,
-  //     color: const Color(0xFF2196F3),
-  //   ),
-  //   Account(
-  //     id: 'acc_ktb_saving',
-  //     name: 'KTB Saving',
-  //     type: AccountType.bankAccount,
-  //     initialBalance: 19000,
-  //     icon: Icons.savings,
-  //     color: const Color(0xFF03A9F4),
-  //   ),
-  //   Account(
-  //     id: 'acc_ktc_mc',
-  //     name: 'KTC Mastercard',
-  //     type: AccountType.creditCard,
-  //     initialBalance: -1356.75,
-  //     icon: Icons.credit_card,
-  //     color: const Color(0xFFFF5722),
-  //   ),
-  //   Account(
-  //     id: 'acc_kbank_visa',
-  //     name: 'KBank Visa',
-  //     type: AccountType.creditCard,
-  //     initialBalance: -738.41,
-  //     icon: Icons.credit_card,
-  //     color: const Color(0xFF1565C0),
-  //   ),
-  //   Account(
-  //     id: 'acc_car',
-  //     name: 'รถยนต์',
-  //     type: AccountType.debt,
-  //     initialBalance: -146036,
-  //     icon: Icons.directions_car,
-  //     color: const Color(0xFF607D8B),
-  //   ),
-  //   Account(
-  //     id: 'acc_car_ins',
-  //     name: 'ประกันรถยนต์ 2569',
-  //     type: AccountType.debt,
-  //     initialBalance: -5498.42,
-  //     icon: Icons.shield,
-  //     color: const Color(0xFF78909C),
-  //   ),
-  //   Account(
-  //     id: 'acc_chair',
-  //     name: 'เก้าอี้',
-  //     type: AccountType.debt,
-  //     initialBalance: -1824,
-  //     icon: Icons.weekend,
-  //     color: const Color(0xFF795548),
-  //   ),
-  //   Account(
-  //     id: 'acc_iphone',
-  //     name: 'iPhone 16',
-  //     type: AccountType.debt,
-  //     initialBalance: -19728,
-  //     icon: Icons.phone_iphone,
-  //     color: const Color(0xFF9E9E9E),
-  //   ),
-  //   Account(
-  //     id: 'acc_invest',
-  //     name: 'กองทุนรวม',
-  //     type: AccountType.investment,
-  //     initialBalance: 100000,
-  //     icon: Icons.show_chart,
-  //     color: const Color(0xFF009688),
-  //   ),
-  //   Account(
-  //     id: 'acc_ibkr',
-  //     name: 'IBKR Portfolio',
-  //     type: AccountType.portfolio,
-  //     cashBalance: 5000,
-  //     exchangeRate: 35.0,
-  //     icon: Icons.candlestick_chart,
-  //     color: const Color(0xFF1565C0),
-  //   ),
-  // ];
+  DatabaseRepository get _db => _dbManager.repository;
 
-  // static List<StockHolding> get _seedHoldings => [
-  //   StockHolding(
-  //     id: 'h_aapl',
-  //     portfolioId: 'acc_ibkr',
-  //     ticker: 'AAPL',
-  //     name: 'Apple Inc.',
-  //     shares: 10,
-  //     priceUsd: 185.0,
-  //     costBasisUsd: 170.0,
-  //     sortOrder: 0,
-  //   ),
-  //   StockHolding(
-  //     id: 'h_msft',
-  //     portfolioId: 'acc_ibkr',
-  //     ticker: 'MSFT',
-  //     name: 'Microsoft Corp.',
-  //     shares: 5,
-  //     priceUsd: 415.0,
-  //     costBasisUsd: 390.0,
-  //     sortOrder: 1,
-  //   ),
-  // ];
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
-    final rows = await _db.getAccounts();
-    if (rows.isEmpty) {
-      // final seeds = _seedAccounts;
-      // for (final acc in seeds) {
-      //   await _db.insertAccount(acc.toMap());
-      // }
-      // _accounts.addAll(seeds);
+    debugPrint('AccountProvider: Initializing...');
+    _setLoading(true);
+    
+    try {
+      final accounts = await _db.getAccounts();
+      // Sort by sortOrder to ensure correct order
+      accounts.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      _accounts.clear();
+      _accounts.addAll(accounts);
 
-      // // Seed holdings
-      // for (final h in _seedHoldings) {
-      //   await _db.insertHolding(h.toMap());
-      //   _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
-      // }
-    } else {
-      _accounts.addAll(rows.map(Account.fromMap));
-
-      final holdingRows = await _db.getPortfolioHoldings();
-      for (final row in holdingRows) {
-        final h = StockHolding.fromMap(row);
-        _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
+      final holdings = await _db.getPortfolioHoldings();
+      _holdings.clear();
+      for (final holding in holdings) {
+        _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
       }
+
+      debugPrint('AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings');
+    } catch (e) {
+      debugPrint('AccountProvider: Init error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  /// Reload accounts from database (used after restore)
+  /// Reload accounts from database (used after restore/mode switch)
   Future<void> reload() async {
     debugPrint('AccountProvider: Reloading...');
-    _accounts.clear();
-    _holdings.clear();
-    try {
-      final rows = await _db.getAccounts();
-      debugPrint('AccountProvider: Loaded ${rows.length} accounts from DB');
-      for (final row in rows) {
-        try {
-          _accounts.add(Account.fromMap(row));
-        } catch (e) {
-          debugPrint('AccountProvider: Error parsing account: $e');
-          debugPrint('AccountProvider: Account data: $row');
-        }
-      }
-      final holdingRows = await _db.getPortfolioHoldings();
-      debugPrint(
-        'AccountProvider: Loaded ${holdingRows.length} holdings from DB',
-      );
-      for (final row in holdingRows) {
-        try {
-          final h = StockHolding.fromMap(row);
-          _holdings.putIfAbsent(h.portfolioId, () => []).add(h);
-        } catch (e) {
-          debugPrint('AccountProvider: Error parsing holding: $e');
-          debugPrint('AccountProvider: Holding data: $row');
-        }
-      }
-      notifyListeners();
-      debugPrint('AccountProvider: Reload complete');
-    } catch (e) {
-      debugPrint('AccountProvider: Reload failed: $e');
-      rethrow;
-    }
+    return init(); // Same logic
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -258,6 +115,7 @@ class AccountProvider extends ChangeNotifier {
 
     // Regular accounts: computed from transactions
     double balance = account.initialBalance;
+    
     for (final tx in transactions) {
       if (tx.accountId == accountId) {
         if (tx.type == TransactionType.income) balance += tx.amount;
@@ -271,6 +129,7 @@ class AccountProvider extends ChangeNotifier {
         balance += tx.amount;
       }
     }
+    
     return balance;
   }
 
@@ -297,30 +156,62 @@ class AccountProvider extends ChangeNotifier {
 
   // ── Account CRUD ──────────────────────────────────────────────────────────
 
-  void addAccount(Account account) {
+  Future<void> addAccount(Account account) async {
     _accounts.add(account);
     notifyListeners();
-    _db.insertAccount(account.toMap());
-  }
-
-  void updateAccount(Account updated) {
-    final idx = _accounts.indexWhere((a) => a.id == updated.id);
-    if (idx != -1) {
-      _accounts[idx] = updated;
+    
+    try {
+      await _db.insertAccount(account);
+    } catch (e) {
+      debugPrint('AccountProvider: Error adding account: $e');
+      _accounts.removeWhere((a) => a.id == account.id);
       notifyListeners();
-      _db.updateAccount(updated.toMap());
+      rethrow;
     }
   }
 
-  void deleteAccount(String id) {
-    _accounts.removeWhere((a) => a.id == id);
-    _holdings.remove(id);
+  Future<void> updateAccount(Account updated) async {
+    final idx = _accounts.indexWhere((a) => a.id == updated.id);
+    if (idx == -1) return;
+
+    final oldAccount = _accounts[idx];
+    _accounts[idx] = updated;
     notifyListeners();
-    _db.deleteAccount(id);
-    _db.deleteHoldingsByPortfolio(id);
+
+    try {
+      await _db.updateAccount(updated);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating account: $e');
+      _accounts[idx] = oldAccount;
+      notifyListeners();
+      rethrow;
+    }
   }
 
-  void reorderAccounts(int oldIndex, int newIndex) {
+  Future<void> deleteAccount(String id) async {
+    final idx = _accounts.indexWhere((a) => a.id == id);
+    if (idx == -1) return;
+
+    final oldAccount = _accounts[idx];
+    final oldHoldings = _holdings[id]?.toList() ?? [];
+    
+    _accounts.removeAt(idx);
+    _holdings.remove(id);
+    notifyListeners();
+
+    try {
+      await _db.deleteAccount(id);
+      await _db.deleteHoldingsByPortfolio(id);
+    } catch (e) {
+      debugPrint('AccountProvider: Error deleting account: $e');
+      _accounts.insert(idx, oldAccount);
+      _holdings[id] = oldHoldings;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> reorderAccounts(int oldIndex, int newIndex) async {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
@@ -330,13 +221,22 @@ class AccountProvider extends ChangeNotifier {
     // Update sort order for all affected accounts
     for (int i = 0; i < _accounts.length; i++) {
       _accounts[i] = _accounts[i].copyWith(sortOrder: i);
-      _db.updateAccountSortOrder(_accounts[i].id, i);
     }
-
     notifyListeners();
+
+    try {
+      for (int i = 0; i < _accounts.length; i++) {
+        await _db.updateAccountSortOrder(_accounts[i].id, i);
+      }
+    } catch (e) {
+      debugPrint('AccountProvider: Error reordering accounts: $e');
+      // Note: Full rollback is complex, just reload on error
+      await reload();
+      rethrow;
+    }
   }
 
-  void reorderAccountsInGroup(String groupName, int oldIndex, int newIndex) {
+  Future<void> reorderAccountsInGroup(String groupName, int oldIndex, int newIndex) async {
     // Get visible accounts
     final visible = visibleAccounts;
 
@@ -381,35 +281,68 @@ class AccountProvider extends ChangeNotifier {
     }
 
     // Perform the reorder
-    reorderAccounts(actualOldIndex, actualNewIndex);
+    await reorderAccounts(actualOldIndex, actualNewIndex);
   }
 
   // ── Holdings CRUD ──────────────────────────────────────────────────────────
 
-  void addHolding(StockHolding holding) {
+  Future<void> addHolding(StockHolding holding) async {
     _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
     notifyListeners();
-    _db.insertHolding(holding.toMap());
-  }
 
-  void updateHolding(StockHolding updated) {
-    final list = _holdings[updated.portfolioId];
-    if (list == null) return;
-    final idx = list.indexWhere((h) => h.id == updated.id);
-    if (idx != -1) {
-      list[idx] = updated;
+    try {
+      await _db.insertHolding(holding);
+    } catch (e) {
+      debugPrint('AccountProvider: Error adding holding: $e');
+      _holdings[holding.portfolioId]?.removeWhere((h) => h.id == holding.id);
       notifyListeners();
-      _db.updateHolding(updated.toMap());
+      rethrow;
     }
   }
 
-  void deleteHolding(String id, String portfolioId) {
-    _holdings[portfolioId]?.removeWhere((h) => h.id == id);
+  Future<void> updateHolding(StockHolding updated) async {
+    final list = _holdings[updated.portfolioId];
+    if (list == null) return;
+    
+    final idx = list.indexWhere((h) => h.id == updated.id);
+    if (idx == -1) return;
+
+    final oldHolding = list[idx];
+    list[idx] = updated;
     notifyListeners();
-    _db.deleteHolding(id);
+
+    try {
+      await _db.updateHolding(updated);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating holding: $e');
+      list[idx] = oldHolding;
+      notifyListeners();
+      rethrow;
+    }
   }
 
-  void reorderHoldings(String portfolioId, int oldIndex, int newIndex) {
+  Future<void> deleteHolding(String id, String portfolioId) async {
+    final list = _holdings[portfolioId];
+    if (list == null) return;
+
+    final idx = list.indexWhere((h) => h.id == id);
+    if (idx == -1) return;
+
+    final oldHolding = list[idx];
+    list.removeAt(idx);
+    notifyListeners();
+
+    try {
+      await _db.deleteHolding(id);
+    } catch (e) {
+      debugPrint('AccountProvider: Error deleting holding: $e');
+      list.insert(idx, oldHolding);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> reorderHoldings(String portfolioId, int oldIndex, int newIndex) async {
     final holdings = _holdings[portfolioId];
     if (holdings == null) return;
     if (oldIndex < 0 || oldIndex >= holdings.length) return;
@@ -426,15 +359,19 @@ class AccountProvider extends ChangeNotifier {
 
     // Update sortOrder for all holdings in this portfolio
     for (var i = 0; i < holdings.length; i++) {
-      final h = holdings[i];
-      final newSortOrder = i * 10; // Use multiples of 10 for flexibility
-      if (h.sortOrder != newSortOrder) {
-        h.sortOrder = newSortOrder;
-        _db.updateHolding(h.toMap());
-      }
+      holdings[i].sortOrder = i * 10; // Use multiples of 10 for flexibility
     }
-
     notifyListeners();
+
+    try {
+      for (var i = 0; i < holdings.length; i++) {
+        await _db.updateHolding(holdings[i]);
+      }
+    } catch (e) {
+      debugPrint('AccountProvider: Error reordering holdings: $e');
+      await reload();
+      rethrow;
+    }
   }
 
   String generateId() => _uuid.v4();

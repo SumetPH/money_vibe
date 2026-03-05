@@ -1,37 +1,64 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../database/database_helper.dart';
+import '../repositories/database_repository.dart';
+import '../services/database_manager.dart';
 import '../models/recurring_transaction.dart';
 
 class RecurringTransactionProvider extends ChangeNotifier {
   final _uuid = const Uuid();
-  final _db = DatabaseHelper.instance;
+  final DatabaseManager _dbManager = DatabaseManager();
 
   final List<RecurringTransaction> _recurring = [];
   final List<RecurringOccurrence> _occurrences = [];
+  bool _isLoading = false;
 
+  bool get isLoading => _isLoading;
   List<RecurringTransaction> get recurring => List.unmodifiable(_recurring);
+
+  // ── Helper ────────────────────────────────────────────────────────────────
+
+  DatabaseRepository get _db => _dbManager.repository;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     debugPrint('RecurringTransactionProvider: Initializing...');
-    _recurring.clear();
-    _occurrences.clear();
-    final rows = await _db.getRecurringTransactions();
-    for (final row in rows) {
-      _recurring.add(RecurringTransaction.fromMap(row));
+    _setLoading(true);
+    
+    try {
+      final recurring = await _db.getRecurringTransactions();
+      final occurrences = await _db.getRecurringOccurrences();
+      
+      // Sort by sortOrder to ensure correct order
+      recurring.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      
+      _recurring.clear();
+      _recurring.addAll(recurring);
+      
+      _occurrences.clear();
+      _occurrences.addAll(occurrences);
+      
+      debugPrint(
+        'RecurringTransactionProvider: Loaded ${_recurring.length} recurring, '
+        '${_occurrences.length} occurrences',
+      );
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Init error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
-    final occRows = await _db.getRecurringOccurrences();
-    for (final row in occRows) {
-      _occurrences.add(RecurringOccurrence.fromMap(row));
-    }
-    notifyListeners();
-    debugPrint(
-      'RecurringTransactionProvider: Loaded ${_recurring.length} recurring, '
-      '${_occurrences.length} occurrences',
-    );
   }
 
-  Future<void> reload() => init();
+  Future<void> reload() async {
+    debugPrint('RecurringTransactionProvider: Reloading...');
+    return init();
+  }
 
   String generateId() => _uuid.v4();
 
@@ -72,38 +99,81 @@ class RecurringTransactionProvider extends ChangeNotifier {
         : (_recurring.map((x) => x.sortOrder).reduce((a, b) => a > b ? a : b) +
               10);
     final updated = r.copyWith(sortOrder: sortOrder);
-    await _db.insertRecurringTransaction(updated.toMap());
+    
     _recurring.add(updated);
     notifyListeners();
+
+    try {
+      await _db.insertRecurringTransaction(updated);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error adding recurring: $e');
+      _recurring.removeWhere((item) => item.id == updated.id);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> updateRecurring(RecurringTransaction r) async {
-    await _db.updateRecurringTransaction(r.toMap());
     final idx = _recurring.indexWhere((x) => x.id == r.id);
-    if (idx != -1) {
-      _recurring[idx] = r;
+    if (idx == -1) return;
+
+    final oldRecurring = _recurring[idx];
+    _recurring[idx] = r;
+    notifyListeners();
+
+    try {
+      await _db.updateRecurringTransaction(r);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error updating recurring: $e');
+      _recurring[idx] = oldRecurring;
       notifyListeners();
+      rethrow;
     }
   }
 
   Future<void> deleteRecurring(String id) async {
-    await _db.deleteRecurringTransaction(id);
-    await _db.deleteOccurrencesByRecurring(id);
-    _recurring.removeWhere((r) => r.id == id);
+    final idx = _recurring.indexWhere((r) => r.id == id);
+    if (idx == -1) return;
+
+    final oldRecurring = _recurring[idx];
+    final oldOccurrences = _occurrences.where((o) => o.recurringId == id).toList();
+    
+    _recurring.removeAt(idx);
     _occurrences.removeWhere((o) => o.recurringId == id);
     notifyListeners();
+
+    try {
+      await _db.deleteRecurringTransaction(id);
+      await _db.deleteOccurrencesByRecurring(id);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error deleting recurring: $e');
+      _recurring.insert(idx, oldRecurring);
+      _occurrences.addAll(oldOccurrences);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> reorderRecurring(int oldIndex, int newIndex) async {
     if (newIndex > oldIndex) newIndex--;
+    
     final moved = _recurring.removeAt(oldIndex);
     _recurring.insert(newIndex, moved);
+    
     for (var i = 0; i < _recurring.length; i++) {
-      final updated = _recurring[i].copyWith(sortOrder: i * 10);
-      _recurring[i] = updated;
-      await _db.updateRecurringSortOrder(updated.id, i * 10);
+      _recurring[i] = _recurring[i].copyWith(sortOrder: i * 10);
     }
     notifyListeners();
+
+    try {
+      for (var i = 0; i < _recurring.length; i++) {
+        await _db.updateRecurringSortOrder(_recurring[i].id, i * 10);
+      }
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error reordering recurring: $e');
+      await reload();
+      rethrow;
+    }
   }
 
   // ── Occurrence management ──────────────────────────────────────────────────
@@ -113,7 +183,12 @@ class RecurringTransactionProvider extends ChangeNotifier {
     DateTime dueDate,
     String transactionId,
   ) async {
-    await _removeExistingOccurrence(recurringId, dueDate);
+    // Remove existing occurrence first
+    final existing = findOccurrence(recurringId, dueDate);
+    if (existing != null) {
+      _occurrences.removeWhere((o) => o.id == existing.id);
+    }
+
     final occ = RecurringOccurrence(
       id: generateId(),
       recurringId: recurringId,
@@ -121,9 +196,25 @@ class RecurringTransactionProvider extends ChangeNotifier {
       transactionId: transactionId,
       status: OccurrenceStatus.done,
     );
-    await _db.insertRecurringOccurrence(occ.toMap());
+    
     _occurrences.add(occ);
     notifyListeners();
+
+    try {
+      if (existing != null) {
+        await _db.deleteOccurrence(existing.id);
+      }
+      await _db.insertRecurringOccurrence(occ);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error marking occurrence done: $e');
+      _occurrences.removeWhere((o) => o.id == occ.id);
+      if (existing != null) {
+        _occurrences.add(existing);
+      }
+      notifyListeners();
+      rethrow;
+    }
+
     return occ;
   }
 
@@ -131,31 +222,52 @@ class RecurringTransactionProvider extends ChangeNotifier {
     String recurringId,
     DateTime dueDate,
   ) async {
-    await _removeExistingOccurrence(recurringId, dueDate);
+    // Remove existing occurrence first
+    final existing = findOccurrence(recurringId, dueDate);
+    if (existing != null) {
+      _occurrences.removeWhere((o) => o.id == existing.id);
+    }
+
     final occ = RecurringOccurrence(
       id: generateId(),
       recurringId: recurringId,
       dueDate: dueDate,
       status: OccurrenceStatus.skipped,
     );
-    await _db.insertRecurringOccurrence(occ.toMap());
+    
     _occurrences.add(occ);
     notifyListeners();
+
+    try {
+      if (existing != null) {
+        await _db.deleteOccurrence(existing.id);
+      }
+      await _db.insertRecurringOccurrence(occ);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error marking occurrence skipped: $e');
+      _occurrences.removeWhere((o) => o.id == occ.id);
+      if (existing != null) {
+        _occurrences.add(existing);
+      }
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> undoOccurrence(String recurringId, DateTime dueDate) async {
-    await _removeExistingOccurrence(recurringId, dueDate);
-    notifyListeners();
-  }
-
-  Future<void> _removeExistingOccurrence(
-    String recurringId,
-    DateTime dueDate,
-  ) async {
     final existing = findOccurrence(recurringId, dueDate);
-    if (existing != null) {
+    if (existing == null) return;
+
+    _occurrences.removeWhere((o) => o.id == existing.id);
+    notifyListeners();
+
+    try {
       await _db.deleteOccurrence(existing.id);
-      _occurrences.removeWhere((o) => o.id == existing.id);
+    } catch (e) {
+      debugPrint('RecurringTransactionProvider: Error undoing occurrence: $e');
+      _occurrences.add(existing);
+      notifyListeners();
+      rethrow;
     }
   }
 }

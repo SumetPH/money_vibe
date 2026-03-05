@@ -75,4 +75,30 @@ class AppTransaction {
       tags: parsedTags,
     );
   }
+
+  AppTransaction copyWith({
+    String? id,
+    TransactionType? type,
+    double? amount,
+    String? accountId,
+    String? categoryId,
+    bool clearCategoryId = false,
+    String? toAccountId,
+    bool clearToAccountId = false,
+    DateTime? dateTime,
+    String? note,
+    List<String>? tags,
+  }) {
+    return AppTransaction(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      accountId: accountId ?? this.accountId,
+      categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
+      toAccountId: clearToAccountId ? null : (toAccountId ?? this.toAccountId),
+      dateTime: dateTime ?? this.dateTime,
+      note: note ?? this.note,
+      tags: tags ?? this.tags,
+    );
+  }
 }

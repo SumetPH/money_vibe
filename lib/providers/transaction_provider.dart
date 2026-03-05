@@ -1,147 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../database/database_helper.dart';
+import '../repositories/database_repository.dart';
+import '../services/database_manager.dart';
 import '../models/transaction.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final _uuid = const Uuid();
-  final _db = DatabaseHelper.instance;
+  final DatabaseManager _dbManager = DatabaseManager();
 
   final List<AppTransaction> _transactions = [];
+  bool _isLoading = false;
 
-  // ── Seed data ─────────────────────────────────────────────────────────────
+  bool get isLoading => _isLoading;
 
-  // static List<AppTransaction> get _seedTransactions => [
-  //   // 28 Feb 2026
-  //   AppTransaction(
-  //     id: 'tx1',
-  //     type: TransactionType.income,
-  //     amount: 500,
-  //     accountId: 'acc_kbank_main',
-  //     categoryId: 'cat_laadin',
-  //     dateTime: DateTime(2026, 2, 28, 12, 37),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx2',
-  //     type: TransactionType.expense,
-  //     amount: 287,
-  //     accountId: 'acc_ktc_mc',
-  //     categoryId: 'cat_food',
-  //     dateTime: DateTime(2026, 2, 28, 12, 37),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx3',
-  //     type: TransactionType.expense,
-  //     amount: 130,
-  //     accountId: 'acc_cash',
-  //     categoryId: 'cat_food',
-  //     dateTime: DateTime(2026, 2, 28, 12, 4),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx4',
-  //     type: TransactionType.expense,
-  //     amount: 65,
-  //     accountId: 'acc_ktc_mc',
-  //     categoryId: 'cat_drink',
-  //     dateTime: DateTime(2026, 2, 28, 12, 3),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx5',
-  //     type: TransactionType.expense,
-  //     amount: 455,
-  //     accountId: 'acc_ktc_mc',
-  //     categoryId: 'cat_food',
-  //     dateTime: DateTime(2026, 2, 28, 12, 3),
-  //   ),
-  //   // 27 Feb 2026
-  //   AppTransaction(
-  //     id: 'tx6',
-  //     type: TransactionType.transfer,
-  //     amount: 4000,
-  //     accountId: 'acc_ktb_main',
-  //     toAccountId: 'acc_ktb_saving',
-  //     dateTime: DateTime(2026, 2, 27, 13, 56),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx7',
-  //     type: TransactionType.transfer,
-  //     amount: 15275.54,
-  //     accountId: 'acc_ktb_main',
-  //     toAccountId: 'acc_kbank_main',
-  //     dateTime: DateTime(2026, 2, 27, 13, 47),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx8',
-  //     type: TransactionType.debtRepay,
-  //     amount: 5859.89,
-  //     accountId: 'acc_ktb_main',
-  //     toAccountId: 'acc_ktc_mc',
-  //     dateTime: DateTime(2026, 2, 27, 13, 44),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx9',
-  //     type: TransactionType.debtRepay,
-  //     amount: 11103.54,
-  //     accountId: 'acc_kbank_main',
-  //     toAccountId: 'acc_kbank_visa',
-  //     dateTime: DateTime(2026, 2, 27, 13, 43),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx10',
-  //     type: TransactionType.debtRepay,
-  //     amount: 6638,
-  //     accountId: 'acc_kbank_main',
-  //     toAccountId: 'acc_car',
-  //     dateTime: DateTime(2026, 2, 27, 13, 43),
-  //   ),
-  //   AppTransaction(
-  //     id: 'tx11',
-  //     type: TransactionType.expense,
-  //     amount: 2500,
-  //     accountId: 'acc_kbank_main',
-  //     categoryId: 'cat_home',
-  //     dateTime: DateTime(2026, 2, 27, 13, 43),
-  //   ),
-  // ];
+  // ── Helper ────────────────────────────────────────────────────────────────
+
+  DatabaseRepository get _db => _dbManager.repository;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
-    final rows = await _db.getTransactions();
-    if (rows.isEmpty) {
-      // final seeds = _seedTransactions;
-      // for (final tx in seeds) {
-      //   await _db.insertTransaction(tx.toMap());
-      // }
-      // _transactions.addAll(seeds);
-    } else {
-      _transactions.addAll(rows.map(AppTransaction.fromMap));
+    _setLoading(true);
+    
+    try {
+      final transactions = await _db.getTransactions();
+      _transactions.clear();
+      _transactions.addAll(transactions);
+    } catch (e) {
+      debugPrint('TransactionProvider: Init error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  /// Reload transactions from database (used after restore)
+  /// Reload transactions from database (used after restore/mode switch)
   Future<void> reload() async {
     debugPrint('TransactionProvider: Reloading...');
-    _transactions.clear();
-    try {
-      final rows = await _db.getTransactions();
-      debugPrint(
-        'TransactionProvider: Loaded ${rows.length} transactions from DB',
-      );
-      for (final row in rows) {
-        try {
-          _transactions.add(AppTransaction.fromMap(row));
-        } catch (e) {
-          debugPrint('TransactionProvider: Error parsing transaction: $e');
-          debugPrint('TransactionProvider: Transaction data: $row');
-        }
-      }
-      notifyListeners();
-      debugPrint('TransactionProvider: Reload complete');
-    } catch (e) {
-      debugPrint('TransactionProvider: Reload failed: $e');
-      rethrow;
-    }
+    return init(); // Same logic
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -208,25 +109,54 @@ class TransactionProvider extends ChangeNotifier {
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
-  void addTransaction(AppTransaction tx) {
+  Future<void> addTransaction(AppTransaction tx) async {
     _transactions.add(tx);
     notifyListeners();
-    _db.insertTransaction(tx.toMap());
-  }
 
-  void updateTransaction(AppTransaction updated) {
-    final idx = _transactions.indexWhere((t) => t.id == updated.id);
-    if (idx != -1) {
-      _transactions[idx] = updated;
+    try {
+      await _db.insertTransaction(tx);
+    } catch (e) {
+      debugPrint('TransactionProvider: Error adding transaction: $e');
+      _transactions.removeWhere((t) => t.id == tx.id);
       notifyListeners();
-      _db.updateTransaction(updated.toMap());
+      rethrow;
     }
   }
 
-  void deleteTransaction(String id) {
-    _transactions.removeWhere((t) => t.id == id);
+  Future<void> updateTransaction(AppTransaction updated) async {
+    final idx = _transactions.indexWhere((t) => t.id == updated.id);
+    if (idx == -1) return;
+
+    final oldTx = _transactions[idx];
+    _transactions[idx] = updated;
     notifyListeners();
-    _db.deleteTransaction(id);
+
+    try {
+      await _db.updateTransaction(updated);
+    } catch (e) {
+      debugPrint('TransactionProvider: Error updating transaction: $e');
+      _transactions[idx] = oldTx;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    final idx = _transactions.indexWhere((t) => t.id == id);
+    if (idx == -1) return;
+
+    final oldTx = _transactions[idx];
+    _transactions.removeAt(idx);
+    notifyListeners();
+
+    try {
+      await _db.deleteTransaction(id);
+    } catch (e) {
+      debugPrint('TransactionProvider: Error deleting transaction: $e');
+      _transactions.insert(idx, oldTx);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   String generateId() => _uuid.v4();

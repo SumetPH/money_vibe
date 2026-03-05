@@ -133,8 +133,8 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     return ReorderableListView.builder(
       buildDefaultDragHandles: _isReorderMode,
       onReorder: _isReorderMode
-          ? (oldIndex, newIndex) {
-              catProvider.reorderCategories(type, oldIndex, newIndex);
+          ? (oldIndex, newIndex) async {
+              await catProvider.reorderCategories(type, oldIndex, newIndex);
             }
           : (_, _) {},
       proxyDecorator: (child, index, animation) {

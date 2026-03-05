@@ -7,6 +7,7 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/recurring_transaction_provider.dart';
+import 'services/database_manager.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
@@ -20,6 +21,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   debugPrint('Main: Starting app initialization...');
+
+  // Initialize DatabaseManager first (singleton)
+  final dbManager = DatabaseManager();
+  try {
+    debugPrint('Main: Initializing DatabaseManager...');
+    await dbManager.init();
+    debugPrint('Main: DatabaseManager initialized - Mode: ${dbManager.currentMode}');
+  } catch (e, stackTrace) {
+    debugPrint('Main: DatabaseManager init error: $e');
+    debugPrint('Main: Stack trace: $stackTrace');
+    // Continue anyway - will use SQLite as fallback
+  }
 
   final accountProvider = AccountProvider();
   final budgetProvider = BudgetProvider();
@@ -96,6 +109,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: transactionProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: recurringProvider),
+        // Add DatabaseManager as ChangeNotifierProvider for UI updates
+        ChangeNotifierProvider(create: (_) => DatabaseManager()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {

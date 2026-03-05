@@ -1,51 +1,55 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../database/database_helper.dart';
+import '../repositories/database_repository.dart';
+import '../services/database_manager.dart';
 import '../models/budget.dart';
 
 class BudgetProvider extends ChangeNotifier {
   final _uuid = const Uuid();
-  final _db = DatabaseHelper.instance;
+  final DatabaseManager _dbManager = DatabaseManager();
 
   final List<Budget> _budgets = [];
+  bool _isLoading = false;
 
+  bool get isLoading => _isLoading;
   List<Budget> get budgets => List.unmodifiable(_budgets);
+
+  // ── Helper ────────────────────────────────────────────────────────────────
+
+  DatabaseRepository get _db => _dbManager.repository;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     debugPrint('BudgetProvider: Initializing...');
-    debugPrint(
-      'BudgetProvider: Before clear - _budgets.length = ${_budgets.length}',
-    );
+    _setLoading(true);
+    
     try {
+      final budgets = await _db.getBudgets();
+      // Sort by sortOrder to ensure correct order
+      budgets.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _budgets.clear();
-      debugPrint(
-        'BudgetProvider: After clear - _budgets.length = ${_budgets.length}',
-      );
-      final rows = await _db.getBudgets();
-      debugPrint('BudgetProvider: Loaded ${rows.length} budgets from DB');
-      for (final row in rows) {
-        try {
-          _budgets.add(Budget.fromMap(row));
-        } catch (e) {
-          debugPrint('BudgetProvider: Error parsing budget: $e');
-          debugPrint('BudgetProvider: Budget data: $row');
-          rethrow;
-        }
-      }
-      debugPrint(
-        'BudgetProvider: After load - _budgets.length = ${_budgets.length}',
-      );
-      notifyListeners();
-      debugPrint('BudgetProvider: Init complete');
+      _budgets.addAll(budgets);
+      debugPrint('BudgetProvider: Loaded ${budgets.length} budgets');
     } catch (e) {
-      debugPrint('BudgetProvider: Init failed: $e');
+      debugPrint('BudgetProvider: Init error: $e');
       rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<void> reload() => init();
+  Future<void> reload() async {
+    debugPrint('BudgetProvider: Reloading...');
+    return init();
+  }
 
-  String generateId() => _uuid.v4();
+  // ── CRUD ──────────────────────────────────────────────────────────────────
 
   Future<void> addBudget(Budget budget) async {
     final sortOrder = _budgets.isEmpty
@@ -53,35 +57,77 @@ class BudgetProvider extends ChangeNotifier {
         : (_budgets.map((b) => b.sortOrder).reduce((a, b) => a > b ? a : b) +
               10);
     final b = budget.copyWith(sortOrder: sortOrder);
-    await _db.insertBudget(b.toMap());
+    
     _budgets.add(b);
     notifyListeners();
+
+    try {
+      await _db.insertBudget(b);
+    } catch (e) {
+      debugPrint('BudgetProvider: Error adding budget: $e');
+      _budgets.removeWhere((item) => item.id == b.id);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> updateBudget(Budget budget) async {
-    await _db.updateBudget(budget.toMap());
     final idx = _budgets.indexWhere((b) => b.id == budget.id);
-    if (idx != -1) {
-      _budgets[idx] = budget;
+    if (idx == -1) return;
+
+    final oldBudget = _budgets[idx];
+    _budgets[idx] = budget;
+    notifyListeners();
+
+    try {
+      await _db.updateBudget(budget);
+    } catch (e) {
+      debugPrint('BudgetProvider: Error updating budget: $e');
+      _budgets[idx] = oldBudget;
       notifyListeners();
+      rethrow;
     }
   }
 
   Future<void> deleteBudget(String id) async {
-    await _db.deleteBudget(id);
-    _budgets.removeWhere((b) => b.id == id);
+    final idx = _budgets.indexWhere((b) => b.id == id);
+    if (idx == -1) return;
+
+    final oldBudget = _budgets[idx];
+    _budgets.removeAt(idx);
     notifyListeners();
+
+    try {
+      await _db.deleteBudget(id);
+    } catch (e) {
+      debugPrint('BudgetProvider: Error deleting budget: $e');
+      _budgets.insert(idx, oldBudget);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> reorderBudgets(int oldIndex, int newIndex) async {
     if (newIndex > oldIndex) newIndex--;
+    
     final moved = _budgets.removeAt(oldIndex);
     _budgets.insert(newIndex, moved);
+    
     for (var i = 0; i < _budgets.length; i++) {
-      final updated = _budgets[i].copyWith(sortOrder: i * 10);
-      _budgets[i] = updated;
-      await _db.updateBudgetSortOrder(updated.id, i * 10);
+      _budgets[i] = _budgets[i].copyWith(sortOrder: i * 10);
     }
     notifyListeners();
+
+    try {
+      for (var i = 0; i < _budgets.length; i++) {
+        await _db.updateBudgetSortOrder(_budgets[i].id, i * 10);
+      }
+    } catch (e) {
+      debugPrint('BudgetProvider: Error reordering budgets: $e');
+      await reload();
+      rethrow;
+    }
   }
+
+  String generateId() => _uuid.v4();
 }
