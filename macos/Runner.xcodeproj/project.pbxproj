@@ -715,7 +715,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_NAME = "Money Vibe";
+				PRODUCT_BUNDLE_IDENTIFIER = app.sumetph.moneyvibe.debug;
+				PRODUCT_NAME = "Money Vibe (Dev)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
