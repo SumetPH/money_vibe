@@ -8,7 +8,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
 # Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
+# by specifying --build-name and --build-number, respectively.
 # In Android, build-name is used as versionName while build-number used as versionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
 # In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
@@ -25,7 +25,7 @@ environment:
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
 # dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
+# the latest versions available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.2
   supabase_flutter: ^2.3.4
+  flutter_native_splash: ^2.4.4
 
 dev_dependencies:
   flutter_test:
@@ -70,9 +71,9 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/splash_logo.png
+    - assets/images/splash_logo_dark.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -81,8 +82,8 @@ flutter:
   # https://flutter.dev/to/asset-from-package
 
   # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
+  # in this `flutter` section. Each entry in this list should have a
+  # `family` key with the font family name, and a `fonts` key with a
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
@@ -99,3 +100,33 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Flutter Native Splash Configuration
+flutter_native_splash:
+  # สีพื้นหลังสำหรับ Light Mode (สี header)
+  color: "#393E46"
+  # สีพื้นหลังสำหรับ Dark Mode (สี header ดำ)
+  color_dark: "#2C333A"
+  
+  # รูปภาพสำหรับ Splash Screen
+  image: assets/images/splash_logo.png
+  image_dark: assets/images/splash_logo_dark.png
+  
+  # ตั้งค่าให้ย่อ/ขยายรูปให้พอดีกับหน้าจอ
+  android: true
+  ios: true
+  web: true
+  
+  # ซ่อน Splash Screen อัตโนมัติเมื่อแอปพร้อม
+  fullscreen: true
+  
+  # ระยะเวลาแสดง Splash Screen (ms) - สำหรับทดสอบ
+  # duration: 2000
+  
+  android_12:
+    # สีพื้นหลังสำหรับ Android 12+
+    color: "#393E46"
+    color_dark: "#2C333A"
+    # ไอคอนสำหรับ Android 12+ (ใช้รูปเดิม)
+    image: assets/images/splash_logo.png
+    image_dark: assets/images/splash_logo_dark.png

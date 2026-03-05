@@ -11,6 +11,7 @@ import 'providers/recurring_transaction_provider.dart';
 import 'repositories/database_repository.dart';
 import 'screens/auth/auth_screen.dart';
 import 'services/database_manager.dart';
+import 'services/splash_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'screens/account/account_list_screen.dart';
@@ -21,7 +22,8 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/recurring/recurring_list_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize and preserve native splash screen
+  SplashService.initialize();
 
   debugPrint('Main: Starting app initialization...');
 
@@ -30,7 +32,9 @@ void main() async {
   try {
     debugPrint('Main: Initializing DatabaseManager...');
     await dbManager.init();
-    debugPrint('Main: DatabaseManager initialized - Mode: ${dbManager.currentMode}');
+    debugPrint(
+      'Main: DatabaseManager initialized - Mode: ${dbManager.currentMode}',
+    );
   } catch (e, stackTrace) {
     debugPrint('Main: DatabaseManager init error: $e');
     debugPrint('Main: Stack trace: $stackTrace');
@@ -49,14 +53,15 @@ void main() async {
     await Future.wait([
       _initProvider('Settings', settingsProvider.loadSettings),
     ]);
-    
+
     // Initialize AuthProvider หลังจาก DatabaseManager (Supabase) พร้อมแล้ว
     if (dbManager.currentMode == DatabaseMode.supabase) {
       await _initProvider('Auth', authProvider.init);
     }
-    
+
     // โหลดข้อมูลอื่นๆ ถ้าเป็น SQLite หรือถ้า Login แล้ว
-    if (dbManager.currentMode == DatabaseMode.sqlite || authProvider.isLoggedIn) {
+    if (dbManager.currentMode == DatabaseMode.sqlite ||
+        authProvider.isLoggedIn) {
       await Future.wait([
         _initProvider('Account', accountProvider.init),
         _initProvider('Budget', budgetProvider.init),
@@ -65,7 +70,7 @@ void main() async {
         _initProvider('Recurring', recurringProvider.init),
       ]);
     }
-    
+
     debugPrint('Main: All providers initialized successfully');
   } catch (e, stackTrace) {
     debugPrint('Main: Fatal error during initialization: $e');
@@ -84,6 +89,9 @@ void main() async {
       recurringProvider: recurringProvider,
     ),
   );
+
+  // Remove native splash screen after app is built
+  SplashService.remove();
 }
 
 Future<void> _initProvider(String name, Future<void> Function() initFn) async {
@@ -155,12 +163,12 @@ class MyApp extends StatelessWidget {
 
   Widget _buildHomeScreen(BuildContext context, AuthProvider authProvider) {
     final dbManager = DatabaseManager();
-    
+
     // ถ้าใช้ SQLite ให้ไปหน้าหลักเลย (ไม่ต้อง login)
     if (dbManager.currentMode == DatabaseMode.sqlite) {
       return const AccountListScreen();
     }
-    
+
     // ถ้าใช้ Supabase ต้องตรวจสอบว่า login หรือยัง
     if (dbManager.currentMode == DatabaseMode.supabase) {
       if (authProvider.isLoggedIn) {
@@ -169,13 +177,9 @@ class MyApp extends StatelessWidget {
         return const AuthScreen();
       }
     }
-    
+
     // กรณีอื่นๆ (loading, error) ให้แสดงหน้า loading
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 

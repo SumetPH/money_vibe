@@ -48,8 +48,23 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
     super.dispose();
   }
 
+  /// ตรวจสอบและเติม https:// ให้ URL ถ้าขาดไป
+  String _normalizeSupabaseUrl(String url) {
+    var normalized = url.trim();
+    if (normalized.isEmpty) return normalized;
+    // เติม https:// ถ้าไม่มี protocol
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    // ลบ / ท้ายสุดถ้ามี
+    if (normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
+  }
+
   Future<void> _testConnection() async {
-    final url = _urlController.text.trim();
+    final url = _normalizeSupabaseUrl(_urlController.text);
     final key = _keyController.text.trim();
 
     if (url.isEmpty || key.isEmpty) {
@@ -105,7 +120,7 @@ class _DatabaseSettingsScreenState extends State<DatabaseSettingsScreen> {
   }
 
   Future<void> _saveSupabaseConfig() async {
-    final url = _urlController.text.trim();
+    final url = _normalizeSupabaseUrl(_urlController.text);
     final key = _keyController.text.trim();
 
     if (url.isEmpty || key.isEmpty) {
