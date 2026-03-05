@@ -1014,7 +1014,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                 const SizedBox(height: 24),
 
                 // ========== SECTION: SUPABASE CONFIG ==========
-                if (!dbManager.isSqliteMode || dbManager.canUseSupabase) ...[
+                // แสดงเสมอเพื่อให้ผู้ใช้สามารถตั้งค่า Supabase ได้แม้ยังไม่มี config
+                ...[
                   _buildSectionTitle(
                     'ตั้งค่า Supabase',
                     textColor,
