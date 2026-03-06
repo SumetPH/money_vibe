@@ -91,7 +91,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     return txs
         .where(
           (tx) =>
-              tx.type == TransactionType.expense &&
+              (tx.type == TransactionType.expense ||
+                  tx.type == TransactionType.debtRepay) &&
               budget.categoryIds.contains(tx.categoryId) &&
               !tx.dateTime.isBefore(period.start) &&
               !tx.dateTime.isAfter(period.end),
@@ -830,7 +831,7 @@ class _BudgetItem extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'เหลือ ',
+                            _remaining >= -0.001 ? 'เหลือ ' : 'เกิน ',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
