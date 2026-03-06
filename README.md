@@ -1,4 +1,4 @@
-# money_flutter
+# money_vibe
 
 A new Flutter project.
 
