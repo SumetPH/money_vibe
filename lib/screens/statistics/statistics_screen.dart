@@ -1269,7 +1269,13 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: lineColor,
+                        color: currentNetWorth >= 0
+                            ? (isDarkMode
+                                  ? AppColors.darkIncome
+                                  : AppColors.income)
+                            : (isDarkMode
+                                  ? AppColors.darkExpense
+                                  : AppColors.expense),
                       ),
                     ),
                     const SizedBox(height: 8),
