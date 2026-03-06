@@ -1191,7 +1191,7 @@ class _NetWorthLineChart extends StatefulWidget {
 }
 
 class _NetWorthLineChartState extends State<_NetWorthLineChart> {
-  bool _includeExcluded = true;
+  bool _includeExcluded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1208,7 +1208,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
 
         final netWorthData = _calculateNetWorth(
           txProvider.transactions,
-          accountProvider.accounts,
+          accountProvider.visibleAccounts,
           accountProvider,
           includeExcluded: _includeExcluded,
         );
@@ -1645,14 +1645,16 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     }
 
     // Convert to list
+    final now = DateTime.now();
+    final currentMonthKey = monthKey(now);
     final result = monthlyNetWorth.entries.map((entry) {
       final parts = entry.key.split('-');
       final year = int.parse(parts[0]);
       final month = int.parse(parts[1]);
-      return _NetWorthData(
-        date: DateTime(year, month, 1),
-        netWorth: entry.value + portfolioValue,
-      );
+      final date = entry.key == currentMonthKey
+          ? now
+          : DateTime(year, month, 1);
+      return _NetWorthData(date: date, netWorth: entry.value + portfolioValue);
     }).toList();
 
     result.sort((a, b) => a.date.compareTo(b.date));

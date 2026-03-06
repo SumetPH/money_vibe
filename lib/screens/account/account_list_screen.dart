@@ -47,7 +47,11 @@ class _AccountListScreenState extends State<AccountListScreen> {
           final transactions = txProvider.transactions;
           final accounts = accountProvider.visibleAccounts;
           final isReorderMode = _isReorderMode;
-          final netWorth = accountProvider.getTotalNetWorth(transactions);
+          final filterIds = settingsProvider.netWorthFilterIds;
+          final netWorth = accountProvider.getTotalNetWorth(
+            transactions,
+            filterIds: filterIds,
+          );
           final groupTotals = accountProvider.getGroupTotals(transactions);
 
           // Group accounts by display group
@@ -87,6 +91,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         iconColor: const Color(0xFFFFB300),
                         isTopLevel: true,
                         isDarkMode: isDarkMode,
+                        accounts: accountProvider.visibleAccounts
+                            .where((a) => !a.excludeFromNetWorth)
+                            .toList(),
+                        filterIds: filterIds,
                       ),
                     ],
                   ),
@@ -311,6 +319,8 @@ class _TotalRow extends StatelessWidget {
   final Color iconColor;
   final bool isTopLevel;
   final bool isDarkMode;
+  final List<Account> accounts;
+  final Set<String>? filterIds;
 
   const _TotalRow({
     required this.label,
@@ -319,6 +329,8 @@ class _TotalRow extends StatelessWidget {
     required this.iconColor,
     this.isTopLevel = false,
     required this.isDarkMode,
+    required this.accounts,
+    required this.filterIds,
   });
 
   @override
@@ -371,11 +383,20 @@ class _TotalRow extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: textSecondaryColor, size: 20),
-            onPressed: () => _showTotalMenu(context),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.more_horiz,
+                  color: textSecondaryColor,
+                  size: 20,
+                ),
+                onPressed: () => _showTotalMenu(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
         ],
       ),
@@ -410,20 +431,53 @@ class _TotalRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
-                  leading: Icon(Icons.info_outline, color: textColor),
+                  leading: Icon(Icons.filter_list, color: textColor),
                   title: Text(
-                    'รายละเอียดทรัพย์สิน',
+                    'เลือก account ที่คำนวณ',
                     style: TextStyle(color: textColor),
                   ),
-                  onTap: () => Navigator.pop(context),
+                  trailing: filterIds != null
+                      ? Text(
+                          '${filterIds!.length}/${accounts.length}',
+                          style: TextStyle(
+                            color: const Color(0xFFFFB300),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showNetWorthFilterSheet(context, settingsProvider);
+                  },
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showNetWorthFilterSheet(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      isScrollControlled: true,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _NetWorthFilterSheet(
+        accounts: accounts,
+        filterIds: filterIds,
+        isDarkMode: isDarkMode,
+        onSave: (selected) => settingsProvider.setNetWorthFilterIds(selected),
       ),
     );
   }
@@ -618,6 +672,223 @@ class _AccountItem extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _NetWorthFilterSheet extends StatefulWidget {
+  final List<Account> accounts;
+  final Set<String>? filterIds;
+  final bool isDarkMode;
+  final Future<void> Function(Set<String>?) onSave;
+
+  const _NetWorthFilterSheet({
+    required this.accounts,
+    required this.filterIds,
+    required this.isDarkMode,
+    required this.onSave,
+  });
+
+  @override
+  State<_NetWorthFilterSheet> createState() => _NetWorthFilterSheetState();
+}
+
+class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // null = all selected
+    _selected = widget.filterIds != null
+        ? Set.from(widget.filterIds!)
+        : widget.accounts.map((a) => a.id).toSet();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = widget.isDarkMode;
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final handleColor = isDarkMode
+        ? AppColors.darkDivider
+        : Colors.grey.shade300;
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    final allIds = widget.accounts.map((a) => a.id).toSet();
+    final isAllSelected = _selected.containsAll(allIds);
+
+    // Group accounts
+    const groupOrder = ['ลงทุน', 'เงินสด / เงินฝาก', 'บัตรเครดิต', 'หนี้สิน'];
+    final Map<String, List<Account>> grouped = {};
+    for (final a in widget.accounts) {
+      grouped.putIfAbsent(accountTypeDisplayGroup(a.type), () => []).add(a);
+    }
+
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, scrollController) => Column(
+          children: [
+            Container(
+              color: bgColor,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'เลือก account ที่คำนวณยอดรวม',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textPrimary,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (isAllSelected) {
+                                _selected.clear();
+                              } else {
+                                _selected = Set.from(allIds);
+                              }
+                            });
+                          },
+                          child: Text(
+                            isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
+                            style: const TextStyle(color: Color(0xFFFFB300)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: dividerColor),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  for (final groupName in groupOrder)
+                    if (grouped.containsKey(groupName)) ...[
+                      Container(
+                        color: isDarkMode
+                            ? AppColors.darkBackground
+                            : AppColors.background,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          groupName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: textSecondary,
+                          ),
+                        ),
+                      ),
+                      for (final account in grouped[groupName]!)
+                        CheckboxListTile(
+                          tileColor: bgColor,
+                          value: _selected.contains(account.id),
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked == true) {
+                                _selected.add(account.id);
+                              } else {
+                                _selected.remove(account.id);
+                              }
+                            });
+                          },
+                          secondary: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: account.color.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              account.icon,
+                              color: account.color,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            account.name,
+                            style: TextStyle(color: textPrimary, fontSize: 15),
+                          ),
+                          activeColor: const Color(0xFFFFB300),
+                          checkColor: Colors.black,
+                          controlAffinity: ListTileControlAffinity.trailing,
+                        ),
+                      Divider(height: 1, color: dividerColor),
+                    ],
+                ],
+              ),
+            ),
+            Container(
+              color: bgColor,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFB300),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    // If all selected → save null (no filter)
+                    final saveValue =
+                        _selected.containsAll(allIds) &&
+                            allIds.containsAll(_selected)
+                        ? null
+                        : _selected.isEmpty
+                        ? <String>{}
+                        : _selected;
+                    await widget.onSave(saveValue);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'บันทึก',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

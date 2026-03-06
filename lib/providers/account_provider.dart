@@ -140,10 +140,16 @@ class AccountProvider extends ChangeNotifier {
     return balance;
   }
 
-  double getTotalNetWorth(List<AppTransaction> transactions) {
+  double getTotalNetWorth(
+    List<AppTransaction> transactions, {
+    Set<String>? filterIds,
+  }) {
     return _accounts
         .where(
-          (a) => !a.excludeFromNetWorth && (_showHiddenAccounts || !a.isHidden),
+          (a) =>
+              !a.excludeFromNetWorth &&
+              (_showHiddenAccounts || !a.isHidden) &&
+              (filterIds == null || filterIds.contains(a.id)),
         )
         .fold(0.0, (sum, a) => sum + getBalance(a.id, transactions));
   }
