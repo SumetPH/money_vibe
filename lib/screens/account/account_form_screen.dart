@@ -578,7 +578,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   Widget _buildDivider({required Color color}) =>
-      Divider(height: 1, indent: 16, color: color);
+      Divider(height: 1, color: color);
 
   Widget _buildStatementDayPicker({
     required Color surfaceColor,

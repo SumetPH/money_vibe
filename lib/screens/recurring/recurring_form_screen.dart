@@ -289,7 +289,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   style: TextStyle(fontSize: 15, color: textPrimary),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Amount ────────────────────────────────────────────────────
               Container(
@@ -331,7 +331,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 textSecondary: textSecondary,
                 onTap: () => _pickType(isDark),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Account ───────────────────────────────────────────────────
               _RowTile(
@@ -342,7 +342,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 onTap: () =>
                     _pickAccount(accounts, isDark, isDestination: false),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── To Account (transfer only) ────────────────────────────────
               if (_type == TransactionType.transfer) ...[
@@ -354,7 +354,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   onTap: () =>
                       _pickAccount(accounts, isDark, isDestination: true),
                 ),
-                Divider(height: 1, indent: 16, color: dividerColor),
+                Divider(height: 1, color: dividerColor),
               ],
 
               // ── Debt Account (debtRepay only) ─────────────────────────────
@@ -366,7 +366,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   textSecondary: textSecondary,
                   onTap: () => _pickDebtAccount(accountProvider, isDark),
                 ),
-                Divider(height: 1, indent: 16, color: dividerColor),
+                Divider(height: 1, color: dividerColor),
               ],
 
               // ── Category (non-transfer) ────────────────────────────────────
@@ -378,7 +378,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   textSecondary: textSecondary,
                   onTap: () => _pickCategory(categories, isDark),
                 ),
-                Divider(height: 1, indent: 16, color: dividerColor),
+                Divider(height: 1, color: dividerColor),
               ],
 
               // ── Day of month ──────────────────────────────────────────────
@@ -389,7 +389,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 textSecondary: textSecondary,
                 onTap: () => _pickDayOfMonth(isDark),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Month start ────────────────────────────────────────────────
               InkWell(
@@ -417,7 +417,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Month end (optional) ───────────────────────────────────────
               InkWell(
@@ -463,7 +463,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
               // ── Icon ──────────────────────────────────────────────────────
               InkWell(
                 onTap: () => _pickIcon(isDark),
@@ -495,7 +495,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Color ─────────────────────────────────────────────────────
               InkWell(
@@ -527,7 +527,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
 
               // ── Note ──────────────────────────────────────────────────────
               const SizedBox(height: 8),
@@ -746,7 +746,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                                 Navigator.pop(context);
                               },
                             ),
-                            Divider(height: 1, indent: 68, color: dividerColor),
+                            Divider(height: 1, color: dividerColor),
                           ],
                         );
                       }),
@@ -885,7 +885,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                                 Navigator.pop(context);
                               },
                             ),
-                            Divider(height: 1, indent: 68, color: dividerColor),
+                            Divider(height: 1, color: dividerColor),
                           ],
                         );
                       }),
@@ -954,13 +954,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 Navigator.pop(context);
               },
             ),
-            Divider(height: 1, indent: 68, color: dividerColor),
+            Divider(height: 1, color: dividerColor),
             Expanded(
               child: ListView.separated(
                 controller: sc,
                 itemCount: categories.length,
                 separatorBuilder: (context, i) =>
-                    Divider(height: 1, indent: 68, color: dividerColor),
+                    Divider(height: 1, color: dividerColor),
                 itemBuilder: (_, i) {
                   final cat = categories[i];
                   final isSelected = _categoryId == cat.id;

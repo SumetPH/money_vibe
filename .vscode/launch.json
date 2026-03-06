@@ -7,6 +7,16 @@
       "type": "dart"
     },
     {
+      "name": "Debug (Dev Web)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": [
+        "--web-port=8080",
+        "--web-browser-flag=--user-data-dir=/Users/sumetph/.flutter-chrome-profile"
+      ]
+    },
+    {
       "name": "Release (Production App)",
       "request": "launch",
       "type": "dart",

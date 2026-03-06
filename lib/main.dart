@@ -21,6 +21,7 @@ import 'screens/category/category_list_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/recurring/recurring_list_screen.dart';
+import 'screens/statistics/statistics_screen.dart';
 
 void main() async {
   // Initialize and preserve native splash screen
@@ -151,6 +152,7 @@ class MyApp extends StatelessWidget {
               '/recurring': (_) => const RecurringListScreen(),
               '/categories': (_) => const CategoryListScreen(),
               '/settings': (_) => const SettingsScreen(),
+              '/statistics': (_) => const StatisticsScreen(),
             },
           );
         },

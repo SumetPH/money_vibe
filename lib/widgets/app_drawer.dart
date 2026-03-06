@@ -152,8 +152,8 @@ class AppDrawer extends StatelessWidget {
                     _DrawerItem(
                       icon: Icons.pie_chart_outline,
                       label: 'สถิติ',
-                      selected: false,
-                      onTap: () => Navigator.pop(context),
+                      selected: currentRoute == '/statistics',
+                      onTap: () => _navigate(context, '/statistics'),
                       selectedColor: selectedColor,
                       unselectedColor: drawerItemSecondaryColor,
                       selectedTileColor: selectedTileColor,

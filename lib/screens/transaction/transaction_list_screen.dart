@@ -139,8 +139,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                   if (index < txs.length - 1)
                                     Divider(
                                       height: 1,
-                                      indent: 52,
-                                      endIndent: 12,
                                       color: isDarkMode
                                           ? AppColors.darkDivider
                                           : AppColors.divider,

@@ -334,9 +334,7 @@ class _SetupScreenState extends State<SetupScreen> {
               // Help text
               Center(
                 child: TextButton.icon(
-                  onPressed: () {
-                    // TODO: Open help URL
-                  },
+                  onPressed: () {},
                   icon: const Icon(Icons.help_outline, size: 16),
                   label: const Text('วิธีการตั้งค่า Supabase'),
                 ),

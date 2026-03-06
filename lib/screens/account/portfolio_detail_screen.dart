@@ -1077,7 +1077,7 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
                 style: TextStyle(fontSize: 15, color: textColor),
               ),
             ),
-            Divider(height: 1, indent: 16, color: dividerColor),
+            Divider(height: 1, color: dividerColor),
             _FormRow(
               label: 'ชื่อบริษัท',
               labelColor: textSecondaryColor,
@@ -1100,7 +1100,7 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
                 style: TextStyle(fontSize: 15, color: textColor),
               ),
             ),
-            Divider(height: 1, indent: 16, color: dividerColor),
+            Divider(height: 1, color: dividerColor),
             _FormRow(
               label: 'จำนวนหุ้น',
               labelColor: textSecondaryColor,
@@ -1130,7 +1130,7 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
                 style: TextStyle(fontSize: 15, color: textColor),
               ),
             ),
-            Divider(height: 1, indent: 16, color: dividerColor),
+            Divider(height: 1, color: dividerColor),
             _FormRow(
               label: 'ราคาทุน (USD)',
               labelColor: textSecondaryColor,
@@ -1160,7 +1160,7 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
                 style: TextStyle(fontSize: 15, color: textColor),
               ),
             ),
-            const Divider(height: 1, indent: 16),
+            const Divider(height: 1),
             _FormRow(
               label: 'ราคาปัจจุบัน (USD)',
               labelColor: textSecondaryColor,

@@ -865,11 +865,7 @@ class _BudgetItem extends StatelessWidget {
             ),
           ),
         ),
-        Divider(
-          height: 1,
-          indent: isReorderMode ? 68 : 72,
-          color: dividerColor,
-        ),
+        Divider(height: 1, color: dividerColor),
       ],
     );
   }

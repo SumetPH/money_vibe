@@ -219,7 +219,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   style: TextStyle(fontSize: 15, color: textPrimary),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
               // Amount
               Container(
                 color: surfaceColor,
@@ -296,7 +296,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
               // Icon
               InkWell(
                 onTap: () => _pickIcon(isDark),
@@ -332,7 +332,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   ),
                 ),
               ),
-              Divider(height: 1, indent: 16, color: dividerColor),
+              Divider(height: 1, color: dividerColor),
               // Color
               InkWell(
                 onTap: () => _pickColor(isDark),

@@ -88,11 +88,11 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
         unselectedFontSize: 12,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.arrow_downward),
+            icon: Icon(Icons.arrow_upward),
             label: 'รายจ่าย',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.arrow_upward),
+            icon: Icon(Icons.arrow_downward),
             label: 'รายรับ',
           ),
         ],
@@ -351,11 +351,7 @@ class _CategoryItem extends StatelessWidget {
             ),
           ),
         ),
-        Divider(
-          indent: isReorderMode ? 100 : 72,
-          height: 1,
-          color: dividerColor,
-        ),
+        Divider(height: 1, color: dividerColor),
       ],
     );
   }

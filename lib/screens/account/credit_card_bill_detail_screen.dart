@@ -92,129 +92,129 @@ class _CreditCardBillDetailScreenState
             top: false,
             child: Column(
               children: [
-              // Summary Card
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    _buildSummaryRow(
-                      bill.isOpen ? 'ยอดใช้จ่ายถึงวันนี้' : 'ยอดใช้จ่ายในรอบ',
-                      bill.expensesAmount,
-                      isDarkMode,
-                      textPrimaryColor,
-                      textSecondaryColor,
-                    ),
-                    if (bill.carriedOverAmount != 0)
-                      _buildSummaryRowWithSign(
-                        bill.carriedOverAmount > 0
-                            ? 'ยอดค้างยกมาจากรอบก่อน'
-                            : 'ยอดชำระเกินยกมา',
-                        bill.carriedOverAmount,
+                // Summary Card
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildSummaryRow(
+                        bill.isOpen ? 'ยอดใช้จ่ายถึงวันนี้' : 'ยอดใช้จ่ายในรอบ',
+                        bill.expensesAmount,
                         isDarkMode,
                         textPrimaryColor,
                         textSecondaryColor,
                       ),
-                    Divider(height: 24, color: dividerColor),
-                    _buildSummaryRow(
-                      bill.isOpen ? 'ยอดสะสมถึงวันนี้' : 'ยอดที่ต้องชำระรวม',
-                      bill.totalAmount,
-                      isDarkMode,
-                      textPrimaryColor,
-                      textSecondaryColor,
-                      isBold: true,
-                      valueColor: bill.totalAmount == 0
-                          ? AppColors.getAmountColor(0, isDarkMode)
-                          : AppColors.getAmountColor(-1, isDarkMode),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow(
-                      'ชำระแล้ว',
-                      bill.paidAmount,
-                      isDarkMode,
-                      textPrimaryColor,
-                      textSecondaryColor,
-                      valueColor: bill.paidAmount == 0
-                          ? AppColors.getAmountColor(0, isDarkMode)
-                          : AppColors.getAmountColor(1, isDarkMode),
-                      isBold: true,
-                    ),
-                    Divider(height: 24, color: dividerColor),
-                    _buildSummaryRow(
-                      bill.remainingAmount > 0
-                          ? 'คงเหลือที่ต้องชำระ'
-                          : 'ชำระเกิน',
-                      bill.remainingAmount.abs(),
-                      isDarkMode,
-                      textPrimaryColor,
-                      textSecondaryColor,
-                      isBold: true,
-                      valueColor: bill.remainingAmount == 0
-                          ? AppColors.getAmountColor(0, isDarkMode)
-                          : bill.remainingAmount > 0
-                          ? AppColors.getAmountColor(-1, isDarkMode)
-                          : AppColors.getAmountColor(1, isDarkMode),
-                    ),
-                  ],
-                ),
-              ),
-              // Transactions
-              Expanded(
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      Container(
-                        color: surfaceColor,
-                        child: TabBar(
-                          indicatorColor: isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income,
-                          labelColor: textPrimaryColor,
-                          unselectedLabelColor: textSecondaryColor,
-                          tabs: [
-                            Tab(
-                              text: 'รายการใช้จ่าย (${bill.expenses.length})',
-                            ),
-                            Tab(text: 'รายการชำระ (${bill.payments.length})'),
-                          ],
+                      if (bill.carriedOverAmount != 0)
+                        _buildSummaryRowWithSign(
+                          bill.carriedOverAmount > 0
+                              ? 'ยอดค้างยกมาจากรอบก่อน'
+                              : 'ยอดชำระเกินยกมา',
+                          bill.carriedOverAmount,
+                          isDarkMode,
+                          textPrimaryColor,
+                          textSecondaryColor,
                         ),
+                      Divider(height: 24, color: dividerColor),
+                      _buildSummaryRow(
+                        bill.isOpen ? 'ยอดสะสมถึงวันนี้' : 'ยอดที่ต้องชำระรวม',
+                        bill.totalAmount,
+                        isDarkMode,
+                        textPrimaryColor,
+                        textSecondaryColor,
+                        isBold: true,
+                        valueColor: bill.totalAmount == 0
+                            ? AppColors.getAmountColor(0, isDarkMode)
+                            : AppColors.getAmountColor(-1, isDarkMode),
                       ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildGroupedTransactionList(
-                              bill.expenses,
-                              isDarkMode,
-                              surfaceColor,
-                              textPrimaryColor,
-                              textSecondaryColor,
-                              accountProvider,
-                              catProvider,
-                              true,
-                            ),
-                            _buildGroupedTransactionList(
-                              bill.payments,
-                              isDarkMode,
-                              surfaceColor,
-                              textPrimaryColor,
-                              textSecondaryColor,
-                              accountProvider,
-                              catProvider,
-                              false,
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 12),
+                      _buildSummaryRow(
+                        'ชำระแล้ว',
+                        bill.paidAmount,
+                        isDarkMode,
+                        textPrimaryColor,
+                        textSecondaryColor,
+                        valueColor: bill.paidAmount == 0
+                            ? AppColors.getAmountColor(0, isDarkMode)
+                            : AppColors.getAmountColor(1, isDarkMode),
+                        isBold: true,
+                      ),
+                      Divider(height: 24, color: dividerColor),
+                      _buildSummaryRow(
+                        bill.remainingAmount > 0
+                            ? 'คงเหลือที่ต้องชำระ'
+                            : 'ชำระเกิน',
+                        bill.remainingAmount.abs(),
+                        isDarkMode,
+                        textPrimaryColor,
+                        textSecondaryColor,
+                        isBold: true,
+                        valueColor: bill.remainingAmount == 0
+                            ? AppColors.getAmountColor(0, isDarkMode)
+                            : bill.remainingAmount > 0
+                            ? AppColors.getAmountColor(-1, isDarkMode)
+                            : AppColors.getAmountColor(1, isDarkMode),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                // Transactions
+                Expanded(
+                  child: DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        Container(
+                          color: surfaceColor,
+                          child: TabBar(
+                            indicatorColor: isDarkMode
+                                ? AppColors.darkIncome
+                                : AppColors.income,
+                            labelColor: textPrimaryColor,
+                            unselectedLabelColor: textSecondaryColor,
+                            tabs: [
+                              Tab(
+                                text: 'รายการใช้จ่าย (${bill.expenses.length})',
+                              ),
+                              Tab(text: 'รายการชำระ (${bill.payments.length})'),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildGroupedTransactionList(
+                                bill.expenses,
+                                isDarkMode,
+                                surfaceColor,
+                                textPrimaryColor,
+                                textSecondaryColor,
+                                accountProvider,
+                                catProvider,
+                                true,
+                              ),
+                              _buildGroupedTransactionList(
+                                bill.payments,
+                                isDarkMode,
+                                surfaceColor,
+                                textPrimaryColor,
+                                textSecondaryColor,
+                                accountProvider,
+                                catProvider,
+                                false,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -422,8 +422,6 @@ class _CreditCardBillDetailScreenState
                   if (txIndex < txs.length - 1)
                     Divider(
                       height: 1,
-                      indent: 52,
-                      endIndent: 12,
                       color: isDarkMode
                           ? AppColors.darkDivider
                           : AppColors.divider,

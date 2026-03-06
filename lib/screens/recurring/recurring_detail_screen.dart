@@ -358,311 +358,320 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
           body: SafeArea(
             top: false,
             child: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-              // ── Header card ──────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: recurring.color.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                // ── Header card ──────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: surfaceColor,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: recurring.color.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                recurring.icon,
+                                color: recurring.color,
+                                size: 26,
+                              ),
                             ),
-                            child: Icon(
-                              recurring.icon,
-                              color: recurring.color,
-                              size: 26,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  recurring.name,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    _TypeBadge(
-                                      label: recurring.transactionType.label,
-                                      color: typeColor,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    recurring.name,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: textPrimary,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      formatAmount(recurring.amount),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      _TypeBadge(
+                                        label: recurring.transactionType.label,
                                         color: typeColor,
                                       ),
-                                    ),
-                                    Text(
-                                      ' บาท',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: textSecondary,
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        formatAmount(recurring.amount),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: typeColor,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      Text(
+                                        ' บาท',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Divider(height: 1, color: dividerColor),
-                      const SizedBox(height: 12),
-                      // Details grid
-                      _DetailRow(
-                        label: 'บัญชี',
-                        value: account?.name ?? '-',
-                        icon: account?.icon ?? Icons.account_balance_wallet,
-                        iconColor: account?.color ?? textSecondary,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                      ),
-                      if (toAccount != null) ...[
-                        const SizedBox(height: 6),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Divider(height: 1, color: dividerColor),
+                        const SizedBox(height: 12),
+                        // Details grid
                         _DetailRow(
-                          label: 'บัญชีปลายทาง',
-                          value: toAccount.name,
-                          icon: toAccount.icon,
-                          iconColor: toAccount.color,
+                          label: 'บัญชี',
+                          value: account?.name ?? '-',
+                          icon: account?.icon ?? Icons.account_balance_wallet,
+                          iconColor: account?.color ?? textSecondary,
                           textPrimary: textPrimary,
                           textSecondary: textSecondary,
                         ),
-                      ],
-                      if (category != null) ...[
-                        const SizedBox(height: 6),
-                        _DetailRow(
-                          label: 'หมวดหมู่',
-                          value: category.name,
-                          icon: category.icon,
-                          iconColor: category.color,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            'ทุกวันที่ ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: textSecondary,
-                            ),
-                          ),
-                          Text(
-                            recurring.dayOfMonth == 0
-                                ? 'สิ้นเดือน'
-                                : '${recurring.dayOfMonth} ของเดือน',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textPrimary,
-                            ),
+                        if (toAccount != null) ...[
+                          const SizedBox(height: 6),
+                          _DetailRow(
+                            label: 'บัญชีปลายทาง',
+                            value: toAccount.name,
+                            icon: toAccount.icon,
+                            iconColor: toAccount.color,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            'เริ่ม ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: textSecondary,
-                            ),
+                        if (category != null) ...[
+                          const SizedBox(height: 6),
+                          _DetailRow(
+                            label: 'หมวดหมู่',
+                            value: category.name,
+                            icon: category.icon,
+                            iconColor: category.color,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
                           ),
-                          Text(
-                            _formatMonthYear(recurring.startDate),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textPrimary,
-                            ),
-                          ),
-                          if (recurring.endDate != null) ...[
+                        ],
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
                             Text(
-                              '  ถึง  ',
+                              'ทุกวันที่ ',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: textSecondary,
                               ),
                             ),
                             Text(
-                              _formatMonthYear(recurring.endDate!),
+                              recurring.dayOfMonth == 0
+                                  ? 'สิ้นเดือน'
+                                  : '${recurring.dayOfMonth} ของเดือน',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: textPrimary,
                               ),
                             ),
-                          ] else
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
                             Text(
-                              '  (ต่อเนื่อง)',
+                              'เริ่ม ',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: textSecondary,
                               ),
                             ),
+                            Text(
+                              _formatMonthYear(recurring.startDate),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                            if (recurring.endDate != null) ...[
+                              Text(
+                                '  ถึง  ',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: textSecondary,
+                                ),
+                              ),
+                              Text(
+                                _formatMonthYear(recurring.endDate!),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimary,
+                                ),
+                              ),
+                            ] else
+                              Text(
+                                '  (ต่อเนื่อง)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (recurring.note != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            recurring.note!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondary,
+                            ),
+                          ),
                         ],
-                      ),
-                      if (recurring.note != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          recurring.note!,
-                          style: TextStyle(fontSize: 13, color: textSecondary),
+                        // ── Summary ───────────────────────────────────────────
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: dividerColor),
+                        const SizedBox(height: 12),
+                        _RemainingSummary(
+                          upcoming: upcoming,
+                          past: past,
+                          recurring: recurring,
+                          recurProvider: recurProvider,
+                          isDark: isDark,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          typeColor: typeColor,
+                          hasEndDate: recurring.endDate != null,
                         ),
                       ],
-                      // ── Summary ───────────────────────────────────────────
-                      const SizedBox(height: 12),
-                      Divider(height: 1, color: dividerColor),
-                      const SizedBox(height: 12),
-                      _RemainingSummary(
-                        upcoming: upcoming,
-                        past: past,
-                        recurring: recurring,
-                        recurProvider: recurProvider,
-                        isDark: isDark,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        typeColor: typeColor,
-                        hasEndDate: recurring.endDate != null,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              // ── Tab bar ──────────────────────────────────────────────────
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SliverTabBarDelegate(
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: textPrimary,
-                    unselectedLabelColor: textSecondary,
-                    indicatorColor: typeColor,
-                    tabs: [
-                      Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
-                      Tab(text: 'รายการที่ผ่านมา (${past.length})'),
-                    ],
+                // ── Tab bar ──────────────────────────────────────────────────
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverTabBarDelegate(
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: textPrimary,
+                      unselectedLabelColor: textSecondary,
+                      indicatorColor: typeColor,
+                      tabs: [
+                        Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
+                        Tab(text: 'รายการที่ผ่านมา (${past.length})'),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                // ── Upcoming tab ─────────────────────────────────────────
-                upcoming.isEmpty
-                    ? _EmptyState(
-                        message: 'ไม่มีรายการที่จะเกิดขึ้น',
-                        isDark: isDark,
-                      )
-                    : ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: upcoming.length,
-                        itemBuilder: (context, i) {
-                          final date = upcoming[i];
-                          final occ = recurProvider.findOccurrence(
-                            recurring.id,
-                            date,
-                          );
-                          final linkedTx = occ?.transactionId != null
-                              ? txProvider.transactions
-                                    .where((t) => t.id == occ!.transactionId)
-                                    .firstOrNull
-                              : null;
-                          return _OccurrenceItem(
-                            date: date,
-                            occurrence: occ,
-                            linkedTransaction: linkedTx,
-                            recurring: recurring,
-                            isDark: isDark,
-                            surfaceColor: surfaceColor,
-                            textPrimary: textPrimary,
-                            textSecondary: textSecondary,
-                            dividerColor: dividerColor,
-                            typeColor: typeColor,
-                            formatDate: _formatDateLong,
-                            onCreateTap: () =>
-                                _createTransaction(context, date, isDark),
-                            onSkipTap: () =>
-                                _skipOccurrence(context, date, isDark),
-                            onUndoTap: () =>
-                                _undoOccurrence(context, date, isDark),
-                            onEditTap: linkedTx != null
-                                ? () =>
-                                      _editTransaction(context, linkedTx, date)
-                                : null,
-                          );
-                        },
-                      ),
-                // ── Past tab ─────────────────────────────────────────────
-                past.isEmpty
-                    ? _EmptyState(
-                        message: 'ไม่มีรายการที่ผ่านมา',
-                        isDark: isDark,
-                      )
-                    : ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: past.length,
-                        itemBuilder: (context, i) {
-                          final date = past[i];
-                          final occ = recurProvider.findOccurrence(
-                            recurring.id,
-                            date,
-                          );
-                          final linkedTx = occ?.transactionId != null
-                              ? txProvider.transactions
-                                    .where((t) => t.id == occ!.transactionId)
-                                    .firstOrNull
-                              : null;
-                          return _OccurrenceItem(
-                            date: date,
-                            occurrence: occ,
-                            linkedTransaction: linkedTx,
-                            recurring: recurring,
-                            isDark: isDark,
-                            surfaceColor: surfaceColor,
-                            textPrimary: textPrimary,
-                            textSecondary: textSecondary,
-                            dividerColor: dividerColor,
-                            typeColor: typeColor,
-                            formatDate: _formatDateLong,
-                            onCreateTap: () =>
-                                _createTransaction(context, date, isDark),
-                            onSkipTap: () =>
-                                _skipOccurrence(context, date, isDark),
-                            onUndoTap: () =>
-                                _undoOccurrence(context, date, isDark),
-                            onEditTap: linkedTx != null
-                                ? () =>
-                                      _editTransaction(context, linkedTx, date)
-                                : null,
-                          );
-                        },
-                      ),
               ],
-            ),
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  // ── Upcoming tab ─────────────────────────────────────────
+                  upcoming.isEmpty
+                      ? _EmptyState(
+                          message: 'ไม่มีรายการที่จะเกิดขึ้น',
+                          isDark: isDark,
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: upcoming.length,
+                          itemBuilder: (context, i) {
+                            final date = upcoming[i];
+                            final occ = recurProvider.findOccurrence(
+                              recurring.id,
+                              date,
+                            );
+                            final linkedTx = occ?.transactionId != null
+                                ? txProvider.transactions
+                                      .where((t) => t.id == occ!.transactionId)
+                                      .firstOrNull
+                                : null;
+                            return _OccurrenceItem(
+                              date: date,
+                              occurrence: occ,
+                              linkedTransaction: linkedTx,
+                              recurring: recurring,
+                              isDark: isDark,
+                              surfaceColor: surfaceColor,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              dividerColor: dividerColor,
+                              typeColor: typeColor,
+                              formatDate: _formatDateLong,
+                              onCreateTap: () =>
+                                  _createTransaction(context, date, isDark),
+                              onSkipTap: () =>
+                                  _skipOccurrence(context, date, isDark),
+                              onUndoTap: () =>
+                                  _undoOccurrence(context, date, isDark),
+                              onEditTap: linkedTx != null
+                                  ? () => _editTransaction(
+                                      context,
+                                      linkedTx,
+                                      date,
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
+                  // ── Past tab ─────────────────────────────────────────────
+                  past.isEmpty
+                      ? _EmptyState(
+                          message: 'ไม่มีรายการที่ผ่านมา',
+                          isDark: isDark,
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: past.length,
+                          itemBuilder: (context, i) {
+                            final date = past[i];
+                            final occ = recurProvider.findOccurrence(
+                              recurring.id,
+                              date,
+                            );
+                            final linkedTx = occ?.transactionId != null
+                                ? txProvider.transactions
+                                      .where((t) => t.id == occ!.transactionId)
+                                      .firstOrNull
+                                : null;
+                            return _OccurrenceItem(
+                              date: date,
+                              occurrence: occ,
+                              linkedTransaction: linkedTx,
+                              recurring: recurring,
+                              isDark: isDark,
+                              surfaceColor: surfaceColor,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              dividerColor: dividerColor,
+                              typeColor: typeColor,
+                              formatDate: _formatDateLong,
+                              onCreateTap: () =>
+                                  _createTransaction(context, date, isDark),
+                              onSkipTap: () =>
+                                  _skipOccurrence(context, date, isDark),
+                              onUndoTap: () =>
+                                  _undoOccurrence(context, date, isDark),
+                              onEditTap: linkedTx != null
+                                  ? () => _editTransaction(
+                                      context,
+                                      linkedTx,
+                                      date,
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
+                ],
+              ),
             ),
           ),
         );
@@ -842,7 +851,7 @@ class _OccurrenceItem extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, indent: 34, color: dividerColor),
+        Divider(height: 1, color: dividerColor),
       ],
     );
   }

@@ -312,11 +312,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               ),
                             ),
                           ),
-                          Divider(
-                            height: 1,
-                            indent: _isReorderMode ? 68 : 72,
-                            color: dividerColor,
-                          ),
+                          Divider(height: 1, color: dividerColor),
                         ],
                       );
                     },

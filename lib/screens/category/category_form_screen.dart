@@ -282,7 +282,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }
 
   Widget _buildDivider({required Color color}) =>
-      Divider(height: 1, indent: 16, color: color);
+      Divider(height: 1, color: color);
 
   Widget _buildPickerRow({
     required String label,

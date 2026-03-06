@@ -447,7 +447,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     ];
   }
 
-  Widget _buildDivider() => const Divider(height: 1, indent: 16);
+  Widget _buildDivider() => const Divider(height: 1);
 
   void _pickAccount(
     BuildContext context,
@@ -1165,7 +1165,7 @@ class _DebtRepayAccountSection extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(height: 1, indent: 16),
+          const Divider(height: 1),
           // บัญชี row
           InkWell(
             onTap: onAccountTap,
@@ -1236,7 +1236,7 @@ class _DebtRepayAccountSection extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(height: 1, indent: 16),
+          const Divider(height: 1),
           // หมวดหมู่ row
           InkWell(
             onTap: onCategoryTap,
