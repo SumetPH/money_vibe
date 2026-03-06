@@ -6,35 +6,6 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 
-/// Enum สำหรับเลือกประเภท Database
-enum DatabaseMode {
-  sqlite,
-  supabase,
-}
-
-/// Extension สำหรับ convert DateTime ระหว่าง SQLite และ Supabase
-/// 
-/// SQLite: เก็บเป็น ISO8601 String
-/// Supabase (Postgres): เก็บเป็น timestamp without time zone (เวลา local)
-extension DateTimeConverter on DateTime {
-  /// Convert เป็นรูปแบบที่เก็บใน SQLite (ISO8601 String)
-  String toSqlite() => toIso8601String();
-
-  /// Convert จากรูปแบบ SQLite (ISO8601 String)
-  static DateTime fromSqlite(String value) => DateTime.parse(value);
-
-  /// Convert เป็นรูปแบบที่เก็บใน Supabase (DateTime โดยตรง)
-  DateTime toSupabase() => this;
-
-  /// Convert จากรูปแบบ Supabase (อาจเป็น String หรือ DateTime)
-  static DateTime fromSupabase(dynamic value) {
-    if (value == null) return DateTime.now();
-    if (value is DateTime) return value;
-    if (value is String) return DateTime.parse(value);
-    return DateTime.now();
-  }
-}
-
 /// Abstract Repository Interface
 /// กำหนด contract สำหรับทุก database operations
 /// ทั้ง SQLite และ Supabase ต้อง implement ตามนี้
@@ -103,6 +74,26 @@ abstract class DatabaseRepository {
   Future<void> insertRecurringOccurrence(RecurringOccurrence occurrence);
   Future<void> deleteOccurrence(String id);
   Future<void> deleteOccurrencesByRecurring(String recurringId);
+
+  // ── Bulk Import Helpers ────────────────────────────────────────────────────
+  
+  /// ดึง IDs ที่มีอยู่แล้วเพื่อเช็ค duplicates
+  Future<Set<String>> getExistingAccountIds();
+  Future<Set<String>> getExistingCategoryIds();
+  Future<Set<String>> getExistingTransactionIds();
+  Future<Set<String>> getExistingBudgetIds();
+  Future<Set<String>> getExistingHoldingIds();
+  Future<Set<String>> getExistingRecurringIds();
+  Future<Set<String>> getExistingOccurrenceIds();
+  
+  /// Bulk insert (สำหรับ CSV import)
+  Future<void> bulkInsertAccounts(List<Account> accounts);
+  Future<void> bulkInsertCategories(List<Category> categories);
+  Future<void> bulkInsertTransactions(List<AppTransaction> transactions);
+  Future<void> bulkInsertBudgets(List<Budget> budgets);
+  Future<void> bulkInsertHoldings(List<StockHolding> holdings);
+  Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring);
+  Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences);
 
   // ── Migration Helpers ──────────────────────────────────────────────────────
 

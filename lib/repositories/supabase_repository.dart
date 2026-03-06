@@ -901,6 +901,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   /// แบ่งเป็น batch ละ 500 records เพื่อป้องกัน timeout
   static const int _batchSize = 500;
 
+  @override
   Future<void> bulkInsertAccounts(List<Account> accounts) async {
     _requireAuth();
     log('Bulk inserting ${accounts.length} accounts for user: $currentUserId');
@@ -920,44 +921,128 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     await _batchInsert('accounts', accounts.map((a) => _accountToSupabase(a)).toList());
   }
 
+  @override
   Future<void> bulkInsertCategories(List<Category> categories) async {
     _requireAuth();
     log('Bulk inserting ${categories.length} categories for user: $currentUserId');
     await _batchInsert('categories', categories.map((c) => _categoryToSupabase(c)).toList());
   }
 
+  @override
   Future<void> bulkInsertTransactions(List<AppTransaction> transactions) async {
     _requireAuth();
     log('Bulk inserting ${transactions.length} transactions for user: $currentUserId');
     await _batchInsert('transactions', transactions.map((t) => _transactionToSupabase(t)).toList());
   }
 
+  @override
   Future<void> bulkInsertBudgets(List<Budget> budgets) async {
     _requireAuth();
     log('Bulk inserting ${budgets.length} budgets for user: $currentUserId');
     await _batchInsert('budgets', budgets.map((b) => _budgetToSupabase(b)).toList());
   }
 
+  @override
   Future<void> bulkInsertHoldings(List<StockHolding> holdings) async {
     _requireAuth();
     log('Bulk inserting ${holdings.length} holdings for user: $currentUserId');
     await _batchInsert('portfolio_holdings', holdings.map((h) => _holdingToSupabase(h)).toList());
   }
 
+  @override
   Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring) async {
     _requireAuth();
     log('Bulk inserting ${recurring.length} recurring transactions for user: $currentUserId');
     await _batchInsert('recurring_transactions', recurring.map((r) => _recurringToSupabase(r)).toList());
   }
 
+  @override
   Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences) async {
     _requireAuth();
     log('Bulk inserting ${occurrences.length} occurrences for user: $currentUserId');
     await _batchInsert('recurring_occurrences', occurrences.map((o) => _occurrenceToSupabase(o)).toList());
   }
 
+  // ── Bulk Import: Get Existing IDs ──────────────────────────────────────────
+  
+  @override
+  @override
+  Future<Set<String>> getExistingAccountIds() async {
+    _requireAuth();
+    final response = await client
+        .from('accounts')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingCategoryIds() async {
+    _requireAuth();
+    final response = await client
+        .from('categories')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingTransactionIds() async {
+    _requireAuth();
+    final response = await client
+        .from('transactions')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingBudgetIds() async {
+    _requireAuth();
+    final response = await client
+        .from('budgets')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingHoldingIds() async {
+    _requireAuth();
+    final response = await client
+        .from('portfolio_holdings')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingRecurringIds() async {
+    _requireAuth();
+    final response = await client
+        .from('recurring_transactions')
+        .select('id')
+        .eq('user_id', currentUserId!);
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+  
+  @override
+  @override
+  Future<Set<String>> getExistingOccurrenceIds() async {
+    _requireAuth();
+    final response = await client
+        .from('recurring_occurrences')
+        .select('id');
+    return (response as List).map((r) => r['id'] as String).toSet();
+  }
+
   /// Helper สำหรับ batch insert
-  /// ใช้ upsert แทน insert เพื่อให้สามารถ overwrite ข้อมูลที่มีอยู่ได้
+  /// ใช้ insert แบบ ignore conflicts (upsert แต่ไม่ update)
   Future<void> _batchInsert(String table, List<Map<String, dynamic>> data) async {
     if (data.isEmpty) return;
 
@@ -965,11 +1050,17 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       final end = (i + _batchSize < data.length) ? i + _batchSize : data.length;
       final batch = data.sublist(i, end);
       
-      log('Upserting batch ${i ~/ _batchSize + 1}: ${batch.length} records to $table');
-      // ใช้ upsert แทน insert เพื่อ overwrite ข้อมูลที่มีอยู่แล้ว (same ID)
-      await client.from(table).upsert(batch, onConflict: 'id');
+      log('Inserting batch ${i ~/ _batchSize + 1}: ${batch.length} records to $table');
+      try {
+        // ใช้ upsert แต่กำหนด ignoreDuplicates เพื่อ skip ข้อมูลที่มีอยู่แล้ว
+        await client.from(table).upsert(batch, onConflict: 'id', ignoreDuplicates: true);
+      } catch (e) {
+        logError('Error inserting batch to $table', e);
+        // ถ้า ignoreDuplicates ไม่รองรับ ให้ log แล้วข้าม
+        rethrow;
+      }
     }
     
-    log('Completed upserting ${data.length} records to $table');
+    log('Completed inserting ${data.length} records to $table');
   }
 }

@@ -7,10 +7,21 @@ class AuthProvider extends ChangeNotifier {
   factory AuthProvider() => _instance;
   AuthProvider._internal();
 
-  /// Lazy getter สำหรับ SupabaseClient
-  /// จะถูก initialize เมื่อเรียกใช้ครั้งแรกเท่านั้น
-  SupabaseClient get _client {
-    return Supabase.instance.client;
+  SupabaseClient? _client;
+  bool _isSupabaseInitialized = false;
+
+  /// Getter สำหรับ SupabaseClient
+  /// จะคืนค่า null ถ้ายังไม่ได้ initialize
+  SupabaseClient? get _safeClient {
+    if (!_isSupabaseInitialized) {
+      try {
+        _client = Supabase.instance.client;
+        _isSupabaseInitialized = true;
+      } catch (_) {
+        return null;
+      }
+    }
+    return _client;
   }
 
   User? _user;
@@ -33,12 +44,19 @@ class AuthProvider extends ChangeNotifier {
     
     _setLoading(true);
     try {
+      final client = _safeClient;
+      if (client == null) {
+        debugPrint('AuthProvider: Supabase not initialized yet');
+        _setLoading(false);
+        return;
+      }
+
       // ตรวจสอบ session ปัจจุบัน
-      final session = _client.auth.currentSession;
+      final session = client.auth.currentSession;
       _user = session?.user;
 
       // ฟังการเปลี่ยนแปลง auth state
-      _client.auth.onAuthStateChange.listen((data) {
+      client.auth.onAuthStateChange.listen((data) {
         final AuthChangeEvent event = data.event;
         final Session? session = data.session;
 
@@ -73,7 +91,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      final response = await _client.auth.signUp(
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
+      final response = await client.auth.signUp(
         email: email,
         password: password,
       );
@@ -105,7 +130,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      final response = await _client.auth.signInWithPassword(
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
+      final response = await client.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -133,7 +165,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     _setLoading(true);
     try {
-      await _client.auth.signOut();
+      final client = _safeClient;
+      if (client != null) {
+        await client.auth.signOut();
+      }
       _user = null;
       notifyListeners();
     } catch (e) {
@@ -149,7 +184,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
+      await client.auth.resetPasswordForEmail(email);
       return true;
     } on AuthException catch (e) {
       _error = _getErrorMessage(e.message);
@@ -169,7 +211,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      await _client.auth.updateUser(
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
+      await client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
       return true;
@@ -191,10 +240,17 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
       // ต้องเรียก RPC function บน Supabase เนื่องจาก delete user
       // ต้องใช้ service role key ซึ่งไม่ควรเก็บบน client
       // ให้เรียก edge function หรือ RPC แทน
-      await _client.rpc('delete_user');
+      await client.rpc('delete_user');
       _user = null;
       notifyListeners();
       return true;

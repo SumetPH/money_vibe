@@ -7,7 +7,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
-import '../../repositories/database_repository.dart';
+
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
@@ -52,10 +52,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             top: false,
             child: ListView(
               children: [
-                // Account Section (สำหรับ Supabase mode)
-                if (dbManager.currentMode == DatabaseMode.supabase) ...[
-                  _buildSectionHeader('บัญชีผู้ใช้', textColor),
-                  Consumer<AuthProvider>(
+                // Account Section
+                _buildSectionHeader('บัญชีผู้ใช้', textColor),
+                Consumer<AuthProvider>(
                     builder: (context, authProvider, _) {
                       if (authProvider.isLoggedIn) {
                         // แสดงเมื่อ login แล้ว
@@ -117,6 +116,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   Divider(color: dividerColor),
+                if (!dbManager.isConfigured) ...[
+                  ListTile(
+                    leading: Icon(Icons.cloud_off, color: Colors.orange),
+                    title: Text(
+                      'ยังไม่ได้ตั้งค่า Supabase',
+                      style: TextStyle(color: textColor),
+                    ),
+                    subtitle: Text(
+                      'ไปที่จัดการข้อมูลเพื่อตั้งค่า',
+                      style: TextStyle(color: secondaryTextColor),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: secondaryTextColor,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DataManagementScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
                 Divider(color: dividerColor),
 
@@ -177,17 +200,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('ข้อมูล', textColor),
                 ListTile(
                   leading: Icon(
-                    dbManager.isSqliteMode ? Icons.storage : Icons.cloud,
-                    color: dbManager.isSqliteMode ? Colors.orange : Colors.blue,
+                    Icons.cloud,
+                    color: dbManager.isConfigured ? Colors.blue : Colors.orange,
                   ),
                   title: Text(
                     'จัดการข้อมูล',
                     style: TextStyle(color: textColor),
                   ),
                   subtitle: Text(
-                    dbManager.isSqliteMode
-                        ? 'ฐานข้อมูล: SQLite (Local) - แตะเพื่อตั้งค่า'
-                        : 'ฐานข้อมูล: Supabase (Cloud) - แตะเพื่อตั้งค่า',
+                    dbManager.isConfigured
+                        ? 'ฐานข้อมูล: Supabase (Cloud) - แตะเพื่อตั้งค่า'
+                        : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่า - แตะเพื่อตั้งค่า',
                     style: TextStyle(color: secondaryTextColor),
                   ),
                   trailing: Icon(
@@ -236,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
 
-              // Logout
+              // Logout - ล้างแค่ login state ไม่ล้าง Supabase config
               await context.read<AuthProvider>().signOut();
 
               // Clear all providers (ข้อมูลเก่าของ user ก่อนหน้า)
@@ -244,9 +267,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await _clearAllProviders(context);
               }
 
-              // Switch back to SQLite mode (ไม่บังคับ login)
-              final dbManager = DatabaseManager();
-              await dbManager.switchMode(DatabaseMode.sqlite);
+              // Navigate to login screen and clear navigation stack
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.expense,

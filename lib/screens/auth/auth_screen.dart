@@ -8,6 +8,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../theme/app_colors.dart';
+import '../account/account_list_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -70,9 +71,12 @@ class _AuthScreenState extends State<AuthScreen> {
         context.read<RecurringTransactionProvider>().reload(),
       ]);
       
-      debugPrint('[AuthScreen] Providers reloaded, navigating back');
+      debugPrint('[AuthScreen] Providers reloaded, navigating to home');
       if (mounted) {
-        Navigator.of(context).pop(true);
+        // ใช้ pushReplacement เพื่อให้แน่ใจว่าหน้าหลักถูกสร้างใหม่
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AccountListScreen()),
+        );
       }
     } else if (!success && mounted) {
       // Error จะแสดงผ่าน authProvider.error

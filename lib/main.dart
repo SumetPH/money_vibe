@@ -8,8 +8,9 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/recurring_transaction_provider.dart';
-import 'repositories/database_repository.dart';
+
 import 'screens/auth/auth_screen.dart';
+import 'screens/auth/setup_screen.dart';
 import 'services/database_manager.dart';
 import 'services/splash_service.dart';
 import 'theme/app_theme.dart';
@@ -32,13 +33,10 @@ void main() async {
   try {
     debugPrint('Main: Initializing DatabaseManager...');
     await dbManager.init();
-    debugPrint(
-      'Main: DatabaseManager initialized - Mode: ${dbManager.currentMode}',
-    );
+    debugPrint('Main: DatabaseManager initialized');
   } catch (e, stackTrace) {
     debugPrint('Main: DatabaseManager init error: $e');
     debugPrint('Main: Stack trace: $stackTrace');
-    // Continue anyway - will use SQLite as fallback
   }
 
   final accountProvider = AccountProvider();
@@ -55,13 +53,12 @@ void main() async {
     ]);
 
     // Initialize AuthProvider หลังจาก DatabaseManager (Supabase) พร้อมแล้ว
-    if (dbManager.currentMode == DatabaseMode.supabase) {
+    if (dbManager.isConfigured) {
       await _initProvider('Auth', authProvider.init);
     }
 
-    // โหลดข้อมูลอื่นๆ ถ้าเป็น SQLite หรือถ้า Login แล้ว
-    if (dbManager.currentMode == DatabaseMode.sqlite ||
-        authProvider.isLoggedIn) {
+    // โหลดข้อมูลถ้า Login แล้ว
+    if (authProvider.isLoggedIn) {
       await Future.wait([
         _initProvider('Account', accountProvider.init),
         _initProvider('Budget', budgetProvider.init),
@@ -164,22 +161,18 @@ class MyApp extends StatelessWidget {
   Widget _buildHomeScreen(BuildContext context, AuthProvider authProvider) {
     final dbManager = DatabaseManager();
 
-    // ถ้าใช้ SQLite ให้ไปหน้าหลักเลย (ไม่ต้อง login)
-    if (dbManager.currentMode == DatabaseMode.sqlite) {
-      return const AccountListScreen();
+    // 1. ถ้ายังไม่ได้ตั้งค่า Supabase → ไปหน้าตั้งค่า
+    if (!dbManager.isConfigured) {
+      return const SetupScreen();
     }
 
-    // ถ้าใช้ Supabase ต้องตรวจสอบว่า login หรือยัง
-    if (dbManager.currentMode == DatabaseMode.supabase) {
-      if (authProvider.isLoggedIn) {
-        return const AccountListScreen();
-      } else {
-        return const AuthScreen();
-      }
+    // 2. ถ้าตั้งค่าแล้วแต่ยังไม่ login → ไปหน้า Login
+    if (!authProvider.isLoggedIn) {
+      return const AuthScreen();
     }
 
-    // กรณีอื่นๆ (loading, error) ให้แสดงหน้า loading
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // 3. ถ้าตั้งค่าแล้วและ login แล้ว → ไปหน้าหลัก
+    return const AccountListScreen();
   }
 }
 

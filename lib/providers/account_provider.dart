@@ -39,7 +39,7 @@ class AccountProvider extends ChangeNotifier {
   Future<void> init() async {
     debugPrint('AccountProvider: Initializing...');
     _setLoading(true);
-    
+
     try {
       final accounts = await _db.getAccounts();
       // Sort by sortOrder to ensure correct order
@@ -54,13 +54,16 @@ class AccountProvider extends ChangeNotifier {
       }
       // Sort holdings in each portfolio by sortOrder
       for (final portfolioId in _holdings.keys) {
-        _holdings[portfolioId]!.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        _holdings[portfolioId]!.sort(
+          (a, b) => a.sortOrder.compareTo(b.sortOrder),
+        );
       }
 
-      debugPrint('AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings');
+      debugPrint(
+        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings',
+      );
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
-      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -119,7 +122,7 @@ class AccountProvider extends ChangeNotifier {
 
     // Regular accounts: computed from transactions
     double balance = account.initialBalance;
-    
+
     for (final tx in transactions) {
       if (tx.accountId == accountId) {
         if (tx.type == TransactionType.income) balance += tx.amount;
@@ -133,7 +136,7 @@ class AccountProvider extends ChangeNotifier {
         balance += tx.amount;
       }
     }
-    
+
     return balance;
   }
 
@@ -163,7 +166,7 @@ class AccountProvider extends ChangeNotifier {
   Future<void> addAccount(Account account) async {
     _accounts.add(account);
     notifyListeners();
-    
+
     try {
       await _db.insertAccount(account);
     } catch (e) {
@@ -198,7 +201,7 @@ class AccountProvider extends ChangeNotifier {
 
     final oldAccount = _accounts[idx];
     final oldHoldings = _holdings[id]?.toList() ?? [];
-    
+
     _accounts.removeAt(idx);
     _holdings.remove(id);
     notifyListeners();
@@ -240,7 +243,11 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> reorderAccountsInGroup(String groupName, int oldIndex, int newIndex) async {
+  Future<void> reorderAccountsInGroup(
+    String groupName,
+    int oldIndex,
+    int newIndex,
+  ) async {
     // Get visible accounts
     final visible = visibleAccounts;
 
@@ -307,7 +314,7 @@ class AccountProvider extends ChangeNotifier {
   Future<void> updateHolding(StockHolding updated) async {
     final list = _holdings[updated.portfolioId];
     if (list == null) return;
-    
+
     final idx = list.indexWhere((h) => h.id == updated.id);
     if (idx == -1) return;
 
@@ -346,7 +353,11 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> reorderHoldings(String portfolioId, int oldIndex, int newIndex) async {
+  Future<void> reorderHoldings(
+    String portfolioId,
+    int oldIndex,
+    int newIndex,
+  ) async {
     final holdings = _holdings[portfolioId];
     if (holdings == null) return;
     if (oldIndex < 0 || oldIndex >= holdings.length) return;
