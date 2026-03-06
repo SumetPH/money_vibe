@@ -73,20 +73,23 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ],
             ),
           ),
-          body: Container(
-            color: backgroundColor,
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _tabController,
-              children: [
-                _NetWorthLineChart(),
-                _YearlyBarChart(
-                  selectedYear: _selectedYear,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
-                ),
-                _CategoryPieChart(type: CategoryType.expense),
-                _CategoryPieChart(type: CategoryType.income),
-              ],
+          body: SafeArea(
+            child: Container(
+              color: backgroundColor,
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                controller: _tabController,
+                children: [
+                  _NetWorthLineChart(),
+                  _YearlyBarChart(
+                    selectedYear: _selectedYear,
+                    onYearChanged: (year) =>
+                        setState(() => _selectedYear = year),
+                  ),
+                  _CategoryPieChart(type: CategoryType.expense),
+                  _CategoryPieChart(type: CategoryType.income),
+                ],
+              ),
             ),
           ),
         );
