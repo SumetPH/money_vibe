@@ -59,10 +59,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
           // Display order
           const groupOrder = [
+            'ลงทุน',
             'เงินสด / เงินฝาก',
             'บัตรเครดิต',
             'หนี้สิน',
-            'ลงทุน',
           ];
 
           // Group accounts by display group
