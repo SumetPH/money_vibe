@@ -23,6 +23,7 @@ git push origin main
 
 # ios release
 echo "📦 Building for iOS..."
+cd /Users/sumetph/Development/money/money_vibe/
 flutter run --release -d 00008130-000A503A012B803A
 flutter clean && flutter pub get
 
