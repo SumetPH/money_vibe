@@ -693,6 +693,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
         return isDark ? AppColors.darkExpense : AppColors.expense;
       case TransactionType.transfer:
       case TransactionType.debtRepay:
+      case TransactionType.debtTransfer:
         return isDark ? AppColors.darkTransfer : AppColors.transfer;
     }
   }

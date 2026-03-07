@@ -52,7 +52,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _selectedToAccountId = _type == TransactionType.transfer
         ? tx?.toAccountId
         : null;
-    _selectedDebtAccountId = _type == TransactionType.debtRepay
+    _selectedDebtAccountId = _type.requiresDebtAccount
         ? tx?.toAccountId
         : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
@@ -132,7 +132,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชี')));
       return;
     }
-    if (_type == TransactionType.debtRepay && _selectedDebtAccountId == null) {
+    if (_type.requiresDebtAccount && _selectedDebtAccountId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชีหนี้สิน')));
@@ -144,7 +144,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     String? toAccountId;
     if (_type == TransactionType.transfer) {
       toAccountId = _selectedToAccountId;
-    } else if (_type == TransactionType.debtRepay) {
+    } else if (_type.requiresDebtAccount) {
       toAccountId = _selectedDebtAccountId;
     }
 
@@ -153,7 +153,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       type: _type,
       amount: amount,
       accountId: _selectedAccountId!,
-      categoryId: _selectedCategoryId,
+      categoryId: _type.supportsCategory ? _selectedCategoryId : null,
       toAccountId: toAccountId,
       dateTime: _selectedDateTime,
       note: _noteController.text.trim().isEmpty
@@ -231,18 +231,26 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         // Filter out debt accounts for Income/Expense transactions
         final allVisibleAccounts = accountProvider.visibleAccounts;
 
-        final accounts =
-            (_type == TransactionType.income ||
-                _type == TransactionType.expense ||
-                _type == TransactionType.debtRepay)
-            ? allVisibleAccounts
-                  .where(
-                    (a) =>
-                        a.type != AccountType.debt &&
-                        a.type != AccountType.portfolio,
-                  )
-                  .toList()
-            : allVisibleAccounts;
+        final accounts = switch (_type) {
+          TransactionType.debtTransfer => allVisibleAccounts
+              .where(
+                (a) =>
+                    (a.type == AccountType.debt ||
+                        a.type == AccountType.creditCard) &&
+                    a.type != AccountType.portfolio,
+              )
+              .toList(),
+          TransactionType.income ||
+          TransactionType.expense ||
+          TransactionType.debtRepay => allVisibleAccounts
+              .where(
+                (a) =>
+                    a.type != AccountType.debt &&
+                    a.type != AccountType.portfolio,
+              )
+              .toList(),
+          _ => allVisibleAccounts,
+        };
         final selectedAccount = _selectedAccountId != null
             ? accountProvider.findById(_selectedAccountId!)
             : null;
@@ -271,6 +279,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               onChanged: (t) => setState(() {
                 _type = t;
                 _selectedCategoryId = null;
+                if (t != TransactionType.transfer) {
+                  _selectedToAccountId = null;
+                }
+                if (!t.requiresDebtAccount) {
+                  _selectedDebtAccountId = null;
+                }
               }),
             ),
             actions: [
@@ -309,6 +323,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     required Category? selectedCategory,
   }) {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
+    final bool isDebtTransfer = _type == TransactionType.debtTransfer;
+    final bool usesDebtAccount = _type.requiresDebtAccount;
     final txProvider = context.read<TransactionProvider>();
     final transactions = txProvider.transactions;
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
@@ -324,7 +340,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         child: Row(
           children: [
             Text(
-              isDebtRepay ? 'เงินต้น' : 'จำนวน',
+              isDebtRepay
+                  ? 'เงินต้น'
+                  : isDebtTransfer
+                  ? 'ยอดโยก'
+                  : 'จำนวน',
               style: TextStyle(
                 fontSize: 14,
                 color: isDarkMode
@@ -346,8 +366,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w300,
-                  color: isDebtRepay
-                      ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                  color: usesDebtAccount
+                      ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
                       : (isDarkMode
                             ? AppColors.darkTextSecondary
                             : AppColors.textSecondary),
@@ -372,10 +392,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   suffixText: 'บาท',
                   suffixStyle: TextStyle(
                     fontSize: 14,
-                    color: isDebtRepay
+                    color: usesDebtAccount
                         ? (isDarkMode
-                              ? AppColors.darkExpense
-                              : AppColors.expense)
+                              ? AppColors.darkTransfer
+                              : AppColors.transfer)
                         : (isDarkMode
                               ? AppColors.darkTextSecondary
                               : AppColors.textSecondary),
@@ -384,7 +404,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 autofocus: !_isEditing,
                 onChanged: (value) {
                   _formatAmountInput(value);
-                  if (isDebtRepay) setState(() {});
+                  if (usesDebtAccount) setState(() {});
                 },
               ),
             ),
@@ -410,11 +430,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           type: _type,
           accounts: accounts,
           selectedAccount: selectedAccount,
-          selectedToAccount: selectedToAccount,
+          selectedToAccount: isDebtTransfer
+              ? selectedDebtAccount
+              : selectedToAccount,
           categories: categories,
           selectedCategory: selectedCategory,
           onAccountTap: () => _pickAccount(context, accounts, false),
-          onToAccountTap: () => _pickAccount(context, accounts, true),
+          onToAccountTap: isDebtTransfer
+              ? () => _pickDebtAccount(context, accountProvider)
+              : () => _pickAccount(context, accounts, true),
           onCategoryTap: () => _pickCategory(context, categories),
           accountProvider: accountProvider,
           transactions: transactions,
@@ -986,6 +1010,8 @@ class _TypeSelector extends StatelessWidget {
         return (Icons.swap_horiz, Colors.blue);
       case TransactionType.debtRepay:
         return (Icons.payment, Colors.orange);
+      case TransactionType.debtTransfer:
+        return (Icons.account_tree, Colors.orange);
     }
   }
 
@@ -1431,9 +1457,9 @@ class _AccountCategorySelector extends StatelessWidget {
           // Category / To-Account selector
           Expanded(
             child: InkWell(
-              onTap: type == TransactionType.transfer
+              onTap: type.isTransferLike
                   ? onToAccountTap
-                  : onCategoryTap,
+                  : (type.supportsCategory ? onCategoryTap : null),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -1441,7 +1467,7 @@ class _AccountCategorySelector extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    if (type == TransactionType.transfer &&
+                    if (type.isTransferLike &&
                         selectedToAccount != null) ...[
                       Container(
                         width: 28,
@@ -1471,7 +1497,7 @@ class _AccountCategorySelector extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ] else if (type != TransactionType.transfer &&
+                    ] else if (type.supportsCategory &&
                         selectedCategory != null) ...[
                       Container(
                         width: 28,
@@ -1503,7 +1529,7 @@ class _AccountCategorySelector extends StatelessWidget {
                       ),
                     ] else
                       Text(
-                        type == TransactionType.transfer
+                        type.isTransferLike
                             ? 'บัญชีปลายทาง'
                             : 'เลือกหมวดหมู่',
                         style: TextStyle(

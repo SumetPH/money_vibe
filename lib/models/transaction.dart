@@ -4,10 +4,44 @@ enum TransactionType {
   expense('รายจ่าย'),
   income('รายรับ'),
   transfer('โอน'),
-  debtRepay('ชำระหนี้สิน');
+  debtRepay('ชำระหนี้สิน'),
+  debtTransfer('โยกหนี้สิน');
 
   final String label;
   const TransactionType(this.label);
+}
+
+extension TransactionTypeX on TransactionType {
+  bool get isExpenseLike =>
+      this == TransactionType.expense || this == TransactionType.debtRepay;
+
+  bool get isTransferLike =>
+      this == TransactionType.transfer || this == TransactionType.debtTransfer;
+
+  bool get usesDestinationAccount =>
+      this == TransactionType.transfer ||
+      this == TransactionType.debtRepay ||
+      this == TransactionType.debtTransfer;
+
+  bool get requiresDebtAccount =>
+      this == TransactionType.debtRepay ||
+      this == TransactionType.debtTransfer;
+
+  bool get supportsCategory =>
+      this == TransactionType.income ||
+      this == TransactionType.expense ||
+      this == TransactionType.debtRepay;
+}
+
+TransactionType parseTransactionType(
+  String? raw, {
+  TransactionType fallback = TransactionType.expense,
+}) {
+  if (raw == null || raw.isEmpty) return fallback;
+  for (final type in TransactionType.values) {
+    if (type.name == raw) return type;
+  }
+  return fallback;
 }
 
 class AppTransaction {
@@ -63,9 +97,7 @@ class AppTransaction {
     }
     return AppTransaction(
       id: m['id'] as String,
-      type: TransactionType.values.firstWhere(
-        (e) => e.name == m['type'] as String,
-      ),
+      type: parseTransactionType(m['type'] as String?),
       amount: (m['amount'] as num).toDouble(),
       accountId: m['account_id'] as String,
       categoryId: m['category_id'] as String?,

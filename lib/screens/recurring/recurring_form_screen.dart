@@ -55,7 +55,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     _endDate = r?.endDate;
     _accountId = r?.accountId;
     _toAccountId = r?.toAccountId;
-    _debtAccountId = _type == TransactionType.debtRepay ? r?.toAccountId : null;
+    _debtAccountId = _type.requiresDebtAccount ? r?.toAccountId : null;
     _categoryId = r?.categoryId;
   }
 
@@ -90,7 +90,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       return;
     }
     // Validate debt account for debtRepay type
-    if (_type == TransactionType.debtRepay && _debtAccountId == null) {
+    if (_type.requiresDebtAccount && _debtAccountId == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชีหนี้สิน')));
@@ -102,8 +102,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         ? null
         : _noteController.text.trim();
 
-    // For debtRepay, use debtAccountId as toAccountId
-    final toAccountId = _type == TransactionType.debtRepay
+    final toAccountId = _type.requiresDebtAccount
         ? _debtAccountId
         : _toAccountId;
 
@@ -122,7 +121,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           accountId: _accountId!,
           toAccountId: toAccountId,
           clearToAccountId: toAccountId == null,
-          categoryId: _categoryId,
+          categoryId: _type.supportsCategory ? _categoryId : null,
           clearCategoryId: _categoryId == null,
           note: note,
           clearNote: note == null,
@@ -142,7 +141,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           amount: amount,
           accountId: _accountId!,
           toAccountId: toAccountId,
-          categoryId: _categoryId,
+          categoryId: _type.supportsCategory ? _categoryId : null,
           note: note,
         ),
       );
@@ -225,12 +224,25 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             : AppColors.textSecondary;
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
-        final accounts = accountProvider.visibleAccounts
-            .where(
-              (a) =>
-                  a.type != AccountType.debt && a.type != AccountType.portfolio,
-            )
-            .toList();
+        final accounts = switch (_type) {
+          TransactionType.debtTransfer => accountProvider.visibleAccounts
+              .where(
+                (a) =>
+                    (a.type == AccountType.debt ||
+                        a.type == AccountType.creditCard) &&
+                    a.type != AccountType.portfolio,
+              )
+              .toList(),
+          TransactionType.income ||
+          TransactionType.expense ||
+          TransactionType.debtRepay => accountProvider.visibleAccounts
+              .where(
+                (a) =>
+                    a.type != AccountType.debt && a.type != AccountType.portfolio,
+              )
+              .toList(),
+          _ => accountProvider.visibleAccounts,
+        };
         final selectedAccount = _accountId != null
             ? accountProvider.findById(_accountId!)
             : null;
@@ -345,14 +357,19 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               Divider(height: 1, color: dividerColor),
 
               // ── To Account (transfer only) ────────────────────────────────
-              if (_type == TransactionType.transfer) ...[
+              if (_type.isTransferLike) ...[
                 _RowTile(
                   label: 'บัญชีปลายทาง',
-                  value: selectedToAccount?.name ?? 'เลือกบัญชี',
+                  value: (_type == TransactionType.debtTransfer
+                          ? selectedDebtAccount
+                          : selectedToAccount)
+                      ?.name ??
+                      'เลือกบัญชี',
                   surfaceColor: surfaceColor,
                   textSecondary: textSecondary,
-                  onTap: () =>
-                      _pickAccount(accounts, isDark, isDestination: true),
+                  onTap: () => _type == TransactionType.debtTransfer
+                      ? _pickDebtAccount(accountProvider, isDark)
+                      : _pickAccount(accounts, isDark, isDestination: true),
                 ),
                 Divider(height: 1, color: dividerColor),
               ],
@@ -370,7 +387,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               ],
 
               // ── Category (non-transfer) ────────────────────────────────────
-              if (_type != TransactionType.transfer) ...[
+              if (_type.supportsCategory) ...[
                 _RowTile(
                   label: 'หมวดหมู่',
                   value: selectedCategory?.name ?? 'ไม่ได้เลือก',
@@ -595,8 +612,11 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         _type = t;
                         _categoryId = null;
                         // Reset debt account when changing type
-                        if (t != TransactionType.debtRepay) {
+                        if (!t.requiresDebtAccount) {
                           _debtAccountId = null;
+                        }
+                        if (t != TransactionType.transfer) {
+                          _toAccountId = null;
                         }
                       });
                       Navigator.pop(context);
@@ -1409,6 +1429,8 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         return isDark ? AppColors.darkExpense : AppColors.expense;
       case TransactionType.transfer:
       case TransactionType.debtRepay:
+        return isDark ? AppColors.darkTransfer : AppColors.transfer;
+      case TransactionType.debtTransfer:
         return isDark ? AppColors.darkTransfer : AppColors.transfer;
     }
   }

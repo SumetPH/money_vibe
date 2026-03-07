@@ -91,8 +91,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     return txs
         .where(
           (tx) =>
-              (tx.type == TransactionType.expense ||
-                  tx.type == TransactionType.debtRepay) &&
+              tx.type.isExpenseLike &&
               budget.categoryIds.contains(tx.categoryId) &&
               !tx.dateTime.isBefore(period.start) &&
               !tx.dateTime.isAfter(period.end),

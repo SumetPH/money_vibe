@@ -654,7 +654,7 @@ class CsvService {
 
       transactions.add(AppTransaction(
         id: id,
-        type: TransactionType.values.byName(row[1]?.toString() ?? 'expense'),
+        type: parseTransactionType(row[1]?.toString()),
         amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
         accountId: accountId,
         categoryId: row[4]?.toString().isEmpty == true
@@ -841,8 +841,7 @@ class CsvService {
             ? null
             : DateTime.tryParse(row[5]?.toString() ?? ''),
         dayOfMonth: int.tryParse(row[6]?.toString() ?? '') ?? 1,
-        transactionType: TransactionType.values.byName(
-            row[7]?.toString() ?? 'expense'),
+        transactionType: parseTransactionType(row[7]?.toString()),
         amount: double.tryParse(row[8]?.toString() ?? '0') ?? 0,
         accountId: accountId,
         toAccountId: row[10]?.toString().isEmpty == true

@@ -1042,13 +1042,12 @@ class _CategoryPieChart extends StatelessWidget {
     final Map<String, double> categoryAmounts = {};
 
     for (final tx in transactions) {
-      if (tx.type == TransactionType.transfer) continue;
+      if (tx.type.isTransferLike) continue;
 
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : (tx.type == TransactionType.expense ||
-                tx.type == TransactionType.debtRepay);
+          : tx.type.isExpenseLike;
 
       if (!shouldInclude) continue;
 
@@ -1636,8 +1635,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
           if (fromIncluded) runningTotal += tx.amount;
         } else if (tx.type == TransactionType.expense) {
           if (fromIncluded) runningTotal -= tx.amount;
-        } else if (tx.type == TransactionType.transfer ||
-            tx.type == TransactionType.debtRepay) {
+        } else if (tx.type.usesDestinationAccount) {
           if (!fromPortfolio && toPortfolio && fromIncluded) {
             runningTotal -= tx.amount;
           } else if (fromPortfolio && !toPortfolio && toIncluded) {

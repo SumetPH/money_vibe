@@ -126,13 +126,9 @@ class AccountProvider extends ChangeNotifier {
     for (final tx in transactions) {
       if (tx.accountId == accountId) {
         if (tx.type == TransactionType.income) balance += tx.amount;
-        if (tx.type == TransactionType.expense) balance -= tx.amount;
-        if (tx.type == TransactionType.transfer) balance -= tx.amount;
-        if (tx.type == TransactionType.debtRepay) balance -= tx.amount;
+        if (tx.type != TransactionType.income) balance -= tx.amount;
       }
-      if (tx.toAccountId == accountId &&
-          (tx.type == TransactionType.transfer ||
-              tx.type == TransactionType.debtRepay)) {
+      if (tx.toAccountId == accountId && tx.type.usesDestinationAccount) {
         balance += tx.amount;
       }
     }

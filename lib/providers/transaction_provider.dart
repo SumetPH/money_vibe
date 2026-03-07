@@ -99,11 +99,7 @@ class TransactionProvider extends ChangeNotifier {
 
   double getTotalExpense(List<AppTransaction> txs) {
     return txs
-        .where(
-          (t) =>
-              t.type == TransactionType.expense ||
-              t.type == TransactionType.debtRepay,
-        )
+        .where((t) => t.type.isExpenseLike)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 

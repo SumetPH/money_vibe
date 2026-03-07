@@ -66,27 +66,6 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-		<key>CFBundleDocumentTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleTypeName</key>
-				<string>SQL File</string>
-				<key>CFBundleTypeRole</key>
-				<string>Viewer</string>
-				<key>LSHandlerRank</key>
-				<string>Default</string>
-				<key>LSItemContentTypes</key>
-				<array>
-					<string>public.plain-text</string>
-					<string>public.text</string>
-					<string>public.data</string>
-				</array>
-			</dict>
-		</array>
-		<key>UISupportsDocumentBrowser</key>
-		<true/>
-		<key>LSSupportsOpeningDocumentsInPlace</key>
-		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>

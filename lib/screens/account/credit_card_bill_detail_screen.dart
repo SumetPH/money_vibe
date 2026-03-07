@@ -558,11 +558,7 @@ class _TransactionItem extends StatelessWidget {
         : null;
 
     final typeColor = _typeColor(tx.type, isDarkMode);
-    final displayAmount =
-        (tx.type == TransactionType.expense ||
-            tx.type == TransactionType.debtRepay)
-        ? -tx.amount
-        : tx.amount;
+    final displayAmount = tx.type.isExpenseLike ? -tx.amount : tx.amount;
 
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
@@ -590,7 +586,9 @@ class _TransactionItem extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                tx.type == TransactionType.transfer
+                tx.type == TransactionType.debtTransfer
+                    ? Icons.account_tree
+                    : tx.type == TransactionType.transfer
                     ? Icons.swap_horiz
                     : tx.type == TransactionType.debtRepay
                     ? Icons.payment
@@ -633,13 +631,13 @@ class _TransactionItem extends StatelessWidget {
                   style: TextStyle(fontSize: 13, color: textSecondaryColor),
                 ),
                 Text(
-                  tx.type == TransactionType.transfer
+                  tx.type.isTransferLike
                       ? formatAmount(tx.amount)
                       : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: tx.type == TransactionType.transfer
+                    color: tx.type.isTransferLike
                         ? (isDarkMode
                               ? AppColors.darkTransfer
                               : AppColors.transfer)
@@ -670,6 +668,8 @@ class _TransactionItem extends StatelessWidget {
           return AppColors.darkTransfer;
         case TransactionType.debtRepay:
           return AppColors.darkIncome; // ชำระหนี้ = สีเขียว
+        case TransactionType.debtTransfer:
+          return AppColors.darkTransfer;
       }
     }
     switch (type) {
@@ -681,6 +681,8 @@ class _TransactionItem extends StatelessWidget {
         return AppColors.transfer;
       case TransactionType.debtRepay:
         return AppColors.income; // ชำระหนี้ = สีเขียว
+      case TransactionType.debtTransfer:
+        return AppColors.transfer;
     }
   }
 
@@ -689,8 +691,7 @@ class _TransactionItem extends StatelessWidget {
     Account? toAccount,
     AppTransaction tx,
   ) {
-    if (tx.type == TransactionType.transfer ||
-        tx.type == TransactionType.debtRepay) {
+    if (tx.type.usesDestinationAccount) {
       final from = account?.name ?? '-';
       final to = toAccount?.name ?? '-';
       return '$from → $to';

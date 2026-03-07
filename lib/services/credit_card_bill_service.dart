@@ -136,11 +136,12 @@ class CreditCardBillService {
       final paymentEndDay = dueDateDay; // statementDate + 15 (inclusive)
 
       // รายการใช้จ่ายในรอบ [startDate, statementDate] (inclusive ทั้งสองฝั่ง, เทียบระดับวัน)
-      // รวม debtRepay จากบัตร (ใช้บัตรจ่ายหนี้) ให้นับเป็นรายจ่ายด้วย
+      // รวม debtRepay/debtTransfer จากบัตร ให้นับเป็นยอดใช้ของบัตรด้วย
       final expenses = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
         return (t.type == TransactionType.expense ||
-                t.type == TransactionType.debtRepay) &&
+                t.type == TransactionType.debtRepay ||
+                t.type == TransactionType.debtTransfer) &&
             t.accountId == account.id &&
             !d.isBefore(startDay) &&
             !d.isAfter(endDay);
@@ -233,7 +234,8 @@ class CreditCardBillService {
       final openExpenses = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
         return (t.type == TransactionType.expense ||
-                t.type == TransactionType.debtRepay) &&
+                t.type == TransactionType.debtRepay ||
+                t.type == TransactionType.debtTransfer) &&
             t.accountId == account.id &&
             !d.isBefore(openStartDay) &&
             !d.isAfter(todayDay);

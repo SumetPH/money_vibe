@@ -111,16 +111,7 @@ class RecurringTransaction {
       color = const Color(0xFF607D8B);
     }
 
-    TransactionType txType;
-    final typeRaw = map['transaction_type']?.toString() ?? '';
-    try {
-      txType = TransactionType.values.firstWhere(
-        (t) => t.name == typeRaw,
-        orElse: () => TransactionType.expense,
-      );
-    } catch (_) {
-      txType = TransactionType.expense;
-    }
+    final txType = parseTransactionType(map['transaction_type']?.toString());
 
     return RecurringTransaction(
       id: map['id']?.toString() ?? '',

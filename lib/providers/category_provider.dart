@@ -79,8 +79,7 @@ class CategoryProvider extends ChangeNotifier {
   ) {
     return transactions
         .where(
-          (t) =>
-              t.categoryId == categoryId && t.type != TransactionType.transfer,
+          (t) => t.categoryId == categoryId && !t.type.isTransferLike,
         )
         .fold(0.0, (sum, t) => sum + t.amount);
   }
