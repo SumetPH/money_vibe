@@ -3,4 +3,4 @@
 
 // Debug-only overrides: separate app from release
 PRODUCT_BUNDLE_IDENTIFIER = app.sumetph.moneyvibe.debug
-PRODUCT_NAME = money_flutter_dev
+PRODUCT_NAME = Money\ Vibe\ Dev

@@ -481,7 +481,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.sumetph.moneyvibe.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/money_flutter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/money_flutter";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Money Vibe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Money Vibe";
 			};
 			name = Debug;
 		};
@@ -496,7 +496,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.sumetph.moneyvibe.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/money_flutter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/money_flutter";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Money Vibe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Money Vibe";
 			};
 			name = Release;
 		};
@@ -511,7 +511,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.sumetph.moneyvibe.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/money_flutter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/money_flutter";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Money Vibe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Money Vibe";
 			};
 			name = Profile;
 		};
