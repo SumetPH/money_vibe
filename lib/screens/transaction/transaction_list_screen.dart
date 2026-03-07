@@ -425,91 +425,116 @@ class _TransactionItem extends StatelessWidget {
     final textSecondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
+    final note = tx.note?.trim();
 
     return InkWell(
       onTap: onTap,
       child: Container(
         color: surfaceColor,
-        child: Row(
-          children: [
-            // Type indicator bar
-            Container(width: 4, height: 60, color: typeColor),
-            const SizedBox(width: 12),
-            // Category/Type icon
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: (category?.color ?? typeColor).withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Type indicator bar
+              Container(width: 4, color: typeColor),
+              const SizedBox(width: 12),
+              // Category/Type icon
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: (tx.type == TransactionType.debtTransfer
+                          ? typeColor
+                          : (category?.color ?? typeColor))
+                      .withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  tx.type == TransactionType.debtTransfer
+                      ? Icons.account_tree
+                      : tx.type == TransactionType.transfer
+                      ? Icons.swap_horiz
+                      : tx.type == TransactionType.debtRepay
+                      ? Icons.payment
+                      : (category?.icon ?? Icons.receipt),
+                  color: tx.type == TransactionType.debtTransfer
+                      ? typeColor
+                      : (category?.color ?? typeColor),
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                tx.type == TransactionType.debtTransfer
-                    ? Icons.account_tree
-                    : tx.type == TransactionType.transfer
-                    ? Icons.swap_horiz
-                    : tx.type == TransactionType.debtRepay
-                    ? Icons.payment
-                    : (category?.icon ?? Icons.receipt),
-                color: category?.color ?? typeColor,
-                size: 20,
+              const SizedBox(width: 10),
+              // Info
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _buildAccountLabel(account, toAccount, tx),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimaryColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        _buildSubLabel(category?.name, note),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: textSecondaryColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Account info
-                  Text(
-                    _buildAccountLabel(account, toAccount, tx),
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimaryColor,
+              // Time + Amount
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _formatTime(tx.dateTime),
+                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // Category
-                  Text(
-                    _buildSubLabel(category?.name),
-                    style: TextStyle(fontSize: 14, color: textSecondaryColor),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    Text(
+                      tx.type == TransactionType.transfer
+                          ? formatAmount(tx.amount)
+                          : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: tx.type == TransactionType.transfer
+                            ? (isDarkMode
+                                  ? AppColors.darkTransfer
+                                  : AppColors.transfer)
+                            : tx.type == TransactionType.debtRepay
+                            ? (isDarkMode
+                                  ? AppColors.darkExpense
+                                  : AppColors.expense)
+                            : tx.type == TransactionType.debtTransfer
+                            ? (isDarkMode
+                                  ? AppColors.darkDebtTransfer
+                                  : AppColors.debtTransfer)
+                            : AppColors.getAmountColor(
+                                displayAmount,
+                                isDarkMode,
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // Time + Amount
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _formatTime(tx.dateTime),
-                  style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                ),
-                Text(
-                  tx.type.isTransferLike
-                      ? formatAmount(tx.amount)
-                      : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: tx.type.isTransferLike
-                        ? (isDarkMode
-                              ? AppColors.darkTransfer
-                              : AppColors.transfer)
-                        : tx.type == TransactionType.debtRepay
-                        ? (isDarkMode
-                              ? AppColors.darkExpense
-                              : AppColors.expense)
-                        : AppColors.getAmountColor(displayAmount, isDarkMode),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
-          ],
+              const SizedBox(width: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -527,7 +552,7 @@ class _TransactionItem extends StatelessWidget {
         case TransactionType.debtRepay:
           return AppColors.darkExpense;
         case TransactionType.debtTransfer:
-          return AppColors.darkTransfer;
+          return AppColors.darkDebtTransfer;
       }
     }
     switch (type) {
@@ -540,7 +565,7 @@ class _TransactionItem extends StatelessWidget {
       case TransactionType.debtRepay:
         return AppColors.expense;
       case TransactionType.debtTransfer:
-        return AppColors.transfer;
+        return AppColors.debtTransfer;
     }
   }
 
@@ -557,11 +582,12 @@ class _TransactionItem extends StatelessWidget {
     return account?.name ?? '-';
   }
 
-  String _buildSubLabel(String? categoryName) {
-    if (categoryName != null) {
-      return categoryName;
-    }
-    return categoryName ?? '';
+  String _buildSubLabel(String? categoryName, String? note) {
+    final parts = <String>[
+      if (categoryName != null && categoryName.isNotEmpty) categoryName,
+      if (note != null && note.isNotEmpty) note,
+    ];
+    return parts.join(' • ');
   }
 
   String _formatTime(DateTime dt) {

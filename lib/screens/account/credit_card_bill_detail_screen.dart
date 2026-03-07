@@ -582,7 +582,10 @@ class _TransactionItem extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (category?.color ?? typeColor).withValues(alpha: 0.15),
+                color: (tx.type == TransactionType.debtTransfer
+                        ? typeColor
+                        : (category?.color ?? typeColor))
+                    .withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -593,7 +596,9 @@ class _TransactionItem extends StatelessWidget {
                     : tx.type == TransactionType.debtRepay
                     ? Icons.payment
                     : (category?.icon ?? Icons.receipt),
-                color: category?.color ?? typeColor,
+                color: tx.type == TransactionType.debtTransfer
+                    ? typeColor
+                    : (category?.color ?? typeColor),
                 size: 20,
               ),
             ),
@@ -631,20 +636,24 @@ class _TransactionItem extends StatelessWidget {
                   style: TextStyle(fontSize: 13, color: textSecondaryColor),
                 ),
                 Text(
-                  tx.type.isTransferLike
+                  tx.type == TransactionType.transfer
                       ? formatAmount(tx.amount)
                       : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: tx.type.isTransferLike
+                    color: tx.type == TransactionType.transfer
                         ? (isDarkMode
                               ? AppColors.darkTransfer
                               : AppColors.transfer)
                         : tx.type == TransactionType.debtRepay
                         ? (isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income) // ชำระหนี้ = สีเขียว
+                              ? AppColors.darkExpense
+                              : AppColors.expense)
+                        : tx.type == TransactionType.debtTransfer
+                        ? (isDarkMode
+                              ? AppColors.darkDebtTransfer
+                              : AppColors.debtTransfer)
                         : AppColors.getAmountColor(displayAmount, isDarkMode),
                   ),
                 ),
@@ -667,9 +676,9 @@ class _TransactionItem extends StatelessWidget {
         case TransactionType.transfer:
           return AppColors.darkTransfer;
         case TransactionType.debtRepay:
-          return AppColors.darkIncome; // ชำระหนี้ = สีเขียว
+          return AppColors.darkExpense;
         case TransactionType.debtTransfer:
-          return AppColors.darkTransfer;
+          return AppColors.darkDebtTransfer;
       }
     }
     switch (type) {
@@ -680,9 +689,9 @@ class _TransactionItem extends StatelessWidget {
       case TransactionType.transfer:
         return AppColors.transfer;
       case TransactionType.debtRepay:
-        return AppColors.income; // ชำระหนี้ = สีเขียว
+        return AppColors.expense;
       case TransactionType.debtTransfer:
-        return AppColors.transfer;
+        return AppColors.debtTransfer;
     }
   }
 

@@ -52,9 +52,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _selectedToAccountId = _type == TransactionType.transfer
         ? tx?.toAccountId
         : null;
-    _selectedDebtAccountId = _type.requiresDebtAccount
-        ? tx?.toAccountId
-        : null;
+    _selectedDebtAccountId = _type.requiresDebtAccount ? tx?.toAccountId : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
     _amountController.text = (tx != null && tx.amount > 0)
         ? formatAmount(tx.amount)
@@ -232,23 +230,25 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         final allVisibleAccounts = accountProvider.visibleAccounts;
 
         final accounts = switch (_type) {
-          TransactionType.debtTransfer => allVisibleAccounts
-              .where(
-                (a) =>
-                    (a.type == AccountType.debt ||
-                        a.type == AccountType.creditCard) &&
-                    a.type != AccountType.portfolio,
-              )
-              .toList(),
+          TransactionType.debtTransfer =>
+            allVisibleAccounts
+                .where(
+                  (a) =>
+                      (a.type == AccountType.debt ||
+                          a.type == AccountType.creditCard) &&
+                      a.type != AccountType.portfolio,
+                )
+                .toList(),
           TransactionType.income ||
           TransactionType.expense ||
-          TransactionType.debtRepay => allVisibleAccounts
-              .where(
-                (a) =>
-                    a.type != AccountType.debt &&
-                    a.type != AccountType.portfolio,
-              )
-              .toList(),
+          TransactionType.debtRepay =>
+            allVisibleAccounts
+                .where(
+                  (a) =>
+                      a.type != AccountType.debt &&
+                      a.type != AccountType.portfolio,
+                )
+                .toList(),
           _ => allVisibleAccounts,
         };
         final selectedAccount = _selectedAccountId != null
@@ -363,15 +363,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
                 textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w300,
-                  color: usesDebtAccount
-                      ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
-                      : (isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary),
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300),
                 decoration: InputDecoration(
                   hintText: 'จำนวน',
                   hintStyle: TextStyle(
@@ -390,16 +382,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   filled: false,
                   suffixText: 'บาท',
-                  suffixStyle: TextStyle(
-                    fontSize: 14,
-                    color: usesDebtAccount
-                        ? (isDarkMode
-                              ? AppColors.darkTransfer
-                              : AppColors.transfer)
-                        : (isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary),
-                  ),
+                  suffixStyle: TextStyle(fontSize: 14),
                 ),
                 autofocus: !_isEditing,
                 onChanged: (value) {
@@ -443,6 +426,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           accountProvider: accountProvider,
           transactions: transactions,
         ),
+
+      if (isDebtTransfer) ...[
+        _buildDivider(),
+        _CategorySelectionRow(
+          selectedCategory: selectedCategory,
+          onTap: () => _pickCategory(context, categories),
+        ),
+      ],
 
       const SizedBox(height: 8),
 
@@ -1011,7 +1002,7 @@ class _TypeSelector extends StatelessWidget {
       case TransactionType.debtRepay:
         return (Icons.payment, Colors.orange);
       case TransactionType.debtTransfer:
-        return (Icons.account_tree, Colors.orange);
+        return (Icons.account_tree, AppColors.debtTransfer);
     }
   }
 
@@ -1467,8 +1458,7 @@ class _AccountCategorySelector extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    if (type.isTransferLike &&
-                        selectedToAccount != null) ...[
+                    if (type.isTransferLike && selectedToAccount != null) ...[
                       Container(
                         width: 28,
                         height: 28,
@@ -1529,9 +1519,7 @@ class _AccountCategorySelector extends StatelessWidget {
                       ),
                     ] else
                       Text(
-                        type.isTransferLike
-                            ? 'บัญชีปลายทาง'
-                            : 'เลือกหมวดหมู่',
+                        type.isTransferLike ? 'บัญชีปลายทาง' : 'เลือกหมวดหมู่',
                         style: TextStyle(
                           fontSize: 14,
                           color: isDarkMode
@@ -1613,6 +1601,93 @@ class _FieldRow extends StatelessWidget {
             size: 20,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategorySelectionRow extends StatelessWidget {
+  final Category? selectedCategory;
+  final VoidCallback onTap;
+
+  const _CategorySelectionRow({
+    required this.selectedCategory,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color:
+            theme.cardTheme.color ??
+            (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 90,
+              child: Text(
+                'หมวดหมู่',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  if (selectedCategory != null) ...[
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: selectedCategory!.color.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        selectedCategory!.icon,
+                        color: selectedCategory!.color,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      selectedCategory?.name ?? 'เลือกหมวดหมู่',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode
+                            ? (selectedCategory != null
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.darkTextSecondary)
+                            : (selectedCategory != null
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

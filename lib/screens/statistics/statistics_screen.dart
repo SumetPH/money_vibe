@@ -100,6 +100,28 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
 // ==================== Yearly Bar Chart ====================
 
+bool _isExpenseTransaction(AppTransaction tx, List<Account> accounts) {
+  if (tx.type == TransactionType.expense) return true;
+  if (tx.type == TransactionType.debtTransfer) return true;
+  if (tx.type == TransactionType.debtRepay) {
+    final toAccount = accounts.firstWhere(
+      (a) => a.id == tx.toAccountId,
+      orElse: () => Account(
+        id: '',
+        name: '',
+        type: AccountType.debt,
+        initialBalance: 0,
+        currency: 'THB',
+      ),
+    );
+
+    // debtRepay to a credit card account is just a bill payment —
+    // the original credit card purchases were already counted as expenses.
+    return toAccount.type != AccountType.creditCard;
+  }
+  return false;
+}
+
 class _YearlyBarChart extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
@@ -299,26 +321,6 @@ class _YearlyBarChart extends StatelessWidget {
     );
   }
 
-  bool _isExpense(AppTransaction tx, List<Account> accounts) {
-    if (tx.type == TransactionType.expense) return true;
-    if (tx.type == TransactionType.debtRepay) {
-      // debtRepay to a credit card account is just a bill payment —
-      // the original credit card purchases were already counted as expenses.
-      final toAccount = accounts.firstWhere(
-        (a) => a.id == tx.toAccountId,
-        orElse: () => Account(
-          id: '',
-          name: '',
-          type: AccountType.debt,
-          initialBalance: 0,
-          currency: 'THB',
-        ),
-      );
-      return toAccount.type != AccountType.creditCard;
-    }
-    return false;
-  }
-
   Map<int, Map<String, double>> _calculateYearlyData(
     List<AppTransaction> transactions,
     List<Account> accounts,
@@ -331,7 +333,7 @@ class _YearlyBarChart extends StatelessWidget {
 
       if (tx.type == TransactionType.income) {
         data[year]!['income'] = (data[year]!['income'] ?? 0) + tx.amount;
-      } else if (_isExpense(tx, accounts)) {
+      } else if (_isExpenseTransaction(tx, accounts)) {
         data[year]!['expense'] = (data[year]!['expense'] ?? 0) + tx.amount;
       }
     }
@@ -663,7 +665,7 @@ class _YearlyBarChart extends StatelessWidget {
       final monthIndex = tx.dateTime.month - 1;
       if (tx.type == TransactionType.income) {
         monthlyData[monthIndex].income += tx.amount;
-      } else if (_isExpense(tx, accounts)) {
+      } else if (_isExpenseTransaction(tx, accounts)) {
         monthlyData[monthIndex].expense += tx.amount;
       }
     }
@@ -825,212 +827,227 @@ class _CategoryPieChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<TransactionProvider, CategoryProvider, SettingsProvider>(
-      builder: (context, txProvider, catProvider, settingsProvider, _) {
-        final isDarkMode = settingsProvider.isDarkMode;
-        final textColor = isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
+    return Consumer4<
+      TransactionProvider,
+      CategoryProvider,
+      AccountProvider,
+      SettingsProvider
+    >(
+      builder:
+          (
+            context,
+            txProvider,
+            catProvider,
+            accountProvider,
+            settingsProvider,
+            _,
+          ) {
+            final isDarkMode = settingsProvider.isDarkMode;
+            final textColor = isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary;
 
-        final categoryData = _calculateCategoryData(
-          txProvider.transactions,
-          catProvider.categories,
-          type,
-        );
+            final categoryData = _calculateCategoryData(
+              txProvider.transactions,
+              catProvider.categories,
+              type,
+              accountProvider.accounts,
+            );
 
-        final total = categoryData.fold<double>(
-          0,
-          (sum, item) => sum + item.amount,
-        );
+            final total = categoryData.fold<double>(
+              0,
+              (sum, item) => sum + item.amount,
+            );
 
-        final color = type == CategoryType.income
-            ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
-            : (isDarkMode ? AppColors.darkExpense : AppColors.expense);
+            final color = type == CategoryType.income
+                ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
+                : (isDarkMode ? AppColors.darkExpense : AppColors.expense);
 
-        if (categoryData.isEmpty) {
-          return Center(
-            child: Text(
-              'ไม่มีข้อมูล${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}',
-              style: TextStyle(
-                color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
-              ),
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Total Card
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      formatAmount(total),
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Pie Chart
-              Container(
-                height: 220,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 16,
-                    sections: categoryData.map((data) {
-                      final percentage = total > 0
-                          ? (data.amount / total) * 100
-                          : 0.0;
-                      final showLabel = percentage >= 4;
-                      return PieChartSectionData(
-                        color: data.color,
-                        value: data.amount,
-                        title: '',
-                        radius: 52,
-                        badgeWidget: showLabel
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? AppColors.darkSurface
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: data.color,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      data.icon,
-                                      color: data.color,
-                                      size: 11,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      '${percentage.toStringAsFixed(0)}%',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                        color: data.color,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : null,
-                        badgePositionPercentageOffset: 1.50,
-                      );
-                    }).toList(),
-                    pieTouchData: PieTouchData(
-                      enabled: true,
-                      touchCallback: (FlTouchEvent event, pieTouchResponse) {},
-                    ),
+            if (categoryData.isEmpty) {
+              return Center(
+                child: Text(
+                  'ไม่มีข้อมูล${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}',
+                  style: TextStyle(
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                   ),
                 ),
-              ),
+              );
+            }
 
-              // Category List
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Total Card
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'แยกตามหมวดหมู่',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
+                    child: Column(
+                      children: [
+                        Text(
+                          '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          formatAmount(total),
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Pie Chart
+                  Container(
+                    height: 220,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 16,
+                        sections: categoryData.map((data) {
+                          final percentage = total > 0
+                              ? (data.amount / total) * 100
+                              : 0.0;
+                          final showLabel = percentage >= 4;
+                          return PieChartSectionData(
+                            color: data.color,
+                            value: data.amount,
+                            title: '',
+                            radius: 52,
+                            badgeWidget: showLabel
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? AppColors.darkSurface
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: data.color,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          data.icon,
+                                          color: data.color,
+                                          size: 11,
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          '${percentage.toStringAsFixed(0)}%',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: data.color,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : null,
+                            badgePositionPercentageOffset: 1.50,
+                          );
+                        }).toList(),
+                        pieTouchData: PieTouchData(
+                          enabled: true,
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {},
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: categoryData.length,
-                      itemBuilder: (context, index) {
-                        final data = categoryData[index];
-                        final percentage = total > 0
-                            ? (data.amount / total) * 100
-                            : 0.0;
-                        return _CategoryListItem(
-                          data: data,
-                          percentage: percentage.toDouble(),
-                          isDarkMode: isDarkMode,
-                        );
-                      },
+                  ),
+
+                  // Category List
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'แยกตามหมวดหมู่',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: categoryData.length,
+                          itemBuilder: (context, index) {
+                            final data = categoryData[index];
+                            final percentage = total > 0
+                                ? (data.amount / total) * 100
+                                : 0.0;
+                            return _CategoryListItem(
+                              data: data,
+                              percentage: percentage.toDouble(),
+                              isDarkMode: isDarkMode,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            );
+          },
     );
   }
 
@@ -1038,6 +1055,7 @@ class _CategoryPieChart extends StatelessWidget {
     List<AppTransaction> transactions,
     List<Category> categories,
     CategoryType type,
+    List<Account> accounts,
   ) {
     final Map<String, double> categoryAmounts = {};
 
@@ -1047,7 +1065,7 @@ class _CategoryPieChart extends StatelessWidget {
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : tx.type.isExpenseLike;
+          : _isExpenseTransaction(tx, accounts);
 
       if (!shouldInclude) continue;
 

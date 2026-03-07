@@ -1431,7 +1431,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       case TransactionType.debtRepay:
         return isDark ? AppColors.darkTransfer : AppColors.transfer;
       case TransactionType.debtTransfer:
-        return isDark ? AppColors.darkTransfer : AppColors.transfer;
+        return isDark ? AppColors.darkDebtTransfer : AppColors.debtTransfer;
     }
   }
 }

@@ -5,15 +5,15 @@ enum TransactionType {
   income('รายรับ'),
   transfer('โอน'),
   debtRepay('ชำระหนี้สิน'),
-  debtTransfer('โยกหนี้สิน');
+  debtTransfer('โอนหนี้');
 
   final String label;
   const TransactionType(this.label);
-}
 
-extension TransactionTypeX on TransactionType {
   bool get isExpenseLike =>
-      this == TransactionType.expense || this == TransactionType.debtRepay;
+      this == TransactionType.expense ||
+      this == TransactionType.debtRepay ||
+      this == TransactionType.debtTransfer;
 
   bool get isTransferLike =>
       this == TransactionType.transfer || this == TransactionType.debtTransfer;
@@ -24,13 +24,13 @@ extension TransactionTypeX on TransactionType {
       this == TransactionType.debtTransfer;
 
   bool get requiresDebtAccount =>
-      this == TransactionType.debtRepay ||
-      this == TransactionType.debtTransfer;
+      this == TransactionType.debtRepay || this == TransactionType.debtTransfer;
 
   bool get supportsCategory =>
       this == TransactionType.income ||
       this == TransactionType.expense ||
-      this == TransactionType.debtRepay;
+      this == TransactionType.debtRepay ||
+      this == TransactionType.debtTransfer;
 }
 
 TransactionType parseTransactionType(
