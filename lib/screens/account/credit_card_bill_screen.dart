@@ -112,7 +112,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                 if (widget.account.statementDay != null)
                   Text(
                     'สรุปยอดวันที่ ${widget.account.statementDay}',
-                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                    style: TextStyle(fontSize: 13, color: textSecondaryColor),
                   ),
               ],
             ),
@@ -149,12 +149,12 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
           const SizedBox(height: 16),
           Text(
             'ยังไม่ได้ตั้งค่าวันสรุปยอด',
-            style: TextStyle(fontSize: 18, color: textSecondaryColor),
+            style: TextStyle(fontSize: 19, color: textSecondaryColor),
           ),
           const SizedBox(height: 8),
           Text(
             'กรุณาแก้ไขบัญชีเพื่อเพิ่มวันสรุปยอด',
-            style: TextStyle(fontSize: 14, color: textSecondaryColor),
+            style: TextStyle(fontSize: 15, color: textSecondaryColor),
           ),
         ],
       ),
@@ -221,7 +221,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                         child: Text(
                           bill.isOpen ? 'รอบปัจจุบัน' : bill.billName,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: bill.isOpen
                                 ? AppColors.getAmountColor(1, isDarkMode)
@@ -236,7 +236,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                   const SizedBox(height: 12),
                   Text(
                     bill.dateRange,
-                    style: TextStyle(fontSize: 14, color: textSecondaryColor),
+                    style: TextStyle(fontSize: 15, color: textSecondaryColor),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -248,7 +248,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                             Text(
                               'ยอดที่ต้องชำระ',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 color: textSecondaryColor,
                               ),
                             ),
@@ -270,7 +270,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                             Text(
                               'ชำระแล้ว',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 color: textSecondaryColor,
                               ),
                             ),
@@ -301,14 +301,14 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                               ? 'คงเหลือที่ต้องชำระ'
                               : 'ชำระเกิน',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: textSecondaryColor,
                           ),
                         ),
                         Text(
                           '${formatAmount(bill.remainingAmount.abs())} บาท',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: bill.remainingAmount > 0
                                 ? AppColors.getAmountColor(
@@ -334,14 +334,14 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                               ? 'ยอดค้างยกมาจากรอบก่อน'
                               : 'ยอดชำระเกินยกมา',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: textSecondaryColor,
                           ),
                         ),
                         Text(
                           '${formatAmount(bill.carriedOverAmount.abs())} บาท',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: bill.carriedOverAmount > 0
                                 ? AppColors.getAmountColor(
@@ -406,7 +406,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: textColor,
         ),

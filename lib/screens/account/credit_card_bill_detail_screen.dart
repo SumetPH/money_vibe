@@ -70,14 +70,14 @@ class _CreditCardBillDetailScreenState
                 Text(
                   bill.isOpen ? 'รอบปัจจุบัน' : 'รอบบิล ${bill.billName}',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 19,
                     fontWeight: FontWeight.w600,
                     color: textPrimaryColor,
                   ),
                 ),
                 Text(
                   bill.dateRange,
-                  style: TextStyle(fontSize: 14, color: textSecondaryColor),
+                  style: TextStyle(fontSize: 15, color: textSecondaryColor),
                 ),
               ],
             ),
@@ -261,7 +261,7 @@ class _CreditCardBillDetailScreenState
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: textColor,
         ),
@@ -324,12 +324,12 @@ class _CreditCardBillDetailScreenState
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 14, color: textSecondaryColor),
+            style: TextStyle(fontSize: 15, color: textSecondaryColor),
           ),
           Text(
             '${formatAmount(displayValue)} บาท',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: color,
             ),
@@ -469,7 +469,7 @@ class _DateHeader extends StatelessWidget {
             child: Text(
               _formatFullDate(date),
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -482,7 +482,7 @@ class _DateHeader extends StatelessWidget {
             Text(
               '+${formatAmount(income)}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: incomeColor,
               ),
@@ -493,7 +493,7 @@ class _DateHeader extends StatelessWidget {
             Text(
               '-${formatAmount(expense)}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: expenseColor,
               ),
@@ -612,7 +612,7 @@ class _TransactionItem extends StatelessWidget {
                   Text(
                     _buildAccountLabel(account, toAccount, tx),
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: textPrimaryColor,
                     ),
@@ -621,7 +621,7 @@ class _TransactionItem extends StatelessWidget {
                   // Category
                   Text(
                     _buildSubLabel(category?.name),
-                    style: TextStyle(fontSize: 14, color: textSecondaryColor),
+                    style: TextStyle(fontSize: 13, color: textSecondaryColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -633,14 +633,14 @@ class _TransactionItem extends StatelessWidget {
               children: [
                 Text(
                   _formatTime(tx.dateTime),
-                  style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
                 ),
                 Text(
                   tx.type == TransactionType.transfer
                       ? formatAmount(tx.amount)
                       : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: tx.type == TransactionType.transfer
                         ? (isDarkMode

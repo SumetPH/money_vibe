@@ -298,7 +298,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  style: TextStyle(fontSize: 15, color: textPrimary),
+                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
               Divider(height: 1, color: dividerColor),
@@ -327,9 +327,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixText: 'บาท',
-                    suffixStyle: TextStyle(color: textSecondary, fontSize: 14),
+                    suffixStyle: TextStyle(color: textSecondary, fontSize: 15),
                   ),
-                  style: TextStyle(fontSize: 15, color: textPrimary),
+                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
               const SizedBox(height: 8),
@@ -421,12 +421,12 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     children: [
                       Text(
                         'เดือนเริ่มต้น',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       Text(
                         _formatMonthYear(_startDate),
-                        style: TextStyle(fontSize: 14, color: textPrimary),
+                        style: TextStyle(fontSize: 15, color: textPrimary),
                       ),
                       const SizedBox(width: 4),
                       Icon(Icons.chevron_right, color: textSecondary, size: 18),
@@ -449,13 +449,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     children: [
                       Text(
                         'เดือนสิ้นสุด',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       if (_endDate != null) ...[
                         Text(
                           _formatMonthYear(_endDate!),
-                          style: TextStyle(fontSize: 14, color: textPrimary),
+                          style: TextStyle(fontSize: 15, color: textPrimary),
                         ),
                         const SizedBox(width: 4),
                         GestureDetector(
@@ -470,7 +470,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         Text(
                           'ไม่ได้เลือก',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             color: textSecondary.withValues(alpha: 0.6),
                           ),
                         ),
@@ -494,7 +494,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     children: [
                       Text(
                         'ไอคอน',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       Container(
@@ -527,7 +527,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     children: [
                       Text(
                         'สี',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       Container(
@@ -566,7 +566,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  style: TextStyle(fontSize: 15, color: textPrimary),
+                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
 
@@ -1469,12 +1469,12 @@ class _RowTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Text(label, style: TextStyle(fontSize: 15, color: textSecondary)),
+            Text(label, style: TextStyle(fontSize: 16, color: textSecondary)),
             const Spacer(),
             Text(
               value,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: valueColor ?? textPrimary,
                 fontWeight: valueColor != null
                     ? FontWeight.w600

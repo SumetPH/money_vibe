@@ -216,7 +216,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  style: TextStyle(fontSize: 15, color: textPrimary),
+                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
               Divider(height: 1, color: dividerColor),
@@ -244,9 +244,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixText: 'บาท',
-                    suffixStyle: TextStyle(color: textSecondary, fontSize: 14),
+                    suffixStyle: TextStyle(color: textSecondary, fontSize: 15),
                   ),
-                  style: TextStyle(fontSize: 15, color: textPrimary),
+                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
               const SizedBox(height: 8),
@@ -264,7 +264,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     children: [
                       Text(
                         'หมวดหมู่',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       SizedBox(width: 20),
                       Expanded(
@@ -275,7 +275,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                               child: Text(
                                 categoryLabel,
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   color: textPrimary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -310,7 +310,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     children: [
                       Text(
                         'ไอคอน',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       Container(
@@ -346,7 +346,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     children: [
                       Text(
                         'สี',
-                        style: TextStyle(fontSize: 15, color: textSecondary),
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
                       const Spacer(),
                       Container(

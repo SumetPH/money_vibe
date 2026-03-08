@@ -370,8 +370,8 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                         Row(
                           children: [
                             Container(
-                              width: 52,
-                              height: 52,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 color: recurring.color.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
@@ -379,7 +379,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               child: Icon(
                                 recurring.icon,
                                 color: recurring.color,
-                                size: 26,
+                                size: 22,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -390,7 +390,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                                   Text(
                                     recurring.name,
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w700,
                                       color: textPrimary,
                                     ),
@@ -406,7 +406,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                                       Text(
                                         formatAmount(recurring.amount),
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.w700,
                                           color: typeColor,
                                         ),
@@ -414,7 +414,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                                       Text(
                                         ' บาท',
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: 14,
                                           color: textSecondary,
                                         ),
                                       ),
@@ -465,7 +465,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                             Text(
                               'ทุกวันที่ ',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: textSecondary,
                               ),
                             ),
@@ -474,7 +474,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                                   ? 'สิ้นเดือน'
                                   : '${recurring.dayOfMonth} ของเดือน',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: textPrimary,
                               ),
@@ -487,14 +487,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                             Text(
                               'เริ่ม ',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: textSecondary,
                               ),
                             ),
                             Text(
                               _formatMonthYear(recurring.startDate),
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: textPrimary,
                               ),
@@ -503,14 +503,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               Text(
                                 '  ถึง  ',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   color: textSecondary,
                                 ),
                               ),
                               Text(
                                 _formatMonthYear(recurring.endDate!),
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: textPrimary,
                                 ),
@@ -519,7 +519,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               Text(
                                 '  (ต่อเนื่อง)',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   color: textSecondary,
                                 ),
                               ),
@@ -530,7 +530,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           Text(
                             recurring.note!,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 14,
                               color: textSecondary,
                             ),
                           ),
@@ -746,7 +746,7 @@ class _OccurrenceItem extends StatelessWidget {
       children: [
         Container(
           color: surfaceColor,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -775,7 +775,7 @@ class _OccurrenceItem extends StatelessWidget {
                           child: Text(
                             formatDate(date),
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: textPrimary,
                             ),
@@ -793,7 +793,7 @@ class _OccurrenceItem extends StatelessWidget {
                           Text(
                             formatAmount(linkedTransaction!.amount),
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: typeColor,
                             ),
@@ -840,7 +840,7 @@ class _OccurrenceItem extends StatelessWidget {
                         child: Text(
                           'ยกเลิก',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: textSecondary,
                             decoration: TextDecoration.underline,
                           ),
@@ -973,20 +973,20 @@ class _DetailRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 26,
-          height: 26,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 13, color: iconColor),
+          child: Icon(icon, size: 14, color: iconColor),
         ),
         const SizedBox(width: 8),
-        Text('$label: ', style: TextStyle(fontSize: 13, color: textSecondary)),
+        Text('$label: ', style: TextStyle(fontSize: 14, color: textSecondary)),
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: textPrimary,
           ),
@@ -1013,7 +1013,7 @@ class _TypeBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
           color: color,
         ),

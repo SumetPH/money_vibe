@@ -771,7 +771,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: isDarkMode
                   ? AppColors.darkTextSecondary
                   : AppColors.textSecondary,
@@ -781,7 +781,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             formatAmount(amount),
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -812,7 +812,7 @@ class _LegendItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(label, style: const TextStyle(fontSize: 13)),
       ],
     );
   }
@@ -1159,7 +1159,7 @@ class _CategoryListItem extends StatelessWidget {
                 Text(
                   data.category.name,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
@@ -1186,14 +1186,14 @@ class _CategoryListItem extends StatelessWidget {
               Text(
                 formatAmount(data.amount),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: textColor,
                 ),
               ),
               Text(
                 '${percentage.toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                style: TextStyle(fontSize: 13, color: secondaryTextColor),
               ),
             ],
           ),

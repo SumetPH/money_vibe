@@ -41,6 +41,14 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final selectedTabColor = _currentType == CategoryType.expense
+        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+        : (isDarkMode ? AppColors.darkIncome : AppColors.income);
+    final unselectedTabColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+
     return Scaffold(
       drawer: const AppDrawer(currentRoute: '/categories'),
       appBar: AppBar(
@@ -84,6 +92,8 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _isReorderMode ? null : _onTabChanged,
+        selectedItemColor: selectedTabColor,
+        unselectedItemColor: unselectedTabColor,
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const [
@@ -304,13 +314,13 @@ class _CategoryItem extends StatelessWidget {
                 ],
                 // Icon
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: category.color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(category.icon, color: category.color, size: 22),
+                  child: Icon(category.icon, color: category.color, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Name + amount
@@ -321,7 +331,7 @@ class _CategoryItem extends StatelessWidget {
                       Text(
                         category.name,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: textPrimaryColor,
                         ),
@@ -330,7 +340,7 @@ class _CategoryItem extends StatelessWidget {
                         Text(
                           '${formatAmount(displayAmount)} บาท',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.getAmountColor(
                               displayAmount,

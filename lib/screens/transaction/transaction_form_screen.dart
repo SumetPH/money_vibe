@@ -346,7 +346,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ? 'ยอดโยก'
                   : 'จำนวน',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: isDarkMode
                     ? AppColors.darkTextSecondary
                     : AppColors.textSecondary,
@@ -363,7 +363,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w300),
                 decoration: InputDecoration(
                   hintText: 'จำนวน',
                   hintStyle: TextStyle(
@@ -382,7 +382,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   filled: false,
                   suffixText: 'บาท',
-                  suffixStyle: TextStyle(fontSize: 14),
+                  suffixStyle: TextStyle(fontSize: 15),
                 ),
                 autofocus: !_isEditing,
                 onChanged: (value) {
@@ -1425,13 +1425,18 @@ class _AccountCategorySelector extends StatelessWidget {
                         ),
                       ),
                     ] else
-                      Text(
-                        'เลือกบัญชี',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
+                      SizedBox(
+                        height: 36,
+                        child: Center(
+                          child: Text(
+                            'เลือกบัญชี',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
                         ),
                       ),
                   ],
@@ -1518,13 +1523,20 @@ class _AccountCategorySelector extends StatelessWidget {
                         ),
                       ),
                     ] else
-                      Text(
-                        type.isTransferLike ? 'บัญชีปลายทาง' : 'เลือกหมวดหมู่',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
+                      SizedBox(
+                        height: 36,
+                        child: Center(
+                          child: Text(
+                            type.isTransferLike
+                                ? 'บัญชีปลายทาง'
+                                : 'เลือกหมวดหมู่',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
                         ),
                       ),
                   ],
@@ -1570,7 +1582,7 @@ class _FieldRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 color: isDarkMode
                     ? AppColors.darkTextSecondary
                     : AppColors.textSecondary,
@@ -1590,7 +1602,7 @@ class _FieldRow extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: const TextStyle(fontSize: 15),
+              style: const TextStyle(fontSize: 16),
             ),
           ),
           Icon(
@@ -1634,7 +1646,7 @@ class _CategorySelectionRow extends StatelessWidget {
               child: Text(
                 'หมวดหมู่',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   color: isDarkMode
                       ? AppColors.darkTextSecondary
                       : AppColors.textSecondary,
@@ -1664,7 +1676,7 @@ class _CategorySelectionRow extends StatelessWidget {
                     child: Text(
                       selectedCategory?.name ?? 'เลือกหมวดหมู่',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
                         color: isDarkMode
                             ? (selectedCategory != null
                                   ? AppColors.darkTextPrimary
@@ -1715,7 +1727,7 @@ class _DateTimeRow extends StatelessWidget {
             Text(
               'วันและเวลา',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 color: isDarkMode
                     ? AppColors.darkTextSecondary
                     : AppColors.textSecondary,
@@ -1725,7 +1737,7 @@ class _DateTimeRow extends StatelessWidget {
             Text(
               _formatThaiDateTime(dateTime),
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
@@ -1803,7 +1815,7 @@ class _TagRow extends StatelessWidget {
                 hintText:
                     'เพิ่มแท็กได้ตรงนี้ (พิมพ์ชื่อกดปุ่ม Enter เพื่อสร้างแท็ก)',
                 hintStyle: TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   color: isDarkMode
                       ? AppColors.darkTextSecondary
                       : AppColors.textSecondary,
@@ -1815,7 +1827,7 @@ class _TagRow extends StatelessWidget {
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 15),
             ),
           ),
           Icon(

@@ -477,12 +477,12 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'มูลค่ารวม',
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                      style: TextStyle(fontSize: 14, color: textSecondaryColor),
                     ),
                     Text(
                       '${formatAmount(totalValue)} บาท',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.getAmountColor(totalValue, isDarkMode),
                       ),
@@ -497,14 +497,14 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'อัตราแลกเปลี่ยน',
-                      style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
                     ),
                     Row(
                       children: [
                         Text(
                           '1 USD = ${rate.toStringAsFixed(2)} THB',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: textPrimaryColor,
                           ),
@@ -539,14 +539,14 @@ class _SummaryCard extends StatelessWidget {
                       Text(
                         'ต้นทุนหุ้นรวม',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: textSecondaryColor,
                         ),
                       ),
                       Text(
                         '${formatAmount(totalCost)} บาท',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: textPrimaryColor,
                         ),
@@ -559,12 +559,12 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'กำไร/ขาดทุนหุ้น',
-                      style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
                     ),
                     Text(
                       '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)} บาท  (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: pnl >= 0 ? incomeColor : expenseColor,
                       ),
@@ -593,7 +593,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: FontWeight.w600,
           color: isDarkMode
               ? AppColors.darkTextSecondary
@@ -626,7 +626,7 @@ class _CashRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color: surfaceColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
             Container(
@@ -646,13 +646,13 @@ class _CashRow extends StatelessWidget {
             Expanded(
               child: Text(
                 'เงินสด (USD)',
-                style: TextStyle(fontSize: 15, color: textPrimaryColor),
+                style: TextStyle(fontSize: 16, color: textPrimaryColor),
               ),
             ),
             Text(
               '${formatAmount(cashBalance)} USD',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.getAmountColor(cashBalance, isDarkMode),
               ),
@@ -709,7 +709,7 @@ class _HoldingItem extends StatelessWidget {
           onLongPress: isReorderMode ? null : onLongPress,
           child: Container(
             color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -720,8 +720,8 @@ class _HoldingItem extends StatelessWidget {
                 ],
                 // Ticker badge
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: headerColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -730,7 +730,7 @@ class _HoldingItem extends StatelessWidget {
                   child: Text(
                     holding.ticker,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: headerColor,
                     ),
@@ -746,7 +746,7 @@ class _HoldingItem extends StatelessWidget {
                       Text(
                         holding.name.isEmpty ? holding.ticker : holding.name,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: textPrimaryColor,
                         ),
@@ -754,7 +754,7 @@ class _HoldingItem extends StatelessWidget {
                       Text(
                         '${_formatShares(holding.shares)} หุ้น',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: textSecondaryColor,
                         ),
                       ),
@@ -762,14 +762,14 @@ class _HoldingItem extends StatelessWidget {
                         Text(
                           'ทุน ${holding.costBasisUsd.toStringAsFixed(2)} USD',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: textSecondaryColor,
                           ),
                         ),
                       Text(
                         'ราคา ${holding.priceUsd.toStringAsFixed(2)} USD',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: textSecondaryColor,
                         ),
                       ),
@@ -783,7 +783,7 @@ class _HoldingItem extends StatelessWidget {
                     Text(
                       '${formatAmount(valueTHB)} บาท',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: textPrimaryColor,
                       ),
@@ -792,7 +792,7 @@ class _HoldingItem extends StatelessWidget {
                       Text(
                         '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: pnlTHB >= 0 ? incomeColor : expenseColor,
                         ),
@@ -801,7 +801,7 @@ class _HoldingItem extends StatelessWidget {
                       Text(
                         '\$${formatAmount(holding.valueUsd)}',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: textSecondaryColor,
                         ),
                       ),

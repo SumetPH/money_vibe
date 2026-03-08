@@ -276,7 +276,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           filled: false,
         ),
-        style: TextStyle(fontSize: 15, color: textSecondaryColor),
+        style: TextStyle(fontSize: 16, color: textSecondaryColor),
       ),
     );
   }
@@ -301,12 +301,12 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Text(
               value,
-              style: TextStyle(fontSize: 15, color: textPrimaryColor),
+              style: TextStyle(fontSize: 16, color: textPrimaryColor),
             ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
@@ -329,7 +329,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           children: [
             Text(
               'ไอคอน',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -362,7 +362,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           children: [
             Text(
               'สี',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -397,7 +397,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 'โน้ต',
-                style: TextStyle(fontSize: 15, color: textSecondaryColor),
+                style: TextStyle(fontSize: 16, color: textSecondaryColor),
               ),
             ),
           ),
@@ -414,7 +414,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
           Icon(Icons.drag_handle, color: textSecondaryColor, size: 20),

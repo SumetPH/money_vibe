@@ -351,7 +351,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           filled: false,
         ),
-        style: TextStyle(fontSize: 15, color: textSecondaryColor),
+        style: TextStyle(fontSize: 16, color: textSecondaryColor),
       ),
     );
   }
@@ -370,7 +370,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             width: 130,
             child: Text(
               isPortfolio ? 'เงินสดใน Broker' : 'ยอดเริ่มต้น',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
           Expanded(
@@ -390,7 +390,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 suffixText: isPortfolio ? 'USD' : null,
                 suffixStyle: TextStyle(
                   color: textSecondaryColor,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
                 border: InputBorder.none,
@@ -402,7 +402,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
         ],
@@ -423,7 +423,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             width: 130,
             child: Text(
               'USD/THB',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
           Expanded(
@@ -448,7 +448,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
         ],
@@ -473,12 +473,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Text(
               value,
-              style: TextStyle(fontSize: 15, color: textPrimaryColor),
+              style: TextStyle(fontSize: 16, color: textPrimaryColor),
             ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
@@ -501,7 +501,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             Text(
               'ไอคอน',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -534,7 +534,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             Text(
               'สี',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Container(
@@ -568,7 +568,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
           ),
           Switch(value: value, onChanged: onChanged),
@@ -594,12 +594,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           children: [
             Text(
               'วันสรุปยอด',
-              style: TextStyle(fontSize: 15, color: textSecondaryColor),
+              style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
             Text(
               _statementDay != null ? 'วันที่ $_statementDay' : 'ไม่ระบุ',
-              style: TextStyle(fontSize: 15, color: textPrimaryColor),
+              style: TextStyle(fontSize: 16, color: textPrimaryColor),
             ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),

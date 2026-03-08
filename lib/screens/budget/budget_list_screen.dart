@@ -648,7 +648,7 @@ class _SummaryHeader extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${(progress * 100).toStringAsFixed(1)}% ของงบประมาณ',
-            style: TextStyle(fontSize: 12, color: textSecondary),
+            style: TextStyle(fontSize: 13, color: textSecondary),
           ),
         ],
       ),
@@ -673,12 +673,12 @@ class _SummaryCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: textSecondary)),
+        Text(label, style: TextStyle(fontSize: 13, color: textSecondary)),
         const SizedBox(height: 4),
         Text(
           formatAmount(amount),
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             color: color,
           ),
@@ -741,7 +741,7 @@ class _BudgetItem extends StatelessWidget {
           onLongPress: isReorderMode ? null : onLongPress,
           child: Container(
             color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -757,13 +757,13 @@ class _BudgetItem extends StatelessWidget {
                 ],
                 // Icon
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: budget.color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(budget.icon, color: budget.color, size: 22),
+                  child: Icon(budget.icon, color: budget.color, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Info
@@ -782,7 +782,7 @@ class _BudgetItem extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 15,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                       color: textPrimary,
                                     ),
@@ -796,7 +796,7 @@ class _BudgetItem extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: textPrimary,
                               ),
@@ -810,7 +810,7 @@ class _BudgetItem extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: textSecondary,
                                     ),
@@ -822,63 +822,72 @@ class _BudgetItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      SizedBox(
-                        width: 104,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      Expanded(
+                        child: Row(
                           children: [
-                            Text(
-                              '${(_progress * 100).toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: _progressColor,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${(_progress * 100).toStringAsFixed(0)}%',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _progressColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: _progress,
+                                      minHeight: 6,
+                                      backgroundColor: isDarkMode
+                                          ? AppColors.darkDivider
+                                          : AppColors.divider,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        _progressColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _isRemainingNeutral
+                                          ? textPrimary
+                                          : _remaining > 0
+                                          ? (isDarkMode
+                                                ? AppColors.darkIncome
+                                                : AppColors.income)
+                                          : (isDarkMode
+                                                ? AppColors.darkExpense
+                                                : AppColors.expense),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: _progress,
-                                minHeight: 6,
-                                backgroundColor: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  _progressColor,
-                                ),
+                            if (!isReorderMode) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right,
+                                color: textSecondary,
+                                size: 20,
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: _isRemainingNeutral
-                                    ? textPrimary
-                                    : _remaining > 0
-                                    ? (isDarkMode
-                                          ? AppColors.darkIncome
-                                          : AppColors.income)
-                                    : (isDarkMode
-                                          ? AppColors.darkExpense
-                                          : AppColors.expense),
-                              ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                if (!isReorderMode) ...[
-                  const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: textSecondary, size: 20),
-                ],
               ],
             ),
           ),

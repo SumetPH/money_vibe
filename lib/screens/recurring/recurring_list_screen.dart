@@ -195,7 +195,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               color: surfaceColor,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 12,
+                                vertical: 10,
                               ),
                               child: Row(
                                 children: [
@@ -211,8 +211,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                   ],
                                   // Icon
                                   Container(
-                                    width: 44,
-                                    height: 44,
+                                    width: 36,
+                                    height: 36,
                                     decoration: BoxDecoration(
                                       color: r.color.withValues(alpha: 0.15),
                                       shape: BoxShape.circle,
@@ -220,7 +220,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                     child: Icon(
                                       r.icon,
                                       color: r.color,
-                                      size: 22,
+                                      size: 20,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -233,7 +233,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                         Text(
                                           r.name,
                                           style: TextStyle(
-                                            fontSize: 15,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             color: textPrimary,
                                           ),
@@ -249,7 +249,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                             Text(
                                               'ทุกวันที่ ${r.dayOfMonth == 0 ? 'สิ้นเดือน' : r.dayOfMonth}',
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 13,
                                                 color: textSecondary,
                                               ),
                                             ),
@@ -260,7 +260,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                           Text(
                                             'ครั้งถัดไป: ${_formatDate(next)}',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 13,
                                               color: textSecondary,
                                             ),
                                           ),
@@ -303,7 +303,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                     Text(
                                       formatAmount(r.amount),
                                       style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                         color: typeColor,
                                       ),
