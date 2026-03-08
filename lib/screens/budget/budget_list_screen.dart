@@ -722,6 +722,8 @@ class _BudgetItem extends StatelessWidget {
 
   double get _remaining => budget.amount - spent;
 
+  bool get _isRemainingNeutral => _remaining.abs() <= 0.001;
+
   Color get _progressColor {
     if (_progress >= 1.0) {
       return isDarkMode ? AppColors.darkExpense : AppColors.expense;
@@ -766,92 +768,109 @@ class _BudgetItem extends StatelessWidget {
                 const SizedBox(width: 12),
                 // Info
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      // Name + amount
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              budget.name,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    budget.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              formatAmount(budget.amount),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: textPrimary,
                               ),
                             ),
-                          ),
-                          Text(
-                            formatAmount(budget.amount),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: textPrimary,
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'ใช้ ${formatAmount(spent)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: _progress,
-                          minHeight: 6,
-                          backgroundColor: isDarkMode
-                              ? AppColors.darkDivider
-                              : AppColors.divider,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            _progressColor,
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      // Stats row
-                      Row(
-                        children: [
-                          Text(
-                            '${(_progress * 100).toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _progressColor,
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 104,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${(_progress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _progressColor,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'ใช้ ${formatAmount(spent)}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textSecondary,
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: _progress,
+                                minHeight: 6,
+                                backgroundColor: isDarkMode
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  _progressColor,
+                                ),
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            _remaining >= -0.001 ? 'เหลือ ' : 'เกิน ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textSecondary,
+                            const SizedBox(height: 6),
+                            Text(
+                              '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _isRemainingNeutral
+                                    ? textPrimary
+                                    : _remaining > 0
+                                    ? (isDarkMode
+                                          ? AppColors.darkIncome
+                                          : AppColors.income)
+                                    : (isDarkMode
+                                          ? AppColors.darkExpense
+                                          : AppColors.expense),
+                              ),
                             ),
-                          ),
-                          Text(
-                            formatAmount(_remaining),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _remaining >= 0
-                                  ? (isDarkMode
-                                        ? AppColors.darkIncome
-                                        : AppColors.income)
-                                  : (isDarkMode
-                                        ? AppColors.darkExpense
-                                        : AppColors.expense),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
