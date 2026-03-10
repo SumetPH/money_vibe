@@ -544,6 +544,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           past: past,
                           recurring: recurring,
                           recurProvider: recurProvider,
+                          txProvider: txProvider,
                           isDark: isDark,
                           textPrimary: textPrimary,
                           textSecondary: textSecondary,
@@ -1084,6 +1085,7 @@ class _RemainingSummary extends StatelessWidget {
   final List<DateTime> past;
   final RecurringTransaction recurring;
   final RecurringTransactionProvider recurProvider;
+  final TransactionProvider txProvider;
   final bool isDark;
   final Color textPrimary;
   final Color textSecondary;
@@ -1095,6 +1097,7 @@ class _RemainingSummary extends StatelessWidget {
     required this.past,
     required this.recurring,
     required this.recurProvider,
+    required this.txProvider,
     required this.isDark,
     required this.textPrimary,
     required this.textSecondary,
@@ -1117,20 +1120,22 @@ class _RemainingSummary extends StatelessWidget {
     for (final date in allDates) {
       final occ = recurProvider.findOccurrence(recurring.id, date);
       final status = occ?.status ?? OccurrenceStatus.pending;
+      final amount = _amountForOccurrence(occ);
       switch (status) {
         case OccurrenceStatus.done:
           doneCount++;
-          doneAmount += recurring.amount;
+          doneAmount += amount;
         case OccurrenceStatus.pending:
           pendingCount++;
-          pendingAmount += recurring.amount;
+          pendingAmount += amount;
         case OccurrenceStatus.skipped:
           skippedCount++;
-          skippedAmount += recurring.amount;
+          skippedAmount += amount;
       }
     }
 
     final totalCount = doneCount + pendingCount + skippedCount;
+    final totalAmount = doneAmount + pendingAmount + skippedAmount;
 
     // Only show summary if there are done or skipped items
     if (totalCount == 0 || (doneCount == 0 && skippedCount == 0)) {
@@ -1340,7 +1345,7 @@ class _RemainingSummary extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${formatAmount(recurring.amount * totalCount)} บาท',
+                      '${formatAmount(totalAmount)} บาท',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -1355,5 +1360,17 @@ class _RemainingSummary extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double _amountForOccurrence(RecurringOccurrence? occurrence) {
+    final transactionId = occurrence?.transactionId;
+    if (transactionId == null || transactionId.isEmpty) {
+      return recurring.amount;
+    }
+
+    final linkedTransaction = txProvider.transactions
+        .where((transaction) => transaction.id == transactionId)
+        .firstOrNull;
+    return linkedTransaction?.amount ?? recurring.amount;
   }
 }
