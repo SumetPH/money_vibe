@@ -12,7 +12,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
   static const Color divider = Color(0xFFE0E0E0);
-  static const Color fabYellow = Color(0xFFFFC107);
+  static const Color fabYellow = Color(0xFFFB8C00);
   static const Color sectionHeader = Color(0xFFEEEEEE);
 
   // Dark mode colors
@@ -30,7 +30,7 @@ class AppColors {
   static const Color darkExpense = Color(0xFFEF5350);
   static const Color darkTransfer = Color(0xFF42A5F5);
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
-  static const Color darkFabYellow = Color(0xFFFFCA28);
+  static const Color darkFabYellow = Color(0xFFFFB74D);
 
   static Color amountColor(double amount, {bool isDarkMode = false}) {
     if (amount.abs() < 0.005) {

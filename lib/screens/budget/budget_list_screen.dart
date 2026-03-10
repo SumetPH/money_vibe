@@ -133,7 +133,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         );
         final totalRemaining = totalBudget - totalSpent;
         final overallProgress = totalBudget > 0
-            ? (totalSpent / totalBudget).clamp(0.0, 1.0)
+            ? (totalSpent / totalBudget)
             : 0.0;
 
         return Scaffold(
@@ -634,16 +634,12 @@ class _SummaryHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkDivider
-                  : AppColors.divider,
-              valueColor: AlwaysStoppedAnimation<Color>(_progressColor),
-            ),
+          _BudgetProgressBar(
+            progress: progress,
+            color: _progressColor,
+            backgroundColor: isDarkMode
+                ? AppColors.darkDivider
+                : AppColors.divider,
           ),
           const SizedBox(height: 4),
           Text(
@@ -717,8 +713,7 @@ class _BudgetItem extends StatelessWidget {
     required this.onLongPress,
   });
 
-  double get _progress =>
-      budget.amount > 0 ? (spent / budget.amount).clamp(0.0, 1.0) : 0.0;
+  double get _progress => budget.amount > 0 ? (spent / budget.amount) : 0.0;
 
   double get _remaining => budget.amount - spent;
 
@@ -838,18 +833,12 @@ class _BudgetItem extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: _progress,
-                                      minHeight: 6,
-                                      backgroundColor: isDarkMode
-                                          ? AppColors.darkDivider
-                                          : AppColors.divider,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        _progressColor,
-                                      ),
-                                    ),
+                                  _BudgetProgressBar(
+                                    progress: _progress,
+                                    color: _progressColor,
+                                    backgroundColor: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -894,6 +883,60 @@ class _BudgetItem extends StatelessWidget {
         ),
         Divider(height: 1, color: dividerColor),
       ],
+    );
+  }
+}
+
+class _BudgetProgressBar extends StatelessWidget {
+  final double progress;
+  final Color color;
+  final Color backgroundColor;
+
+  const _BudgetProgressBar({
+    required this.progress,
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedProgress = progress.isFinite ? progress : 0.0;
+    final baseProgress = normalizedProgress.clamp(0.0, 1.0);
+    final overflowProgress = (normalizedProgress - 1.0).clamp(0.0, 1.0);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        height: 6,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: backgroundColor),
+            if (baseProgress > 0)
+              FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: baseProgress,
+                child: ColoredBox(color: color),
+              ),
+            if (overflowProgress > 0)
+              FractionallySizedBox(
+                alignment: Alignment.centerRight,
+                widthFactor: overflowProgress,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withValues(alpha: 0.25),
+                        color.withValues(alpha: 0.7),
+                      ],
+                      stops: const [0.0, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
