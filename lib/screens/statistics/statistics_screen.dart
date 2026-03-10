@@ -1060,8 +1060,6 @@ class _CategoryPieChart extends StatelessWidget {
     final Map<String, double> categoryAmounts = {};
 
     for (final tx in transactions) {
-      if (tx.type.isTransferLike) continue;
-
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome

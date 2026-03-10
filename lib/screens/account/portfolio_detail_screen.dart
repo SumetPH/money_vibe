@@ -217,7 +217,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         holding: h,
                         exchangeRate: acc.exchangeRate,
                         isReorderMode: _isReorderMode,
-                        onLongPress: () =>
+                        onEdit: () =>
                             _showHoldingSheet(context, provider, acc.id, h),
                         onDelete: () => provider.deleteHolding(h.id, acc.id),
                         isDarkMode: isDarkMode,
@@ -460,31 +460,44 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: account.color.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(account.icon, color: account.color, size: 24),
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'มูลค่ารวม',
-                      style: TextStyle(fontSize: 14, color: textSecondaryColor),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: account.color.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(account.icon, color: account.color, size: 24),
                     ),
-                    Text(
-                      '${formatAmount(totalValue)} บาท',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.getAmountColor(totalValue, isDarkMode),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'มูลค่ารวม',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                          Text(
+                            '${formatAmount(totalValue)} บาท',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.getAmountColor(
+                                totalValue,
+                                isDarkMode,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -497,14 +510,14 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'อัตราแลกเปลี่ยน',
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                      style: TextStyle(fontSize: 11, color: textSecondaryColor),
                     ),
                     Row(
                       children: [
                         Text(
                           '1 USD = ${rate.toStringAsFixed(2)} THB',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: textPrimaryColor,
                           ),
@@ -668,7 +681,7 @@ class _HoldingItem extends StatelessWidget {
   final StockHolding holding;
   final double exchangeRate;
   final bool isReorderMode;
-  final VoidCallback onLongPress;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
   final bool isDarkMode;
 
@@ -677,7 +690,7 @@ class _HoldingItem extends StatelessWidget {
     required this.holding,
     required this.exchangeRate,
     this.isReorderMode = false,
-    required this.onLongPress,
+    required this.onEdit,
     required this.onDelete,
     required this.isDarkMode,
   });
@@ -705,8 +718,8 @@ class _HoldingItem extends StatelessWidget {
 
     return Column(
       children: [
-        InkWell(
-          onLongPress: isReorderMode ? null : onLongPress,
+        GestureDetector(
+          onLongPress: () => _openListMenu(context),
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -720,8 +733,8 @@ class _HoldingItem extends StatelessWidget {
                 ],
                 // Ticker badge
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: headerColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -743,14 +756,6 @@ class _HoldingItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        holding.name.isEmpty ? holding.ticker : holding.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
-                        ),
-                      ),
                       Text(
                         '${_formatShares(holding.shares)} หุ้น',
                         style: TextStyle(
@@ -808,18 +813,6 @@ class _HoldingItem extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 4),
-                if (!isReorderMode)
-                  GestureDetector(
-                    onTap: () => _confirmDelete(context),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.more_horiz,
-                        color: textSecondaryColor,
-                        size: 20,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -836,8 +829,11 @@ class _HoldingItem extends StatelessWidget {
     return shares.toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '');
   }
 
-  void _confirmDelete(BuildContext context) {
+  void _openListMenu(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     final handleColor = isDarkMode
         ? AppColors.darkDivider
@@ -864,6 +860,18 @@ class _HoldingItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            ListTile(
+              leading: Icon(Icons.edit_outlined, color: textColor),
+              title: Text(
+                'แก้ไข ${holding.ticker}',
+                style: TextStyle(color: textColor),
+              ),
+              tileColor: bgColor,
+              onTap: () {
+                Navigator.pop(context);
+                onEdit();
+              },
+            ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: expenseColor),
               title: Text(
@@ -1063,31 +1071,9 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
               child: TextField(
                 controller: _tickerController,
                 textCapitalization: TextCapitalization.characters,
+                textAlign: TextAlign.end,
                 decoration: InputDecoration(
                   hintText: 'เช่น AAPL',
-                  hintStyle: TextStyle(color: textSecondaryColor),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                style: TextStyle(fontSize: 15, color: textColor),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            _FormRow(
-              label: 'ชื่อบริษัท',
-              labelColor: textSecondaryColor,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkSurface
-                  : Colors.white,
-              child: TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'เช่น Apple Inc.',
                   hintStyle: TextStyle(color: textSecondaryColor),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
