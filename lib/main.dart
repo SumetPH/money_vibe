@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -144,6 +145,17 @@ class MyApp extends StatelessWidget {
             title: 'Money Vibe',
             theme: AppTheme.getTheme(settingsProvider.isDarkMode),
             debugShowCheckedModeBanner: false,
+            builder: kIsWeb
+                ? (context, child) => ColoredBox(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    child: Center(
+                      child: SizedBox(
+                        width: 480,
+                        child: ClipRect(child: child!),
+                      ),
+                    ),
+                  )
+                : null,
             home: _buildHomeScreen(context, authProvider),
             routes: {
               '/accounts': (_) => const AccountListScreen(),
