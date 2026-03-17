@@ -115,7 +115,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     final amountText = _amountController.text.replaceAll(',', '').trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
@@ -160,13 +160,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     );
 
     if (_isEditing) {
-      txProvider.updateTransaction(tx);
+      await txProvider.updateTransaction(tx);
     } else {
-      txProvider.addTransaction(tx);
+      await txProvider.addTransaction(tx);
     }
 
     widget.onSaved?.call(tx.id);
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   void _delete() {

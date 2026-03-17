@@ -776,7 +776,7 @@ class _OccurrenceItem extends StatelessWidget {
                           child: Text(
                             formatDate(date),
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: textPrimary,
                             ),
@@ -794,21 +794,11 @@ class _OccurrenceItem extends StatelessWidget {
                           Text(
                             formatAmount(linkedTransaction!.amount),
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: typeColor,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          if (onEditTap != null)
-                            _ActionButton(
-                              label: 'แก้ไข',
-                              icon: Icons.edit_outlined,
-                              color: isDark
-                                  ? AppColors.darkTransfer
-                                  : AppColors.transfer,
-                              onTap: onEditTap!,
-                            ),
                         ],
                       ),
                     ],
@@ -836,16 +826,27 @@ class _OccurrenceItem extends StatelessWidget {
                       ),
                     ] else ...[
                       const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: onUndoTap,
-                        child: Text(
-                          'ยกเลิก',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSecondary,
-                            decoration: TextDecoration.underline,
+                      Row(
+                        children: [
+                          if (onEditTap != null)
+                            _ActionButton(
+                              label: 'แก้ไข',
+                              icon: Icons.edit_outlined,
+                              color: isDark
+                                  ? AppColors.darkTransfer
+                                  : AppColors.transfer,
+                              onTap: onEditTap!,
+                            ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            label: 'ยกเลิก',
+                            icon: Icons.cancel_outlined,
+                            color: isDark
+                                ? AppColors.darkExpense
+                                : AppColors.expense,
+                            onTap: onUndoTap,
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ],
@@ -924,7 +925,7 @@ class _ActionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
@@ -1190,7 +1191,7 @@ class _RemainingSummary extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '$actionWord แล้ว',
+                      '$actionWordแล้ว',
                       style: TextStyle(fontSize: 13, color: textSecondary),
                     ),
                   ],
@@ -1347,7 +1348,7 @@ class _RemainingSummary extends StatelessWidget {
                     Text(
                       '${formatAmount(totalAmount)} บาท',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: typeColor,
                       ),
