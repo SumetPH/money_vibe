@@ -229,7 +229,7 @@ class CreditCardBillService {
       final openPaymentStartDay = statementDates.isNotEmpty
           ? _dayOf(statementDates.last).add(const Duration(days: 16))
           : _dayOf(account.startDate);
-      final todayDay = _dayOf(now);
+      final openEndDay = _dayOf(nextStatementDate);
 
       final openExpenses = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
@@ -238,7 +238,7 @@ class CreditCardBillService {
                 t.type == TransactionType.debtTransfer) &&
             t.accountId == account.id &&
             !d.isBefore(openStartDay) &&
-            !d.isAfter(todayDay);
+            !d.isAfter(openEndDay);
       }).toList();
 
       final openExpensesAmount = openExpenses.fold<double>(0, (s, t) => s + t.amount);
@@ -252,7 +252,7 @@ class CreditCardBillService {
             t.accountId == account.id;
         return (isTransferPayment || isIncomePayment) &&
             !d.isBefore(openPaymentStartDay) &&
-            !d.isAfter(todayDay);
+            !d.isAfter(openEndDay);
       }).toList();
 
       final openTotalPaid = _round(openPayments.fold<double>(0, (s, t) => s + t.amount));
