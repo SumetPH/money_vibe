@@ -11,9 +11,22 @@ class RecurringTransactionProvider extends ChangeNotifier {
   final List<RecurringTransaction> _recurring = [];
   final List<RecurringOccurrence> _occurrences = [];
   bool _isLoading = false;
+  bool _showHiddenRecurring = false;
 
   bool get isLoading => _isLoading;
-  List<RecurringTransaction> get recurring => List.unmodifiable(_recurring);
+  bool get showHiddenRecurring => _showHiddenRecurring;
+
+  void toggleShowHiddenRecurring() {
+    _showHiddenRecurring = !_showHiddenRecurring;
+    notifyListeners();
+  }
+
+  List<RecurringTransaction> get recurring {
+    if (_showHiddenRecurring) return List.unmodifiable(_recurring);
+    return _recurring.where((r) => !r.isHidden).toList();
+  }
+
+  List<RecurringTransaction> get allRecurring => List.unmodifiable(_recurring);
 
   // ── Helper ────────────────────────────────────────────────────────────────
 

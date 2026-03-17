@@ -271,6 +271,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'category_id': recurring.categoryId,
       'note': recurring.note,
       'sort_order': recurring.sortOrder,
+      'is_hidden': recurring.isHidden ? 1 : 0,
     };
   }
 

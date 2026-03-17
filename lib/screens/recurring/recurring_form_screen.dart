@@ -35,6 +35,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   String? _toAccountId;
   String? _debtAccountId; // สำหรับชำระหนี้สิน
   String? _categoryId;
+  late bool _isHidden;
 
   bool get _isEditing => widget.recurring != null;
 
@@ -57,6 +58,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     _toAccountId = r?.toAccountId;
     _debtAccountId = _type.requiresDebtAccount ? r?.toAccountId : null;
     _categoryId = r?.categoryId;
+    _isHidden = r?.isHidden ?? false;
   }
 
   @override
@@ -125,6 +127,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           clearCategoryId: _categoryId == null,
           note: note,
           clearNote: note == null,
+          isHidden: _isHidden,
         ),
       );
     } else {
@@ -143,6 +146,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           toAccountId: toAccountId,
           categoryId: _type.supportsCategory ? _categoryId : null,
           note: note,
+          isHidden: _isHidden,
         ),
       );
     }
@@ -567,6 +571,24 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   style: TextStyle(fontSize: 16, color: textPrimary),
+                ),
+              ),
+
+              // ── Hidden toggle ──────────────────────────────────────────────
+              const SizedBox(height: 8),
+              Container(
+                color: surfaceColor,
+                child: SwitchListTile(
+                  value: _isHidden,
+                  onChanged: (v) => setState(() => _isHidden = v),
+                  title: Text(
+                    'ซ่อนรายการนี้',
+                    style: TextStyle(fontSize: 16, color: textPrimary),
+                  ),
+                  subtitle: Text(
+                    'ซ่อนจากรายการประจำ (แต่ยังทำงานอยู่)',
+                    style: TextStyle(fontSize: 13, color: textSecondary),
+                  ),
                 ),
               ),
 

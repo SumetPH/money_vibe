@@ -18,6 +18,7 @@ class RecurringTransaction {
   final String? categoryId;
   final String? note;
   final int sortOrder;
+  final bool isHidden;
 
   const RecurringTransaction({
     required this.id,
@@ -34,6 +35,7 @@ class RecurringTransaction {
     this.categoryId,
     this.note,
     this.sortOrder = 0,
+    this.isHidden = false,
   });
 
   RecurringTransaction copyWith({
@@ -55,6 +57,7 @@ class RecurringTransaction {
     String? note,
     bool clearNote = false,
     int? sortOrder,
+    bool? isHidden,
   }) {
     return RecurringTransaction(
       id: id ?? this.id,
@@ -72,6 +75,7 @@ class RecurringTransaction {
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       note: clearNote ? null : (note ?? this.note),
       sortOrder: sortOrder ?? this.sortOrder,
+      isHidden: isHidden ?? this.isHidden,
     );
   }
 
@@ -91,6 +95,7 @@ class RecurringTransaction {
       'category_id': categoryId,
       'note': note,
       'sort_order': sortOrder,
+      'is_hidden': isHidden ? 1 : 0,
     };
   }
 
@@ -132,6 +137,7 @@ class RecurringTransaction {
       categoryId: map['category_id']?.toString(),
       note: map['note']?.toString(),
       sortOrder: (map['sort_order'] as num?)?.toInt() ?? 0,
+      isHidden: (map['is_hidden'] as num?)?.toInt() == 1,
     );
   }
 

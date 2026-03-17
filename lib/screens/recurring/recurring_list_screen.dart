@@ -180,8 +180,10 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                         }
                       }
 
-                      return Column(
+                      return Opacity(
                         key: ValueKey(r.id),
+                        opacity: r.isHidden ? 0.45 : 1.0,
+                        child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           InkWell(
@@ -314,6 +316,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                           ),
                           Divider(height: 1, color: dividerColor),
                         ],
+                        ),
                       );
                     },
                   ),
@@ -385,6 +388,26 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   ),
                   onTap: () {
                     setState(() => _isReorderMode = !_isReorderMode);
+                    Navigator.pop(context);
+                  },
+                ),
+                Divider(height: 1, color: dividerColor),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.visibility_outlined, color: textColor),
+                  title: Text(
+                    'แสดงรายการที่ซ่อน',
+                    style: TextStyle(color: textColor),
+                  ),
+                  trailing: Switch(
+                    value: provider.showHiddenRecurring,
+                    onChanged: (v) {
+                      provider.toggleShowHiddenRecurring();
+                      Navigator.pop(context);
+                    },
+                  ),
+                  onTap: () {
+                    provider.toggleShowHiddenRecurring();
                     Navigator.pop(context);
                   },
                 ),
