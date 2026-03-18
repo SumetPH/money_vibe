@@ -505,7 +505,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
         maxChildSize: 0.85,
         expand: false,
@@ -718,7 +718,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
         maxChildSize: 0.85,
         expand: false,
@@ -898,7 +898,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
         maxChildSize: 0.85,
         expand: false,
