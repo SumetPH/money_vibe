@@ -719,7 +719,7 @@ class _HoldingItem extends StatelessWidget {
     return Column(
       children: [
         GestureDetector(
-          onLongPress: () => _openListMenu(context),
+          onLongPress: isReorderMode ? null : () => _openListMenu(context),
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

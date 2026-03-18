@@ -32,9 +32,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     super.initState();
     final b = widget.budget;
     _nameController.text = b?.name ?? '';
-    _amountController.text = b != null && b.amount > 0
-        ? b.amount.toStringAsFixed(2)
-        : '';
+    _amountController.text = b != null ? b.amount.toStringAsFixed(2) : '';
     _selectedIcon = b?.icon ?? Icons.savings;
     _selectedColor = b?.color ?? AppColors.accountColors.first;
     _selectedCategoryIds = Set<String>.from(b?.categoryIds ?? []);
@@ -56,8 +54,8 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       return;
     }
     final rawAmount = _amountController.text.replaceAll(',', '').trim();
-    final amount = double.tryParse(rawAmount) ?? 0.0;
-    if (amount <= 0) {
+    final amount = double.tryParse(rawAmount) ?? -1;
+    if (amount < 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณากรอกจำนวนเงิน')));
@@ -205,18 +203,33 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   horizontal: 16,
                   vertical: 4,
                 ),
-                child: TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    hintText: 'ชื่องบประมาณ',
-                    hintStyle: TextStyle(color: textSecondary),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  style: TextStyle(fontSize: 16, color: textPrimary),
+                child: Row(
+                  children: [
+                    Text(
+                      'ชื่อ',
+                      style: TextStyle(fontSize: 16, color: textSecondary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: _nameController,
+                        textAlign: TextAlign.right,
+                        decoration: InputDecoration(
+                          hintText: 'ชื่องบประมาณ',
+                          hintStyle: TextStyle(color: textSecondary),
+                          hintTextDirection: TextDirection.rtl,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                        ),
+                        style: TextStyle(fontSize: 16, color: textPrimary),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Divider(height: 1, color: dividerColor),
@@ -227,26 +240,44 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   horizontal: 16,
                   vertical: 4,
                 ),
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                child: Row(
+                  children: [
+                    Text(
+                      'จำนวน',
+                      style: TextStyle(fontSize: 16, color: textSecondary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: _amountController,
+                        textAlign: TextAlign.right,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: '0.00',
+                          hintStyle: TextStyle(color: textSecondary),
+                          hintTextDirection: TextDirection.rtl,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                          suffixText: 'บาท',
+                          suffixStyle: TextStyle(
+                            color: textSecondary,
+                            fontSize: 15,
+                          ),
+                        ),
+                        style: TextStyle(fontSize: 16, color: textPrimary),
+                      ),
+                    ),
                   ],
-                  decoration: InputDecoration(
-                    hintText: 'จำนวนเงินงบประมาณ',
-                    hintStyle: TextStyle(color: textSecondary),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    suffixText: 'บาท',
-                    suffixStyle: TextStyle(color: textSecondary, fontSize: 15),
-                  ),
-                  style: TextStyle(fontSize: 16, color: textPrimary),
                 ),
               ),
               const SizedBox(height: 8),
