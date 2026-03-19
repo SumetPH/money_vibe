@@ -11,6 +11,7 @@ import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
 import 'credit_card_bill_screen.dart';
 import '../transaction/transaction_list_screen.dart';
+import '../transaction/transaction_form_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
   const AccountListScreen({super.key});
@@ -24,6 +25,11 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final filterIds = context.select<SettingsProvider, Set<String>?>(
+      (settingsProvider) => settingsProvider.netWorthFilterIds,
+    );
+
     return Scaffold(
       drawer: const AppDrawer(currentRoute: '/accounts'),
       appBar: AppBar(
@@ -36,18 +42,24 @@ class _AccountListScreenState extends State<AccountListScreen> {
         title: const Text('บัญชี'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz),
+            icon: const Icon(Icons.more_vert),
             onPressed: () => _showAppMenu(context),
           ),
         ],
       ),
-      body: Consumer3<AccountProvider, TransactionProvider, SettingsProvider>(
-        builder: (context, accountProvider, txProvider, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openAddTransactionForm(context),
+        backgroundColor: isDarkMode
+            ? AppColors.darkFabYellow
+            : AppColors.fabYellow,
+        foregroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+        child: const Icon(Icons.add),
+      ),
+      body: Consumer2<AccountProvider, TransactionProvider>(
+        builder: (context, accountProvider, txProvider, _) {
           final transactions = txProvider.transactions;
           final accounts = accountProvider.visibleAccounts;
           final isReorderMode = _isReorderMode;
-          final filterIds = settingsProvider.netWorthFilterIds;
           final netWorth = accountProvider.getTotalNetWorth(
             transactions,
             filterIds: filterIds,
@@ -95,6 +107,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             .where((a) => !a.excludeFromNetWorth)
                             .toList(),
                         filterIds: filterIds,
+                        isReorderMode: isReorderMode,
                       ),
                     ],
                   ),
@@ -174,7 +187,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                       ),
                     ),
                 // Footer padding
-                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                const SliverToBoxAdapter(child: SizedBox(height: 112)),
               ],
             ),
           );
@@ -213,6 +226,13 @@ class _AccountListScreenState extends State<AccountListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => AccountFormScreen(account: account)),
+    );
+  }
+
+  void _openAddTransactionForm(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
     );
   }
 
@@ -321,6 +341,7 @@ class _TotalRow extends StatelessWidget {
   final bool isDarkMode;
   final List<Account> accounts;
   final Set<String>? filterIds;
+  final bool isReorderMode;
 
   const _TotalRow({
     required this.label,
@@ -331,6 +352,7 @@ class _TotalRow extends StatelessWidget {
     required this.isDarkMode,
     required this.accounts,
     required this.filterIds,
+    required this.isReorderMode,
   });
 
   @override
@@ -386,16 +408,23 @@ class _TotalRow extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.more_horiz,
-                  color: textSecondaryColor,
-                  size: 20,
+              if (!isReorderMode)
+                GestureDetector(
+                  onTap: () => _showTotalMenu(context),
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: 8,
+                      right: 0,
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    child: Icon(
+                      Icons.more_vert,
+                      color: textSecondaryColor,
+                      size: 20,
+                    ),
+                  ),
                 ),
-                onPressed: () => _showTotalMenu(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
             ],
           ),
         ],
@@ -610,16 +639,23 @@ class _AccountItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.more_horiz,
-                    color: textSecondaryColor,
-                    size: 20,
+                if (!isReorderMode)
+                  GestureDetector(
+                    onTap: () => _showAccountMenu(context),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 8,
+                        right: 0,
+                        top: 8,
+                        bottom: 8,
+                      ),
+                      child: Icon(
+                        Icons.more_vert,
+                        color: textSecondaryColor,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                  onPressed: () => _showAccountMenu(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
               ],
             ),
           ),

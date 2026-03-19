@@ -119,7 +119,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.more_horiz),
+                icon: const Icon(Icons.more_vert),
                 onPressed: () => _showMenuSheet(context),
               ),
             ],

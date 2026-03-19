@@ -71,7 +71,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.more_horiz),
+                icon: const Icon(Icons.more_vert),
                 onPressed: () =>
                     _showMenuBottomSheet(context, isDark, provider),
               ),
@@ -183,139 +183,21 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                       return Opacity(
                         key: ValueKey(r.id),
                         opacity: r.isHidden ? 0.45 : 1.0,
-                        child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InkWell(
-                            onTap: _isReorderMode
-                                ? null
-                                : () => _openDetail(context, r),
-                            onLongPress: _isReorderMode
-                                ? null
-                                : () => _openForm(context, r),
-                            child: Container(
-                              color: surfaceColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  if (_isReorderMode) ...[
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: Icon(
-                                        Icons.drag_indicator,
-                                        color: dividerColor,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ],
-                                  // Icon
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: r.color.withValues(alpha: 0.15),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      r.icon,
-                                      color: r.color,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  // Info
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          r.name,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: textPrimary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            _TypeBadge(
-                                              label: r.transactionType.label,
-                                              color: typeColor,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'ทุกวันที่ ${r.dayOfMonth == 0 ? 'สิ้นเดือน' : r.dayOfMonth}',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: textSecondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (next != null) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'ครั้งถัดไป: ${_formatDate(next)}',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                        // Status row (current month only)
-                                        if (statusLabel != null &&
-                                            statusColor != null) ...[
-                                          const SizedBox(height: 4),
-                                          _StatusChip(
-                                            label: statusLabel,
-                                            color: statusColor,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  // Amount + chevron
-                                  if (!_isReorderMode)
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          formatAmount(r.amount),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: typeColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Icon(
-                                          Icons.chevron_right,
-                                          color: textSecondary,
-                                          size: 18,
-                                        ),
-                                      ],
-                                    )
-                                  else
-                                    Text(
-                                      formatAmount(r.amount),
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: typeColor,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Divider(height: 1, color: dividerColor),
-                        ],
+                        child: _RecurringItem(
+                          recurring: r,
+                          nextOccurrence: next,
+                          statusLabel: statusLabel,
+                          statusColor: statusColor,
+                          typeColor: typeColor,
+                          isReorderMode: _isReorderMode,
+                          isDarkMode: isDark,
+                          surfaceColor: surfaceColor,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          dividerColor: dividerColor,
+                          formatDate: _formatDate,
+                          onTap: () => _openDetail(context, r),
+                          onTapEdit: () => _openForm(context, r),
                         ),
                       );
                     },
@@ -444,6 +326,212 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => RecurringDetailScreen(recurring: r)),
+    );
+  }
+}
+
+class _RecurringItem extends StatelessWidget {
+  final RecurringTransaction recurring;
+  final DateTime? nextOccurrence;
+  final String? statusLabel;
+  final Color? statusColor;
+  final Color typeColor;
+  final bool isReorderMode;
+  final bool isDarkMode;
+  final Color surfaceColor;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color dividerColor;
+  final String Function(DateTime) formatDate;
+  final VoidCallback onTap;
+  final VoidCallback onTapEdit;
+
+  const _RecurringItem({
+    required this.recurring,
+    required this.nextOccurrence,
+    required this.statusLabel,
+    required this.statusColor,
+    required this.typeColor,
+    required this.isReorderMode,
+    required this.isDarkMode,
+    required this.surfaceColor,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.dividerColor,
+    required this.formatDate,
+    required this.onTap,
+    required this.onTapEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: isReorderMode ? null : onTap,
+          child: Container(
+            color: surfaceColor,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                if (isReorderMode) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Icon(
+                      Icons.drag_indicator,
+                      color: dividerColor,
+                      size: 20,
+                    ),
+                  ),
+                ],
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: recurring.color.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(recurring.icon, color: recurring.color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        recurring.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          _TypeBadge(
+                            label: recurring.transactionType.label,
+                            color: typeColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ทุกวันที่ ${recurring.dayOfMonth == 0 ? 'สิ้นเดือน' : recurring.dayOfMonth}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (nextOccurrence != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'ครั้งถัดไป: ${formatDate(nextOccurrence!)}',
+                          style: TextStyle(fontSize: 13, color: textSecondary),
+                        ),
+                      ],
+                      if (statusLabel != null && statusColor != null) ...[
+                        const SizedBox(height: 4),
+                        _StatusChip(label: statusLabel!, color: statusColor!),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (!isReorderMode)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatAmount(recurring.amount),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: typeColor,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      GestureDetector(
+                        onTap: () => _showRecurringMenu(context),
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: 8,
+                            right: 0,
+                            top: 8,
+                            bottom: 8,
+                          ),
+                          child: Icon(
+                            Icons.more_vert,
+                            color: textSecondary,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    formatAmount(recurring.amount),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: typeColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Divider(height: 1, color: dividerColor),
+      ],
+    );
+  }
+
+  void _showRecurringMenu(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDark = settingsProvider.isDarkMode;
+          final handleColor = isDark
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTapEdit();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

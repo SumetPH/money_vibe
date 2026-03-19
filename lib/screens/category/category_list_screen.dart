@@ -7,6 +7,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
 
 class CategoryListScreen extends StatefulWidget {
@@ -62,7 +63,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz),
+            icon: const Icon(Icons.more_vert),
             onPressed: () => _showMenuBottomSheet(context),
           ),
         ],
@@ -176,7 +177,8 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           category: cat,
           total: total,
           isReorderMode: _isReorderMode,
-          onTap: () => _openForm(context, cat),
+          onTap: () => _openTransactions(context, cat),
+          onTapEdit: () => _openForm(context, cat),
           isDarkMode: isDarkMode,
         );
       },
@@ -189,6 +191,18 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       MaterialPageRoute(
         builder: (_) =>
             CategoryFormScreen(category: cat, initialType: _currentType),
+      ),
+    );
+  }
+
+  void _openTransactions(BuildContext context, Category category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionListScreen(
+          categoryIds: [category.id],
+          title: category.name,
+        ),
       ),
     );
   }
@@ -272,6 +286,7 @@ class _CategoryItem extends StatelessWidget {
   final double total;
   final bool isReorderMode;
   final VoidCallback onTap;
+  final VoidCallback onTapEdit;
   final bool isDarkMode;
 
   const _CategoryItem({
@@ -280,6 +295,7 @@ class _CategoryItem extends StatelessWidget {
     required this.total,
     this.isReorderMode = false,
     required this.onTap,
+    required this.onTapEdit,
     required this.isDarkMode,
   });
 
@@ -325,44 +341,114 @@ class _CategoryItem extends StatelessWidget {
                 const SizedBox(width: 12),
                 // Name + amount
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        category.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                            if (total > 0)
+                              Text(
+                                '${formatAmount(displayAmount)} บาท',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.getAmountColor(
+                                    displayAmount,
+                                    isDarkMode,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      if (total > 0)
-                        Text(
-                          '${formatAmount(displayAmount)} บาท',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.getAmountColor(
-                              displayAmount,
-                              isDarkMode,
+                      if (!isReorderMode) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _showCategoryMenu(context),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: 8,
+                              right: 0,
+                              top: 8,
+                              bottom: 8,
+                            ),
+                            child: Icon(
+                              Icons.more_vert,
+                              color: textSecondaryColor,
+                              size: 18,
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),
-                if (!isReorderMode)
-                  Icon(
-                    Icons.chevron_right,
-                    color: textSecondaryColor,
-                    size: 20,
-                  ),
               ],
             ),
           ),
         ),
         Divider(height: 1, color: dividerColor),
       ],
+    );
+  }
+
+  void _showCategoryMenu(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDark = settingsProvider.isDarkMode;
+          final handleColor = isDark
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTapEdit();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

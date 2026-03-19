@@ -150,7 +150,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.more_horiz),
+                icon: const Icon(Icons.more_vert),
                 onPressed: () => _showMenuBottomSheet(context, isDarkMode),
               ),
             ],
@@ -237,7 +237,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                               dividerColor: dividerColor,
                               onTap: () =>
                                   _openTransactions(context, budget, period),
-                              onLongPress: () => _openForm(context, budget),
+                              onTapEdit: () => _openForm(context, budget),
                             );
                           },
                         ),
@@ -697,7 +697,7 @@ class _BudgetItem extends StatelessWidget {
   final Color textSecondary;
   final Color dividerColor;
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback onTapEdit;
 
   const _BudgetItem({
     super.key,
@@ -710,7 +710,7 @@ class _BudgetItem extends StatelessWidget {
     required this.textSecondary,
     required this.dividerColor,
     required this.onTap,
-    required this.onLongPress,
+    required this.onTapEdit,
   });
 
   double get _progress => budget.amount > 0 ? (spent / budget.amount) : 0.0;
@@ -733,7 +733,6 @@ class _BudgetItem extends StatelessWidget {
       children: [
         InkWell(
           onTap: isReorderMode ? null : onTap,
-          onLongPress: isReorderMode ? null : onLongPress,
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -864,11 +863,22 @@ class _BudgetItem extends StatelessWidget {
                               ),
                             ),
                             if (!isReorderMode) ...[
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.chevron_right,
-                                color: textSecondary,
-                                size: 20,
+                              const SizedBox(width: 2),
+                              GestureDetector(
+                                onTap: () => _showBudgetMenu(context),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 8,
+                                    right: 0,
+                                    top: 8,
+                                    bottom: 8,
+                                  ),
+                                  child: Icon(
+                                    Icons.more_vert,
+                                    color: textSecondary,
+                                    size: 18,
+                                  ),
+                                ),
                               ),
                             ],
                           ],
@@ -883,6 +893,53 @@ class _BudgetItem extends StatelessWidget {
         ),
         Divider(height: 1, color: dividerColor),
       ],
+    );
+  }
+
+  void _showBudgetMenu(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDark = settingsProvider.isDarkMode;
+          final handleColor = isDark
+              ? AppColors.darkDivider
+              : Colors.grey.shade300;
+          final textColor = isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: bgColor,
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTapEdit();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
