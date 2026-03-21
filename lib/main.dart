@@ -13,6 +13,7 @@ import 'providers/recurring_transaction_provider.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
 import 'services/database_manager.dart';
+import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
@@ -50,6 +51,8 @@ void main() async {
   final authProvider = AuthProvider();
 
   try {
+    await RecurringNotificationService.instance.init();
+
     await Future.wait([
       _initProvider('Settings', settingsProvider.loadSettings),
     ]);

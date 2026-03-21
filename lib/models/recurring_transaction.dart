@@ -19,6 +19,9 @@ class RecurringTransaction {
   final String? note;
   final int sortOrder;
   final bool isHidden;
+  final bool notificationEnabled;
+  final int notificationHour;
+  final int notificationMinute;
 
   const RecurringTransaction({
     required this.id,
@@ -36,6 +39,9 @@ class RecurringTransaction {
     this.note,
     this.sortOrder = 0,
     this.isHidden = false,
+    this.notificationEnabled = false,
+    this.notificationHour = 9,
+    this.notificationMinute = 0,
   });
 
   RecurringTransaction copyWith({
@@ -58,6 +64,9 @@ class RecurringTransaction {
     bool clearNote = false,
     int? sortOrder,
     bool? isHidden,
+    bool? notificationEnabled,
+    int? notificationHour,
+    int? notificationMinute,
   }) {
     return RecurringTransaction(
       id: id ?? this.id,
@@ -70,12 +79,14 @@ class RecurringTransaction {
       transactionType: transactionType ?? this.transactionType,
       amount: amount ?? this.amount,
       accountId: accountId ?? this.accountId,
-      toAccountId:
-          clearToAccountId ? null : (toAccountId ?? this.toAccountId),
+      toAccountId: clearToAccountId ? null : (toAccountId ?? this.toAccountId),
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       note: clearNote ? null : (note ?? this.note),
       sortOrder: sortOrder ?? this.sortOrder,
       isHidden: isHidden ?? this.isHidden,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      notificationHour: notificationHour ?? this.notificationHour,
+      notificationMinute: notificationMinute ?? this.notificationMinute,
     );
   }
 
@@ -96,6 +107,9 @@ class RecurringTransaction {
       'note': note,
       'sort_order': sortOrder,
       'is_hidden': isHidden ? 1 : 0,
+      'notification_enabled': notificationEnabled ? 1 : 0,
+      'notification_hour': notificationHour,
+      'notification_minute': notificationMinute,
     };
   }
 
@@ -137,16 +151,28 @@ class RecurringTransaction {
       categoryId: map['category_id']?.toString(),
       note: map['note']?.toString(),
       sortOrder: (map['sort_order'] as num?)?.toInt() ?? 0,
-      isHidden: (map['is_hidden'] as num?)?.toInt() == 1,
+      isHidden: _boolFromAny(map['is_hidden']),
+      notificationEnabled: _boolFromAny(map['notification_enabled']),
+      notificationHour: (map['notification_hour'] as num?)?.toInt() ?? 9,
+      notificationMinute: (map['notification_minute'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  static bool _boolFromAny(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value.toInt() == 1;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' || normalized == '1';
+    }
+    return false;
   }
 
   /// Generate all occurrence dates from startDate up to [upTo].
   /// If [upTo] is null and [endDate] is null, defaults to today + 65 days.
   List<DateTime> generateOccurrenceDates({DateTime? upTo}) {
     final List<DateTime> dates = [];
-    final end =
-        endDate ?? upTo ?? DateTime.now().add(const Duration(days: 65));
+    final end = endDate ?? upTo ?? DateTime.now().add(const Duration(days: 65));
 
     var year = startDate.year;
     var month = startDate.month;

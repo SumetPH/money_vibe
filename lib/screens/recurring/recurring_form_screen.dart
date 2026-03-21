@@ -9,6 +9,7 @@ import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 
 class RecurringFormScreen extends StatefulWidget {
@@ -36,6 +37,8 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   String? _debtAccountId; // สำหรับชำระหนี้สิน
   String? _categoryId;
   late bool _isHidden;
+  bool _notificationEnabled = false;
+  TimeOfDay _notificationTime = const TimeOfDay(hour: 9, minute: 0);
 
   bool get _isEditing => widget.recurring != null;
 
@@ -59,6 +62,11 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     _debtAccountId = _type.requiresDebtAccount ? r?.toAccountId : null;
     _categoryId = r?.categoryId;
     _isHidden = r?.isHidden ?? false;
+    _notificationEnabled = r?.notificationEnabled ?? false;
+    _notificationTime = TimeOfDay(
+      hour: r?.notificationHour ?? 9,
+      minute: r?.notificationMinute ?? 0,
+    );
   }
 
   @override
@@ -69,7 +77,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -100,6 +108,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     }
 
     final provider = context.read<RecurringTransactionProvider>();
+    final notificationService = RecurringNotificationService.instance;
     final note = _noteController.text.trim().isEmpty
         ? null
         : _noteController.text.trim();
@@ -108,49 +117,79 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         ? _debtAccountId
         : _toAccountId;
 
-    if (_isEditing) {
-      provider.updateRecurring(
-        widget.recurring!.copyWith(
-          name: name,
-          icon: _icon,
-          color: _color,
-          startDate: _startDate,
-          endDate: _endDate,
-          clearEndDate: _endDate == null,
-          dayOfMonth: _dayOfMonth,
-          transactionType: _type,
-          amount: amount,
-          accountId: _accountId!,
-          toAccountId: toAccountId,
-          clearToAccountId: toAccountId == null,
-          categoryId: _type.supportsCategory ? _categoryId : null,
-          clearCategoryId: _categoryId == null,
-          note: note,
-          clearNote: note == null,
-          isHidden: _isHidden,
-        ),
-      );
-    } else {
-      provider.addRecurring(
-        RecurringTransaction(
-          id: provider.generateId(),
-          name: name,
-          icon: _icon,
-          color: _color,
-          startDate: _startDate,
-          endDate: _endDate,
-          dayOfMonth: _dayOfMonth,
-          transactionType: _type,
-          amount: amount,
-          accountId: _accountId!,
-          toAccountId: toAccountId,
-          categoryId: _type.supportsCategory ? _categoryId : null,
-          note: note,
-          isHidden: _isHidden,
-        ),
-      );
+    final recurring = _isEditing
+        ? widget.recurring!.copyWith(
+            name: name,
+            icon: _icon,
+            color: _color,
+            startDate: _startDate,
+            endDate: _endDate,
+            clearEndDate: _endDate == null,
+            dayOfMonth: _dayOfMonth,
+            transactionType: _type,
+            amount: amount,
+            accountId: _accountId!,
+            toAccountId: toAccountId,
+            clearToAccountId: toAccountId == null,
+            categoryId: _type.supportsCategory ? _categoryId : null,
+            clearCategoryId: _categoryId == null,
+            note: note,
+            clearNote: note == null,
+            isHidden: _isHidden,
+            notificationEnabled: _notificationEnabled,
+            notificationHour: _notificationTime.hour,
+            notificationMinute: _notificationTime.minute,
+          )
+        : RecurringTransaction(
+            id: provider.generateId(),
+            name: name,
+            icon: _icon,
+            color: _color,
+            startDate: _startDate,
+            endDate: _endDate,
+            dayOfMonth: _dayOfMonth,
+            transactionType: _type,
+            amount: amount,
+            accountId: _accountId!,
+            toAccountId: toAccountId,
+            categoryId: _type.supportsCategory ? _categoryId : null,
+            note: note,
+            isHidden: _isHidden,
+            notificationEnabled: _notificationEnabled,
+            notificationHour: _notificationTime.hour,
+            notificationMinute: _notificationTime.minute,
+          );
+
+    try {
+      if (_isEditing) {
+        await provider.updateRecurring(recurring);
+      } else {
+        await provider.addRecurring(recurring);
+      }
+
+      final notificationGranted = await notificationService
+          .syncRecurringNotification(
+            recurring: recurring,
+            occurrences: provider.occurrencesFor(recurring.id),
+          );
+
+      if (!mounted) return;
+
+      if (_notificationEnabled && !notificationGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('บันทึกรายการแล้ว แต่ยังไม่ได้รับสิทธิ์แจ้งเตือน'),
+          ),
+        );
+      }
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('บันทึกรายการไม่สำเร็จ: $e')));
     }
-    Navigator.pop(context);
   }
 
   void _delete() {
@@ -229,22 +268,25 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
         final accounts = switch (_type) {
-          TransactionType.debtTransfer => accountProvider.visibleAccounts
-              .where(
-                (a) =>
-                    (a.type == AccountType.debt ||
-                        a.type == AccountType.creditCard) &&
-                    a.type != AccountType.portfolio,
-              )
-              .toList(),
+          TransactionType.debtTransfer =>
+            accountProvider.visibleAccounts
+                .where(
+                  (a) =>
+                      (a.type == AccountType.debt ||
+                          a.type == AccountType.creditCard) &&
+                      a.type != AccountType.portfolio,
+                )
+                .toList(),
           TransactionType.income ||
           TransactionType.expense ||
-          TransactionType.debtRepay => accountProvider.visibleAccounts
-              .where(
-                (a) =>
-                    a.type != AccountType.debt && a.type != AccountType.portfolio,
-              )
-              .toList(),
+          TransactionType.debtRepay =>
+            accountProvider.visibleAccounts
+                .where(
+                  (a) =>
+                      a.type != AccountType.debt &&
+                      a.type != AccountType.portfolio,
+                )
+                .toList(),
           _ => accountProvider.visibleAccounts,
         };
         final selectedAccount = _accountId != null
@@ -364,10 +406,11 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               if (_type.isTransferLike) ...[
                 _RowTile(
                   label: 'บัญชีปลายทาง',
-                  value: (_type == TransactionType.debtTransfer
-                          ? selectedDebtAccount
-                          : selectedToAccount)
-                      ?.name ??
+                  value:
+                      (_type == TransactionType.debtTransfer
+                              ? selectedDebtAccount
+                              : selectedToAccount)
+                          ?.name ??
                       'เลือกบัญชี',
                   surfaceColor: surfaceColor,
                   textSecondary: textSecondary,
@@ -550,6 +593,38 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               ),
               Divider(height: 1, color: dividerColor),
 
+              // ── Notification toggle ──────────────────────────────────────
+              const SizedBox(height: 8),
+              Container(
+                color: surfaceColor,
+                child: SwitchListTile(
+                  value: _notificationEnabled,
+                  onChanged: (v) => setState(() => _notificationEnabled = v),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  title: Text(
+                    'แจ้งเตือนเมื่อถึงกำหนด',
+                    style: TextStyle(fontSize: 16, color: textPrimary),
+                  ),
+                  subtitle: Text(
+                    _notificationEnabled
+                        ? 'เตือนบนเครื่องนี้เวลา ${_formatTime(_notificationTime)}'
+                        : 'ปิดการแจ้งเตือนอยู่',
+                    style: TextStyle(fontSize: 13, color: textSecondary),
+                  ),
+                ),
+              ),
+              if (_notificationEnabled) ...[
+                Divider(height: 1, color: dividerColor),
+                _RowTile(
+                  label: 'เวลาแจ้งเตือน',
+                  value: _formatTime(_notificationTime),
+                  surfaceColor: surfaceColor,
+                  textSecondary: textSecondary,
+                  onTap: () => _pickNotificationTime(isDark),
+                ),
+                Divider(height: 1, color: dividerColor),
+              ],
+
               // ── Note ──────────────────────────────────────────────────────
               const SizedBox(height: 8),
               Container(
@@ -581,6 +656,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 child: SwitchListTile(
                   value: _isHidden,
                   onChanged: (v) => setState(() => _isHidden = v),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   title: Text(
                     'ซ่อนรายการนี้',
                     style: TextStyle(fontSize: 16, color: textPrimary),
@@ -1304,6 +1380,83 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
   String _formatMonthYear(DateTime d) =>
       '${_thaiMonths[d.month - 1]} ${d.year + 543}';
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  Future<void> _pickNotificationTime(bool isDark) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _notificationTime,
+      builder: (context, child) {
+        final actionColor = isDark ? AppColors.darkIncome : AppColors.header;
+        final pickerBg = isDark ? AppColors.darkSurface : Colors.white;
+        final textColor = isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondaryTextColor = isDark
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final selectedBg = isDark
+            ? AppColors.darkSurfaceVariant
+            : AppColors.background;
+        final dialTextColor = WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return textColor;
+        });
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: isDark ? AppColors.darkHeader : AppColors.header,
+              surface: pickerBg,
+              onSurface: textColor,
+              onPrimary: Colors.white,
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: pickerBg),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: actionColor),
+            ),
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: pickerBg,
+              hourMinuteColor: selectedBg,
+              hourMinuteTextColor: textColor,
+              dayPeriodColor: selectedBg,
+              dayPeriodTextColor: textColor,
+              dayPeriodBorderSide: BorderSide(
+                color: isDark ? AppColors.darkDivider : AppColors.divider,
+              ),
+              dialHandColor: actionColor,
+              dialBackgroundColor: selectedBg,
+              dialTextColor: dialTextColor,
+              entryModeIconColor: actionColor,
+              helpTextStyle: TextStyle(color: secondaryTextColor),
+              hourMinuteShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark ? AppColors.darkDivider : AppColors.divider,
+                ),
+              ),
+              dayPeriodShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isDark ? AppColors.darkDivider : AppColors.divider,
+                ),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked == null) return;
+    setState(() => _notificationTime = picked);
+  }
 
   void _pickIcon(bool isDark) {
     final bgColor = isDark ? AppColors.darkBackground : AppColors.background;

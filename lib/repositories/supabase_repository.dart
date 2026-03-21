@@ -10,13 +10,13 @@ import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 
 /// Supabase Repository Implementation
-/// 
+///
 /// หมายเหตุเรื่อง DateTime:
 /// - ใช้ timestamp without time zone (เก็บเวลา local โดยตรง)
 /// - ไม่มีการแปลง timezone
 /// - แปลงเป็น ISO8601 string เมื่อส่งไป Supabase
 /// - รับค่ากลับมาเป็น DateTime หรือ String แล้ว parse กลับ
-/// 
+///
 /// หมายเหตุเรื่อง Authentication:
 /// - ทุก table มี user_id column เพื่อแยกข้อมูลต่อ user
 /// - RLS policies จะตรวจสอบ auth.uid() = user_id
@@ -24,7 +24,7 @@ import '../models/stock_holding.dart';
 class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   final String supabaseUrl;
   final String supabaseAnonKey;
-  
+
   SupabaseClient? _client;
   bool _initialized = false;
 
@@ -70,17 +70,18 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
     if (isSupabaseInitialized) {
       _initialized = true;
-      debugPrint('[SupabaseRepository] Supabase already initialized, reusing existing instance');
+      debugPrint(
+        '[SupabaseRepository] Supabase already initialized, reusing existing instance',
+      );
       return;
     }
 
     // ยังไม่ได้ initialize → initialize ใหม่
-    debugPrint('[SupabaseRepository] Initializing Supabase with URL: $supabaseUrl');
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
+    debugPrint(
+      '[SupabaseRepository] Initializing Supabase with URL: $supabaseUrl',
     );
-    
+    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
     _client = Supabase.instance.client;
     _initialized = true;
     debugPrint('[SupabaseRepository] Supabase initialized successfully');
@@ -106,16 +107,18 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   /// จัดการเรื่อง DateTime conversion ให้ถูกต้อง
   Map<String, dynamic> _normalizeRow(Map<String, dynamic> row) {
     final normalized = <String, dynamic>{};
-    
+
     row.forEach((key, value) {
       // แปลง key จาก snake_case เป็น underscore format ตาม SQLite
       final sqliteKey = key;
-      
+
       // จัดการ DateTime fields
       if (value is DateTime) {
         // ถ้าเป็น DateTime อยู่แล้ว แปลงเป็น ISO8601 string
         normalized[sqliteKey] = value.toIso8601String();
-      } else if (key.contains('_date') || key.contains('date_') || key == 'date_time') {
+      } else if (key.contains('_date') ||
+          key.contains('date_') ||
+          key == 'date_time') {
         // ถ้าเป็น field ที่เกี่ยวกับวันที่ และเป็น String
         if (value is String) {
           normalized[sqliteKey] = value;
@@ -128,7 +131,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         normalized[sqliteKey] = value;
       }
     });
-    
+
     return normalized;
   }
 
@@ -272,6 +275,9 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'note': recurring.note,
       'sort_order': recurring.sortOrder,
       'is_hidden': recurring.isHidden ? 1 : 0,
+      'notification_enabled': recurring.notificationEnabled,
+      'notification_hour': recurring.notificationHour,
+      'notification_minute': recurring.notificationMinute,
     };
   }
 
@@ -364,9 +370,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('id', id)
           .eq('user_id', currentUserId!)
           .select();
-      
+
       if ((response as List).isEmpty) {
-        throw Exception('Failed to update account sort order: No rows affected');
+        throw Exception(
+          'Failed to update account sort order: No rows affected',
+        );
       }
       log('Updated account sort order successfully: $id');
     } catch (e) {
@@ -429,9 +437,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('id', id)
           .eq('user_id', currentUserId!)
           .select();
-      
+
       if ((response as List).isEmpty) {
-        throw Exception('Failed to update category sort order: No rows affected');
+        throw Exception(
+          'Failed to update category sort order: No rows affected',
+        );
       }
       log('Updated category sort order successfully: $id');
     } catch (e) {
@@ -460,7 +470,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     final allTransactions = <AppTransaction>[];
     int offset = 0;
     const int pageSize = 1000;
-    
+
     while (true) {
       final response = await client
           .from('transactions')
@@ -468,22 +478,24 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('user_id', currentUserId!)
           .order('date_time', ascending: false)
           .range(offset, offset + pageSize - 1);
-      
-      final batch = (response as List).map((row) => _transactionFromSupabase(row)).toList();
-      
+
+      final batch = (response as List)
+          .map((row) => _transactionFromSupabase(row))
+          .toList();
+
       if (batch.isEmpty) {
         break;
       }
-      
+
       allTransactions.addAll(batch);
-      
+
       if (batch.length < pageSize) {
         break;
       }
-      
+
       offset += pageSize;
     }
-    
+
     log('Fetched ${allTransactions.length} transactions total');
     return allTransactions;
   }
@@ -492,7 +504,9 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> insertTransaction(AppTransaction transaction) async {
     _requireAuth();
     log('Inserting transaction: ${transaction.id} for user: $currentUserId');
-    await client.from('transactions').insert(_transactionToSupabase(transaction));
+    await client
+        .from('transactions')
+        .insert(_transactionToSupabase(transaction));
   }
 
   @override
@@ -560,9 +574,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('id', id)
           .eq('user_id', currentUserId!)
           .select();
-      
+
       if ((response as List).isEmpty) {
-        throw Exception('Failed to update holding sort order: No rows affected');
+        throw Exception(
+          'Failed to update holding sort order: No rows affected',
+        );
       }
       log('Updated holding sort order successfully: $id');
     } catch (e) {
@@ -636,7 +652,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('id', id)
           .eq('user_id', currentUserId!)
           .select();
-      
+
       if ((response as List).isEmpty) {
         throw Exception('Failed to update budget sort order: No rows affected');
       }
@@ -669,20 +685,32 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .select()
         .eq('user_id', currentUserId!)
         .order('sort_order');
-    return (response as List).map((row) => _recurringFromSupabase(row)).toList();
+    return (response as List)
+        .map((row) => _recurringFromSupabase(row))
+        .toList();
   }
 
   @override
-  Future<void> insertRecurringTransaction(RecurringTransaction recurring) async {
+  Future<void> insertRecurringTransaction(
+    RecurringTransaction recurring,
+  ) async {
     _requireAuth();
-    log('Inserting recurring transaction: ${recurring.id} for user: $currentUserId');
-    await client.from('recurring_transactions').insert(_recurringToSupabase(recurring));
+    log(
+      'Inserting recurring transaction: ${recurring.id} for user: $currentUserId',
+    );
+    await client
+        .from('recurring_transactions')
+        .insert(_recurringToSupabase(recurring));
   }
 
   @override
-  Future<void> updateRecurringTransaction(RecurringTransaction recurring) async {
+  Future<void> updateRecurringTransaction(
+    RecurringTransaction recurring,
+  ) async {
     _requireAuth();
-    log('Updating recurring transaction: ${recurring.id} for user: $currentUserId');
+    log(
+      'Updating recurring transaction: ${recurring.id} for user: $currentUserId',
+    );
     await client
         .from('recurring_transactions')
         .update(_recurringToSupabase(recurring))
@@ -712,9 +740,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
           .eq('id', id)
           .eq('user_id', currentUserId!)
           .select();
-      
+
       if ((response as List).isEmpty) {
-        throw Exception('Failed to update recurring sort order: No rows affected');
+        throw Exception(
+          'Failed to update recurring sort order: No rows affected',
+        );
       }
       log('Updated recurring sort order successfully: $id');
     } catch (e) {
@@ -734,11 +764,15 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .select()
         .eq('user_id', currentUserId!)
         .order('due_date');
-    return (response as List).map((row) => _occurrenceFromSupabase(row)).toList();
+    return (response as List)
+        .map((row) => _occurrenceFromSupabase(row))
+        .toList();
   }
 
   @override
-  Future<List<RecurringOccurrence>> getOccurrencesFor(String recurringId) async {
+  Future<List<RecurringOccurrence>> getOccurrencesFor(
+    String recurringId,
+  ) async {
     _requireAuth();
     log('Fetching occurrences for: $recurringId, user: $currentUserId');
     final response = await client
@@ -747,14 +781,18 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('recurring_id', recurringId)
         .eq('user_id', currentUserId!)
         .order('due_date');
-    return (response as List).map((row) => _occurrenceFromSupabase(row)).toList();
+    return (response as List)
+        .map((row) => _occurrenceFromSupabase(row))
+        .toList();
   }
 
   @override
   Future<void> insertRecurringOccurrence(RecurringOccurrence occurrence) async {
     _requireAuth();
     log('Inserting occurrence: ${occurrence.id} for user: $currentUserId');
-    await client.from('recurring_occurrences').insert(_occurrenceToSupabase(occurrence));
+    await client
+        .from('recurring_occurrences')
+        .insert(_occurrenceToSupabase(occurrence));
   }
 
   @override
@@ -771,7 +809,9 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> deleteOccurrencesByRecurring(String recurringId) async {
     _requireAuth();
-    log('Deleting occurrences for recurring: $recurringId, user: $currentUserId');
+    log(
+      'Deleting occurrences for recurring: $recurringId, user: $currentUserId',
+    );
     await client
         .from('recurring_occurrences')
         .delete()
@@ -785,7 +825,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> clearAllData() async {
     _requireAuth();
     log('Clearing all data for user: $currentUserId');
-    
+
     // ลบตามลำดับ dependencies (child -> parent)
     // ใช้ .select() เพื่อดูจำนวนที่ลบ
     final occurrences = await client
@@ -794,49 +834,49 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${occurrences.length} occurrences');
-    
+
     final recurring = await client
         .from('recurring_transactions')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${recurring.length} recurring transactions');
-    
+
     final transactions = await client
         .from('transactions')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${transactions.length} transactions');
-    
+
     final holdings = await client
         .from('portfolio_holdings')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${holdings.length} holdings');
-    
+
     final budgets = await client
         .from('budgets')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${budgets.length} budgets');
-    
+
     final categories = await client
         .from('categories')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${categories.length} categories');
-    
+
     final accounts = await client
         .from('accounts')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${accounts.length} accounts');
-    
+
     log('All data cleared for user: $currentUserId');
   }
 
@@ -857,7 +897,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         log('Connected but table not ready (code: ${e.code})');
         return true;
       }
-      logError('Connection check failed (PostgrestException: ${e.code})', e.message);
+      logError(
+        'Connection check failed (PostgrestException: ${e.code})',
+        e.message,
+      );
       return false;
     } on AuthException catch (e) {
       logError('Connection check failed (AuthException)', e.message);
@@ -906,66 +949,103 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> bulkInsertAccounts(List<Account> accounts) async {
     _requireAuth();
     log('Bulk inserting ${accounts.length} accounts for user: $currentUserId');
-    
+
     // ตรวจสอบว่ามี ID ซ้ำใน list หรือไม่
     final ids = accounts.map((a) => a.id).toList();
     final uniqueIds = ids.toSet();
     if (ids.length != uniqueIds.length) {
-      log('WARNING: Found ${ids.length - uniqueIds.length} duplicate IDs in accounts list');
-      log('Duplicate IDs: ${ids.where((id) => ids.where((x) => x == id).length > 1).toSet()}');
+      log(
+        'WARNING: Found ${ids.length - uniqueIds.length} duplicate IDs in accounts list',
+      );
+      log(
+        'Duplicate IDs: ${ids.where((id) => ids.where((x) => x == id).length > 1).toSet()}',
+      );
     }
-    
+
     // Log ตัวอย่าง IDs ที่จะ insert (5 ตัวแรก)
     log('Sample IDs to insert: ${ids.take(5).toList()}');
-    log('Sample account names: ${accounts.take(5).map((a) => '${a.id.substring(0, 8)}:${a.name}').toList()}');
-    
-    await _batchInsert('accounts', accounts.map((a) => _accountToSupabase(a)).toList());
+    log(
+      'Sample account names: ${accounts.take(5).map((a) => '${a.id.substring(0, 8)}:${a.name}').toList()}',
+    );
+
+    await _batchInsert(
+      'accounts',
+      accounts.map((a) => _accountToSupabase(a)).toList(),
+    );
   }
 
   @override
   Future<void> bulkInsertCategories(List<Category> categories) async {
     _requireAuth();
-    log('Bulk inserting ${categories.length} categories for user: $currentUserId');
-    await _batchInsert('categories', categories.map((c) => _categoryToSupabase(c)).toList());
+    log(
+      'Bulk inserting ${categories.length} categories for user: $currentUserId',
+    );
+    await _batchInsert(
+      'categories',
+      categories.map((c) => _categoryToSupabase(c)).toList(),
+    );
   }
 
   @override
   Future<void> bulkInsertTransactions(List<AppTransaction> transactions) async {
     _requireAuth();
-    log('Bulk inserting ${transactions.length} transactions for user: $currentUserId');
-    await _batchInsert('transactions', transactions.map((t) => _transactionToSupabase(t)).toList());
+    log(
+      'Bulk inserting ${transactions.length} transactions for user: $currentUserId',
+    );
+    await _batchInsert(
+      'transactions',
+      transactions.map((t) => _transactionToSupabase(t)).toList(),
+    );
   }
 
   @override
   Future<void> bulkInsertBudgets(List<Budget> budgets) async {
     _requireAuth();
     log('Bulk inserting ${budgets.length} budgets for user: $currentUserId');
-    await _batchInsert('budgets', budgets.map((b) => _budgetToSupabase(b)).toList());
+    await _batchInsert(
+      'budgets',
+      budgets.map((b) => _budgetToSupabase(b)).toList(),
+    );
   }
 
   @override
   Future<void> bulkInsertHoldings(List<StockHolding> holdings) async {
     _requireAuth();
     log('Bulk inserting ${holdings.length} holdings for user: $currentUserId');
-    await _batchInsert('portfolio_holdings', holdings.map((h) => _holdingToSupabase(h)).toList());
+    await _batchInsert(
+      'portfolio_holdings',
+      holdings.map((h) => _holdingToSupabase(h)).toList(),
+    );
   }
 
   @override
   Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring) async {
     _requireAuth();
-    log('Bulk inserting ${recurring.length} recurring transactions for user: $currentUserId');
-    await _batchInsert('recurring_transactions', recurring.map((r) => _recurringToSupabase(r)).toList());
+    log(
+      'Bulk inserting ${recurring.length} recurring transactions for user: $currentUserId',
+    );
+    await _batchInsert(
+      'recurring_transactions',
+      recurring.map((r) => _recurringToSupabase(r)).toList(),
+    );
   }
 
   @override
-  Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences) async {
+  Future<void> bulkInsertOccurrences(
+    List<RecurringOccurrence> occurrences,
+  ) async {
     _requireAuth();
-    log('Bulk inserting ${occurrences.length} occurrences for user: $currentUserId');
-    await _batchInsert('recurring_occurrences', occurrences.map((o) => _occurrenceToSupabase(o)).toList());
+    log(
+      'Bulk inserting ${occurrences.length} occurrences for user: $currentUserId',
+    );
+    await _batchInsert(
+      'recurring_occurrences',
+      occurrences.map((o) => _occurrenceToSupabase(o)).toList(),
+    );
   }
 
   // ── Bulk Import: Get Existing IDs ──────────────────────────────────────────
-  
+
   @override
   @override
   Future<Set<String>> getExistingAccountIds() async {
@@ -976,7 +1056,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingCategoryIds() async {
@@ -987,7 +1067,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingTransactionIds() async {
@@ -998,7 +1078,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingBudgetIds() async {
@@ -1009,7 +1089,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingHoldingIds() async {
@@ -1020,7 +1100,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingRecurringIds() async {
@@ -1031,37 +1111,42 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!);
     return (response as List).map((r) => r['id'] as String).toSet();
   }
-  
+
   @override
   @override
   Future<Set<String>> getExistingOccurrenceIds() async {
     _requireAuth();
-    final response = await client
-        .from('recurring_occurrences')
-        .select('id');
+    final response = await client.from('recurring_occurrences').select('id');
     return (response as List).map((r) => r['id'] as String).toSet();
   }
 
   /// Helper สำหรับ batch insert
   /// ใช้ insert แบบ ignore conflicts (upsert แต่ไม่ update)
-  Future<void> _batchInsert(String table, List<Map<String, dynamic>> data) async {
+  Future<void> _batchInsert(
+    String table,
+    List<Map<String, dynamic>> data,
+  ) async {
     if (data.isEmpty) return;
 
     for (var i = 0; i < data.length; i += _batchSize) {
       final end = (i + _batchSize < data.length) ? i + _batchSize : data.length;
       final batch = data.sublist(i, end);
-      
-      log('Inserting batch ${i ~/ _batchSize + 1}: ${batch.length} records to $table');
+
+      log(
+        'Inserting batch ${i ~/ _batchSize + 1}: ${batch.length} records to $table',
+      );
       try {
         // ใช้ upsert แต่กำหนด ignoreDuplicates เพื่อ skip ข้อมูลที่มีอยู่แล้ว
-        await client.from(table).upsert(batch, onConflict: 'id', ignoreDuplicates: true);
+        await client
+            .from(table)
+            .upsert(batch, onConflict: 'id', ignoreDuplicates: true);
       } catch (e) {
         logError('Error inserting batch to $table', e);
         // ถ้า ignoreDuplicates ไม่รองรับ ให้ log แล้วข้าม
         rethrow;
       }
     }
-    
+
     log('Completed inserting ${data.length} records to $table');
   }
 }

@@ -181,6 +181,9 @@ CREATE TABLE IF NOT EXISTS public.recurring_transactions (
     category_id text references public.categories(id) on delete set null,
     note text,
     sort_order integer not null default 0,
+    notification_enabled boolean not null default false,
+    notification_hour integer not null default 9,
+    notification_minute integer not null default 0,
     created_at timestamp without time zone default now(),
     updated_at timestamp without time zone default now()
 );
