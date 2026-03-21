@@ -567,6 +567,7 @@ class _TransactionItem extends StatelessWidget {
     final textSecondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
+    final note = tx.note?.trim();
 
     return InkWell(
       onTap: onTap,
@@ -582,10 +583,11 @@ class _TransactionItem extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (tx.type == TransactionType.debtTransfer
-                        ? typeColor
-                        : (category?.color ?? typeColor))
-                    .withValues(alpha: 0.15),
+                color:
+                    (tx.type == TransactionType.debtTransfer
+                            ? typeColor
+                            : (category?.color ?? typeColor))
+                        .withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -620,8 +622,9 @@ class _TransactionItem extends StatelessWidget {
                   ),
                   // Category
                   Text(
-                    _buildSubLabel(category?.name),
+                    _buildSubLabel(category?.name, note),
                     style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -708,11 +711,12 @@ class _TransactionItem extends StatelessWidget {
     return account?.name ?? '-';
   }
 
-  String _buildSubLabel(String? categoryName) {
-    if (categoryName != null) {
-      return categoryName;
-    }
-    return categoryName ?? '';
+  String _buildSubLabel(String? categoryName, String? note) {
+    final parts = <String>[
+      if (categoryName != null && categoryName.isNotEmpty) categoryName,
+      if (note != null && note.isNotEmpty) note,
+    ];
+    return parts.join(' • ');
   }
 
   String _formatTime(DateTime dt) {

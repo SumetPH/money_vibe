@@ -26,7 +26,7 @@ class TransactionProvider extends ChangeNotifier {
 
   Future<void> init() async {
     _setLoading(true);
-    
+
     try {
       final transactions = await _db.getTransactions();
       _transactions.clear();
@@ -50,11 +50,14 @@ class TransactionProvider extends ChangeNotifier {
   List<AppTransaction> get transactions => List.unmodifiable(_transactions);
 
   List<AppTransaction> getTransactionsForPeriod(DateTime from, DateTime to) {
+    final fromDate = DateTime(from.year, from.month, from.day);
+    final toExclusive = DateTime(to.year, to.month, to.day + 1);
+
     return _transactions
         .where(
           (t) =>
-              t.dateTime.isAfter(from.subtract(const Duration(seconds: 1))) &&
-              t.dateTime.isBefore(to.add(const Duration(days: 1))),
+              !t.dateTime.isBefore(fromDate) &&
+              t.dateTime.isBefore(toExclusive),
         )
         .toList()
       ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
