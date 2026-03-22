@@ -9,6 +9,7 @@ import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 
 import '../../services/database_manager.dart';
+import '../../services/app_refresh_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
 import '../auth/auth_screen.dart';
@@ -55,67 +56,67 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Account Section
                 _buildSectionHeader('บัญชีผู้ใช้', textColor),
                 Consumer<AuthProvider>(
-                    builder: (context, authProvider, _) {
-                      if (authProvider.isLoggedIn) {
-                        // แสดงเมื่อ login แล้ว
-                        return Column(
-                          children: [
-                            ListTile(
-                              leading: Icon(
-                                Icons.person,
-                                color: secondaryTextColor,
-                              ),
-                              title: Text(
-                                authProvider.userEmail ?? 'ผู้ใช้',
-                                style: TextStyle(color: textColor),
-                              ),
-                              subtitle: Text(
-                                'อีเมลปัจจุบัน',
-                                style: TextStyle(color: secondaryTextColor),
-                              ),
+                  builder: (context, authProvider, _) {
+                    if (authProvider.isLoggedIn) {
+                      // แสดงเมื่อ login แล้ว
+                      return Column(
+                        children: [
+                          ListTile(
+                            leading: Icon(
+                              Icons.person,
+                              color: secondaryTextColor,
                             ),
-                            ListTile(
-                              leading: Icon(
-                                Icons.logout,
-                                color: AppColors.expense,
-                              ),
-                              title: Text(
-                                'ออกจากระบบ',
-                                style: TextStyle(color: AppColors.expense),
-                              ),
-                              onTap: () => _showLogoutDialog(context),
+                            title: Text(
+                              authProvider.userEmail ?? 'ผู้ใช้',
+                              style: TextStyle(color: textColor),
                             ),
-                          ],
-                        );
-                      } else {
-                        // แสดงเมื่อยังไม่ได้ login
-                        return ListTile(
-                          leading: Icon(Icons.login, color: AppColors.income),
-                          title: Text(
-                            'เข้าสู่ระบบ',
-                            style: TextStyle(color: AppColors.income),
+                            subtitle: Text(
+                              'อีเมลปัจจุบัน',
+                              style: TextStyle(color: secondaryTextColor),
+                            ),
                           ),
-                          subtitle: Text(
-                            'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
-                            style: TextStyle(color: secondaryTextColor),
+                          ListTile(
+                            leading: Icon(
+                              Icons.logout,
+                              color: AppColors.expense,
+                            ),
+                            title: Text(
+                              'ออกจากระบบ',
+                              style: TextStyle(color: AppColors.expense),
+                            ),
+                            onTap: () => _showLogoutDialog(context),
                           ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            color: secondaryTextColor,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AuthScreen(),
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
-                  Divider(color: dividerColor),
+                        ],
+                      );
+                    } else {
+                      // แสดงเมื่อยังไม่ได้ login
+                      return ListTile(
+                        leading: Icon(Icons.login, color: AppColors.income),
+                        title: Text(
+                          'เข้าสู่ระบบ',
+                          style: TextStyle(color: AppColors.income),
+                        ),
+                        subtitle: Text(
+                          'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
+                          style: TextStyle(color: secondaryTextColor),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: secondaryTextColor,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AuthScreen(),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+                Divider(color: dividerColor),
                 if (!dbManager.isConfigured) ...[
                   ListTile(
                     leading: Icon(Icons.cloud_off, color: Colors.orange),
@@ -191,6 +192,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       MaterialPageRoute(
                         builder: (context) => const ApiKeySettingsScreen(),
                       ),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
+                // App Section
+                _buildSectionHeader('แอป', textColor),
+                FutureBuilder<String>(
+                  future: AppRefreshReminderService.instance
+                      .getReminderStatusLabel(),
+                  builder: (context, snapshot) {
+                    final statusLabel = snapshot.data ?? 'กำลังโหลด...';
+
+                    return ListTile(
+                      leading: Icon(
+                        Icons.notifications_active_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'เตือน build ใหม่',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        'ทุก 5 วัน\n$statusLabel',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      isThreeLine: true,
                     );
                   },
                 ),

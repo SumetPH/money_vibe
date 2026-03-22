@@ -12,6 +12,7 @@ import 'providers/recurring_transaction_provider.dart';
 
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
+import 'services/app_refresh_reminder_service.dart';
 import 'services/database_manager.dart';
 import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
@@ -91,6 +92,10 @@ void main() async {
       recurringProvider: recurringProvider,
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    AppRefreshReminderService.instance.ensureScheduled();
+  });
 
   // Remove native splash screen after app is built
   SplashService.remove();
