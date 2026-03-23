@@ -215,10 +215,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(color: textColor),
                       ),
                       subtitle: Text(
-                        'ทุก 5 วัน\n$statusLabel',
+                        statusLabel,
                         style: TextStyle(color: secondaryTextColor),
                       ),
-                      isThreeLine: true,
+                      // isThreeLine: true,
                     );
                   },
                 ),

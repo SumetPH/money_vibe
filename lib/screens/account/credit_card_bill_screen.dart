@@ -8,7 +8,7 @@ import '../../providers/transaction_provider.dart';
 import '../../services/credit_card_bill_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
-import 'credit_card_bill_detail_screen.dart';
+import '../transaction/transaction_list_screen.dart';
 
 // ฟังก์ชันระดับ top-level สำหรับ compute() isolate
 class _BillParams {
@@ -37,6 +37,18 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
   List<CreditCardBill> _bills = [];
   bool _loading = true;
   String _lastTxKey = '';
+
+  DateTimeRange _buildCurrentCycleDateRange(CreditCardBill bill) {
+    final now = DateTime.now();
+    return DateTimeRange(
+      start: DateTime(
+        bill.startDate.year,
+        bill.startDate.month,
+        bill.startDate.day,
+      ),
+      end: DateTime(now.year, now.month, now.day),
+    );
+  }
 
   void _scheduleRecomputeIfNeeded(List<AppTransaction> transactions) {
     // ใช้ length + first/last id เป็น key ตรวจจับการเปลี่ยนแปลง
@@ -185,13 +197,23 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
           ),
           child: InkWell(
             onTap: () {
+              final billTransactionIds = [
+                ...bill.expenses.map((tx) => tx.id),
+                ...bill.payments.map((tx) => tx.id),
+              ];
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreditCardBillDetailScreen(
-                    bill: bill,
-                    accountName: widget.account.name,
-                    statementDay: widget.account.statementDay,
+                  builder: (_) => TransactionListScreen(
+                    accountId: widget.account.id,
+                    transactionIds: bill.isOpen ? null : billTransactionIds,
+                    fixedDateRange: bill.isOpen
+                        ? _buildCurrentCycleDateRange(bill)
+                        : null,
+                    title: bill.isOpen
+                        ? 'รอบปัจจุบัน'
+                        : 'รอบบิล ${bill.billName}',
                   ),
                 ),
               );

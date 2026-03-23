@@ -14,6 +14,7 @@ import 'transaction_form_screen.dart';
 class TransactionListScreen extends StatefulWidget {
   final String? accountId;
   final List<String>? categoryIds;
+  final List<String>? transactionIds;
   final DateTimeRange? fixedDateRange;
   final String? title;
 
@@ -21,6 +22,7 @@ class TransactionListScreen extends StatefulWidget {
     super.key,
     this.accountId,
     this.categoryIds,
+    this.transactionIds,
     this.fixedDateRange,
     this.title,
   });
@@ -61,6 +63,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final isFiltered =
                 isFromAccount ||
                 widget.categoryIds != null ||
+                widget.transactionIds != null ||
                 widget.fixedDateRange != null;
 
             return Scaffold(
@@ -87,7 +90,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 ),
                 centerTitle: true,
                 actions: [
-                  if (widget.fixedDateRange == null)
+                  if (widget.fixedDateRange == null &&
+                      widget.transactionIds == null)
                     IconButton(
                       icon: const Icon(Icons.tune),
                       onPressed: () => _showPeriodPicker(isDarkMode),
@@ -164,10 +168,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   List<AppTransaction> _getFilteredTransactions(TransactionProvider provider) {
     final now = DateTime.now();
     final accountId = widget.accountId;
+    final transactionIds = widget.transactionIds;
     List<AppTransaction> transactions;
 
-    // ถ้ามี fixedDateRange (เช่น จากงบประมาณ) ใช้ช่วงนั้นโดยตรง
-    if (widget.fixedDateRange != null) {
+    // ถ้ามี transactionIds ให้ใช้รายการทั้งหมดก่อน เพื่อไม่ให้ period filter ตัดรายการทิ้ง
+    if (transactionIds != null) {
+      transactions = List.of(provider.transactions)
+        ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    } else if (widget.fixedDateRange != null) {
+      // ถ้ามี fixedDateRange (เช่น จากงบประมาณ) ใช้ช่วงนั้นโดยตรง
       transactions = provider.getTransactionsForPeriod(
         widget.fixedDateRange!.start,
         widget.fixedDateRange!.end,
@@ -227,6 +236,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     if (categoryIds != null && categoryIds.isNotEmpty) {
       transactions = transactions
           .where((tx) => categoryIds.contains(tx.categoryId))
+          .toList();
+    }
+
+    if (transactionIds != null && transactionIds.isNotEmpty) {
+      final transactionIdSet = transactionIds.toSet();
+      transactions = transactions
+          .where((tx) => transactionIdSet.contains(tx.id))
           .toList();
     }
 

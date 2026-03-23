@@ -230,7 +230,7 @@ class AppRefreshReminderService {
       return 'ยังไม่ได้ตั้งเตือน';
     }
 
-    final formatter = DateFormat('d MMM yyyy, HH:mm', 'en_US');
+    final formatter = DateFormat('dd/MM/yyyy HH:mm', 'en_US');
     return 'ครั้งถัดไป: ${formatter.format(scheduledFor)}';
   }
 }

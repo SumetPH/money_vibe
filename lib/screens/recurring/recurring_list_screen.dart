@@ -431,10 +431,10 @@ class _RecurringItem extends StatelessWidget {
                           style: TextStyle(fontSize: 13, color: textSecondary),
                         ),
                       ],
-                      if (statusLabel != null && statusColor != null) ...[
-                        const SizedBox(height: 4),
-                        _StatusChip(label: statusLabel!, color: statusColor!),
-                      ],
+                      // if (statusLabel != null && statusColor != null) ...[
+                      //   const SizedBox(height: 4),
+                      //   _StatusChip(label: statusLabel!, color: statusColor!),
+                      // ],
                     ],
                   ),
                 ),
@@ -443,13 +443,25 @@ class _RecurringItem extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        formatAmount(recurring.amount),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: typeColor,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            formatAmount(recurring.amount),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: typeColor,
+                            ),
+                          ),
+                          if (statusLabel != null && statusColor != null) ...[
+                            const SizedBox(height: 4),
+                            _StatusChip(
+                              label: statusLabel!,
+                              color: statusColor!,
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(width: 2),
                       GestureDetector(
