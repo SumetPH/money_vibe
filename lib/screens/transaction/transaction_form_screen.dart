@@ -31,7 +31,6 @@ class TransactionFormScreen extends StatefulWidget {
 class _TransactionFormScreenState extends State<TransactionFormScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  final _tagController = TextEditingController();
 
   late TransactionType _type;
   String? _selectedAccountId;
@@ -58,22 +57,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ? formatAmount(tx.amount)
         : '';
     _noteController.text = tx?.note ?? '';
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (_selectedAccountId == null) {
-    //     final accounts = context.read<AccountProvider>().visibleAccounts;
-    //     if (accounts.isNotEmpty) {
-    //       setState(() => _selectedAccountId = accounts.first.id);
-    //     }
-    //   }
-    // });
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
-    _tagController.dispose();
     super.dispose();
   }
 
@@ -454,10 +443,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         hint: '',
         maxLines: 3,
       ),
-      _buildDivider(),
-
-      // Tags
-      _TagRow(controller: _tagController),
       const SizedBox(height: 16),
     ];
   }
@@ -1777,68 +1762,5 @@ class _DateTimeRow extends StatelessWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$day. ${dt.day} ${thaiMonths[dt.month - 1]} ${dt.year} $h:$m';
-  }
-}
-
-class _TagRow extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _TagRow({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final theme = Theme.of(context);
-    return Container(
-      color:
-          theme.cardTheme.color ??
-          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              'แท็ก',
-              style: TextStyle(
-                fontSize: 15,
-                color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText:
-                    'เพิ่มแท็กได้ตรงนี้ (พิมพ์ชื่อกดปุ่ม Enter เพื่อสร้างแท็ก)',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
-                filled: false,
-              ),
-              style: const TextStyle(fontSize: 15),
-            ),
-          ),
-          Icon(
-            Icons.access_time,
-            color: isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary,
-            size: 20,
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -224,7 +224,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'to_account_id': transaction.toAccountId,
       'date_time': transaction.dateTime.toIso8601String(),
       'note': transaction.note,
-      'tags': transaction.tags.join(','),
     };
   }
 

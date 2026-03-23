@@ -347,7 +347,6 @@ class CsvService {
         'to_account_id',
         'date_time',
         'note',
-        'tags',
       ],
     ];
 
@@ -361,7 +360,6 @@ class CsvService {
         tx.toAccountId ?? '',
         tx.dateTime.toIso8601String(),
         tx.note ?? '',
-        jsonEncode(tx.tags),
       ]);
     }
 
@@ -646,11 +644,6 @@ class CsvService {
         continue;
       }
 
-      var tags = row[8]?.toString() ?? '[]';
-      if (!tags.startsWith('[')) {
-        final tagList = tags.split(',').where((t) => t.isNotEmpty).toList();
-        tags = jsonEncode(tagList);
-      }
 
       transactions.add(AppTransaction(
         id: id,
@@ -665,7 +658,6 @@ class CsvService {
             : row[5]?.toString(),
         dateTime: DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
         note: row[7]?.toString(),
-        tags: (jsonDecode(tags) as List<dynamic>).cast<String>(),
       ));
     }
 

@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 enum TransactionType {
   expense('รายจ่าย'),
@@ -53,7 +52,6 @@ class AppTransaction {
   String? toAccountId;
   DateTime dateTime;
   String? note;
-  List<String> tags;
 
   AppTransaction({
     required this.id,
@@ -64,9 +62,7 @@ class AppTransaction {
     this.toAccountId,
     DateTime? dateTime,
     this.note,
-    List<String>? tags,
-  }) : dateTime = dateTime ?? DateTime.now(),
-       tags = tags ?? [];
+  }) : dateTime = dateTime ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
     'id': id,
@@ -77,24 +73,9 @@ class AppTransaction {
     'to_account_id': toAccountId,
     'date_time': dateTime.toIso8601String(),
     'note': note,
-    'tags': jsonEncode(tags),
   };
 
   static AppTransaction fromMap(Map<String, dynamic> m) {
-    final tagsRaw = m['tags'] as String? ?? '[]';
-    List<String> parsedTags;
-    try {
-      final decoded = jsonDecode(tagsRaw);
-      if (decoded is List) {
-        parsedTags = decoded.cast<String>();
-      } else {
-        // Fallback สำหรับข้อมูลเก่าที่ใช้ comma-separated
-        parsedTags = tagsRaw.isEmpty ? [] : tagsRaw.split(',');
-      }
-    } catch (_) {
-      // Fallback สำหรับข้อมูลเก่าที่ใช้ comma-separated
-      parsedTags = tagsRaw.isEmpty || tagsRaw == '[]' ? [] : tagsRaw.split(',');
-    }
     return AppTransaction(
       id: m['id'] as String,
       type: parseTransactionType(m['type'] as String?),
@@ -104,7 +85,6 @@ class AppTransaction {
       toAccountId: m['to_account_id'] as String?,
       dateTime: DateTime.parse(m['date_time'] as String),
       note: m['note'] as String?,
-      tags: parsedTags,
     );
   }
 
@@ -119,7 +99,6 @@ class AppTransaction {
     bool clearToAccountId = false,
     DateTime? dateTime,
     String? note,
-    List<String>? tags,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -130,7 +109,6 @@ class AppTransaction {
       toAccountId: clearToAccountId ? null : (toAccountId ?? this.toAccountId),
       dateTime: dateTime ?? this.dateTime,
       note: note ?? this.note,
-      tags: tags ?? this.tags,
     );
   }
 }
