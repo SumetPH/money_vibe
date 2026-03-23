@@ -103,7 +103,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         iconColor: const Color(0xFFFFB300),
                         isTopLevel: true,
                         isDarkMode: isDarkMode,
-                        accounts: accountProvider.visibleAccounts
+                        accounts: accountProvider.accounts
                             .where((a) => !a.excludeFromNetWorth)
                             .toList(),
                         filterIds: filterIds,
@@ -465,7 +465,7 @@ class _TotalRow extends StatelessWidget {
                   tileColor: bgColor,
                   leading: Icon(Icons.filter_list, color: textColor),
                   title: Text(
-                    'เลือก account ที่คำนวณ',
+                    'เลือกบัญชีที่คำนวณ',
                     style: TextStyle(color: textColor),
                   ),
                   trailing: filterIds != null
@@ -877,9 +877,37 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                               size: 20,
                             ),
                           ),
-                          title: Text(
-                            account.name,
-                            style: TextStyle(color: textPrimary, fontSize: 15),
+                          title: Row(
+                            children: [
+                              Text(
+                                account.name,
+                                style:
+                                    TextStyle(color: textPrimary, fontSize: 15),
+                              ),
+                              if (account.isHidden) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.1)
+                                        : Colors.black.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'ซ่อนอยู่',
+                                    style: TextStyle(
+                                      color: textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           activeColor: const Color(0xFFFFB300),
                           checkColor: Colors.black,

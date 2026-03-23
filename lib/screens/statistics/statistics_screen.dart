@@ -100,28 +100,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
 // ==================== Yearly Bar Chart ====================
 
-bool _isExpenseTransaction(AppTransaction tx, List<Account> accounts) {
-  if (tx.type == TransactionType.expense) return true;
-  if (tx.type == TransactionType.debtTransfer) return true;
-  if (tx.type == TransactionType.debtRepay) {
-    final toAccount = accounts.firstWhere(
-      (a) => a.id == tx.toAccountId,
-      orElse: () => Account(
-        id: '',
-        name: '',
-        type: AccountType.debt,
-        initialBalance: 0,
-        currency: 'THB',
-      ),
-    );
-
-    // debtRepay to a credit card account is just a bill payment —
-    // the original credit card purchases were already counted as expenses.
-    return toAccount.type != AccountType.creditCard;
-  }
-  return false;
-}
-
 class _YearlyBarChart extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
@@ -333,7 +311,7 @@ class _YearlyBarChart extends StatelessWidget {
 
       if (tx.type == TransactionType.income) {
         data[year]!['income'] = (data[year]!['income'] ?? 0) + tx.amount;
-      } else if (_isExpenseTransaction(tx, accounts)) {
+      } else if (TransactionProvider.isActualExpense(tx, accounts)) {
         data[year]!['expense'] = (data[year]!['expense'] ?? 0) + tx.amount;
       }
     }
@@ -665,7 +643,7 @@ class _YearlyBarChart extends StatelessWidget {
       final monthIndex = tx.dateTime.month - 1;
       if (tx.type == TransactionType.income) {
         monthlyData[monthIndex].income += tx.amount;
-      } else if (_isExpenseTransaction(tx, accounts)) {
+      } else if (TransactionProvider.isActualExpense(tx, accounts)) {
         monthlyData[monthIndex].expense += tx.amount;
       }
     }
@@ -1063,7 +1041,7 @@ class _CategoryPieChart extends StatelessWidget {
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : _isExpenseTransaction(tx, accounts);
+          : TransactionProvider.isActualExpense(tx, accounts);
 
       if (!shouldInclude) continue;
 

@@ -144,7 +144,6 @@ class AccountProvider extends ChangeNotifier {
         .where(
           (a) =>
               !a.excludeFromNetWorth &&
-              (_showHiddenAccounts || !a.isHidden) &&
               (filterIds == null || filterIds.contains(a.id)),
         )
         .fold(0.0, (sum, a) => sum + getBalance(a.id, transactions));

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
 import '../../models/transaction.dart';
+import '../../models/account.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
@@ -87,11 +89,12 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     Budget budget,
     List<AppTransaction> txs,
     DateTimeRange period,
+    List<Account> accounts,
   ) {
     return txs
         .where(
           (tx) =>
-              tx.type.isExpenseLike &&
+              TransactionProvider.isActualExpense(tx, accounts) &&
               budget.categoryIds.contains(tx.categoryId) &&
               !tx.dateTime.isBefore(period.start) &&
               !tx.dateTime.isAfter(period.end),
@@ -103,6 +106,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   Widget build(BuildContext context) {
     return Consumer3<BudgetProvider, TransactionProvider, SettingsProvider>(
       builder: (context, budgetProvider, txProvider, settingsProvider, _) {
+        final accountProvider = context.read<AccountProvider>();
+        final accounts = accountProvider.accounts;
         final isDarkMode = settingsProvider.isDarkMode;
         final startDay = settingsProvider.budgetStartDay;
         final period = _getBudgetPeriod(startDay);
@@ -129,7 +134,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final totalBudget = budgets.fold(0.0, (s, b) => s + b.amount);
         final totalSpent = budgets.fold(
           0.0,
-          (s, b) => s + _getSpent(b, allTx, period),
+          (s, b) => s + _getSpent(b, allTx, period, accounts),
         );
         final totalRemaining = totalBudget - totalSpent;
         final overallProgress = totalBudget > 0
@@ -196,8 +201,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                   budgetProvider.reorderBudgets(
                                     oldIndex,
                                     newIndex,
-                                  );
-                                }
+                                    );
+                                  }
                               : (oldIdx, newIdx) {},
                           proxyDecorator: (child, index, animation) {
                             return AnimatedBuilder(
@@ -224,7 +229,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                           itemCount: budgets.length,
                           itemBuilder: (context, i) {
                             final budget = budgets[i];
-                            final spent = _getSpent(budget, allTx, period);
+                            final spent = _getSpent(budget, allTx, period, accounts);
                             return _BudgetItem(
                               key: ValueKey(budget.id),
                               budget: budget,

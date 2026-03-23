@@ -58,7 +58,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               ..sort((a, b) => b.compareTo(a));
 
             final totalIncome = txProvider.getTotalIncome(allTx);
-            final totalExpense = txProvider.getTotalExpense(allTx);
+            final totalExpense = txProvider.getTotalActualExpense(
+              allTx,
+              accountProvider.accounts,
+            );
             final isFromAccount = widget.accountId != null;
             final isFiltered =
                 isFromAccount ||
@@ -117,7 +120,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         final txs = grouped[date]!
                           ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
                         final dayIncome = txProvider.getTotalIncome(txs);
-                        final dayExpense = txProvider.getTotalExpense(txs);
+                        final dayExpense = txProvider.getTotalActualExpense(
+                          txs,
+                          accountProvider.accounts,
+                        );
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
