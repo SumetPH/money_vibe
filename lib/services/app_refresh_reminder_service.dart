@@ -25,7 +25,7 @@ class AppRefreshReminderService {
   static const _lastSeenBuildKey = 'app_refresh_last_seen_build_v1';
   static const _installStartedAtKey = 'app_refresh_install_started_at_v1';
   static const _scheduledForKey = 'app_refresh_scheduled_for_v1';
-  static const _reminderAfter = Duration(days: 5);
+  static const _reminderAfter = Duration(days: 3);
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -115,10 +115,6 @@ class AppRefreshReminderService {
     if (!prefs.containsKey(_installStartedAtKey) ||
         lastSeenBuildKey == null ||
         lastSeenBuildKey != currentBuildKey) {
-      debugPrint(
-        'AppRefreshReminderService: detected new build, reset 5-day reminder '
-        '(old: ${lastSeenBuildKey ?? 'none'}, new: $currentBuildKey)',
-      );
       await _plugin.cancel(_notificationId);
       await prefs.setString(_installStartedAtKey, now.toIso8601String());
       await prefs.setString(_lastSeenBuildKey, currentBuildKey);
@@ -145,10 +141,6 @@ class AppRefreshReminderService {
       return;
     }
 
-    debugPrint(
-      'AppRefreshReminderService: previous reminder expired for build '
-      '$currentBuildKey, scheduling a new 5-day reminder',
-    );
     final nextReminder = now.add(_reminderAfter);
     await prefs.setString(_installStartedAtKey, now.toIso8601String());
     await prefs.setString(_lastSeenBuildKey, currentBuildKey);
