@@ -1,6 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
+enum BudgetType {
+  expense('รายจ่าย'),
+  savings('ออม / ลงทุน');
+
+  final String label;
+  const BudgetType(this.label);
+}
+
 class Budget {
   final String id;
   final String name;
@@ -9,6 +17,8 @@ class Budget {
   final IconData icon;
   final Color color;
   final int sortOrder;
+  final String? groupName;
+  final BudgetType type;
 
   const Budget({
     required this.id,
@@ -18,6 +28,8 @@ class Budget {
     required this.icon,
     required this.color,
     this.sortOrder = 0,
+    this.groupName,
+    this.type = BudgetType.expense,
   });
 
   Budget copyWith({
@@ -28,6 +40,9 @@ class Budget {
     IconData? icon,
     Color? color,
     int? sortOrder,
+    String? groupName,
+    bool clearGroupName = false,
+    BudgetType? type,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -37,6 +52,8 @@ class Budget {
       icon: icon ?? this.icon,
       color: color ?? this.color,
       sortOrder: sortOrder ?? this.sortOrder,
+      groupName: clearGroupName ? null : (groupName ?? this.groupName),
+      type: type ?? this.type,
     );
   }
 
@@ -49,6 +66,8 @@ class Budget {
       'icon': icon.codePoint,
       'color': color.toARGB32(),
       'sort_order': sortOrder,
+      'group_name': groupName,
+      'budget_type': type.name,
     };
   }
 
@@ -73,7 +92,10 @@ class Budget {
         }
       } else if (categoryIdsRaw.contains(',')) {
         // Comma-separated format: "uuid1,uuid2" (legacy Supabase format)
-        categoryIds = categoryIdsRaw.split(',').where((s) => s.isNotEmpty).toList();
+        categoryIds = categoryIdsRaw
+            .split(',')
+            .where((s) => s.isNotEmpty)
+            .toList();
       } else {
         // Single UUID format: "uuid1"
         categoryIds = categoryIdsRaw.isNotEmpty ? [categoryIdsRaw] : [];
@@ -118,6 +140,17 @@ class Budget {
       sortOrder = 0;
     }
 
+    final groupNameRaw = map['group_name'];
+    final groupName = (groupNameRaw is String && groupNameRaw.isNotEmpty)
+        ? groupNameRaw
+        : null;
+
+    final typeRaw = map['budget_type'];
+    final type = BudgetType.values.firstWhere(
+      (e) => e.name == typeRaw,
+      orElse: () => BudgetType.expense,
+    );
+
     return Budget(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
@@ -126,6 +159,8 @@ class Budget {
       icon: icon,
       color: color,
       sortOrder: sortOrder,
+      groupName: groupName,
+      type: type,
     );
   }
 }

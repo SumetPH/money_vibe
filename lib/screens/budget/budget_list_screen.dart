@@ -194,57 +194,19 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       ),
                       // ── Budget list ─────────────────────────────────────────
                       Expanded(
-                        child: ReorderableListView.builder(
-                          buildDefaultDragHandles: _isReorderMode,
-                          onReorder: _isReorderMode
-                              ? (oldIndex, newIndex) {
-                                  budgetProvider.reorderBudgets(
-                                    oldIndex,
-                                    newIndex,
-                                    );
-                                  }
-                              : (oldIdx, newIdx) {},
-                          proxyDecorator: (child, index, animation) {
-                            return AnimatedBuilder(
-                              animation: animation,
-                              builder: (context, child) {
-                                final animValue = Curves.easeInOut.transform(
-                                  animation.value,
-                                );
-                                final elevation = 1 + animValue * 8;
-                                final scale = 1 + animValue * 0.02;
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: Material(
-                                    elevation: elevation,
-                                    color: surfaceColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: child,
-                            );
-                          },
-                          itemCount: budgets.length,
-                          itemBuilder: (context, i) {
-                            final budget = budgets[i];
-                            final spent = _getSpent(budget, allTx, period, accounts);
-                            return _BudgetItem(
-                              key: ValueKey(budget.id),
-                              budget: budget,
-                              spent: spent,
-                              isReorderMode: _isReorderMode,
-                              isDarkMode: isDarkMode,
-                              surfaceColor: surfaceColor,
-                              textPrimary: textPrimary,
-                              textSecondary: textSecondary,
-                              dividerColor: dividerColor,
-                              onTap: () =>
-                                  _openTransactions(context, budget, period),
-                              onTapEdit: () => _openForm(context, budget),
-                            );
-                          },
+                        child: _buildBudgetList(
+                          context,
+                          budgets: budgets,
+                          allTx: allTx,
+                          period: period,
+                          accounts: accounts,
+                          totalBudget: totalBudget,
+                          budgetProvider: budgetProvider,
+                          isDarkMode: isDarkMode,
+                          surfaceColor: surfaceColor,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          dividerColor: dividerColor,
                         ),
                       ),
                     ],
@@ -253,6 +215,169 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         );
       },
     );
+  }
+
+  Widget _buildBudgetList(
+    BuildContext context, {
+    required List<Budget> budgets,
+    required List<AppTransaction> allTx,
+    required DateTimeRange period,
+    required List<Account> accounts,
+    required double totalBudget,
+    required BudgetProvider budgetProvider,
+    required bool isDarkMode,
+    required Color surfaceColor,
+    required Color textPrimary,
+    required Color textSecondary,
+    required Color dividerColor,
+  }) {
+    final hasGroups = budgets.any(
+      (b) => b.groupName != null && b.groupName!.isNotEmpty,
+    );
+
+    // ── Reorder mode or no groups → flat ReorderableListView ────────────────
+    if (_isReorderMode || !hasGroups) {
+      return ReorderableListView.builder(
+        buildDefaultDragHandles: _isReorderMode,
+        onReorder: _isReorderMode
+            ? (oldIndex, newIndex) =>
+                  budgetProvider.reorderBudgets(oldIndex, newIndex)
+            : (a, b) {},
+        proxyDecorator: (child, index, animation) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) {
+              final animValue = Curves.easeInOut.transform(animation.value);
+              final elevation = 1 + animValue * 8;
+              final scale = 1 + animValue * 0.02;
+              return Transform.scale(
+                scale: scale,
+                child: Material(
+                  elevation: elevation,
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(8),
+                  child: child,
+                ),
+              );
+            },
+            child: child,
+          );
+        },
+        itemCount: budgets.length,
+        itemBuilder: (context, i) {
+          final budget = budgets[i];
+          final spent = _getSpent(budget, allTx, period, accounts);
+          return _BudgetItem(
+            key: ValueKey(budget.id),
+            budget: budget,
+            spent: spent,
+            isReorderMode: _isReorderMode,
+            isDarkMode: isDarkMode,
+            surfaceColor: surfaceColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            dividerColor: dividerColor,
+            onTap: () => _openTransactions(context, budget, period),
+            onTapEdit: () => _openForm(context, budget),
+          );
+        },
+      );
+    }
+
+    // ── Grouped ListView ────────────────────────────────────────────────────
+    // Partition: null-group first, then named groups ordered by first item's sortOrder
+    final Map<String, List<Budget>> namedGroupMap = {};
+    final List<Budget> ungrouped = [];
+
+    for (final b in budgets) {
+      final g = (b.groupName == null || b.groupName!.isEmpty)
+          ? null
+          : b.groupName!;
+      if (g == null) {
+        ungrouped.add(b);
+      } else {
+        (namedGroupMap[g] ??= []).add(b);
+      }
+    }
+
+    // Sort named groups by the minimum sortOrder of their members
+    final sortedGroups = namedGroupMap.entries.toList()
+      ..sort(
+        (a, b) => a.value
+            .map((x) => x.sortOrder)
+            .reduce((x, y) => x < y ? x : y)
+            .compareTo(
+              b.value.map((x) => x.sortOrder).reduce((x, y) => x < y ? x : y),
+            ),
+      );
+
+    final List<Widget> items = [];
+
+    // Ungrouped items (no header)
+    for (final budget in ungrouped) {
+      final spent = _getSpent(budget, allTx, period, accounts);
+      items.add(
+        _BudgetItem(
+          key: ValueKey(budget.id),
+          budget: budget,
+          spent: spent,
+          isReorderMode: false,
+          isDarkMode: isDarkMode,
+          surfaceColor: surfaceColor,
+          textPrimary: textPrimary,
+          textSecondary: textSecondary,
+          dividerColor: dividerColor,
+          onTap: () => _openTransactions(context, budget, period),
+          onTapEdit: () => _openForm(context, budget),
+        ),
+      );
+    }
+
+    // Named group sections
+    for (final entry in sortedGroups) {
+      final groupBudgets = entry.value;
+      final groupTotal = groupBudgets.fold(0.0, (s, b) => s + b.amount);
+      final groupSpent = groupBudgets.fold(
+        0.0,
+        (s, b) => s + _getSpent(b, allTx, period, accounts),
+      );
+      final groupPct = totalBudget > 0 ? groupTotal / totalBudget * 100 : 0.0;
+
+      items.add(
+        _GroupHeader(
+          key: ValueKey('group_${entry.key}'),
+          groupName: entry.key,
+          groupTotal: groupTotal,
+          groupSpent: groupSpent,
+          groupPct: groupPct,
+          isDarkMode: isDarkMode,
+          textPrimary: textPrimary,
+          textSecondary: textSecondary,
+          dividerColor: dividerColor,
+        ),
+      );
+
+      for (final budget in groupBudgets) {
+        final spent = _getSpent(budget, allTx, period, accounts);
+        items.add(
+          _BudgetItem(
+            key: ValueKey(budget.id),
+            budget: budget,
+            spent: spent,
+            isReorderMode: false,
+            isDarkMode: isDarkMode,
+            surfaceColor: surfaceColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            dividerColor: dividerColor,
+            onTap: () => _openTransactions(context, budget, period),
+            onTapEdit: () => _openForm(context, budget),
+          ),
+        );
+      }
+    }
+
+    return ListView(children: items);
   }
 
   void _openForm(BuildContext context, Budget? budget) {
@@ -828,42 +953,69 @@ class _BudgetItem extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    '${(_progress * 100).toStringAsFixed(0)}%',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
+                                  if (budget.type == BudgetType.savings) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            (isDarkMode
+                                                    ? AppColors.darkIncome
+                                                    : AppColors.income)
+                                                .withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'แผน',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDarkMode
+                                              ? AppColors.darkIncome
+                                              : AppColors.income,
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    Text(
+                                      '${(_progress * 100).toStringAsFixed(0)}%',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: _progressColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    _BudgetProgressBar(
+                                      progress: _progress,
                                       color: _progressColor,
+                                      backgroundColor: isDarkMode
+                                          ? AppColors.darkDivider
+                                          : AppColors.divider,
                                     ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  _BudgetProgressBar(
-                                    progress: _progress,
-                                    color: _progressColor,
-                                    backgroundColor: isDarkMode
-                                        ? AppColors.darkDivider
-                                        : AppColors.divider,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: _isRemainingNeutral
-                                          ? textPrimary
-                                          : _remaining > 0
-                                          ? (isDarkMode
-                                                ? AppColors.darkIncome
-                                                : AppColors.income)
-                                          : (isDarkMode
-                                                ? AppColors.darkExpense
-                                                : AppColors.expense),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: _isRemainingNeutral
+                                            ? textPrimary
+                                            : _remaining > 0
+                                            ? (isDarkMode
+                                                  ? AppColors.darkIncome
+                                                  : AppColors.income)
+                                            : (isDarkMode
+                                                  ? AppColors.darkExpense
+                                                  : AppColors.expense),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -944,6 +1096,85 @@ class _BudgetItem extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Group Header ────────────────────────────────────────────────────────────
+
+class _GroupHeader extends StatelessWidget {
+  final String groupName;
+  final double groupTotal;
+  final double groupSpent;
+  final double groupPct;
+  final bool isDarkMode;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color dividerColor;
+
+  const _GroupHeader({
+    super.key,
+    required this.groupName,
+    required this.groupTotal,
+    required this.groupSpent,
+    required this.groupPct,
+    required this.isDarkMode,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.dividerColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final headerBg = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Column(
+        children: [
+          Container(
+            color: headerBg,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    groupName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textSecondary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                Text(
+                  formatAmount(groupTotal),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: textPrimary,
+                  ),
+                ),
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    '${groupPct.toStringAsFixed(1)}%',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

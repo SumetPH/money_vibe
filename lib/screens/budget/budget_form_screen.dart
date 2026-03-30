@@ -20,10 +20,12 @@ class BudgetFormScreen extends StatefulWidget {
 class _BudgetFormScreenState extends State<BudgetFormScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
+  final _groupController = TextEditingController();
 
   late IconData _selectedIcon;
   late Color _selectedColor;
   late Set<String> _selectedCategoryIds;
+  late BudgetType _selectedType;
 
   bool get _isEditing => widget.budget != null;
 
@@ -33,15 +35,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     final b = widget.budget;
     _nameController.text = b?.name ?? '';
     _amountController.text = b != null ? b.amount.toStringAsFixed(2) : '';
+    _groupController.text = b?.groupName ?? '';
     _selectedIcon = b?.icon ?? Icons.savings;
     _selectedColor = b?.color ?? AppColors.accountColors.first;
     _selectedCategoryIds = Set<String>.from(b?.categoryIds ?? []);
+    _selectedType = b?.type ?? BudgetType.expense;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _amountController.dispose();
+    _groupController.dispose();
     super.dispose();
   }
 
@@ -63,6 +68,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     }
 
     final provider = context.read<BudgetProvider>();
+    final groupName = _groupController.text.trim().isEmpty
+        ? null
+        : _groupController.text.trim();
     if (_isEditing) {
       provider.updateBudget(
         widget.budget!.copyWith(
@@ -71,6 +79,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           categoryIds: _selectedCategoryIds.toList(),
           icon: _selectedIcon,
           color: _selectedColor,
+          groupName: groupName,
+          clearGroupName: groupName == null,
+          type: _selectedType,
         ),
       );
     } else {
@@ -82,6 +93,8 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           categoryIds: _selectedCategoryIds.toList(),
           icon: _selectedIcon,
           color: _selectedColor,
+          groupName: groupName,
+          type: _selectedType,
         ),
       );
     }
@@ -233,6 +246,43 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 ),
               ),
               Divider(height: 1, color: dividerColor),
+              // Group Name
+              Container(
+                color: surfaceColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'กลุ่ม',
+                      style: TextStyle(fontSize: 16, color: textSecondary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: _groupController,
+                        textAlign: TextAlign.right,
+                        decoration: InputDecoration(
+                          hintText: 'ชื่อกลุ่ม (ไม่บังคับ)',
+                          hintStyle: TextStyle(color: textSecondary),
+                          hintTextDirection: TextDirection.rtl,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                        ),
+                        style: TextStyle(fontSize: 16, color: textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: dividerColor),
               // Amount
               Container(
                 color: surfaceColor,
@@ -281,53 +331,105 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Categories
-              InkWell(
-                onTap: () =>
-                    _pickCategories(context, expenseCategories, isDark),
-                child: Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'หมวดหมู่',
-                        style: TextStyle(fontSize: 16, color: textSecondary),
-                      ),
-                      SizedBox(width: 20),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                categoryLabel,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                textAlign: TextAlign.end,
+              // Type selector
+              Container(
+                color: surfaceColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'ประเภท',
+                      style: TextStyle(fontSize: 16, color: textSecondary),
+                    ),
+                    const Spacer(),
+                    ...BudgetType.values.map((t) {
+                      final isSelected = _selectedType == t;
+                      final accentColor = isDark
+                          ? AppColors.darkHeader
+                          : AppColors.header;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedType = t),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? accentColor
+                                  : accentColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              t.label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected ? Colors.white : accentColor,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.chevron_right,
-                              color: textSecondary,
-                              size: 18,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      );
+                    }),
+                  ],
                 ),
               ),
               Divider(height: 1, color: dividerColor),
+              // Categories (shown only for expense type)
+              if (_selectedType == BudgetType.expense) ...[
+                InkWell(
+                  onTap: () =>
+                      _pickCategories(context, expenseCategories, isDark),
+                  child: Container(
+                    color: surfaceColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'หมวดหมู่',
+                          style: TextStyle(fontSize: 16, color: textSecondary),
+                        ),
+                        SizedBox(width: 20),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  categoryLabel,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.end,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right,
+                                color: textSecondary,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(height: 1, color: dividerColor),
+              ], // end if expense
               // Icon
               InkWell(
                 onTap: () => _pickIcon(isDark),

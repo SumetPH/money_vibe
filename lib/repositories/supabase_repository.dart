@@ -243,6 +243,8 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'icon': budget.icon.codePoint,
       'color': _colorToSupabase(budget.color.toARGB32()),
       'sort_order': budget.sortOrder,
+      'group_name': budget.groupName,
+      'budget_type': budget.type.name,
     };
   }
 
