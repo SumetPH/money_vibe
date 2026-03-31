@@ -44,6 +44,8 @@ git push origin main
 # --------------------------------------------------------------------------
 
 # ios release
+read -r -p "🤔 Build iOS? Press Enter to continue or Ctrl+C to cancel..."
+
 echo "📦 Building for iOS..."
 echo "🔢 Using build marker: ${BUILD_MARKER}"
 cd /Users/sumetph/Development/money/money_vibe/
