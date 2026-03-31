@@ -285,7 +285,7 @@ class CsvService {
         account.initialBalance,
         account.currency,
         account.startDate.toIso8601String(),
-        account.icon.codePoint,  // Export as int
+        account.icon.codePoint, // Export as int
         account.color.toARGB32(), // Export as int
         account.excludeFromNetWorth ? 1 : 0,
         account.isHidden ? 1 : 0,
@@ -404,7 +404,17 @@ class CsvService {
 
     final rows = <List<dynamic>>[
       // Header
-      ['id', 'name', 'amount', 'category_ids', 'icon', 'color', 'sort_order'],
+      [
+        'id',
+        'name',
+        'amount',
+        'category_ids',
+        'icon',
+        'color',
+        'sort_order',
+        'group_name',
+        'type',
+      ],
     ];
 
     for (final budget in budgets) {
@@ -416,6 +426,8 @@ class CsvService {
         budget.icon.codePoint,
         budget.color.toARGB32(),
         budget.sortOrder,
+        budget.groupName ?? '',
+        budget.type.name,
       ]);
     }
 
@@ -442,6 +454,10 @@ class CsvService {
         'category_id',
         'note',
         'sort_order',
+        'is_hidden',
+        'notification_enabled',
+        'notification_hour',
+        'notification_minute',
       ],
     ];
 
@@ -461,6 +477,10 @@ class CsvService {
         r.categoryId ?? '',
         r.note ?? '',
         r.sortOrder,
+        r.isHidden ? 1 : 0,
+        r.notificationEnabled ? 1 : 0,
+        r.notificationHour,
+        r.notificationMinute,
       ]);
     }
 
@@ -513,38 +533,42 @@ class CsvService {
       if (row.isEmpty || row.length < 5) continue;
 
       final id = row[0]?.toString() ?? _uuid.v4();
-      
+
       // Skip ถ้า ID ซ้ำ
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate account ID: $id');
         continue;
       }
 
-      accounts.add(Account(
-        id: id,
-        name: row[1]?.toString() ?? 'Unknown',
-        type: AccountType.values.byName(row[2]?.toString() ?? 'cash'),
-        initialBalance: double.tryParse(row[3]?.toString() ?? '0') ?? 0,
-        currency: row[4]?.toString() ?? 'THB',
-        startDate: DateTime.tryParse(row[5]?.toString() ?? '') ?? DateTime.now(),
-        icon: _parseIcon(int.tryParse(row[6]?.toString() ?? '')),
-        color: _parseColor(int.tryParse(row[7]?.toString() ?? '')),
-        excludeFromNetWorth: (int.tryParse(row[8]?.toString() ?? '') ?? 0) == 1,
-        isHidden: (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
-        sortOrder: int.tryParse(row[10]?.toString() ?? '') ?? 0,
-        cashBalance: row.length > 11
-            ? (double.tryParse(row[11]?.toString() ?? '') ?? 0)
-            : 0,
-        exchangeRate: row.length > 12
-            ? (double.tryParse(row[12]?.toString() ?? '') ?? 35.0)
-            : 35.0,
-        autoUpdateRate: row.length > 13
-            ? (int.tryParse(row[13]?.toString() ?? '') ?? 1) == 1
-            : true,
-        statementDay: row.length > 14
-            ? int.tryParse(row[14]?.toString() ?? '')
-            : null,
-      ));
+      accounts.add(
+        Account(
+          id: id,
+          name: row[1]?.toString() ?? 'Unknown',
+          type: AccountType.values.byName(row[2]?.toString() ?? 'cash'),
+          initialBalance: double.tryParse(row[3]?.toString() ?? '0') ?? 0,
+          currency: row[4]?.toString() ?? 'THB',
+          startDate:
+              DateTime.tryParse(row[5]?.toString() ?? '') ?? DateTime.now(),
+          icon: _parseIcon(int.tryParse(row[6]?.toString() ?? '')),
+          color: _parseColor(int.tryParse(row[7]?.toString() ?? '')),
+          excludeFromNetWorth:
+              (int.tryParse(row[8]?.toString() ?? '') ?? 0) == 1,
+          isHidden: (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
+          sortOrder: int.tryParse(row[10]?.toString() ?? '') ?? 0,
+          cashBalance: row.length > 11
+              ? (double.tryParse(row[11]?.toString() ?? '') ?? 0)
+              : 0,
+          exchangeRate: row.length > 12
+              ? (double.tryParse(row[12]?.toString() ?? '') ?? 35.0)
+              : 35.0,
+          autoUpdateRate: row.length > 13
+              ? (int.tryParse(row[13]?.toString() ?? '') ?? 1) == 1
+              : true,
+          statementDay: row.length > 14
+              ? int.tryParse(row[14]?.toString() ?? '')
+              : null,
+        ),
+      );
     }
 
     // Bulk insert
@@ -577,24 +601,26 @@ class CsvService {
       if (row.isEmpty) continue;
 
       final id = row[0]?.toString() ?? _uuid.v4();
-      
+
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate category ID: $id');
         continue;
       }
 
-      categories.add(Category(
-        id: id,
-        name: row[1]?.toString() ?? 'Unknown',
-        type: CategoryType.values.byName(row[2]?.toString() ?? 'expense'),
-        icon: _parseIcon(int.tryParse(row[3]?.toString() ?? '')),
-        color: _parseColor(int.tryParse(row[4]?.toString() ?? '')),
-        parentId: row[5]?.toString().isEmpty == true
-            ? null
-            : row[5]?.toString(),
-        note: row[6]?.toString(),
-        sortOrder: int.tryParse(row[7]?.toString() ?? '') ?? 0,
-      ));
+      categories.add(
+        Category(
+          id: id,
+          name: row[1]?.toString() ?? 'Unknown',
+          type: CategoryType.values.byName(row[2]?.toString() ?? 'expense'),
+          icon: _parseIcon(int.tryParse(row[3]?.toString() ?? '')),
+          color: _parseColor(int.tryParse(row[4]?.toString() ?? '')),
+          parentId: row[5]?.toString().isEmpty == true
+              ? null
+              : row[5]?.toString(),
+          note: row[6]?.toString(),
+          sortOrder: int.tryParse(row[7]?.toString() ?? '') ?? 0,
+        ),
+      );
     }
 
     if (categories.isNotEmpty) {
@@ -619,10 +645,13 @@ class CsvService {
 
     final existingIds = await _dbManager.repository.getExistingTransactionIds();
     // ดึง account IDs เพื่อเช็ค foreign key
-    final existingAccountIds = await _dbManager.repository.getExistingAccountIds();
-    
+    final existingAccountIds = await _dbManager.repository
+        .getExistingAccountIds();
+
     debugPrint('CSV Import: Found ${existingIds.length} existing transactions');
-    debugPrint('CSV Import: Found ${existingAccountIds.length} existing accounts');
+    debugPrint(
+      'CSV Import: Found ${existingAccountIds.length} existing accounts',
+    );
 
     final transactions = <AppTransaction>[];
     for (int i = 1; i < rows.length; i++) {
@@ -631,38 +660,44 @@ class CsvService {
 
       final id = row[0]?.toString() ?? _uuid.v4();
       final accountId = row[3]?.toString() ?? '';
-      
+
       // Skip ถ้า ID ซ้ำ
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate transaction ID: $id');
         continue;
       }
-      
+
       // Skip ถ้า account_id ไม่มีใน database
       if (!existingAccountIds.contains(accountId)) {
-        debugPrint('CSV Import: Skipping transaction $id - account $accountId not found');
+        debugPrint(
+          'CSV Import: Skipping transaction $id - account $accountId not found',
+        );
         continue;
       }
 
-
-      transactions.add(AppTransaction(
-        id: id,
-        type: parseTransactionType(row[1]?.toString()),
-        amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
-        accountId: accountId,
-        categoryId: row[4]?.toString().isEmpty == true
-            ? null
-            : row[4]?.toString(),
-        toAccountId: row[5]?.toString().isEmpty == true
-            ? null
-            : row[5]?.toString(),
-        dateTime: DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
-        note: row[7]?.toString(),
-      ));
+      transactions.add(
+        AppTransaction(
+          id: id,
+          type: parseTransactionType(row[1]?.toString()),
+          amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
+          accountId: accountId,
+          categoryId: row[4]?.toString().isEmpty == true
+              ? null
+              : row[4]?.toString(),
+          toAccountId: row[5]?.toString().isEmpty == true
+              ? null
+              : row[5]?.toString(),
+          dateTime:
+              DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
+          note: row[7]?.toString(),
+        ),
+      );
     }
 
     if (transactions.isNotEmpty) {
-      debugPrint('CSV Import: Bulk inserting ${transactions.length} transactions');
+      debugPrint(
+        'CSV Import: Bulk inserting ${transactions.length} transactions',
+      );
       await _dbManager.repository.bulkInsertTransactions(transactions);
     }
 
@@ -683,11 +718,16 @@ class CsvService {
 
     final existingIds = await _dbManager.repository.getExistingHoldingIds();
     // ดึง account IDs เพื่อเช็ค foreign key (portfolio_id → account.id)
-    final existingAccountIds = await _dbManager.repository.getExistingAccountIds();
-    
+    final existingAccountIds = await _dbManager.repository
+        .getExistingAccountIds();
+
     debugPrint('CSV Import: Found ${existingIds.length} existing holdings');
-    debugPrint('CSV Import: Found ${existingAccountIds.length} existing accounts');
-    debugPrint('CSV Import: Sample account IDs: ${existingAccountIds.take(5).toList()}');
+    debugPrint(
+      'CSV Import: Found ${existingAccountIds.length} existing accounts',
+    );
+    debugPrint(
+      'CSV Import: Sample account IDs: ${existingAccountIds.take(5).toList()}',
+    );
 
     final holdings = <StockHolding>[];
     for (int i = 1; i < rows.length; i++) {
@@ -696,33 +736,37 @@ class CsvService {
 
       final id = row[0]?.toString() ?? _uuid.v4();
       final portfolioId = row[1]?.toString() ?? '';
-      
+
       // Skip ถ้า ID ซ้ำ
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate holding ID: $id');
         continue;
       }
-      
+
       // Skip ถ้า portfolio_id (account_id) ไม่มีใน database
       if (!existingAccountIds.contains(portfolioId)) {
-        debugPrint('CSV Import: Skipping holding $id - portfolio $portfolioId not found');
+        debugPrint(
+          'CSV Import: Skipping holding $id - portfolio $portfolioId not found',
+        );
         continue;
       }
 
-      holdings.add(StockHolding(
-        id: id,
-        portfolioId: portfolioId,
-        ticker: row[2]?.toString() ?? '',
-        name: row[3]?.toString() ?? '',
-        shares: double.tryParse(row[4]?.toString() ?? '0') ?? 0,
-        priceUsd: double.tryParse(row[5]?.toString() ?? '0') ?? 0,
-        costBasisUsd: row.length > 6
-            ? (double.tryParse(row[6]?.toString() ?? '0') ?? 0)
-            : 0,
-        sortOrder: row.length > 7
-            ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
-            : 0,
-      ));
+      holdings.add(
+        StockHolding(
+          id: id,
+          portfolioId: portfolioId,
+          ticker: row[2]?.toString() ?? '',
+          name: row[3]?.toString() ?? '',
+          shares: double.tryParse(row[4]?.toString() ?? '0') ?? 0,
+          priceUsd: double.tryParse(row[5]?.toString() ?? '0') ?? 0,
+          costBasisUsd: row.length > 6
+              ? (double.tryParse(row[6]?.toString() ?? '0') ?? 0)
+              : 0,
+          sortOrder: row.length > 7
+              ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
+              : 0,
+        ),
+      );
     }
 
     if (holdings.isNotEmpty) {
@@ -754,7 +798,7 @@ class CsvService {
       if (row.isEmpty) continue;
 
       final id = row[0]?.toString() ?? _uuid.v4();
-      
+
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate budget ID: $id');
         continue;
@@ -765,15 +809,23 @@ class CsvService {
           .map((e) => e.toString())
           .toList();
 
-      budgets.add(Budget(
-        id: id,
-        name: row[1]?.toString() ?? 'Unknown',
-        amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
-        categoryIds: categoryIds,
-        icon: _parseIcon(int.tryParse(row[4]?.toString() ?? '')),
-        color: _parseColor(int.tryParse(row[5]?.toString() ?? '')),
-        sortOrder: int.tryParse(row[6]?.toString() ?? '') ?? 0,
-      ));
+      budgets.add(
+        Budget(
+          id: id,
+          name: row[1]?.toString() ?? 'Unknown',
+          amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
+          categoryIds: categoryIds,
+          icon: _parseIcon(int.tryParse(row[4]?.toString() ?? '')),
+          color: _parseColor(int.tryParse(row[5]?.toString() ?? '')),
+          sortOrder: int.tryParse(row[6]?.toString() ?? '') ?? 0,
+          groupName: row.length > 7
+              ? (row[7]?.toString().isEmpty == true ? null : row[7]?.toString())
+              : null,
+          type: row.length > 8
+              ? BudgetType.values.byName(row[8]?.toString() ?? 'expense')
+              : BudgetType.expense,
+        ),
+      );
     }
 
     if (budgets.isNotEmpty) {
@@ -798,10 +850,15 @@ class CsvService {
 
     final existingIds = await _dbManager.repository.getExistingRecurringIds();
     // ดึง account IDs เพื่อเช็ค foreign key (account_id → account.id)
-    final existingAccountIds = await _dbManager.repository.getExistingAccountIds();
-    
-    debugPrint('CSV Import: Found ${existingIds.length} existing recurring transactions');
-    debugPrint('CSV Import: Found ${existingAccountIds.length} existing accounts');
+    final existingAccountIds = await _dbManager.repository
+        .getExistingAccountIds();
+
+    debugPrint(
+      'CSV Import: Found ${existingIds.length} existing recurring transactions',
+    );
+    debugPrint(
+      'CSV Import: Found ${existingAccountIds.length} existing accounts',
+    );
 
     final recurring = <RecurringTransaction>[];
     for (int i = 1; i < rows.length; i++) {
@@ -810,45 +867,64 @@ class CsvService {
 
       final id = row[0]?.toString() ?? _uuid.v4();
       final accountId = row[9]?.toString() ?? '';
-      
+
       // Skip ถ้า ID ซ้ำ
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate recurring ID: $id');
         continue;
       }
-      
+
       // Skip ถ้า account_id ไม่มีใน database
       if (!existingAccountIds.contains(accountId)) {
-        debugPrint('CSV Import: Skipping recurring $id - account $accountId not found');
+        debugPrint(
+          'CSV Import: Skipping recurring $id - account $accountId not found',
+        );
         continue;
       }
 
-      recurring.add(RecurringTransaction(
-        id: id,
-        name: row[1]?.toString() ?? 'Unknown',
-        icon: _parseIcon(int.tryParse(row[2]?.toString() ?? '')),
-        color: _parseColor(int.tryParse(row[3]?.toString() ?? '')),
-        startDate: DateTime.tryParse(row[4]?.toString() ?? '') ?? DateTime.now(),
-        endDate: row[5]?.toString().isEmpty == true
-            ? null
-            : DateTime.tryParse(row[5]?.toString() ?? ''),
-        dayOfMonth: int.tryParse(row[6]?.toString() ?? '') ?? 1,
-        transactionType: parseTransactionType(row[7]?.toString()),
-        amount: double.tryParse(row[8]?.toString() ?? '0') ?? 0,
-        accountId: accountId,
-        toAccountId: row[10]?.toString().isEmpty == true
-            ? null
-            : row[10]?.toString(),
-        categoryId: row[11]?.toString().isEmpty == true
-            ? null
-            : row[11]?.toString(),
-        note: row[12]?.toString(),
-        sortOrder: int.tryParse(row[13]?.toString() ?? '') ?? 0,
-      ));
+      recurring.add(
+        RecurringTransaction(
+          id: id,
+          name: row[1]?.toString() ?? 'Unknown',
+          icon: _parseIcon(int.tryParse(row[2]?.toString() ?? '')),
+          color: _parseColor(int.tryParse(row[3]?.toString() ?? '')),
+          startDate:
+              DateTime.tryParse(row[4]?.toString() ?? '') ?? DateTime.now(),
+          endDate: row[5]?.toString().isEmpty == true
+              ? null
+              : DateTime.tryParse(row[5]?.toString() ?? ''),
+          dayOfMonth: int.tryParse(row[6]?.toString() ?? '') ?? 1,
+          transactionType: parseTransactionType(row[7]?.toString()),
+          amount: double.tryParse(row[8]?.toString() ?? '0') ?? 0,
+          accountId: accountId,
+          toAccountId: row[10]?.toString().isEmpty == true
+              ? null
+              : row[10]?.toString(),
+          categoryId: row[11]?.toString().isEmpty == true
+              ? null
+              : row[11]?.toString(),
+          note: row[12]?.toString(),
+          sortOrder: int.tryParse(row[13]?.toString() ?? '') ?? 0,
+          isHidden: row.length > 14
+              ? (int.tryParse(row[14]?.toString() ?? '') ?? 0) == 1
+              : false,
+          notificationEnabled: row.length > 15
+              ? (int.tryParse(row[15]?.toString() ?? '') ?? 0) == 1
+              : false,
+          notificationHour: row.length > 16
+              ? (int.tryParse(row[16]?.toString() ?? '') ?? 9)
+              : 9,
+          notificationMinute: row.length > 17
+              ? (int.tryParse(row[17]?.toString() ?? '') ?? 0)
+              : 0,
+        ),
+      );
     }
 
     if (recurring.isNotEmpty) {
-      debugPrint('CSV Import: Bulk inserting ${recurring.length} recurring transactions');
+      debugPrint(
+        'CSV Import: Bulk inserting ${recurring.length} recurring transactions',
+      );
       await _dbManager.repository.bulkInsertRecurring(recurring);
     }
 
@@ -869,10 +945,13 @@ class CsvService {
 
     final existingIds = await _dbManager.repository.getExistingOccurrenceIds();
     // ดึง recurring IDs ที่มีอยู่ใน database เพื่อเช็ค foreign key
-    final existingRecurringIds = await _dbManager.repository.getExistingRecurringIds();
-    
+    final existingRecurringIds = await _dbManager.repository
+        .getExistingRecurringIds();
+
     debugPrint('CSV Import: Found ${existingIds.length} existing occurrences');
-    debugPrint('CSV Import: Found ${existingRecurringIds.length} existing recurring transactions');
+    debugPrint(
+      'CSV Import: Found ${existingRecurringIds.length} existing recurring transactions',
+    );
 
     final occurrences = <RecurringOccurrence>[];
     for (int i = 1; i < rows.length; i++) {
@@ -881,32 +960,39 @@ class CsvService {
 
       final id = row[0]?.toString() ?? _uuid.v4();
       final recurringId = row[1]?.toString() ?? '';
-      
+
       // Skip ถ้า ID ซ้ำ
       if (existingIds.contains(id)) {
         debugPrint('CSV Import: Skipping duplicate occurrence ID: $id');
         continue;
       }
-      
+
       // Skip ถ้า recurring_id ไม่มีใน database (foreign key constraint)
       if (!existingRecurringIds.contains(recurringId)) {
-        debugPrint('CSV Import: Skipping occurrence $id - recurring $recurringId not found');
+        debugPrint(
+          'CSV Import: Skipping occurrence $id - recurring $recurringId not found',
+        );
         continue;
       }
 
-      occurrences.add(RecurringOccurrence(
-        id: id,
-        recurringId: recurringId,
-        dueDate: DateTime.tryParse(row[2]?.toString() ?? '') ?? DateTime.now(),
-        transactionId: row[3]?.toString().isEmpty == true
-            ? null
-            : row[3]?.toString(),
-        status: OccurrenceStatus.values.byName(row[4]?.toString() ?? 'done'),
-      ));
+      occurrences.add(
+        RecurringOccurrence(
+          id: id,
+          recurringId: recurringId,
+          dueDate:
+              DateTime.tryParse(row[2]?.toString() ?? '') ?? DateTime.now(),
+          transactionId: row[3]?.toString().isEmpty == true
+              ? null
+              : row[3]?.toString(),
+          status: OccurrenceStatus.values.byName(row[4]?.toString() ?? 'done'),
+        ),
+      );
     }
 
     if (occurrences.isNotEmpty) {
-      debugPrint('CSV Import: Bulk inserting ${occurrences.length} occurrences');
+      debugPrint(
+        'CSV Import: Bulk inserting ${occurrences.length} occurrences',
+      );
       await _dbManager.repository.bulkInsertOccurrences(occurrences);
     }
 
