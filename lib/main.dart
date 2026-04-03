@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
 import 'providers/account_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
@@ -9,22 +10,22 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/recurring_transaction_provider.dart';
-
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
+import 'screens/account/account_list_screen.dart';
+import 'screens/budget/budget_list_screen.dart';
+import 'screens/category/category_list_screen.dart';
+import 'screens/recurring/recurring_list_screen.dart';
+import 'screens/settings/settings_screen.dart';
+import 'screens/statistics/statistics_screen.dart';
+import 'screens/transaction/transaction_list_screen.dart';
 import 'services/app_refresh_reminder_service.dart';
 import 'services/database_manager.dart';
 import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
-import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
-import 'screens/account/account_list_screen.dart';
-import 'screens/budget/budget_list_screen.dart';
-import 'screens/category/category_list_screen.dart';
-import 'screens/transaction/transaction_list_screen.dart';
-import 'screens/settings/settings_screen.dart';
-import 'screens/recurring/recurring_list_screen.dart';
-import 'screens/statistics/statistics_screen.dart';
+import 'theme/app_theme.dart';
+import 'utils/web_safe_area_insets.dart';
 
 void main() async {
   // Initialize and preserve native splash screen
@@ -154,15 +155,33 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.getTheme(settingsProvider.isDarkMode),
             debugShowCheckedModeBanner: false,
             builder: kIsWeb
-                ? (context, child) => ColoredBox(
-                    color: Theme.of(context).colorScheme.surfaceContainerLow,
-                    child: Center(
-                      child: SizedBox(
-                        width: 480,
-                        child: ClipRect(child: child!),
+                ? (context, child) {
+                    final mediaQuery = MediaQuery.of(context);
+                    final extraBottomPadding = _getWebMobileBottomPadding(
+                      mediaQuery,
+                    );
+                    final app = MediaQuery(
+                      data: mediaQuery.copyWith(
+                        padding: mediaQuery.padding.copyWith(
+                          bottom: extraBottomPadding,
+                        ),
+                        viewPadding: mediaQuery.viewPadding.copyWith(
+                          bottom: extraBottomPadding,
+                        ),
                       ),
-                    ),
-                  )
+                      child: child!,
+                    );
+
+                    return ColoredBox(
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
+                      child: Center(
+                        child: SizedBox(
+                          width: 480,
+                          child: ClipRect(child: app),
+                        ),
+                      ),
+                    );
+                  }
                 : null,
             home: _buildHomeScreen(context, authProvider),
             routes: {
@@ -196,6 +215,14 @@ class MyApp extends StatelessWidget {
     // 3. ถ้าตั้งค่าแล้วและ login แล้ว → ไปหน้าหลัก
     return const AccountListScreen();
   }
+}
+
+double _getWebMobileBottomPadding(MediaQueryData mediaQuery) {
+  if (!isMobileWebDevice()) {
+    return mediaQuery.padding.bottom;
+  }
+
+  return 24;
 }
 
 // Shared helper for amount formatting
