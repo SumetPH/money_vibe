@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/account.dart';
@@ -14,6 +12,7 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../services/database_manager.dart';
+import '../utils/csv_file_io.dart';
 
 // Helper functions for IconData and Color
 IconData _parseIcon(dynamic value) {
@@ -40,61 +39,17 @@ class CsvService {
   /// Export all data to CSV files and share them
   Future<void> exportToCsv({Rect? sharePositionOrigin}) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final tempDir = await getTemporaryDirectory();
+    final files = <String, String>{
+      'accounts_$timestamp.csv': await _exportAccounts(),
+      'categories_$timestamp.csv': await _exportCategories(),
+      'transactions_$timestamp.csv': await _exportTransactions(),
+      'holdings_$timestamp.csv': await _exportHoldings(),
+      'budgets_$timestamp.csv': await _exportBudgets(),
+      'recurring_$timestamp.csv': await _exportRecurringTransactions(),
+      'occurrences_$timestamp.csv': await _exportRecurringOccurrences(),
+    };
 
-    // Export accounts
-    final accountsFile = File('${tempDir.path}/accounts_$timestamp.csv');
-    final accountsCsv = await _exportAccounts();
-    await accountsFile.writeAsString(accountsCsv, encoding: utf8);
-
-    // Export categories
-    final categoriesFile = File('${tempDir.path}/categories_$timestamp.csv');
-    final categoriesCsv = await _exportCategories();
-    await categoriesFile.writeAsString(categoriesCsv, encoding: utf8);
-
-    // Export transactions
-    final transactionsFile = File(
-      '${tempDir.path}/transactions_$timestamp.csv',
-    );
-    final transactionsCsv = await _exportTransactions();
-    await transactionsFile.writeAsString(transactionsCsv, encoding: utf8);
-
-    // Export portfolio holdings
-    final holdingsFile = File('${tempDir.path}/holdings_$timestamp.csv');
-    final holdingsCsv = await _exportHoldings();
-    await holdingsFile.writeAsString(holdingsCsv, encoding: utf8);
-
-    // Export budgets
-    final budgetsFile = File('${tempDir.path}/budgets_$timestamp.csv');
-    final budgetsCsv = await _exportBudgets();
-    await budgetsFile.writeAsString(budgetsCsv, encoding: utf8);
-
-    // Export recurring transactions
-    final recurringFile = File('${tempDir.path}/recurring_$timestamp.csv');
-    final recurringCsv = await _exportRecurringTransactions();
-    await recurringFile.writeAsString(recurringCsv, encoding: utf8);
-
-    // Export recurring occurrences
-    final occurrencesFile = File('${tempDir.path}/occurrences_$timestamp.csv');
-    final occurrencesCsv = await _exportRecurringOccurrences();
-    await occurrencesFile.writeAsString(occurrencesCsv, encoding: utf8);
-
-    // Share all files
-    final files = [
-      XFile(accountsFile.path),
-      XFile(categoriesFile.path),
-      XFile(transactionsFile.path),
-      XFile(holdingsFile.path),
-      XFile(budgetsFile.path),
-      XFile(recurringFile.path),
-      XFile(occurrencesFile.path),
-    ];
-
-    await Share.shareXFiles(
-      files,
-      subject: 'Money App Backup ${DateTime.now().toString().split('.')[0]}',
-      sharePositionOrigin: sharePositionOrigin,
-    );
+    await saveCsvFiles(files, sharePositionOrigin: sharePositionOrigin);
   }
 
   /// Import data from CSV files
@@ -104,6 +59,7 @@ class CsvService {
       type: FileType.custom,
       allowedExtensions: ['csv'],
       allowMultiple: true,
+      withData: true,
     );
 
     if (result == null || result.files.isEmpty) {
@@ -122,9 +78,8 @@ class CsvService {
 
     // อ่านไฟล์ทั้งหมดก่อน
     for (final file in result.files) {
-      if (file.path == null) continue;
-
-      final content = await File(file.path!).readAsString(encoding: utf8);
+      final content = await readPlatformFileAsString(file);
+      if (content == null) continue;
       final filename = file.name.toLowerCase();
 
       debugPrint('CSV Service: Reading file: ${file.name}');
