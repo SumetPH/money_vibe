@@ -22,6 +22,7 @@ import 'screens/statistics/statistics_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'services/app_refresh_reminder_service.dart';
 import 'services/database_manager.dart';
+import 'services/debug_bootstrap_service.dart';
 import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
@@ -33,6 +34,13 @@ void main() async {
   SplashService.initialize();
 
   debugPrint('Main: Starting app initialization...');
+
+  try {
+    await DebugBootstrapService.instance.primeLocalState();
+  } catch (e, stackTrace) {
+    debugPrint('Main: Debug bootstrap init error: $e');
+    debugPrint('Main: Debug bootstrap stack trace: $stackTrace');
+  }
 
   // Initialize DatabaseManager first (singleton)
   final dbManager = DatabaseManager();
@@ -63,6 +71,7 @@ void main() async {
     // Initialize AuthProvider หลังจาก DatabaseManager (Supabase) พร้อมแล้ว
     if (dbManager.isConfigured) {
       await _initProvider('Auth', authProvider.init);
+      await DebugBootstrapService.instance.signInIfNeeded(authProvider);
     }
 
     // โหลดข้อมูลถ้า Login แล้ว
