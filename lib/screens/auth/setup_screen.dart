@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
-import 'auth_screen.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
@@ -98,10 +99,7 @@ class _SetupScreenState extends State<SetupScreen> {
     });
 
     if (success && mounted) {
-      // ไปหน้า Login
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AuthScreen()));
+      context.go('/auth');
     } else {
       setState(() {
         _errorMessage = 'ไม่สามารถบันทึกการตั้งค่าได้';

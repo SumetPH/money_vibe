@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -12,7 +13,6 @@ import '../../services/database_manager.dart';
 import '../../services/app_refresh_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
-import '../auth/auth_screen.dart';
 import 'api_key_settings_screen.dart';
 import 'data_management_screen.dart';
 
@@ -104,14 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.chevron_right,
                           color: secondaryTextColor,
                         ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AuthScreen(),
-                            ),
-                          );
-                        },
+                        onTap: () => context.go('/auth'),
                       );
                     }
                   },
@@ -297,10 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Navigate to login screen and clear navigation stack
               if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const AuthScreen()),
-                  (route) => false,
-                );
+                context.go('/auth');
               }
             },
             style: ElevatedButton.styleFrom(

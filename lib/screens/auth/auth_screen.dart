@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -8,7 +9,6 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../theme/app_colors.dart';
-import '../account/account_list_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -61,7 +61,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (success && mounted) {
       // Login/Register สำเร็จ → reload providers แล้วค่อยกลับ
       debugPrint('[AuthScreen] Login success, reloading providers...');
-      
+
       // โหลดข้อมูลใหม่ตาม user ที่ login
       await Future.wait([
         context.read<AccountProvider>().reload(),
@@ -70,13 +70,10 @@ class _AuthScreenState extends State<AuthScreen> {
         context.read<BudgetProvider>().reload(),
         context.read<RecurringTransactionProvider>().reload(),
       ]);
-      
+
       debugPrint('[AuthScreen] Providers reloaded, navigating to home');
       if (mounted) {
-        // ใช้ pushReplacement เพื่อให้แน่ใจว่าหน้าหลักถูกสร้างใหม่
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AccountListScreen()),
-        );
+        context.go('/accounts');
       }
     } else if (!success && mounted) {
       // Error จะแสดงผ่าน authProvider.error

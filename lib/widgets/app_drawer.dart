@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../providers/settings_provider.dart';
@@ -188,7 +189,9 @@ class AppDrawer extends StatelessWidget {
     Navigator.pop(context);
     if (currentRoute != route) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, route);
+        if (context.mounted) {
+          Router.neglect(context, () => context.go(route));
+        }
       });
     }
   }

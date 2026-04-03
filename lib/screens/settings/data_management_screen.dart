@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/account_provider.dart';
@@ -11,7 +12,6 @@ import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
-import '../auth/setup_screen.dart';
 
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
@@ -143,7 +143,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     // Read providers before any await
     final authProvider = context.read<AuthProvider>();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -182,11 +181,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       const SnackBar(content: Text('ลบการตั้งค่าเรียบร้อย')),
     );
 
-    // Navigate to setup screen and clear navigation stack
-    navigator.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const SetupScreen()),
-      (route) => false,
-    );
+    if (mounted) {
+      context.go('/setup');
+    }
   }
 
   Future<void> _exportData() async {
@@ -610,11 +607,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                 const SizedBox(height: 24),
 
                 // ========== SECTION: CLEAR DATA ==========
-                _buildSectionTitle(
-                  'ล้างข้อมูล',
-                  textColor,
-                  secondaryTextColor,
-                ),
+                _buildSectionTitle('ล้างข้อมูล', textColor, secondaryTextColor),
                 const SizedBox(height: 8),
                 _buildCard(
                   surfaceColor: surfaceColor,

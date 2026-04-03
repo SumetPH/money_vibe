@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -114,7 +115,7 @@ Future<void> _initProvider(String name, Future<void> Function() initFn) async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final AccountProvider accountProvider;
   final AuthProvider authProvider;
   final BudgetProvider budgetProvider;
@@ -135,25 +136,132 @@ class MyApp extends StatelessWidget {
   });
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final DatabaseManager _databaseManager;
+  late final _AppRouterRefreshNotifier _routerRefreshNotifier;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _databaseManager = DatabaseManager();
+    _routerRefreshNotifier = _AppRouterRefreshNotifier(
+      listenables: [widget.authProvider, _databaseManager],
+    );
+    final initialLocation = _getDefaultTopLevelLocation();
+    _router = GoRouter(
+      initialLocation: initialLocation,
+      overridePlatformDefaultLocation: _shouldOverridePlatformInitialLocation(),
+      refreshListenable: _routerRefreshNotifier,
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const SizedBox.shrink(),
+        ),
+        GoRoute(
+          path: '/setup',
+          builder: (context, state) => const SetupScreen(),
+        ),
+        GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
+        GoRoute(
+          path: '/accounts',
+          builder: (context, state) => const AccountListScreen(),
+        ),
+        GoRoute(
+          path: '/transactions',
+          builder: (context, state) => const TransactionListScreen(),
+        ),
+        GoRoute(
+          path: '/budgets',
+          builder: (context, state) => const BudgetListScreen(),
+        ),
+        GoRoute(
+          path: '/recurring',
+          builder: (context, state) => const RecurringListScreen(),
+        ),
+        GoRoute(
+          path: '/categories',
+          builder: (context, state) => const CategoryListScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/statistics',
+          builder: (context, state) => const StatisticsScreen(),
+        ),
+      ],
+      redirect: (context, state) {
+        final location = state.matchedLocation;
+        final defaultLocation = _getDefaultTopLevelLocation();
+        final isConfigured = _databaseManager.isConfigured;
+        final isLoggedIn = widget.authProvider.isLoggedIn;
+        final isSetupRoute = location == '/setup';
+        final isAuthRoute = location == '/auth';
+        final isRootRoute = location == '/';
+
+        if (!isConfigured) {
+          return isSetupRoute ? null : '/setup';
+        }
+
+        if (!isLoggedIn) {
+          return isAuthRoute ? null : '/auth';
+        }
+
+        if (isRootRoute || isSetupRoute || isAuthRoute) {
+          return defaultLocation;
+        }
+
+        return null;
+      },
+    );
+  }
+
+  String _getDefaultTopLevelLocation() {
+    if (!_databaseManager.isConfigured) {
+      return '/setup';
+    }
+
+    if (!widget.authProvider.isLoggedIn) {
+      return '/auth';
+    }
+
+    return '/accounts';
+  }
+
+  bool _shouldOverridePlatformInitialLocation() {
+    if (!kIsWeb) {
+      return false;
+    }
+
+    final path = Uri.base.path;
+    return path.isEmpty || path == '/';
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: accountProvider),
-        ChangeNotifierProvider.value(value: authProvider),
-        ChangeNotifierProvider.value(value: budgetProvider),
-        ChangeNotifierProvider.value(value: categoryProvider),
-        ChangeNotifierProvider.value(value: transactionProvider),
-        ChangeNotifierProvider.value(value: settingsProvider),
-        ChangeNotifierProvider.value(value: recurringProvider),
-        // Add DatabaseManager as ChangeNotifierProvider for UI updates
-        ChangeNotifierProvider(create: (_) => DatabaseManager()),
+        ChangeNotifierProvider.value(value: widget.accountProvider),
+        ChangeNotifierProvider.value(value: widget.authProvider),
+        ChangeNotifierProvider.value(value: widget.budgetProvider),
+        ChangeNotifierProvider.value(value: widget.categoryProvider),
+        ChangeNotifierProvider.value(value: widget.transactionProvider),
+        ChangeNotifierProvider.value(value: widget.settingsProvider),
+        ChangeNotifierProvider.value(value: widget.recurringProvider),
+        ChangeNotifierProvider.value(value: _databaseManager),
       ],
-      child: Consumer2<SettingsProvider, AuthProvider>(
-        builder: (context, settingsProvider, authProvider, _) {
-          return MaterialApp(
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          return MaterialApp.router(
             title: 'Money Vibe',
             theme: AppTheme.getTheme(settingsProvider.isDarkMode),
             debugShowCheckedModeBanner: false,
+            routerConfig: _router,
             builder: kIsWeb
                 ? (context, child) {
                     final mediaQuery = MediaQuery.of(context);
@@ -183,37 +291,38 @@ class MyApp extends StatelessWidget {
                     );
                   }
                 : null,
-            home: _buildHomeScreen(context, authProvider),
-            routes: {
-              '/accounts': (_) => const AccountListScreen(),
-              '/transactions': (_) => const TransactionListScreen(),
-              '/budgets': (_) => const BudgetListScreen(),
-              '/recurring': (_) => const RecurringListScreen(),
-              '/categories': (_) => const CategoryListScreen(),
-              '/settings': (_) => const SettingsScreen(),
-              '/statistics': (_) => const StatisticsScreen(),
-            },
           );
         },
       ),
     );
   }
 
-  Widget _buildHomeScreen(BuildContext context, AuthProvider authProvider) {
-    final dbManager = DatabaseManager();
+  @override
+  void dispose() {
+    _routerRefreshNotifier.dispose();
+    _router.dispose();
+    super.dispose();
+  }
+}
 
-    // 1. ถ้ายังไม่ได้ตั้งค่า Supabase → ไปหน้าตั้งค่า
-    if (!dbManager.isConfigured) {
-      return const SetupScreen();
+class _AppRouterRefreshNotifier extends ChangeNotifier {
+  final List<Listenable> listenables;
+  final List<VoidCallback> _listeners = [];
+
+  _AppRouterRefreshNotifier({required this.listenables}) {
+    for (final listenable in listenables) {
+      void listener() => notifyListeners();
+      listenable.addListener(listener);
+      _listeners.add(listener);
     }
+  }
 
-    // 2. ถ้าตั้งค่าแล้วแต่ยังไม่ login → ไปหน้า Login
-    if (!authProvider.isLoggedIn) {
-      return const AuthScreen();
+  @override
+  void dispose() {
+    for (var index = 0; index < listenables.length; index++) {
+      listenables[index].removeListener(_listeners[index]);
     }
-
-    // 3. ถ้าตั้งค่าแล้วและ login แล้ว → ไปหน้าหลัก
-    return const AccountListScreen();
+    super.dispose();
   }
 }
 
