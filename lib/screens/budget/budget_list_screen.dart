@@ -862,7 +862,9 @@ class _BudgetItem extends StatelessWidget {
     return Column(
       children: [
         InkWell(
-          onTap: isReorderMode ? null : onTap,
+          onTap: isReorderMode || budget.type == BudgetType.savings
+              ? null
+              : onTap,
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
