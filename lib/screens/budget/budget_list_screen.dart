@@ -102,6 +102,74 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         .fold(0.0, (sum, tx) => sum + tx.amount);
   }
 
+  List<_BudgetGroupSummary> _buildGroupSummaries({
+    required List<Budget> budgets,
+    required List<AppTransaction> allTx,
+    required DateTimeRange period,
+    required List<Account> accounts,
+    required double totalBudget,
+  }) {
+    final Map<String, List<Budget>> groupedBudgets = {};
+
+    for (final budget in budgets) {
+      final rawGroupName = budget.groupName?.trim();
+      final groupName = (rawGroupName == null || rawGroupName.isEmpty)
+          ? 'ไม่มีกลุ่ม'
+          : rawGroupName;
+      (groupedBudgets[groupName] ??= []).add(budget);
+    }
+
+    final sortedGroups = groupedBudgets.entries.toList()
+      ..sort(
+        (a, b) => a.value
+            .map((budget) => budget.sortOrder)
+            .reduce((min, value) => min < value ? min : value)
+            .compareTo(
+              b.value
+                  .map((budget) => budget.sortOrder)
+                  .reduce((min, value) => min < value ? min : value),
+            ),
+      );
+
+    return sortedGroups.map((entry) {
+      final total = entry.value.fold(0.0, (sum, budget) => sum + budget.amount);
+      final spent = entry.value.fold(
+        0.0,
+        (sum, budget) => sum + _getSpent(budget, allTx, period, accounts),
+      );
+      return _BudgetGroupSummary(
+        name: entry.key,
+        percentage: totalBudget > 0 ? (total / totalBudget) * 100 : 0.0,
+        total: total,
+        spent: spent,
+      );
+    }).toList();
+  }
+
+  String _formatBudgetPeriodLabel(DateTimeRange period) {
+    const thaiMonths = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+
+    final start = period.start;
+    final end = period.end;
+    final startLabel =
+        '${start.day} ${thaiMonths[start.month - 1]} ${start.year}';
+    final endLabel = '${end.day} ${thaiMonths[end.month - 1]} ${end.year}';
+    return '$startLabel - $endLabel';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer3<BudgetProvider, TransactionProvider, SettingsProvider>(
@@ -140,6 +208,14 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final overallProgress = totalBudget > 0
             ? (totalSpent / totalBudget)
             : 0.0;
+        final groupSummaries = _buildGroupSummaries(
+          budgets: budgets,
+          allTx: allTx,
+          period: period,
+          accounts: accounts,
+          totalBudget: totalBudget,
+        );
+        final periodLabel = _formatBudgetPeriodLabel(period);
 
         return Scaffold(
           backgroundColor: bgColor,
@@ -154,6 +230,16 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             title: const Text('งบประมาณ'),
             centerTitle: true,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.list_alt_outlined),
+                tooltip: 'รายละเอียดกลุ่มงบประมาณ',
+                onPressed: () => _showGroupDetailsBottomSheet(
+                  context,
+                  groupSummaries,
+                  periodLabel,
+                  isDarkMode,
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.more_vert),
                 onPressed: () => _showMenuBottomSheet(context, isDarkMode),
@@ -496,6 +582,25 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showGroupDetailsBottomSheet(
+    BuildContext context,
+    List<_BudgetGroupSummary> groupSummaries,
+    String periodLabel,
+    bool isDarkMode,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      builder: (_) => _BudgetGroupDetailsSheet(
+        groupSummaries: groupSummaries,
+        periodLabel: periodLabel,
+        isDarkMode: isDarkMode,
       ),
     );
   }
@@ -1133,6 +1238,9 @@ class _GroupHeader extends StatelessWidget {
     final headerBg = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
+    final percentageColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textSecondary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -1169,8 +1277,8 @@ class _GroupHeader extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textSecondary,
+                      fontWeight: FontWeight.w700,
+                      color: percentageColor,
                     ),
                   ),
                 ),
@@ -1179,6 +1287,260 @@ class _GroupHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BudgetGroupSummary {
+  final String name;
+  final double percentage;
+  final double total;
+  final double spent;
+
+  const _BudgetGroupSummary({
+    required this.name,
+    required this.percentage,
+    required this.total,
+    required this.spent,
+  });
+
+  double get remaining => total - spent;
+}
+
+class _BudgetGroupDetailsSheet extends StatelessWidget {
+  final List<_BudgetGroupSummary> groupSummaries;
+  final String periodLabel;
+  final bool isDarkMode;
+
+  const _BudgetGroupDetailsSheet({
+    required this.groupSummaries,
+    required this.periodLabel,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final handleColor = isDarkMode
+        ? AppColors.darkDivider
+        : Colors.grey.shade300;
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height,
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: handleColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'รายละเอียดกลุ่มงบประมาณ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        periodLabel,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: textSecondary),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: dividerColor),
+          Expanded(
+            child: groupSummaries.isEmpty
+                ? Center(
+                    child: Text(
+                      'ยังไม่มีกลุ่มงบประมาณ',
+                      style: TextStyle(color: textSecondary),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: groupSummaries.length,
+                    separatorBuilder: (_, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final summary = groupSummaries[index];
+                      final remainingColor = summary.remaining >= 0
+                          ? (isDarkMode
+                                ? AppColors.darkIncome
+                                : AppColors.income)
+                          : (isDarkMode
+                                ? AppColors.darkExpense
+                                : AppColors.expense);
+                      final percentageBgColor = isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.header.withValues(alpha: 0.12);
+                      final percentageTextColor = isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.header;
+
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: dividerColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    summary.name,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: percentageBgColor,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: isDarkMode
+                                        ? Border.all(
+                                            color: AppColors.darkDivider,
+                                          )
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    '${summary.percentage.toStringAsFixed(1)}%',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: percentageTextColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _GroupDetailMetric(
+                                    label: 'ยอดรวม',
+                                    value: formatAmount(summary.total),
+                                    valueColor: textPrimary,
+                                    textSecondary: textSecondary,
+                                    alignment: CrossAxisAlignment.start,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _GroupDetailMetric(
+                                    label: 'ยอดที่ใช้ไป',
+                                    value: formatAmount(summary.spent),
+                                    valueColor: isDarkMode
+                                        ? AppColors.darkExpense
+                                        : AppColors.expense,
+                                    textSecondary: textSecondary,
+                                    alignment: CrossAxisAlignment.end,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _GroupDetailMetric(
+                                    label: 'ยอดคงเหลือ',
+                                    value: formatAmount(summary.remaining),
+                                    valueColor: remainingColor,
+                                    textSecondary: textSecondary,
+                                    alignment: CrossAxisAlignment.end,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupDetailMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+  final Color textSecondary;
+  final CrossAxisAlignment alignment;
+
+  const _GroupDetailMetric({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    required this.textSecondary,
+    required this.alignment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignment,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: textSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+        ),
+      ],
     );
   }
 }

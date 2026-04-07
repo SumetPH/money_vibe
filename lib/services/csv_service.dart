@@ -335,6 +335,7 @@ class CsvService {
         'price_usd',
         'cost_basis_usd',
         'sort_order',
+        'logo_url',
       ],
     ];
 
@@ -348,6 +349,7 @@ class CsvService {
         holding.priceUsd,
         holding.costBasisUsd,
         holding.sortOrder,
+        holding.logoUrl,
       ]);
     }
 
@@ -720,6 +722,7 @@ class CsvService {
           sortOrder: row.length > 7
               ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
               : 0,
+          logoUrl: row.length > 8 ? row[8]?.toString() ?? '' : '',
         ),
       );
     }

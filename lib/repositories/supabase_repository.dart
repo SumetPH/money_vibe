@@ -319,6 +319,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'shares': holding.shares,
       'price_usd': holding.priceUsd,
       'cost_basis_usd': holding.costBasisUsd,
+      'logo_url': holding.logoUrl,
       'sort_order': holding.sortOrder,
     };
   }

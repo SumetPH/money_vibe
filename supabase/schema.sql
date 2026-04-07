@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_holdings (
     shares numeric(15,4) not null default 0,
     price_usd numeric(15,4) not null default 0,
     cost_basis_usd numeric(15,4) not null default 0,
+    logo_url text not null default '',
     sort_order integer not null default 0,
     created_at timestamp without time zone default now(),
     updated_at timestamp without time zone default now()

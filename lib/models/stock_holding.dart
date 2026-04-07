@@ -6,6 +6,7 @@ class StockHolding {
   double shares;
   double priceUsd;
   double costBasisUsd; // ราคาทุนต่อหุ้น
+  String logoUrl;
   int sortOrder;
 
   StockHolding({
@@ -16,6 +17,7 @@ class StockHolding {
     this.shares = 0,
     this.priceUsd = 0,
     this.costBasisUsd = 0,
+    this.logoUrl = '',
     this.sortOrder = 0,
   });
 
@@ -33,6 +35,7 @@ class StockHolding {
     'shares': shares,
     'price_usd': priceUsd,
     'cost_basis_usd': costBasisUsd,
+    'logo_url': logoUrl,
     'sort_order': sortOrder,
   };
 
@@ -44,6 +47,7 @@ class StockHolding {
     shares: (m['shares'] as num).toDouble(),
     priceUsd: (m['price_usd'] as num).toDouble(),
     costBasisUsd: (m['cost_basis_usd'] as num? ?? 0).toDouble(),
+    logoUrl: m['logo_url'] as String? ?? '',
     sortOrder: m['sort_order'] as int? ?? 0,
   );
 
@@ -53,6 +57,7 @@ class StockHolding {
     double? shares,
     double? priceUsd,
     double? costBasisUsd,
+    String? logoUrl,
     int? sortOrder,
   }) => StockHolding(
     id: id,
@@ -62,6 +67,7 @@ class StockHolding {
     shares: shares ?? this.shares,
     priceUsd: priceUsd ?? this.priceUsd,
     costBasisUsd: costBasisUsd ?? this.costBasisUsd,
+    logoUrl: logoUrl ?? this.logoUrl,
     sortOrder: sortOrder ?? this.sortOrder,
   );
 }

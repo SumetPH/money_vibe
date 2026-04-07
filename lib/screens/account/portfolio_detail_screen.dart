@@ -46,21 +46,43 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     setState(() => _isRefreshing = true);
     try {
       final tickers = holdings.map((h) => h.ticker).toList();
+      final tickersNeedingProfile = holdings
+          .where((h) => h.logoUrl.isEmpty)
+          .map((h) => h.ticker)
+          .toSet()
+          .toList();
       final futures = await Future.wait([
         _priceService.fetchPrices(tickers),
         _priceService.fetchUsdThbRate(),
+        tickersNeedingProfile.isEmpty
+            ? Future.value(<String, StockCompanyProfile>{})
+            : _priceService.fetchProfiles(tickersNeedingProfile),
       ]);
 
       final prices = futures[0] as Map<String, double>;
       final rate = futures[1] as double;
+      final profiles = futures[2] as Map<String, StockCompanyProfile>;
 
       if (acc.autoUpdateRate) {
         provider.updateAccount(acc.copyWith(exchangeRate: rate));
       }
       for (final h in holdings) {
+        var updatedHolding = h;
+        var hasChanges = false;
         final newPrice = prices[h.ticker];
         if (newPrice != null) {
-          provider.updateHolding(h.copyWith(priceUsd: newPrice));
+          updatedHolding = updatedHolding.copyWith(priceUsd: newPrice);
+          hasChanges = true;
+        }
+        final profile = profiles[h.ticker];
+        if (profile != null &&
+            profile.logoUrl.isNotEmpty &&
+            h.logoUrl.isEmpty) {
+          updatedHolding = updatedHolding.copyWith(logoUrl: profile.logoUrl);
+          hasChanges = true;
+        }
+        if (hasChanges) {
+          provider.updateHolding(updatedHolding);
         }
       }
     } catch (e) {
@@ -143,6 +165,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                 ),
                 _CashRow(
                   cashBalance: acc.cashBalance,
+                  exchangeRate: acc.exchangeRate,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -335,17 +358,38 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       builder: (_) => _HoldingFormSheet(
         portfolioId: portfolioId,
         existing: existing,
-        onSave: (holding) {
+        onSave: (holding) async {
+          final holdingWithProfile = await _enrichHoldingWithProfile(
+            holding,
+            existing: existing,
+          );
           if (existing == null) {
-            provider.addHolding(holding);
+            await provider.addHolding(holdingWithProfile);
           } else {
-            provider.updateHolding(holding);
+            await provider.updateHolding(holdingWithProfile);
           }
         },
         generateId: provider.generateId,
         isDarkMode: isDarkMode,
       ),
     );
+  }
+
+  Future<StockHolding> _enrichHoldingWithProfile(
+    StockHolding holding, {
+    StockHolding? existing,
+  }) async {
+    final hasSameTicker = existing != null && existing.ticker == holding.ticker;
+    final fallbackLogoUrl = hasSameTicker ? existing.logoUrl : '';
+
+    if (!_priceService.isConfigured) {
+      return holding.copyWith(logoUrl: fallbackLogoUrl);
+    }
+
+    final profile = await _priceService.fetchProfile(holding.ticker);
+    final logoUrl = profile?.logoUrl ?? fallbackLogoUrl;
+
+    return holding.copyWith(logoUrl: logoUrl);
   }
 
   void _showMenuSheet(BuildContext context) {
@@ -434,6 +478,9 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rate = account.exchangeRate;
+    final totalValueUsd =
+        account.cashBalance + holdings.fold(0.0, (sum, h) => sum + h.valueUsd);
+    final totalCostUsd = holdings.fold(0.0, (sum, h) => sum + h.totalCostUsd);
     final totalCost = holdings.fold(
       0.0,
       (sum, h) => sum + h.totalCostUsd * rate,
@@ -460,7 +507,7 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Row(
@@ -495,6 +542,13 @@ class _SummaryCard extends StatelessWidget {
                                 totalValue,
                                 isDarkMode,
                               ),
+                            ),
+                          ),
+                          Text(
+                            '${formatAmount(totalValueUsd)} USD',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: textSecondaryColor,
                             ),
                           ),
                         ],
@@ -564,6 +618,13 @@ class _SummaryCard extends StatelessWidget {
                           color: textPrimaryColor,
                         ),
                       ),
+                      Text(
+                        '${formatAmount(totalCostUsd)} USD',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: textSecondaryColor,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -619,21 +680,27 @@ class _SectionHeader extends StatelessWidget {
 
 class _CashRow extends StatelessWidget {
   final double cashBalance;
+  final double exchangeRate;
   final VoidCallback onTap;
   final bool isDarkMode;
 
   const _CashRow({
     required this.cashBalance,
+    required this.exchangeRate,
     required this.onTap,
     required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cashBalanceThb = cashBalance * exchangeRate;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
 
     return InkWell(
       onTap: onTap,
@@ -662,13 +729,22 @@ class _CashRow extends StatelessWidget {
                 style: TextStyle(fontSize: 16, color: textPrimaryColor),
               ),
             ),
-            Text(
-              '${formatAmount(cashBalance)} USD',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.getAmountColor(cashBalance, isDarkMode),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${formatAmount(cashBalance)} USD',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.getAmountColor(cashBalance, isDarkMode),
+                  ),
+                ),
+                Text(
+                  '${formatAmount(cashBalanceThb)} บาท',
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                ),
+              ],
             ),
           ],
         ),
@@ -731,24 +807,10 @@ class _HoldingItem extends StatelessWidget {
                   Icon(Icons.drag_indicator, color: dividerColor, size: 20),
                   const SizedBox(width: 8),
                 ],
-                // Ticker badge
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: headerColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    holding.ticker,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: headerColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                _HoldingThumbnail(
+                  ticker: holding.ticker,
+                  logoUrl: holding.logoUrl,
+                  accentColor: headerColor,
                 ),
                 const SizedBox(width: 12),
                 // Name + detail row
@@ -757,7 +819,7 @@ class _HoldingItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_formatShares(holding.shares)} หุ้น',
+                        '${holding.ticker} ${_formatShares(holding.shares)} หุ้น',
                         style: TextStyle(
                           fontSize: 13,
                           color: textSecondaryColor,
@@ -928,7 +990,7 @@ class _HoldingItem extends StatelessWidget {
 class _HoldingFormSheet extends StatefulWidget {
   final String portfolioId;
   final StockHolding? existing;
-  final void Function(StockHolding) onSave;
+  final Future<void> Function(StockHolding) onSave;
   final String Function() generateId;
   final bool isDarkMode;
 
@@ -950,6 +1012,7 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
   final _sharesController = TextEditingController();
   final _priceController = TextEditingController();
   final _costController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -979,7 +1042,9 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
     return v.toString();
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_isSaving) return;
+
     final ticker = _tickerController.text.trim().toUpperCase();
     if (ticker.isEmpty) return;
     final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
@@ -994,10 +1059,17 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
       shares: shares,
       priceUsd: price,
       costBasisUsd: cost,
+      logoUrl: widget.existing?.logoUrl ?? '',
       sortOrder: widget.existing?.sortOrder ?? 0,
     );
-    widget.onSave(holding);
-    Navigator.pop(context);
+
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(holding);
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -1049,9 +1121,9 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     child: Text(
-                      'บันทึก',
+                      _isSaving ? 'กำลังบันทึก...' : 'บันทึก',
                       style: TextStyle(
                         color: textColor,
                         fontWeight: FontWeight.w600,
@@ -1180,6 +1252,61 @@ class _HoldingFormSheetState extends State<_HoldingFormSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HoldingThumbnail extends StatelessWidget {
+  final String ticker;
+  final String logoUrl;
+  final Color accentColor;
+
+  const _HoldingThumbnail({
+    required this.ticker,
+    required this.logoUrl,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final decoration = BoxDecoration(
+      color: accentColor.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(6),
+    );
+
+    Widget fallback() => Center(
+      child: Text(
+        ticker,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: accentColor,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: decoration,
+      padding: logoUrl.isEmpty ? EdgeInsets.zero : const EdgeInsets.all(6),
+      alignment: Alignment.center,
+      child: logoUrl.isEmpty
+          ? fallback()
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.network(
+                logoUrl,
+                fit: BoxFit.contain,
+                webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return fallback();
+                },
+                errorBuilder: (_, _, _) => fallback(),
+              ),
+            ),
     );
   }
 }
