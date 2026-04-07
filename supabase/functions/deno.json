@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.window",
+      "dom",
+      "dom.iterable"
+    ],
+    "strict": true
+  },
+  "fmt": {
+    "semiColons": false,
+    "singleQuote": true
+  }
+}

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
@@ -22,6 +25,7 @@ class PortfolioDetailScreen extends StatefulWidget {
 
 class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
   late StockPriceService _priceService;
+  late StockLogoStorageService _logoStorageService;
   bool _isRefreshing = false;
   bool _isReorderMode = false;
 
@@ -30,6 +34,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     super.initState();
     final settings = context.read<SettingsProvider>();
     _priceService = StockPriceService(apiKey: settings.finnhubApiKey);
+    _logoStorageService = StockLogoStorageService();
     if (_priceService.isConfigured) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
     }
@@ -75,14 +80,24 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           hasChanges = true;
         }
         final profile = profiles[h.ticker];
-        if (profile != null &&
-            profile.logoUrl.isNotEmpty &&
-            h.logoUrl.isEmpty) {
-          updatedHolding = updatedHolding.copyWith(logoUrl: profile.logoUrl);
-          hasChanges = true;
+        final sourceLogoUrl =
+            h.logoUrl.isNotEmpty &&
+                !_logoStorageService.isStoredLogoUrl(h.logoUrl)
+            ? h.logoUrl
+            : (profile?.logoUrl ?? '');
+        if (sourceLogoUrl.isNotEmpty) {
+          final mirroredLogoUrl = await _resolveLogoUrl(
+            ticker: h.ticker,
+            sourceUrl: sourceLogoUrl,
+            currentLogoUrl: h.logoUrl,
+          );
+          if (mirroredLogoUrl.isNotEmpty && mirroredLogoUrl != h.logoUrl) {
+            updatedHolding = updatedHolding.copyWith(logoUrl: mirroredLogoUrl);
+            hasChanges = true;
+          }
         }
         if (hasChanges) {
-          provider.updateHolding(updatedHolding);
+          await provider.updateHolding(updatedHolding);
         }
       }
     } catch (e) {
@@ -242,6 +257,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         isReorderMode: _isReorderMode,
                         onEdit: () =>
                             _showHoldingSheet(context, provider, acc.id, h),
+                        onChangeLogo: () =>
+                            _pickAndUploadHoldingLogo(context, provider, h),
+                        onClearLogo: h.logoUrl.isNotEmpty
+                            ? () => provider.updateHolding(
+                                h.copyWith(logoUrl: ''),
+                              )
+                            : null,
                         onDelete: () => provider.deleteHolding(h.id, acc.id),
                         isDarkMode: isDarkMode,
                       );
@@ -380,16 +402,99 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     StockHolding? existing,
   }) async {
     final hasSameTicker = existing != null && existing.ticker == holding.ticker;
-    final fallbackLogoUrl = hasSameTicker ? existing.logoUrl : '';
+    final fallbackLogoUrl = holding.logoUrl.isNotEmpty
+        ? holding.logoUrl
+        : (hasSameTicker ? existing.logoUrl : '');
 
     if (!_priceService.isConfigured) {
       return holding.copyWith(logoUrl: fallbackLogoUrl);
     }
 
     final profile = await _priceService.fetchProfile(holding.ticker);
-    final logoUrl = profile?.logoUrl ?? fallbackLogoUrl;
+    final logoUrl = await _resolveLogoUrl(
+      ticker: holding.ticker,
+      sourceUrl: profile?.logoUrl ?? '',
+      currentLogoUrl: fallbackLogoUrl,
+    );
 
     return holding.copyWith(logoUrl: logoUrl);
+  }
+
+  Future<String> _resolveLogoUrl({
+    required String ticker,
+    required String sourceUrl,
+    required String currentLogoUrl,
+  }) async {
+    if (sourceUrl.isEmpty) return currentLogoUrl;
+    if (_logoStorageService.isStoredLogoUrl(currentLogoUrl)) {
+      return currentLogoUrl;
+    }
+
+    final mirroredLogoUrl = await _logoStorageService.mirrorLogo(
+      ticker: ticker,
+      sourceUrl: sourceUrl,
+    );
+    if (mirroredLogoUrl != null && mirroredLogoUrl.isNotEmpty) {
+      return mirroredLogoUrl;
+    }
+
+    return currentLogoUrl.isNotEmpty ? currentLogoUrl : sourceUrl;
+  }
+
+  Future<void> _pickAndUploadHoldingLogo(
+    BuildContext context,
+    AccountProvider provider,
+    StockHolding holding,
+  ) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'webp'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    if (file.bytes == null || file.bytes!.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ไม่สามารถอ่านไฟล์รูปได้')));
+      return;
+    }
+
+    final extension = file.extension?.toLowerCase() ?? 'png';
+    final uploadedUrl = await _logoStorageService.uploadLogoBytes(
+      ticker: holding.ticker,
+      bytes: file.bytes!,
+      extension: extension,
+      contentType: _contentTypeForExtension(extension),
+    );
+
+    if (!context.mounted) return;
+    if (uploadedUrl == null || uploadedUrl.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('อัปโหลดโลโก้ไม่สำเร็จ')));
+      return;
+    }
+
+    await provider.updateHolding(holding.copyWith(logoUrl: uploadedUrl));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('อัปเดตโลโก้แล้ว')));
+  }
+
+  String _contentTypeForExtension(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/png';
+    }
   }
 
   void _showMenuSheet(BuildContext context) {
@@ -758,6 +863,8 @@ class _HoldingItem extends StatelessWidget {
   final double exchangeRate;
   final bool isReorderMode;
   final VoidCallback onEdit;
+  final VoidCallback onChangeLogo;
+  final VoidCallback? onClearLogo;
   final VoidCallback onDelete;
   final bool isDarkMode;
 
@@ -767,6 +874,8 @@ class _HoldingItem extends StatelessWidget {
     required this.exchangeRate,
     this.isReorderMode = false,
     required this.onEdit,
+    required this.onChangeLogo,
+    required this.onClearLogo,
     required this.onDelete,
     required this.isDarkMode,
   });
@@ -934,6 +1043,33 @@ class _HoldingItem extends StatelessWidget {
                 onEdit();
               },
             ),
+            ListTile(
+              leading: Icon(Icons.image_outlined, color: textColor),
+              title: Text(
+                holding.logoUrl.isEmpty
+                    ? 'เพิ่มโลโก้ ${holding.ticker}'
+                    : 'เปลี่ยนโลโก้ ${holding.ticker}',
+                style: TextStyle(color: textColor),
+              ),
+              tileColor: bgColor,
+              onTap: () {
+                Navigator.pop(context);
+                onChangeLogo();
+              },
+            ),
+            if (onClearLogo != null)
+              ListTile(
+                leading: Icon(Icons.hide_image_outlined, color: textColor),
+                title: Text(
+                  'ลบโลโก้ ${holding.ticker}',
+                  style: TextStyle(color: textColor),
+                ),
+                tileColor: bgColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  onClearLogo!();
+                },
+              ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: expenseColor),
               title: Text(

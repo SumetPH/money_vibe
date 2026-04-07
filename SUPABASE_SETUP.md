@@ -47,6 +47,17 @@
 - `recurring_transactions` - ธุรกรรมที่เกิดซ้ำ (มี user_id)
 - `recurring_occurrences` - การเกิดของธุรกรรมที่ซ้ำ (มี user_id)
 
+### Storage สำหรับโลโก้หุ้น
+ถ้าต้องการ cache โลโก้หุ้นไว้ใน Supabase Storage:
+
+1. รัน SQL ใน `supabase/add_logo_url_to_portfolio_holdings.sql`
+2. รัน SQL ใน `supabase/create_stock_logos_bucket.sql`
+3. รัน SQL ใน `supabase/add_stock_logo_storage_policies.sql`
+4. สร้าง Edge Function ชื่อ `mirror-stock-logo` จากไฟล์ `supabase/functions/mirror-stock-logo/index.ts`
+5. Deploy function พร้อม environment variables มาตรฐานของ Supabase Functions (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+
+หลังจาก deploy แล้ว แอปจะ mirror โลโก้จากผู้ให้บริการภายนอกมาเก็บใน bucket `stock-logos` อัตโนมัติ และใช้ public URL ของ Supabase แทน
+
 ### ความปลอดภัย:
 - **RLS (Row Level Security)** เปิดใช้งานทุก table
 - Policy: `Users can only access their own data`
