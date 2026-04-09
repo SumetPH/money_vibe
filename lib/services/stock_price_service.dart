@@ -10,7 +10,7 @@ class StockCompanyProfile {
 
 class StockPriceService {
   static const _finnhubBase = 'https://finnhub.io/api/v1';
-  static const _erBase = 'https://open.er-api.com';
+  static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
   final String? apiKey;
 
@@ -96,7 +96,7 @@ class StockPriceService {
 
   /// ดึงอัตราแลกเปลี่ยน USD/THB (ไม่ต้อง API key)
   Future<double> fetchUsdThbRate() async {
-    final uri = Uri.parse('$_erBase/v6/latest/USD');
+    final uri = Uri.parse('$_frankfurterBase/latest?base=USD&symbols=THB');
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
       throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
