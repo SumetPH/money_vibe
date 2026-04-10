@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -13,6 +12,7 @@ import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import 'account_form_screen.dart';
+import 'holding_form_screen.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -120,6 +120,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
         final holdings = provider.getHoldings(acc.id);
         final transactions = context.read<TransactionProvider>().transactions;
         final totalValue = provider.getBalance(acc.id, transactions);
+        final totalHoldingsValueUsd = holdings.fold<double>(
+          0,
+          (sum, holding) => sum + holding.valueUsd,
+        );
 
         return Scaffold(
           backgroundColor: isDarkMode
@@ -254,9 +258,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         key: ValueKey(h.id),
                         holding: h,
                         exchangeRate: acc.exchangeRate,
+                        totalHoldingsValueUsd: totalHoldingsValueUsd,
                         isReorderMode: _isReorderMode,
                         onEdit: () =>
-                            _showHoldingSheet(context, provider, acc.id, h),
+                            _openHoldingForm(context, provider, acc.id, h),
                         onChangeLogo: () =>
                             _pickAndUploadHoldingLogo(context, provider, h),
                         onClearLogo: h.logoUrl.isNotEmpty
@@ -362,37 +367,34 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     );
   }
 
-  void _showHoldingSheet(
+  Future<void> _openHoldingForm(
     BuildContext context,
     AccountProvider provider,
     String portfolioId,
     StockHolding? existing,
-  ) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _HoldingFormSheet(
-        portfolioId: portfolioId,
-        existing: existing,
-        onSave: (holding) async {
-          final holdingWithProfile = await _enrichHoldingWithProfile(
-            holding,
-            existing: existing,
-          );
-          if (existing == null) {
-            await provider.addHolding(holdingWithProfile);
-          } else {
-            await provider.updateHolding(holdingWithProfile);
-          }
-        },
-        generateId: provider.generateId,
-        isDarkMode: isDarkMode,
+  ) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HoldingFormScreen(
+          portfolioId: portfolioId,
+          existing: existing,
+          onSave: (holding) async {
+            final holdingWithProfile = await _enrichHoldingWithProfile(
+              holding,
+              existing: existing,
+            );
+            if (existing == null) {
+              await provider.addHolding(holdingWithProfile);
+            } else {
+              await provider.updateHolding(holdingWithProfile);
+            }
+          },
+          onDelete: existing == null
+              ? null
+              : () => provider.deleteHolding(existing.id, portfolioId),
+          generateId: provider.generateId,
+        ),
       ),
     );
   }
@@ -506,6 +508,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     final handleColor = isDarkMode
         ? AppColors.darkDivider
         : Colors.grey.shade300;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     showModalBottomSheet(
       context: context,
@@ -514,53 +517,62 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: handleColor,
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: Icon(Icons.add_circle_outline, color: textColor),
+                    title: Text(
+                      'เพิ่มหุ้นใหม่',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _openHoldingForm(
+                        context,
+                        context.read<AccountProvider>(),
+                        widget.account.id,
+                        null,
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(Icons.reorder, color: textColor),
+                    title: Text(
+                      'จัดเรียงลำดับ',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    trailing: Switch(
+                      value: _isReorderMode,
+                      onChanged: (value) {
+                        setStateModal(() => _isReorderMode = value);
+                        setState(() => _isReorderMode = value);
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              leading: Icon(Icons.add_circle_outline, color: textColor),
-              title: Text('เพิ่มหุ้นใหม่', style: TextStyle(color: textColor)),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                _showHoldingSheet(
-                  context,
-                  context.read<AccountProvider>(),
-                  widget.account.id,
-                  null,
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.reorder, color: textColor),
-              title: Text('จัดเรียงลำดับ', style: TextStyle(color: textColor)),
-              tileColor: bgColor,
-              trailing: Switch(
-                value: _isReorderMode,
-                onChanged: (value) {
-                  setState(() => _isReorderMode = value);
-                  Navigator.pop(context);
-                },
-              ),
-              onTap: () {
-                setState(() => _isReorderMode = !_isReorderMode);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -861,6 +873,7 @@ class _CashRow extends StatelessWidget {
 class _HoldingItem extends StatelessWidget {
   final StockHolding holding;
   final double exchangeRate;
+  final double totalHoldingsValueUsd;
   final bool isReorderMode;
   final VoidCallback onEdit;
   final VoidCallback onChangeLogo;
@@ -872,6 +885,7 @@ class _HoldingItem extends StatelessWidget {
     super.key,
     required this.holding,
     required this.exchangeRate,
+    required this.totalHoldingsValueUsd,
     this.isReorderMode = false,
     required this.onEdit,
     required this.onChangeLogo,
@@ -883,6 +897,9 @@ class _HoldingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final valueTHB = holding.valueUsd * exchangeRate;
+    final allocationPct = totalHoldingsValueUsd > 0
+        ? (holding.valueUsd / totalHoldingsValueUsd) * 100
+        : 0.0;
     final hasCost = holding.costBasisUsd > 0;
     final pnlTHB = holding.unrealizedPnlUsd * exchangeRate;
     final pnlPct = holding.unrealizedPnlPct;
@@ -904,6 +921,7 @@ class _HoldingItem extends StatelessWidget {
     return Column(
       children: [
         GestureDetector(
+          onTap: isReorderMode ? null : onEdit,
           onLongPress: isReorderMode ? null : () => _openListMenu(context),
           child: Container(
             color: surfaceColor,
@@ -981,6 +999,10 @@ class _HoldingItem extends StatelessWidget {
                           color: textSecondaryColor,
                         ),
                       ),
+                    Text(
+                      '${allocationPct.toStringAsFixed(2)}%',
+                      style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                    ),
                   ],
                 ),
                 const SizedBox(width: 4),
@@ -1123,275 +1145,6 @@ class _HoldingItem extends StatelessWidget {
   }
 }
 
-class _HoldingFormSheet extends StatefulWidget {
-  final String portfolioId;
-  final StockHolding? existing;
-  final Future<void> Function(StockHolding) onSave;
-  final String Function() generateId;
-  final bool isDarkMode;
-
-  const _HoldingFormSheet({
-    required this.portfolioId,
-    required this.existing,
-    required this.onSave,
-    required this.generateId,
-    required this.isDarkMode,
-  });
-
-  @override
-  State<_HoldingFormSheet> createState() => _HoldingFormSheetState();
-}
-
-class _HoldingFormSheetState extends State<_HoldingFormSheet> {
-  final _tickerController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _sharesController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _costController = TextEditingController();
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final h = widget.existing;
-    if (h != null) {
-      _tickerController.text = h.ticker;
-      _nameController.text = h.name;
-      _sharesController.text = _formatNum(h.shares);
-      _priceController.text = _formatNum(h.priceUsd);
-      if (h.costBasisUsd > 0) _costController.text = _formatNum(h.costBasisUsd);
-    }
-  }
-
-  @override
-  void dispose() {
-    _tickerController.dispose();
-    _nameController.dispose();
-    _sharesController.dispose();
-    _priceController.dispose();
-    _costController.dispose();
-    super.dispose();
-  }
-
-  String _formatNum(double v) {
-    if (v == v.truncateToDouble()) return v.toInt().toString();
-    return v.toString();
-  }
-
-  Future<void> _save() async {
-    if (_isSaving) return;
-
-    final ticker = _tickerController.text.trim().toUpperCase();
-    if (ticker.isEmpty) return;
-    final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
-    final price = double.tryParse(_priceController.text.trim()) ?? 0;
-    final cost = double.tryParse(_costController.text.trim()) ?? 0;
-
-    final holding = StockHolding(
-      id: widget.existing?.id ?? widget.generateId(),
-      portfolioId: widget.portfolioId,
-      ticker: ticker,
-      name: _nameController.text.trim(),
-      shares: shares,
-      priceUsd: price,
-      costBasisUsd: cost,
-      logoUrl: widget.existing?.logoUrl ?? '',
-      sortOrder: widget.existing?.sortOrder ?? 0,
-    );
-
-    setState(() => _isSaving = true);
-    try {
-      await widget.onSave(holding);
-      if (mounted) Navigator.pop(context);
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = widget.isDarkMode;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final handleColor = isDarkMode
-        ? AppColors.darkDivider
-        : Colors.grey.shade300;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: handleColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  Text(
-                    widget.existing == null ? 'เพิ่มหุ้น' : 'แก้ไขหุ้น',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _isSaving ? null : _save,
-                    child: Text(
-                      _isSaving ? 'กำลังบันทึก...' : 'บันทึก',
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            _FormRow(
-              label: 'Ticker',
-              labelColor: textSecondaryColor,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkSurface
-                  : Colors.white,
-              child: TextField(
-                controller: _tickerController,
-                textCapitalization: TextCapitalization.characters,
-                textAlign: TextAlign.end,
-                decoration: InputDecoration(
-                  hintText: 'เช่น AAPL',
-                  hintStyle: TextStyle(color: textSecondaryColor),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                style: TextStyle(fontSize: 15, color: textColor),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            _FormRow(
-              label: 'จำนวนหุ้น',
-              labelColor: textSecondaryColor,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkSurface
-                  : Colors.white,
-              child: TextField(
-                controller: _sharesController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                textAlign: TextAlign.right,
-                decoration: InputDecoration(
-                  hintText: '0',
-                  hintStyle: TextStyle(color: textSecondaryColor),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                style: TextStyle(fontSize: 15, color: textColor),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            _FormRow(
-              label: 'ราคาทุน (USD)',
-              labelColor: textSecondaryColor,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkSurface
-                  : Colors.white,
-              child: TextField(
-                controller: _costController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                textAlign: TextAlign.right,
-                decoration: InputDecoration(
-                  hintText: '0.00',
-                  hintStyle: TextStyle(color: textSecondaryColor),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                ),
-                style: TextStyle(fontSize: 15, color: textColor),
-              ),
-            ),
-            const Divider(height: 1),
-            _FormRow(
-              label: 'ราคาปัจจุบัน (USD)',
-              labelColor: textSecondaryColor,
-              backgroundColor: isDarkMode
-                  ? AppColors.darkSurface
-                  : Colors.white,
-              child: TextField(
-                controller: _priceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                textAlign: TextAlign.right,
-                decoration: InputDecoration(
-                  hintText: '0.00',
-                  hintStyle: TextStyle(color: textSecondaryColor),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                style: TextStyle(fontSize: 15, color: textColor),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _HoldingThumbnail extends StatelessWidget {
   final String ticker;
   final String logoUrl;
@@ -1443,43 +1196,6 @@ class _HoldingThumbnail extends StatelessWidget {
                 errorBuilder: (_, _, _) => fallback(),
               ),
             ),
-    );
-  }
-}
-
-class _FormRow extends StatelessWidget {
-  final String label;
-  final Widget child;
-  final Color? labelColor;
-  final Color? backgroundColor;
-
-  const _FormRow({
-    required this.label,
-    required this.child,
-    this.labelColor,
-    this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: backgroundColor ?? Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                color: labelColor ?? AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Expanded(child: child),
-        ],
-      ),
     );
   }
 }

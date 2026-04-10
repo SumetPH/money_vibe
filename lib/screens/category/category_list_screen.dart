@@ -227,53 +227,53 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               ? AppColors.darkDivider
               : AppColors.divider;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          return StatefulBuilder(
+            builder: (context, setStateModal) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: handleColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.add, color: textColor),
+                      title: Text(
+                        'เพิ่มหมวดหมู่',
+                        style: TextStyle(color: textColor),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openForm(context, null);
+                      },
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.reorder, color: textColor),
+                      title: Text(
+                        'จัดเรียงลำดับ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: _isReorderMode,
+                        onChanged: (value) {
+                          setStateModal(() => _isReorderMode = value);
+                          setState(() => _isReorderMode = value);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.add, color: textColor),
-                  title: Text(
-                    'เพิ่มหมวดหมู่',
-                    style: TextStyle(color: textColor),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _openForm(context, null);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.reorder, color: textColor),
-                  title: Text(
-                    'จัดเรียงลำดับ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: _isReorderMode,
-                    onChanged: (value) {
-                      setState(() => _isReorderMode = value);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    setState(() => _isReorderMode = !_isReorderMode);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

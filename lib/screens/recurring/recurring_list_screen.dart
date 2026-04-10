@@ -72,8 +72,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.more_vert),
-                onPressed: () =>
-                    _showMenuBottomSheet(context, isDark, provider),
+                onPressed: () => _showMenuBottomSheet(context, isDark),
               ),
             ],
           ),
@@ -211,13 +210,13 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
   void _showMenuBottomSheet(
     BuildContext context,
     bool isDark,
-    RecurringTransactionProvider provider,
+    // RecurringTransactionProvider provider,
   ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, sp, _) {
+      builder: (_) => Consumer2<SettingsProvider, RecurringTransactionProvider>(
+        builder: (context, sp, rtp, _) {
           final isDk = sp.isDarkMode;
           final bgColor = isDk ? AppColors.darkSurface : Colors.white;
           final handleColor = isDk
@@ -228,73 +227,71 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               : AppColors.textPrimary;
           final dividerColor = isDk ? AppColors.darkDivider : AppColors.divider;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          return StatefulBuilder(
+            builder: (context, setStateModal) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: handleColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.add, color: textColor),
+                      title: Text(
+                        'เพิ่มรายการประจำ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openForm(context, null);
+                      },
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.reorder, color: textColor),
+                      title: Text(
+                        'จัดเรียงลำดับ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: _isReorderMode,
+                        onChanged: (v) {
+                          setStateModal(() => _isReorderMode = v);
+                          setState(() => _isReorderMode = v);
+                        },
+                      ),
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(
+                        Icons.visibility_outlined,
+                        color: textColor,
+                      ),
+                      title: Text(
+                        'แสดงรายการที่ซ่อน',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: rtp.showHiddenRecurring,
+                        onChanged: (v) {
+                          rtp.toggleShowHiddenRecurring();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.add, color: textColor),
-                  title: Text(
-                    'เพิ่มรายการประจำ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _openForm(context, null);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.reorder, color: textColor),
-                  title: Text(
-                    'จัดเรียงลำดับ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: _isReorderMode,
-                    onChanged: (v) {
-                      setState(() => _isReorderMode = v);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    setState(() => _isReorderMode = !_isReorderMode);
-                    Navigator.pop(context);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.visibility_outlined, color: textColor),
-                  title: Text(
-                    'แสดงรายการที่ซ่อน',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: provider.showHiddenRecurring,
-                    onChanged: (v) {
-                      provider.toggleShowHiddenRecurring();
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    provider.toggleShowHiddenRecurring();
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

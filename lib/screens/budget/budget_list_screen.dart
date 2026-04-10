@@ -508,78 +508,79 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ? AppColors.darkDivider
               : AppColors.divider;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.add, color: textColor),
-                  title: Text(
-                    'เพิ่มงบประมาณ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _openForm(context, null);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.reorder, color: textColor),
-                  title: Text(
-                    'จัดเรียงลำดับ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: _isReorderMode,
-                    onChanged: (v) {
-                      setState(() => _isReorderMode = v);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    setState(() => _isReorderMode = !_isReorderMode);
-                    Navigator.pop(context);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(
-                    Icons.calendar_today_outlined,
-                    color: textColor,
-                  ),
-                  title: Text(
-                    'ตั้งค่ารอบงบประมาณ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'เริ่มนับวันที่ ${settingsProvider.budgetStartDay} ของเดือน',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.textSecondary,
+          return StatefulBuilder(
+            builder: (context, setStateModal) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: handleColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showStartDayPicker(context, settingsProvider);
-                  },
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.add, color: textColor),
+                      title: Text(
+                        'เพิ่มงบประมาณ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openForm(context, null);
+                      },
+                    ),
+
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(
+                        Icons.calendar_today_outlined,
+                        color: textColor,
+                      ),
+                      title: Text(
+                        'ตั้งค่ารอบงบประมาณ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        'เริ่มนับวันที่ ${settingsProvider.budgetStartDay} ของเดือน',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showStartDayPicker(context, settingsProvider);
+                      },
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(Icons.reorder, color: textColor),
+                      title: Text(
+                        'จัดเรียงลำดับ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: _isReorderMode,
+                        onChanged: (v) {
+                          setStateModal(() => _isReorderMode = v);
+                          setState(() => _isReorderMode = v);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

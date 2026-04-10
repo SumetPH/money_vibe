@@ -253,78 +253,78 @@ class _AccountListScreenState extends State<AccountListScreen> {
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: const Icon(Icons.add_circle_outline),
-                  title: Text(
-                    'เพิ่มบัญชีใหม่',
-                    style: TextStyle(color: textColor),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AccountFormScreen(account: null),
+          return StatefulBuilder(
+            builder: (context, setStateModal) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: handleColor,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: const Icon(Icons.add_circle_outline),
+                      title: Text(
+                        'เพิ่มบัญชีใหม่',
+                        style: TextStyle(color: textColor),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AccountFormScreen(account: null),
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: const Icon(Icons.reorder),
+                      title: Text(
+                        'จัดเรียงลำดับ',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: _isReorderMode,
+                        onChanged: (value) {
+                          setStateModal(() => _isReorderMode = value);
+                          setState(() => _isReorderMode = value);
+                        },
+                      ),
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: const Icon(Icons.visibility_outlined),
+                      title: Text(
+                        'แสดงบัญชีที่ซ่อน',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: showHiddenAccounts,
+                        onChanged: (value) {
+                          accountProvider.toggleShowHiddenAccounts();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: const Icon(Icons.reorder),
-                  title: Text(
-                    'จัดเรียงลำดับ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: _isReorderMode,
-                    onChanged: (value) {
-                      setState(() => _isReorderMode = value);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    setState(() => _isReorderMode = !_isReorderMode);
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  tileColor: bgColor,
-                  leading: const Icon(Icons.visibility_outlined),
-                  title: Text(
-                    'แสดงบัญชีที่ซ่อน',
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: Switch(
-                    value: showHiddenAccounts,
-                    onChanged: (value) {
-                      accountProvider.toggleShowHiddenAccounts();
-                      Navigator.pop(context);
-                    },
-                  ),
-                  onTap: () {
-                    accountProvider.toggleShowHiddenAccounts();
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -881,8 +881,10 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                             children: [
                               Text(
                                 account.name,
-                                style:
-                                    TextStyle(color: textPrimary, fontSize: 15),
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 15,
+                                ),
                               ),
                               if (account.isHidden) ...[
                                 const SizedBox(width: 8),
