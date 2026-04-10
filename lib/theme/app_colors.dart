@@ -7,6 +7,7 @@ class AppColors {
   static const Color expense = Color(0xFFF44336);
   static const Color transfer = Color(0xFF2196F3);
   static const Color debtTransfer = Color(0xFFFB8C00);
+  static const Color debtRepay = Color(0xFFFB8C00);
   static const Color background = Color(0xFFF0F0F0);
   static const Color surface = Colors.white;
   static const Color textPrimary = Color(0xFF212121);
@@ -29,6 +30,7 @@ class AppColors {
   static const Color darkIncome = Color(0xFF66BB6A);
   static const Color darkExpense = Color(0xFFEF5350);
   static const Color darkTransfer = Color(0xFF42A5F5);
+  static const Color darkDebtRepay = Color(0xFFFFB74D);
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
   static const Color darkFabYellow = Color(0xFFFFB74D);
 

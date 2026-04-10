@@ -464,10 +464,7 @@ class _TransactionItem extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: (tx.type == TransactionType.debtTransfer
-                          ? typeColor
-                          : (category?.color ?? typeColor))
-                      .withValues(alpha: 0.15),
+                  color: typeColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -572,7 +569,7 @@ class _TransactionItem extends StatelessWidget {
         case TransactionType.transfer:
           return AppColors.darkTransfer;
         case TransactionType.debtRepay:
-          return AppColors.darkExpense;
+          return AppColors.darkDebtRepay;
         case TransactionType.debtTransfer:
           return AppColors.darkDebtTransfer;
       }
@@ -585,7 +582,7 @@ class _TransactionItem extends StatelessWidget {
       case TransactionType.transfer:
         return AppColors.transfer;
       case TransactionType.debtRepay:
-        return AppColors.expense;
+        return AppColors.debtRepay;
       case TransactionType.debtTransfer:
         return AppColors.debtTransfer;
     }
