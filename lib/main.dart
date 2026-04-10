@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:money_vibe/providers/llm_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/account_provider.dart';
@@ -60,6 +61,7 @@ void main() async {
   final settingsProvider = SettingsProvider();
   final recurringProvider = RecurringTransactionProvider();
   final authProvider = AuthProvider();
+  final llmProvider = LlmProvider();
 
   try {
     await RecurringNotificationService.instance.init();
@@ -101,6 +103,7 @@ void main() async {
       transactionProvider: transactionProvider,
       settingsProvider: settingsProvider,
       recurringProvider: recurringProvider,
+      llmProvider: llmProvider,
     ),
   );
 
@@ -132,6 +135,7 @@ class MyApp extends StatefulWidget {
   final TransactionProvider transactionProvider;
   final SettingsProvider settingsProvider;
   final RecurringTransactionProvider recurringProvider;
+  final LlmProvider llmProvider;
 
   const MyApp({
     super.key,
@@ -142,6 +146,7 @@ class MyApp extends StatefulWidget {
     required this.transactionProvider,
     required this.settingsProvider,
     required this.recurringProvider,
+    required this.llmProvider,
   });
 
   @override
@@ -263,6 +268,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: widget.settingsProvider),
         ChangeNotifierProvider.value(value: widget.recurringProvider),
         ChangeNotifierProvider.value(value: _databaseManager),
+        ChangeNotifierProvider.value(value: widget.llmProvider),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {

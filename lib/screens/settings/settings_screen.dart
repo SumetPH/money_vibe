@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_vibe/screens/settings/llm_api_key_settings_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -13,7 +14,7 @@ import '../../services/database_manager.dart';
 import '../../services/app_refresh_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
-import 'api_key_settings_screen.dart';
+import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -183,7 +184,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ApiKeySettingsScreen(),
+                        builder: (context) =>
+                            const FinnhubApiKeySettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+                ListTile(
+                  leading: Icon(Icons.auto_awesome, color: secondaryTextColor),
+                  title: Text(
+                    'LLM API Key',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    'ตั้งค่า API key สำหรับ LLM',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LLMApiKeySettingsScreen(),
                       ),
                     );
                   },

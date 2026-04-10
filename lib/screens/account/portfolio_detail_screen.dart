@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:money_vibe/screens/account/portfolio_analyze_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/account.dart';
@@ -156,6 +157,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => AccountFormScreen(account: acc),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.auto_awesome),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PortfolioAnalyzeScreen(accountId: acc.id),
                   ),
                 ),
               ),
