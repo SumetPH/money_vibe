@@ -185,12 +185,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                 _CashRow(
                   cashBalance: acc.cashBalance,
                   exchangeRate: acc.exchangeRate,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AccountFormScreen(account: acc),
-                    ),
-                  ),
+                  onTap: () => _editCashBalance(context, provider, acc),
                   isDarkMode: isDarkMode,
                 ),
 
@@ -355,6 +350,72 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     provider.updateAccount(
                       acc.copyWith(exchangeRate: v, autoUpdateRate: autoUpdate),
                     );
+                  }
+                  Navigator.pop(ctx);
+                },
+                child: Text('บันทึก', style: TextStyle(color: textColor)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _editCashBalance(
+    BuildContext context,
+    AccountProvider provider,
+    Account acc,
+  ) async {
+    final controller = TextEditingController(
+      text: acc.cashBalance.toStringAsFixed(2),
+    );
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final dialogBgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        var autoUpdate = acc.autoUpdateRate;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            backgroundColor: dialogBgColor,
+            title: Text('ยอดเงินสด', style: TextStyle(color: textColor)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  autofocus: !autoUpdate,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'ยอดเงินสด (USD)',
+                    suffixText: 'บาท',
+                    labelStyle: TextStyle(
+                      color: isDarkMode
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+              ),
+              TextButton(
+                onPressed: () {
+                  final v = double.tryParse(controller.text.trim());
+                  if (v != null) {
+                    provider.updateAccount(acc.copyWith(cashBalance: v));
                   }
                   Navigator.pop(ctx);
                 },
