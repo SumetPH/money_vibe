@@ -152,15 +152,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   onPressed: _refreshPrices,
                 ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AccountFormScreen(account: acc),
-                  ),
-                ),
-              ),
-              IconButton(
                 icon: const Icon(Icons.auto_awesome),
                 onPressed: () => Navigator.push(
                   context,
@@ -971,7 +962,6 @@ class _HoldingItem extends StatelessWidget {
     final allocationPct = totalHoldingsValueUsd > 0
         ? (holding.valueUsd / totalHoldingsValueUsd) * 100
         : 0.0;
-    final hasCost = holding.costBasisUsd > 0;
     final pnlTHB = holding.unrealizedPnlUsd * exchangeRate;
     final pnlPct = holding.unrealizedPnlPct;
 
@@ -1005,78 +995,225 @@ class _HoldingItem extends StatelessWidget {
                   Icon(Icons.drag_indicator, color: dividerColor, size: 20),
                   const SizedBox(width: 8),
                 ],
-                _HoldingThumbnail(
-                  ticker: holding.ticker,
-                  logoUrl: holding.logoUrl,
-                  accentColor: headerColor,
-                ),
-                const SizedBox(width: 12),
-                // Name + detail row
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${holding.ticker} ${_formatShares(holding.shares)} หุ้น',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondaryColor,
-                        ),
-                      ),
-                      if (hasCost)
-                        Text(
-                          'ทุน ${holding.costBasisUsd.toStringAsFixed(2)} USD',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSecondaryColor,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                _HoldingThumbnail(
+                                  ticker: holding.ticker,
+                                  logoUrl: holding.logoUrl,
+                                  accentColor: headerColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      holding.ticker,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: textPrimaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${allocationPct.toStringAsFixed(2)}%',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: textSecondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      Text(
-                        'ราคา ${holding.priceUsd.toStringAsFixed(2)} USD',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondaryColor,
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  formatAmount(valueTHB),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textPrimaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${formatAmount(holding.valueUsd)} USD',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: textSecondaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Value + P&L
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: pnlTHB >= 0
+                                        ? incomeColor
+                                        : expenseColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} THB',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: pnlTHB >= 0
+                                        ? incomeColor
+                                        : expenseColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'จำนวนหุ้นคงเหลือ',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: textSecondaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  holding.shares.toStringAsFixed(7),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textPrimaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'ราคา (USD)',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: textSecondaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  holding.priceUsd.toStringAsFixed(2),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textPrimaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: const SizedBox()),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ต้นทุนต่อหุ้น (USD)',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: textSecondaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  holding.costBasisUsd.toStringAsFixed(2),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textPrimaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'ต้นทุนรวม (USD)',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: textSecondaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  holding.totalCostUsd.toStringAsFixed(2),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textPrimaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 20,
+                                  color: textSecondaryColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                // Value + P&L
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${formatAmount(valueTHB)} บาท',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textPrimaryColor,
-                      ),
-                    ),
-                    if (hasCost)
-                      Text(
-                        '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: pnlTHB >= 0 ? incomeColor : expenseColor,
-                        ),
-                      )
-                    else
-                      Text(
-                        '\$${formatAmount(holding.valueUsd)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondaryColor,
-                        ),
-                      ),
-                    Text(
-                      '${allocationPct.toStringAsFixed(2)}%',
-                      style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 4),
               ],
             ),
           ),
@@ -1084,13 +1221,6 @@ class _HoldingItem extends StatelessWidget {
         Divider(height: 1, color: dividerColor),
       ],
     );
-  }
-
-  String _formatShares(double shares) {
-    if (shares == shares.truncateToDouble()) {
-      return shares.toInt().toString();
-    }
-    return shares.toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '');
   }
 
   void _openListMenu(BuildContext context) {
