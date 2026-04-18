@@ -12,7 +12,6 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
-import 'account_form_screen.dart';
 import 'holding_form_screen.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
@@ -664,8 +663,9 @@ class _SummaryCard extends StatelessWidget {
       0.0,
       (sum, h) => sum + h.totalCostUsd * rate,
     );
-    final stocksValue = holdings.fold(0.0, (sum, h) => sum + h.valueUsd * rate);
-    final pnl = totalCost > 0 ? stocksValue - totalCost : 0.0;
+    final stocksValueUsd = holdings.fold(0.0, (sum, h) => sum + h.valueUsd);
+    final stocksValueThb = stocksValueUsd * rate;
+    final pnl = totalCost > 0 ? stocksValueThb - totalCost : 0.0;
     final pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0.0;
     final hasCost = totalCost > 0;
 
@@ -780,19 +780,19 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         'ต้นทุนหุ้นรวม',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           color: textSecondaryColor,
                         ),
                       ),
                       Text(
-                        '${formatAmount(totalCost)} บาท',
+                        formatAmount(totalCost),
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: textPrimaryColor,
                         ),
@@ -800,29 +800,75 @@ class _SummaryCard extends StatelessWidget {
                       Text(
                         '${formatAmount(totalCostUsd)} USD',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: textSecondaryColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'กำไร/ขาดทุนหุ้น',
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                    ),
-                    Text(
-                      '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)} บาท  (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: pnl >= 0 ? incomeColor : expenseColor,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'มูลค่าหุ้นรวม',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: textSecondaryColor,
+                        ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        formatAmount(stocksValueThb),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimaryColor,
+                        ),
+                      ),
+                      Text(
+                        '${formatAmount(stocksValueUsd)} USD',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: textSecondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'กำไร/ขาดทุน',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: textSecondaryColor,
+                        ),
+                      ),
+                      Text(
+                        '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: pnl >= 0 ? incomeColor : expenseColor,
+                        ),
+                      ),
+                      Text(
+                        '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: pnl >= 0 ? incomeColor : expenseColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -986,7 +1032,7 @@ class _HoldingItem extends StatelessWidget {
           onLongPress: isReorderMode ? null : () => _openListMenu(context),
           child: Container(
             color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -1097,10 +1143,10 @@ class _HoldingItem extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'จำนวนหุ้นคงเหลือ',
+                                  'จำนวนหุ้น',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: textSecondaryColor,
@@ -1108,7 +1154,7 @@ class _HoldingItem extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  holding.shares.toStringAsFixed(7),
+                                  holding.shares.toStringAsFixed(4),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: textPrimaryColor,
@@ -1121,10 +1167,10 @@ class _HoldingItem extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'ราคา (USD)',
+                                  'ราคา',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: textSecondaryColor,
@@ -1143,18 +1189,12 @@ class _HoldingItem extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(child: const SizedBox()),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'ต้นทุนต่อหุ้น (USD)',
+                                  'ต้นทุนต่อหุ้น',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: textSecondaryColor,
@@ -1175,10 +1215,10 @@ class _HoldingItem extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'ต้นทุนรวม (USD)',
+                                  'ต้นทุนรวม',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: textSecondaryColor,
@@ -1192,19 +1232,6 @@ class _HoldingItem extends StatelessWidget {
                                     color: textPrimaryColor,
                                     fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: 20,
-                                  color: textSecondaryColor,
                                 ),
                               ],
                             ),
