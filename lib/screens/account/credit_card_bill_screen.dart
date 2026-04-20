@@ -38,16 +38,60 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
   bool _loading = true;
   String _lastTxKey = '';
 
+  String _formatBillDateRange(CreditCardBill bill) {
+    const thaiMonths = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+    final startStr =
+        '${bill.startDate.day} ${thaiMonths[bill.startDate.month - 1]}';
+    if (bill.isOpen) {
+      return '$startStr - วันนี้';
+    }
+    final endDate = bill.statementDate;
+    final endStr = '${endDate.day} ${thaiMonths[endDate.month - 1]}';
+    return '$startStr - $endStr';
+  }
+
+  String _formatStatementHint(CreditCardBill bill) {
+    const thaiMonths = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+    return 'ตัดยอด ${bill.statementDate.day} ${thaiMonths[bill.statementDate.month - 1]} ${bill.statementDate.year}';
+  }
+
   DateTimeRange _buildCurrentCycleDateRange(CreditCardBill bill) {
     final now = DateTime.now();
-    return DateTimeRange(
-      start: DateTime(
-        bill.startDate.year,
-        bill.startDate.month,
-        bill.startDate.day,
-      ),
-      end: DateTime(now.year, now.month, now.day),
+    final start = DateTime(
+      bill.startDate.year,
+      bill.startDate.month,
+      bill.startDate.day,
     );
+    final today = DateTime(now.year, now.month, now.day);
+    final end = today.isBefore(start) ? start : today;
+
+    return DateTimeRange(start: start, end: end);
   }
 
   void _scheduleRecomputeIfNeeded(List<AppTransaction> transactions) {
@@ -134,7 +178,11 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : bills.isEmpty
-                ? _buildEmptyState(isDarkMode, textSecondaryColor)
+                ? _buildEmptyState(
+                    isDarkMode,
+                    textSecondaryColor,
+                    hasStatementDay: widget.account.statementDay != null,
+                  )
                 : _buildBillList(
                     bills,
                     isDarkMode,
@@ -148,7 +196,11 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
     );
   }
 
-  Widget _buildEmptyState(bool isDarkMode, Color textSecondaryColor) {
+  Widget _buildEmptyState(
+    bool isDarkMode,
+    Color textSecondaryColor, {
+    required bool hasStatementDay,
+  }) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -160,12 +212,16 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'ยังไม่ได้ตั้งค่าวันสรุปยอด',
+            hasStatementDay
+                ? 'ยังไม่มีรายการรอบบิล'
+                : 'ยังไม่ได้ตั้งค่าวันสรุปยอด',
             style: TextStyle(fontSize: 19, color: textSecondaryColor),
           ),
           const SizedBox(height: 8),
           Text(
-            'กรุณาแก้ไขบัญชีเพื่อเพิ่มวันสรุปยอด',
+            hasStatementDay
+                ? 'เมื่อเริ่มมีข้อมูลรอบบิล รายการจะแสดงที่นี่'
+                : 'กรุณาแก้ไขบัญชีเพื่อเพิ่มวันสรุปยอด',
             style: TextStyle(fontSize: 15, color: textSecondaryColor),
           ),
         ],
@@ -257,9 +313,16 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    bill.dateRange,
+                    _formatBillDateRange(bill),
                     style: TextStyle(fontSize: 15, color: textSecondaryColor),
                   ),
+                  if (bill.isOpen) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatStatementHint(bill),
+                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [

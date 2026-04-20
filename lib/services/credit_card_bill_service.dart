@@ -9,10 +9,12 @@ class CreditCardBill {
 
   // ยอดต่างๆ
   final double expensesAmount; // ยอดใช้จ่ายในรอบนี้
-  final double carriedOverAmount; // ยอดยกมาจากรอบก่อน (บวก=ค้างชำระ, ลบ=ชำระเกิน)
+  final double
+  carriedOverAmount; // ยอดยกมาจากรอบก่อน (บวก=ค้างชำระ, ลบ=ชำระเกิน)
   final double totalAmount; // ยอดที่ต้องชำระรวม = expenses + carriedOver
   final double paidAmount; // ยอดที่ชำระแล้ว
-  final double remainingAmount; // ยอดคงเหลือ (บวก=ค้างชำระ, ลบ=ชำระเกินในช่วง grace period)
+  final double
+  remainingAmount; // ยอดคงเหลือ (บวก=ค้างชำระ, ลบ=ชำระเกินในช่วง grace period)
   final double overpaidAmount; // ยอดชำระเกินที่จะยกไปรอบหน้า (เฉพาะใน 15 วัน)
 
   // รายการ
@@ -46,8 +48,18 @@ class CreditCardBill {
   /// ชื่อรอบบิล เช่น "ก.พ. 2568"
   String get billName {
     const thaiMonths = [
-      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
     ];
     return '${thaiMonths[statementDate.month - 1]} ${statementDate.year}';
   }
@@ -55,11 +67,22 @@ class CreditCardBill {
   /// ช่วงวันของบิล เช่น "16 ม.ค. - 15 ก.พ."
   String get dateRange {
     const thaiMonths = [
-      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
     ];
     final startStr = '${startDate.day} ${thaiMonths[startDate.month - 1]}';
-    final endStr = '${statementDate.day} ${thaiMonths[statementDate.month - 1]}';
+    final endStr =
+        '${statementDate.day} ${thaiMonths[statementDate.month - 1]}';
     return '$startStr - $endStr';
   }
 
@@ -83,6 +106,7 @@ class CreditCardBillService {
     required Account account,
     required List<AppTransaction> transactions,
     int monthsBack = 12,
+    DateTime? now,
   }) {
     if (account.type != AccountType.creditCard) {
       throw ArgumentError('Account must be a credit card');
@@ -90,16 +114,16 @@ class CreditCardBillService {
     if (account.statementDay == null) return [];
 
     final statementDay = account.statementDay!;
-    final now = DateTime.now();
+    final effectiveNow = _dayOf(now ?? DateTime.now());
+    final closedUntil = effectiveNow.subtract(const Duration(days: 1));
 
-    // สร้างวันสรุปยอดเริ่มจากวันสร้างบัญชีไปข้างหน้าจนถึงปัจจุบัน
+    // สร้างวันสรุปยอดสำหรับ "รอบที่ปิดแล้ว" เท่านั้น
+    // เพื่อให้วันตัดรอบเองยังถือเป็นรอบปัจจุบันอยู่จนกว่าจะขึ้นวันถัดไป
     final statementDates = _generateStatementDates(
       statementDay: statementDay,
       from: account.startDate,
-      until: now,
+      until: closedUntil,
     );
-
-    if (statementDates.isEmpty) return [];
 
     // กรองธุรกรรมของบัตรนี้เท่านั้น
     final cardTransactions = transactions
@@ -153,17 +177,20 @@ class CreditCardBillService {
       // ใช้ paymentStartDay เหมือนกันทุกประเภท เพื่อป้องกันนับซ้ำกับรอบก่อน
       final payments = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
-        final isTransferPayment = (t.type == TransactionType.transfer ||
+        final isTransferPayment =
+            (t.type == TransactionType.transfer ||
                 t.type == TransactionType.debtRepay) &&
             t.toAccountId == account.id;
-        final isIncomePayment = t.type == TransactionType.income &&
-            t.accountId == account.id;
+        final isIncomePayment =
+            t.type == TransactionType.income && t.accountId == account.id;
         return (isTransferPayment || isIncomePayment) &&
             !d.isBefore(paymentStartDay) &&
             !d.isAfter(paymentEndDay);
       }).toList();
 
-      final totalPaid = _round(payments.fold<double>(0, (s, t) => s + t.amount));
+      final totalPaid = _round(
+        payments.fold<double>(0, (s, t) => s + t.amount),
+      );
 
       final totalAmount = _round(expensesAmount + carryOverAmount);
       final remainingAmount = _round(totalAmount - totalPaid);
@@ -178,24 +205,28 @@ class CreditCardBillService {
       //   บวก = ยังค้างชำระ
       //   ลบ  = ชำระเกินใน grace period (จะยกไปรอบหน้า)
       //   ศูนย์ = ชำระครบ หรือชำระเกินหลัง grace period (ไม่ยกยอด)
-      final displayRemaining = remainingAmount < 0 ? -overpaidAmount : remainingAmount;
+      final displayRemaining = remainingAmount < 0
+          ? -overpaidAmount
+          : remainingAmount;
 
-      bills.add(CreditCardBill(
-        statementDate: statementDate,
-        startDate: startDate,
-        dueDate: dueDate,
-        expensesAmount: expensesAmount,
-        carriedOverAmount: carryOverAmount,
-        totalAmount: totalAmount,
-        paidAmount: totalPaid,
-        remainingAmount: displayRemaining,
-        overpaidAmount: overpaidAmount,
-        expenses: expenses,
-        payments: payments,
-        isFullyPaid: displayRemaining <= 0,
-        isOverpaid: displayRemaining < 0,
-        hasPartialPaid: totalPaid > 0 && displayRemaining > 0,
-      ));
+      bills.add(
+        CreditCardBill(
+          statementDate: statementDate,
+          startDate: startDate,
+          dueDate: dueDate,
+          expensesAmount: expensesAmount,
+          carriedOverAmount: carryOverAmount,
+          totalAmount: totalAmount,
+          paidAmount: totalPaid,
+          remainingAmount: displayRemaining,
+          overpaidAmount: overpaidAmount,
+          expenses: expenses,
+          payments: payments,
+          isFullyPaid: displayRemaining <= 0,
+          isOverpaid: displayRemaining < 0,
+          hasPartialPaid: totalPaid > 0 && displayRemaining > 0,
+        ),
+      );
 
       // ยกยอดไปรอบถัดไป
       if (displayRemaining > 0) {
@@ -210,18 +241,26 @@ class CreditCardBillService {
     // คำนวณรอบปัจจุบัน (open cycle ที่ยังไม่ถึงวันสรุปยอด)
     final DateTime nextStatementDate;
     if (statementDates.isNotEmpty) {
-      nextStatementDate = _getNextStatementDate(statementDates.last, statementDay);
+      nextStatementDate = _getNextStatementDate(
+        statementDates.last,
+        statementDay,
+      );
     } else {
       // ยังไม่มีรอบปิดเลย — หาวันสรุปยอดแรกที่ >= account.startDate
-      var candidate = _getStatementDateForMonth(statementDay, account.startDate.year, account.startDate.month);
+      var candidate = _getStatementDateForMonth(
+        statementDay,
+        account.startDate.year,
+        account.startDate.month,
+      );
       if (candidate.isBefore(_dayOf(account.startDate))) {
         candidate = _getNextStatementDate(candidate, statementDay);
       }
       nextStatementDate = candidate;
     }
 
-    // nextStatementDate ต้องอยู่ในอนาคต (ถ้าไม่ใช่แสดงว่า generate loop ครอบคลุมแล้ว)
-    if (nextStatementDate.isAfter(_dayOf(now))) {
+    // วันตัดรอบเองยังถือเป็นรอบปัจจุบันอยู่ จึงรองรับทั้งกรณีวันนี้ยังไม่ถึง
+    // และกรณี statementDate ตรงกับวันนี้พอดี
+    if (!nextStatementDate.isBefore(effectiveNow)) {
       final openStartDate = statementDates.isNotEmpty
           ? statementDates.last.add(const Duration(days: 1))
           : account.startDate;
@@ -229,7 +268,7 @@ class CreditCardBillService {
       final openPaymentStartDay = statementDates.isNotEmpty
           ? _dayOf(statementDates.last).add(const Duration(days: 16))
           : _dayOf(account.startDate);
-      final openEndDay = _dayOf(nextStatementDate);
+      final openEndDay = effectiveNow;
 
       final openExpenses = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
@@ -241,41 +280,51 @@ class CreditCardBillService {
             !d.isAfter(openEndDay);
       }).toList();
 
-      final openExpensesAmount = openExpenses.fold<double>(0, (s, t) => s + t.amount);
+      final openExpensesAmount = openExpenses.fold<double>(
+        0,
+        (s, t) => s + t.amount,
+      );
 
       final openPayments = cardTransactions.where((t) {
         final d = _dayOf(t.dateTime);
-        final isTransferPayment = (t.type == TransactionType.transfer ||
+        final isTransferPayment =
+            (t.type == TransactionType.transfer ||
                 t.type == TransactionType.debtRepay) &&
             t.toAccountId == account.id;
-        final isIncomePayment = t.type == TransactionType.income &&
-            t.accountId == account.id;
+        final isIncomePayment =
+            t.type == TransactionType.income && t.accountId == account.id;
         return (isTransferPayment || isIncomePayment) &&
             !d.isBefore(openPaymentStartDay) &&
             !d.isAfter(openEndDay);
       }).toList();
 
-      final openTotalPaid = _round(openPayments.fold<double>(0, (s, t) => s + t.amount));
+      final openTotalPaid = _round(
+        openPayments.fold<double>(0, (s, t) => s + t.amount),
+      );
       final openTotalAmount = _round(openExpensesAmount + carryOverAmount);
-      final openRemaining = _round((openTotalAmount - openTotalPaid).clamp(0.0, double.infinity));
+      final openRemaining = _round(
+        (openTotalAmount - openTotalPaid).clamp(0.0, double.infinity),
+      );
 
-      bills.add(CreditCardBill(
-        statementDate: nextStatementDate,
-        startDate: openStartDate,
-        dueDate: nextStatementDate.add(const Duration(days: 15)),
-        expensesAmount: openExpensesAmount,
-        carriedOverAmount: carryOverAmount,
-        totalAmount: openTotalAmount,
-        paidAmount: openTotalPaid,
-        remainingAmount: openRemaining,
-        overpaidAmount: 0,
-        expenses: openExpenses,
-        payments: openPayments,
-        isFullyPaid: openTotalPaid >= openTotalAmount && openTotalAmount > 0,
-        isOverpaid: false,
-        hasPartialPaid: openTotalPaid > 0 && openRemaining > 0,
-        isOpen: true,
-      ));
+      bills.add(
+        CreditCardBill(
+          statementDate: nextStatementDate,
+          startDate: openStartDate,
+          dueDate: nextStatementDate.add(const Duration(days: 15)),
+          expensesAmount: openExpensesAmount,
+          carriedOverAmount: carryOverAmount,
+          totalAmount: openTotalAmount,
+          paidAmount: openTotalPaid,
+          remainingAmount: openRemaining,
+          overpaidAmount: 0,
+          expenses: openExpenses,
+          payments: openPayments,
+          isFullyPaid: openTotalPaid >= openTotalAmount && openTotalAmount > 0,
+          isOverpaid: false,
+          hasPartialPaid: openTotalPaid > 0 && openRemaining > 0,
+          isOpen: true,
+        ),
+      );
     }
 
     // เรียงจากใหม่ไปเก่าสำหรับแสดงผล
@@ -292,7 +341,11 @@ class CreditCardBillService {
 
     // หาวันสรุปยอดแรกที่อยู่ในหรือหลังวันสร้างบัญชี (เทียบระดับวัน)
     final fromDay = _dayOf(from);
-    var current = _getStatementDateForMonth(statementDay, from.year, from.month);
+    var current = _getStatementDateForMonth(
+      statementDay,
+      from.year,
+      from.month,
+    );
     if (current.isBefore(fromDay)) {
       current = _getNextStatementDate(current, statementDay);
     }
@@ -305,7 +358,11 @@ class CreditCardBillService {
     return dates; // เรียงจากเก่าไปใหม่แล้ว
   }
 
-  static DateTime _getStatementDateForMonth(int statementDay, int year, int month) {
+  static DateTime _getStatementDateForMonth(
+    int statementDay,
+    int year,
+    int month,
+  ) {
     final lastDayOfMonth = DateTime(year, month + 1, 0).day;
     final day = statementDay > lastDayOfMonth ? lastDayOfMonth : statementDay;
     return DateTime(year, month, day);
@@ -330,8 +387,13 @@ class CreditCardBillService {
   static CreditCardBill? getCurrentBill({
     required Account account,
     required List<AppTransaction> transactions,
+    DateTime? now,
   }) {
-    final bills = calculateBills(account: account, transactions: transactions);
+    final bills = calculateBills(
+      account: account,
+      transactions: transactions,
+      now: now,
+    );
     return bills.isNotEmpty ? bills.first : null;
   }
 }
