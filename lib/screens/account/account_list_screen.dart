@@ -79,6 +79,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
             'เงินสด / เงินฝาก',
             'บัตรเครดิต',
             'หนี้สิน',
+            'ทรัพย์สิน',
           ];
 
           // Group accounts by display group
@@ -761,7 +762,13 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     final isAllSelected = _selected.containsAll(allIds);
 
     // Group accounts
-    const groupOrder = ['ลงทุน', 'เงินสด / เงินฝาก', 'บัตรเครดิต', 'หนี้สิน'];
+    const groupOrder = [
+      'ลงทุน',
+      'เงินสด / เงินฝาก',
+      'บัตรเครดิต',
+      'หนี้สิน',
+      'ทรัพย์สิน',
+    ];
     final Map<String, List<Account>> grouped = {};
     for (final a in widget.accounts) {
       grouped.putIfAbsent(accountTypeDisplayGroup(a.type), () => []).add(a);

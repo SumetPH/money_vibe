@@ -438,7 +438,9 @@ class _TransactionItem extends StatelessWidget {
         : null;
 
     final typeColor = _typeColor(tx.type, isDarkMode);
-    final displayAmount = tx.type.isExpenseLike ? -tx.amount : tx.amount;
+    final displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
+        ? -tx.amount
+        : tx.amount;
 
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
@@ -572,6 +574,10 @@ class _TransactionItem extends StatelessWidget {
           return AppColors.darkDebtRepay;
         case TransactionType.debtTransfer:
           return AppColors.darkDebtTransfer;
+        case TransactionType.increaseBalance:
+          return AppColors.darkIncome;
+        case TransactionType.decreaseBalance:
+          return AppColors.darkExpense;
       }
     }
     switch (type) {
@@ -585,6 +591,10 @@ class _TransactionItem extends StatelessWidget {
         return AppColors.debtRepay;
       case TransactionType.debtTransfer:
         return AppColors.debtTransfer;
+      case TransactionType.increaseBalance:
+        return AppColors.income;
+      case TransactionType.decreaseBalance:
+        return AppColors.expense;
     }
   }
 
@@ -598,6 +608,14 @@ class _TransactionItem extends StatelessWidget {
       final to = toAccount?.name ?? '-';
       return '$from → $to';
     }
+
+    if (tx.type.isIncreaseBalance || tx.type.isDecreaseBalance) {
+      final prefix = tx.type == TransactionType.increaseBalance
+          ? 'ปรับเพิ่ม'
+          : 'ปรับลด';
+      return '$prefix ${account?.name ?? '-'}';
+    }
+
     return account?.name ?? '-';
   }
 

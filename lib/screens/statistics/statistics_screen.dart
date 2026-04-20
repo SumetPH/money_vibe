@@ -1625,9 +1625,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             tx.toAccountId != null &&
             portfolioAccountIds.contains(tx.toAccountId);
 
-        if (tx.type == TransactionType.income) {
+        if (tx.type == TransactionType.income ||
+            tx.type == TransactionType.increaseBalance) {
           if (fromIncluded) runningTotal += tx.amount;
-        } else if (tx.type == TransactionType.expense) {
+        } else if (tx.type == TransactionType.expense ||
+            tx.type == TransactionType.decreaseBalance) {
           if (fromIncluded) runningTotal -= tx.amount;
         } else if (tx.type.usesDestinationAccount) {
           if (!fromPortfolio && toPortfolio && fromIncluded) {

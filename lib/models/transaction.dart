@@ -1,10 +1,11 @@
-
 enum TransactionType {
   expense('รายจ่าย'),
   income('รายรับ'),
   transfer('โอน'),
   debtRepay('ชำระหนี้สิน'),
-  debtTransfer('โอนหนี้');
+  debtTransfer('โอนหนี้'),
+  decreaseBalance('ปรับลดยอดบัญชี'),
+  increaseBalance('ปรับเพิ่มยอดบัญชี');
 
   final String label;
   const TransactionType(this.label);
@@ -30,6 +31,9 @@ enum TransactionType {
       this == TransactionType.expense ||
       this == TransactionType.debtRepay ||
       this == TransactionType.debtTransfer;
+
+  bool get isDecreaseBalance => this == TransactionType.decreaseBalance;
+  bool get isIncreaseBalance => this == TransactionType.increaseBalance;
 }
 
 TransactionType parseTransactionType(

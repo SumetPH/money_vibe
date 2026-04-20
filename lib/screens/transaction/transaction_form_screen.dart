@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
@@ -39,6 +40,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   String? _selectedDebtAccountId;
   late DateTime _selectedDateTime;
 
+  double _accountBalance = 0.0;
+
   bool get _isEditing => widget.transaction != null;
 
   @override
@@ -57,6 +60,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ? formatAmount(tx.amount)
         : '';
     _noteController.text = tx?.note ?? '';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateAccountBalance();
+    });
   }
 
   @override
@@ -64,6 +71,31 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _calculateAccountBalance() {
+    if (_selectedAccountId != null &&
+        (_type == TransactionType.increaseBalance ||
+            _type == TransactionType.decreaseBalance)) {
+      final amount =
+          double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
+      final currentBalance = context.read<AccountProvider>().getBalance(
+        _selectedAccountId!,
+        context.read<TransactionProvider>().transactions,
+      );
+
+      final originalAmount = _isEditing ? widget.transaction!.amount : 0;
+
+      if (_type == TransactionType.increaseBalance) {
+        setState(() {
+          _accountBalance = (currentBalance - originalAmount) + amount;
+        });
+      } else if (_type == TransactionType.decreaseBalance) {
+        setState(() {
+          _accountBalance = (currentBalance + originalAmount) - amount;
+        });
+      }
+    }
   }
 
   /// Format amount with commas while typing
@@ -238,6 +270,16 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                       a.type != AccountType.portfolio,
                 )
                 .toList(),
+          TransactionType.increaseBalance || TransactionType.decreaseBalance =>
+            allVisibleAccounts
+                .where(
+                  (a) =>
+                      a.type == AccountType.cash ||
+                      a.type == AccountType.bankAccount ||
+                      a.type == AccountType.asset ||
+                      a.type == AccountType.debt,
+                )
+                .toList(),
           _ => allVisibleAccounts,
         };
         final selectedAccount = _selectedAccountId != null
@@ -274,6 +316,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 if (!t.requiresDebtAccount) {
                   _selectedDebtAccountId = null;
                 }
+
+                _calculateAccountBalance();
               }),
             ),
             actions: [
@@ -295,6 +339,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               selectedDebtAccount: selectedDebtAccount,
               categories: categories,
               selectedCategory: selectedCategory,
+              type: _type,
             ),
           ),
         );
@@ -310,6 +355,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     required Account? selectedDebtAccount,
     required List<Category> categories,
     required Category? selectedCategory,
+    required TransactionType? type,
   }) {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
     final bool isDebtTransfer = _type == TransactionType.debtTransfer;
@@ -376,6 +422,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 autofocus: !_isEditing,
                 onChanged: (value) {
                   _formatAmountInput(value);
+                  _calculateAccountBalance();
                   if (usesDebtAccount) setState(() {});
                 },
               ),
@@ -383,6 +430,39 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           ],
         ),
       ),
+
+      if (type == TransactionType.decreaseBalance ||
+          type == TransactionType.increaseBalance)
+        const SizedBox(height: 8),
+
+      if (type == TransactionType.decreaseBalance ||
+          type == TransactionType.increaseBalance)
+        Container(
+          color:
+              theme.cardTheme.color ??
+              (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Text(
+                'ยอดคงเหลือ',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  '${NumberFormat('#,##0.00').format(_accountBalance)} บาท',
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        ),
 
       const SizedBox(height: 8),
 
@@ -476,7 +556,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
 
     // Display order - use actual groups from groupedAccounts
-    const groupOrder = ['เงินสด / เงินฝาก', 'บัตรเครดิต', 'หนี้สิน', 'ลงทุน'];
+    const groupOrder = [
+      'เงินสด / เงินฝาก',
+      'บัตรเครดิต',
+      'หนี้สิน',
+      'ทรัพย์สิน',
+      'ลงทุน',
+    ];
     final orderedGroups = groupOrder
         .where(groupedAccounts.containsKey)
         .toList();
@@ -589,6 +675,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                                     _selectedAccountId = acc.id;
                                   }
                                 });
+                                _calculateAccountBalance();
                                 Navigator.pop(context);
                               },
                               child: Container(
@@ -988,6 +1075,10 @@ class _TypeSelector extends StatelessWidget {
         return (Icons.payment, Colors.orange);
       case TransactionType.debtTransfer:
         return (Icons.account_tree, AppColors.debtTransfer);
+      case TransactionType.increaseBalance:
+        return (Icons.add, AppColors.income);
+      case TransactionType.decreaseBalance:
+        return (Icons.remove, AppColors.expense);
     }
   }
 
@@ -996,14 +1087,18 @@ class _TypeSelector extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       clipBehavior: Clip.antiAlias,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (_, scrollController) => Column(
           children: [
             const SizedBox(height: 12),
             Container(
@@ -1021,20 +1116,28 @@ class _TypeSelector extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Divider(height: 1),
-            ...TransactionType.values.map((type) {
-              final (icon, color) = _getTypeStyle(type);
-              return ListTile(
-                leading: Icon(icon, color: color),
-                title: Text(type.label),
-                trailing: selectedType == type
-                    ? Icon(Icons.check, color: colorScheme.primary)
-                    : null,
-                onTap: () {
-                  onChanged(type);
-                  Navigator.pop(context);
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: EdgeInsets.zero,
+                itemCount: TransactionType.values.length,
+                itemBuilder: (context, index) {
+                  final type = TransactionType.values[index];
+                  final (icon, color) = _getTypeStyle(type);
+                  return ListTile(
+                    leading: Icon(icon, color: color),
+                    title: Text(type.label),
+                    trailing: selectedType == type
+                        ? Icon(Icons.check, color: colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      onChanged(type);
+                      Navigator.pop(context);
+                    },
+                  );
                 },
-              );
-            }),
+              ),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -1430,105 +1533,109 @@ class _AccountCategorySelector extends StatelessWidget {
             ),
           ),
           // Middle divider
-          Container(
-            width: 1,
-            height: 60,
-            color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-          ),
+          if (type != TransactionType.increaseBalance &&
+              type != TransactionType.decreaseBalance)
+            Container(
+              width: 1,
+              height: 60,
+              color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+            ),
           // Category / To-Account selector
-          Expanded(
-            child: InkWell(
-              onTap: type.isTransferLike
-                  ? onToAccountTap
-                  : (type.supportsCategory ? onCategoryTap : null),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Row(
-                  children: [
-                    if (type.isTransferLike && selectedToAccount != null) ...[
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: selectedToAccount!.color.withValues(
-                            alpha: 0.15,
+          if (type != TransactionType.increaseBalance &&
+              type != TransactionType.decreaseBalance)
+            Expanded(
+              child: InkWell(
+                onTap: type.isTransferLike
+                    ? onToAccountTap
+                    : (type.supportsCategory ? onCategoryTap : null),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Row(
+                    children: [
+                      if (type.isTransferLike && selectedToAccount != null) ...[
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: selectedToAccount!.color.withValues(
+                              alpha: 0.15,
+                            ),
+                            shape: BoxShape.circle,
                           ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          selectedToAccount!.icon,
-                          color: selectedToAccount!.color,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          selectedToAccount!.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary,
+                          child: Icon(
+                            selectedToAccount!.icon,
+                            color: selectedToAccount!.color,
+                            size: 16,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ] else if (type.supportsCategory &&
-                        selectedCategory != null) ...[
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: selectedCategory!.color.withValues(
-                            alpha: 0.15,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          selectedCategory!.icon,
-                          color: selectedCategory!.color,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          selectedCategory!.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ] else
-                      SizedBox(
-                        height: 36,
-                        child: Center(
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: Text(
-                            type.isTransferLike
-                                ? 'บัญชีปลายทาง'
-                                : 'เลือกหมวดหมู่',
+                            selectedToAccount!.name,
                             style: TextStyle(
                               fontSize: 14,
                               color: isDarkMode
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.textSecondary,
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ] else if (type.supportsCategory &&
+                          selectedCategory != null) ...[
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: selectedCategory!.color.withValues(
+                              alpha: 0.15,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            selectedCategory!.icon,
+                            color: selectedCategory!.color,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            selectedCategory!.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ] else
+                        SizedBox(
+                          height: 36,
+                          child: Center(
+                            child: Text(
+                              type.isTransferLike
+                                  ? 'บัญชีปลายทาง'
+                                  : 'เลือกหมวดหมู่',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDarkMode
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

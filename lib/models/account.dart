@@ -5,6 +5,7 @@ enum AccountType {
   bankAccount('บัญชีธนาคาร'),
   creditCard('บัตรเครดิต'),
   debt('หนี้สิน'),
+  asset('ทรัพย์สิน'),
   investment('ลงทุน'),
   portfolio('พอร์ตหุ้น US');
 
@@ -24,6 +25,8 @@ String accountTypeDisplayGroup(AccountType type) {
     case AccountType.investment:
     case AccountType.portfolio:
       return 'ลงทุน';
+    case AccountType.asset:
+      return 'ทรัพย์สิน';
   }
 }
 
@@ -40,6 +43,8 @@ int accountTypeOrder(AccountType type) {
     case AccountType.investment:
     case AccountType.portfolio:
       return 4;
+    case AccountType.asset:
+      return 5;
   }
 }
 
