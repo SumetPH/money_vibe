@@ -11,7 +11,6 @@ import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 
 import '../../services/database_manager.dart';
-import '../../services/app_refresh_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
 import 'finnhubapi_key_settings_screen.dart';
@@ -211,33 +210,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       MaterialPageRoute(
                         builder: (context) => const LLMApiKeySettingsScreen(),
                       ),
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                // App Section
-                _buildSectionHeader('แอป', textColor),
-                FutureBuilder<String>(
-                  future: AppRefreshReminderService.instance
-                      .getReminderStatusLabel(),
-                  builder: (context, snapshot) {
-                    final statusLabel = snapshot.data ?? 'กำลังโหลด...';
-
-                    return ListTile(
-                      leading: Icon(
-                        Icons.notifications_active_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text(
-                        'เตือน build ใหม่',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        statusLabel,
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      // isThreeLine: true,
                     );
                   },
                 ),

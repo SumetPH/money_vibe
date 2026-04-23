@@ -21,10 +21,8 @@ import 'screens/recurring/recurring_list_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/statistics/statistics_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
-import 'services/app_refresh_reminder_service.dart';
 import 'services/database_manager.dart';
 import 'services/debug_bootstrap_service.dart';
-import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -64,7 +62,7 @@ void main() async {
   final llmProvider = LlmProvider();
 
   try {
-    await RecurringNotificationService.instance.init();
+    // await RecurringNotificationService.instance.init();
 
     await Future.wait([
       _initProvider('Settings', settingsProvider.loadSettings),
@@ -106,10 +104,6 @@ void main() async {
       llmProvider: llmProvider,
     ),
   );
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    AppRefreshReminderService.instance.ensureScheduled();
-  });
 
   // Remove native splash screen after app is built
   SplashService.remove();
