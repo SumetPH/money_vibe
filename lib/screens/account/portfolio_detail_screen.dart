@@ -396,7 +396,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'ยอดเงินสด (USD)',
-                    suffixText: 'บาท',
+                    suffixText: 'USD',
                     labelStyle: TextStyle(
                       color: isDarkMode
                           ? AppColors.darkTextSecondary
@@ -950,7 +950,7 @@ class _CashRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'เงินสด (USD)',
+                'เงินสด',
                 style: TextStyle(fontSize: 16, color: textPrimaryColor),
               ),
             ),
@@ -958,15 +958,15 @@ class _CashRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${formatAmount(cashBalance)} USD',
+                  '${formatAmount(cashBalanceThb)} บาท',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.getAmountColor(cashBalance, isDarkMode),
+                    color: AppColors.getAmountColor(cashBalanceThb, isDarkMode),
                   ),
                 ),
                 Text(
-                  '${formatAmount(cashBalanceThb)} บาท',
+                  '${formatAmount(cashBalance)} USD',
                   style: TextStyle(fontSize: 12, color: textSecondaryColor),
                 ),
               ],
