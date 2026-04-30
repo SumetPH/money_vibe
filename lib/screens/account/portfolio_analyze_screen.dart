@@ -78,7 +78,16 @@ class _PortfolioAnalyzeScreenState extends State<PortfolioAnalyzeScreen> {
     _holdingsData = holdings
         .map(
           (h) =>
-              '${h.ticker}: ${h.shares} หุ้น  \nต้นทุน ${h.costBasisUsd.toStringAsFixed(2)}  \nราคาปัจจุบัน ${h.priceUsd.toStringAsFixed(2)}  \n',
+              """
+                - ${h.ticker}
+                จำนวนหุ้น: ${h.shares}
+                ราคาปัจจุบัน: ${h.priceUsd.toStringAsFixed(2)}
+                ต้นทุนต่อหุ้น: ${h.costBasisUsd.toStringAsFixed(2)}
+                ต้นทุนรวม: ${h.totalCostUsd.toStringAsFixed(2)}
+                มูลค่ารวม: ${h.valueUsd.toStringAsFixed(2)}
+                กำไร/ขาดทุน: ${h.unrealizedPnlUsd.toStringAsFixed(2)} (${h.unrealizedPnlPct.toStringAsFixed(2)}%)
+            
+              """,
         )
         .join('\n');
   }
