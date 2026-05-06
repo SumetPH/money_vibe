@@ -23,6 +23,7 @@ import 'screens/statistics/statistics_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'services/database_manager.dart';
 import 'services/debug_bootstrap_service.dart';
+import 'services/recurring_notification_service.dart';
 import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -62,7 +63,7 @@ void main() async {
   final llmProvider = LlmProvider();
 
   try {
-    // await RecurringNotificationService.instance.init();
+    await RecurringNotificationService.instance.init();
 
     await Future.wait([
       _initProvider('Settings', settingsProvider.loadSettings),

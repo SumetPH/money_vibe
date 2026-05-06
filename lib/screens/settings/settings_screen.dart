@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:money_vibe/screens/settings/llm_api_key_settings_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/account_provider.dart';
@@ -15,6 +16,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
+import 'llm_api_key_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,6 +26,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late final Future<PackageInfo> _packageInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
@@ -245,6 +255,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+                Divider(color: dividerColor),
+
+                // About Section
+                _buildSectionHeader('เกี่ยวกับ', textColor),
+                FutureBuilder<PackageInfo>(
+                  future: _packageInfoFuture,
+                  builder: (context, snapshot) {
+                    final versionText = snapshot.hasData
+                        ? _formatVersion(snapshot.data!)
+                        : 'กำลังโหลด...';
+
+                    return ListTile(
+                      leading: Icon(
+                        Icons.info_outline,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'เวอร์ชัน',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        versionText,
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           );
@@ -319,6 +356,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('[SettingsScreen] Error clearing providers: $e');
     }
+  }
+
+  String _formatVersion(PackageInfo packageInfo) {
+    final buildNumber = packageInfo.buildNumber.trim();
+    if (buildNumber.isEmpty) {
+      return packageInfo.version;
+    }
+
+    return '${packageInfo.version} ($buildNumber)';
   }
 
   Widget _buildSectionHeader(String title, Color textColor) {
