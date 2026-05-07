@@ -249,4 +249,48 @@ showModalBottomSheet(
 
 ---
 
-*Last updated: 2026-03-02*
+---
+
+## 🗄️ Supabase Database & Migrations Workflow
+
+เพื่อให้การแก้ไข Database Schema สามารถทำงานร่วมกับการ Deploy หรือการเปลี่ยนโปรเจกต์ใหม่ได้ง่าย **ห้ามสร้างไฟล์ `.sql` แยกเด็ดขาด** ให้ทำตาม Workflow ของ Migration ดังนี้:
+
+### 1. การสร้าง Migration ใหม่
+เมื่อต้องการแก้ไขตาราง, เพิ่มคอลัมน์, หรือสร้าง Storage ให้สร้างไฟล์ Migration เสมอ:
+```bash
+npx supabase migration new <ชื่อ_migration>
+# ตัวอย่าง: npx supabase migration new add_user_profile
+```
+คำสั่งนี้จะสร้างไฟล์ในโฟลเดอร์ `supabase/migrations/` (เช่น `20260507123456_add_user_profile.sql`)
+
+### 2. การเขียนโค้ด SQL
+นำคำสั่ง SQL ที่ต้องการ (เช่น `ALTER TABLE`, `CREATE POLICY`) ไปใส่ในไฟล์ Migration ที่เพิ่งสร้างขึ้น
+
+### 3. การอัปเดต Database โลคอล (ถ้าจำลอง Local Supabase)
+```bash
+npx supabase start
+npx supabase db reset  # รีเซ็ตและรัน migration ทั้งหมดใหม่
+```
+
+### 4. การ Deploy ขึ้นโปรเจกต์จริง (Production / New Project)
+เมื่อต้องการอัปเดต Database ของจริง หรือเมื่อย้ายโปรเจกต์:
+```bash
+npx supabase link --project-ref <project-id>
+npx supabase db push
+```
+คำสั่ง `db push` จะรันไฟล์ Migration เฉพาะที่ยังไม่ได้รัน ตามลำดับเวลาให้โดยอัตโนมัติ
+
+### 5. การ Deploy Edge Functions
+Edge Functions จะแยกส่วนกับ Database (ไม่ไปพร้อมกับ `db push`) หากมีการแก้ไขหรือย้ายโปรเจกต์ ต้องทำการ Deploy ใหม่เสมอ:
+```bash
+# Deploy ฟังก์ชันทั้งหมด
+npx supabase functions deploy
+
+# หรือ Deploy แค่ฟังก์ชันเดียว (ตัวอย่าง)
+npx supabase functions deploy mirror-stock-logo
+```
+*(ข้อควรระวัง: หาก Edge Function มีการเรียกใช้ Environment Variables (เช่น API Key) อย่าลืมไปตั้งค่า Secrets ใน Dashboard ของโปรเจกต์ใหม่ด้วยคำสั่ง `npx supabase secrets set KEY=VALUE`)*
+
+---
+
+*Last updated: 2026-05-07*

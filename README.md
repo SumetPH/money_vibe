@@ -133,9 +133,9 @@ lib/
 └── widgets/
 
 supabase/
-├── schema.sql
-├── *.sql
-└── functions/
+├── functions/
+└── migrations/
+
 
 scripts/
 ├── build_android.sh

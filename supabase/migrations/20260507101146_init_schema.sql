@@ -1,3 +1,6 @@
+-- ============================================
+-- MIGRATION SCRIPT FROM: schema.sql
+-- ============================================
 -- Supabase Schema for Money Flutter App
 -- สร้าง tables สำหรับเก็บข้อมูลการเงิน (แยกตาม user)
 
@@ -382,3 +385,211 @@ BEGIN
         (SELECT count(*) FROM public.budgets WHERE user_id = auth.uid());
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: update_types.sql
+-- ============================================
+-- Migration: Update check constraints for new account and transaction types
+-- Run this in your Supabase SQL Editor
+
+-- 1. Update accounts table check constraint (added 'asset')
+ALTER TABLE public.accounts DROP CONSTRAINT IF EXISTS accounts_type_check;
+ALTER TABLE public.accounts ADD CONSTRAINT accounts_type_check 
+CHECK (type IN ('cash', 'bankAccount', 'creditCard', 'debt', 'investment', 'portfolio', 'asset'));
+
+-- 2. Update transactions table check constraint (added 'debtTransfer')
+ALTER TABLE public.transactions DROP CONSTRAINT IF EXISTS transactions_type_check;
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_type_check 
+CHECK (type IN ('expense', 'income', 'transfer', 'debtRepay', 'debtTransfer', 'increaseBalance', 'decreaseBalance'));
+
+-- 3. Update recurring_transactions table check constraint (added 'debtTransfer')
+ALTER TABLE public.recurring_transactions DROP CONSTRAINT IF EXISTS recurring_transactions_transaction_type_check;
+ALTER TABLE public.recurring_transactions ADD CONSTRAINT recurring_transactions_transaction_type_check 
+CHECK (transaction_type IN ('expense', 'income', 'transfer', 'debtRepay', 'debtTransfer', 'increaseBalance', 'decreaseBalance'));
+
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: fix_amount_precision.sql
+-- ============================================
+-- แก้ไขปัญหา precision ของ amount columns
+-- เปลี่ยนจาก real เป็น numeric(15,2) เพื่อเก็บทศนิยมครบถ้วน
+
+-- 1. Transactions table
+ALTER TABLE transactions 
+  ALTER COLUMN amount TYPE numeric(15,2);
+
+-- 2. Accounts table  
+ALTER TABLE accounts
+  ALTER COLUMN initial_balance TYPE numeric(15,2),
+  ALTER COLUMN cash_balance TYPE numeric(15,2),
+  ALTER COLUMN exchange_rate TYPE numeric(15,4); -- อาจต้องการทศนิยม 4 ตำแหน่ง
+
+-- 3. Budgets table
+ALTER TABLE budgets
+  ALTER COLUMN amount TYPE numeric(15,2);
+
+-- 4. Portfolio holdings
+ALTER TABLE portfolio_holdings
+  ALTER COLUMN shares TYPE numeric(15,4),
+  ALTER COLUMN price_usd TYPE numeric(15,4),
+  ALTER COLUMN cost_basis_usd TYPE numeric(15,4);
+
+-- 5. Recurring transactions
+ALTER TABLE recurring_transactions
+  ALTER COLUMN amount TYPE numeric(15,2);
+
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: add_account_icon_url.sql
+-- ============================================
+-- ============================================
+-- Migration: Add icon_url column to accounts table
+-- ============================================
+
+ALTER TABLE public.accounts
+ADD COLUMN IF NOT EXISTS icon_url text not null default '';
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: add_budget_group_name.sql
+-- ============================================
+-- Phase 1: Add group_name and budget_type columns to budgets table
+-- group_name: allows budgets to be visually grouped (e.g. "ใช้จ่าย", "หนี้สิน", "ออม / ลงทุน")
+-- budget_type: "expense" (default) tracks via categories | "savings" shows as plan only
+
+ALTER TABLE budgets ADD COLUMN IF NOT EXISTS group_name TEXT;
+
+ALTER TABLE budgets
+ADD COLUMN IF NOT EXISTS budget_type TEXT NOT NULL DEFAULT 'expense';
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: add_recurring_notification_fields.sql
+-- ============================================
+ALTER TABLE public.recurring_transactions
+ADD COLUMN IF NOT EXISTS notification_enabled boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.recurring_transactions
+ADD COLUMN IF NOT EXISTS notification_hour integer NOT NULL DEFAULT 9;
+
+ALTER TABLE public.recurring_transactions
+ADD COLUMN IF NOT EXISTS notification_minute integer NOT NULL DEFAULT 0;
+
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: add_logo_url_to_portfolio_holdings.sql
+-- ============================================
+ALTER TABLE public.portfolio_holdings
+ADD COLUMN IF NOT EXISTS logo_url text NOT NULL DEFAULT '';
+
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: create_account_icons_bucket.sql
+-- ============================================
+-- ============================================
+-- Create account-icons bucket for user-uploaded account icons
+-- ============================================
+
+-- Insert bucket into storage.buckets
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'account-icons',
+  'account-icons',
+  true,
+  2097152, -- 2MB limit
+  ARRAY['image/png', 'image/jpeg', 'image/webp']
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- RLS Policies for account-icons bucket
+-- ============================================
+
+-- Policy: Allow authenticated users to view any account icon (public)
+CREATE POLICY "Anyone can view account icons" ON storage.objects FOR
+SELECT USING (bucket_id = 'account-icons');
+
+-- Policy: Allow users to upload their own account icons
+CREATE POLICY "Users can upload their own account icons"
+ON storage.objects
+FOR INSERT
+WITH CHECK (
+  bucket_id = 'account-icons'
+  AND auth.role() = 'authenticated'
+  -- File path format: {userId}/{accountId}_{timestamp}.{ext}
+  AND storage."filename"(name) LIKE '%.%'
+);
+
+-- Policy: Allow users to update their own account icons
+CREATE POLICY "Users can update their own account icons"
+ON storage.objects
+FOR UPDATE
+USING (
+  bucket_id = 'account-icons'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+)
+WITH CHECK (
+  bucket_id = 'account-icons'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Policy: Allow users to delete their own account icons
+CREATE POLICY "Users can delete their own account icons"
+ON storage.objects
+FOR DELETE
+USING (
+  bucket_id = 'account-icons'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: create_stock_logos_bucket.sql
+-- ============================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'stock-logos',
+  'stock-logos',
+  true,
+  1048576,
+  array['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+
+-- ============================================
+-- MIGRATION SCRIPT FROM: add_stock_logo_storage_policies.sql
+-- ============================================
+create policy "Users can upload their own stock logos"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'stock-logos' and
+  (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+create policy "Users can update their own stock logos"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'stock-logos' and
+  (storage.foldername(name))[1] = (select auth.uid()::text)
+)
+with check (
+  bucket_id = 'stock-logos' and
+  (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+create policy "Users can delete their own stock logos"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'stock-logos' and
+  (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+
