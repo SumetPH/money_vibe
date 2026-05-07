@@ -59,10 +59,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final sortedDates = grouped.keys.toList()
               ..sort((a, b) => b.compareTo(a));
 
-            final totalIncome = txProvider.getTotalIncome(allTx);
-            final totalExpense = txProvider.getTotalActualExpense(
+            final totalIncome = _calculateTotalIncome(
               allTx,
-              accountProvider.accounts,
+              txProvider,
+              accountProvider,
+            );
+            final totalExpense = _calculateTotalExpense(
+              allTx,
+              txProvider,
+              accountProvider,
             );
             final isFromAccount = widget.accountId != null;
             final isFiltered =
@@ -121,10 +126,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         final date = sortedDates[i];
                         final txs = grouped[date]!
                           ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-                        final dayIncome = txProvider.getTotalIncome(txs);
-                        final dayExpense = txProvider.getTotalActualExpense(
+                        final dayIncome = _calculateTotalIncome(
                           txs,
-                          accountProvider.accounts,
+                          txProvider,
+                          accountProvider,
+                        );
+                        final dayExpense = _calculateTotalExpense(
+                          txs,
+                          txProvider,
+                          accountProvider,
                         );
 
                         return Column(
@@ -261,6 +271,72 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     return transactions;
   }
 
+  double _calculateTotalIncome(
+    List<AppTransaction> txs,
+    TransactionProvider txProvider,
+    AccountProvider accountProvider,
+  ) {
+    if (widget.accountId == null) {
+      return txProvider.getTotalIncome(txs);
+    }
+    double total = 0;
+    for (final tx in txs) {
+      double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
+          ? -tx.amount
+          : tx.amount;
+
+      if ((tx.type == TransactionType.debtRepay ||
+              tx.type == TransactionType.debtTransfer) &&
+          tx.toAccountId == widget.accountId) {
+        displayAmount = tx.amount;
+      } else if (tx.type == TransactionType.transfer) {
+        if (tx.accountId == widget.accountId) {
+          displayAmount = -tx.amount;
+        } else if (tx.toAccountId == widget.accountId) {
+          displayAmount = tx.amount;
+        }
+      }
+
+      if (displayAmount > 0) {
+        total += displayAmount;
+      }
+    }
+    return total;
+  }
+
+  double _calculateTotalExpense(
+    List<AppTransaction> txs,
+    TransactionProvider txProvider,
+    AccountProvider accountProvider,
+  ) {
+    if (widget.accountId == null) {
+      return txProvider.getTotalActualExpense(txs, accountProvider.accounts);
+    }
+    double total = 0;
+    for (final tx in txs) {
+      double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
+          ? -tx.amount
+          : tx.amount;
+
+      if ((tx.type == TransactionType.debtRepay ||
+              tx.type == TransactionType.debtTransfer) &&
+          tx.toAccountId == widget.accountId) {
+        displayAmount = tx.amount;
+      } else if (tx.type == TransactionType.transfer) {
+        if (tx.accountId == widget.accountId) {
+          displayAmount = -tx.amount;
+        } else if (tx.toAccountId == widget.accountId) {
+          displayAmount = tx.amount;
+        }
+      }
+
+      if (displayAmount < 0) {
+        total += displayAmount.abs();
+      }
+    }
+    return total;
+  }
+
   void _showPeriodPicker(bool isDarkMode) {
     final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
     final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
@@ -374,7 +450,7 @@ class _DateHeader extends StatelessWidget {
 
     return Container(
       color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           Expanded(
@@ -399,9 +475,10 @@ class _DateHeader extends StatelessWidget {
                 color: incomeColor,
               ),
             ),
-            const SizedBox(width: 8),
           ],
-          if (expense > 0)
+
+          if (expense > 0) ...[
+            const SizedBox(width: 8),
             Text(
               '-${formatAmount(expense)}',
               style: TextStyle(
@@ -410,6 +487,7 @@ class _DateHeader extends StatelessWidget {
                 color: expenseColor,
               ),
             ),
+          ],
         ],
       ),
     );
