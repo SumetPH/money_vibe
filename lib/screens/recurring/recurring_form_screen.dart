@@ -11,6 +11,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/account_icon_widget.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -690,38 +691,52 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (_, sc) => Column(
           children: [
             _Handle(color: handleColor),
-            ...TransactionType.values.map(
-              (t) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    tileColor: bgColor,
-                    title: Text(t.label, style: TextStyle(color: textColor)),
-                    trailing: _type == t
-                        ? Icon(Icons.check, color: selectedColor)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _type = t;
-                        _categoryId = null;
-                        // Reset debt account when changing type
-                        if (!t.requiresDebtAccount) {
-                          _debtAccountId = null;
-                        }
-                        if (t != TransactionType.transfer) {
-                          _toAccountId = null;
-                        }
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                ],
+            Expanded(
+              child: ListView(
+                controller: sc,
+                children: TransactionType.values
+                    .map(
+                      (t) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            tileColor: bgColor,
+                            title: Text(
+                              t.label,
+                              style: TextStyle(color: textColor),
+                            ),
+                            trailing: _type == t
+                                ? Icon(Icons.check, color: selectedColor)
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _type = t;
+                                _categoryId = null;
+                                // Reset debt account when changing type
+                                if (!t.requiresDebtAccount) {
+                                  _debtAccountId = null;
+                                }
+                                if (t != TransactionType.transfer) {
+                                  _toAccountId = null;
+                                }
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                        ],
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ],
@@ -833,18 +848,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           children: [
                             ListTile(
                               tileColor: bgColor,
-                              leading: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: acc.color.withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  acc.icon,
-                                  color: acc.color,
-                                  size: 18,
-                                ),
+                              leading: AccountIconWidget(
+                                account: acc,
+                                size: 36,
+                                isDarkMode: isDark,
                               ),
                               title: Text(
                                 acc.name,
@@ -976,18 +983,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           children: [
                             ListTile(
                               tileColor: bgColor,
-                              leading: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: acc.color.withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  acc.icon,
-                                  color: acc.color,
-                                  size: 18,
-                                ),
+                              leading: AccountIconWidget(
+                                account: acc,
+                                size: 36,
+                                isDarkMode: isDark,
                               ),
                               title: Text(
                                 acc.name,
@@ -1122,9 +1121,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (_, sc) => Column(
           children: [
             _Handle(color: handleColor),
             Padding(
@@ -1140,6 +1143,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             ),
             Expanded(
               child: GridView.builder(
+                controller: sc,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
@@ -1470,10 +1474,17 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, sc) => Column(
           children: [
+            _Handle(
+              color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
+            ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
@@ -1487,6 +1498,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             ),
             Expanded(
               child: GridView.builder(
+                controller: sc,
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
@@ -1536,10 +1548,17 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (_, sc) => Column(
           children: [
+            _Handle(
+              color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
+            ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
@@ -1553,6 +1572,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             ),
             Expanded(
               child: GridView.builder(
+                controller: sc,
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,

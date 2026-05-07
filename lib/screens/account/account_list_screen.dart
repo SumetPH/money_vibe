@@ -607,18 +607,10 @@ class _AccountItem extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 // Account icon
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: account.color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: AccountIconWidget(
-                    account: account,
-                    size: 20,
-                    isDarkMode: isDarkMode,
-                  ),
+                AccountIconWidget(
+                  account: account,
+                  size: 36,
+                  isDarkMode: isDarkMode,
                 ),
                 const SizedBox(width: 12),
                 // Name and balance

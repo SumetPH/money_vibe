@@ -12,6 +12,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../widgets/account_icon_widget.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -686,20 +687,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: acc.color.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        acc.icon,
-                                        color: acc.color,
-                                        size: 20,
-                                      ),
+                                    AccountIconWidget(
+                                      account: acc,
+                                      size: 36,
+                                      isDarkMode: isDarkMode,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -889,20 +880,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: acc.color.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        acc.icon,
-                                        color: acc.color,
-                                        size: 20,
-                                      ),
+                                    AccountIconWidget(
+                                      account: acc,
+                                      size: 36,
+                                      isDarkMode: isDarkMode,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -1219,20 +1200,10 @@ class _DebtRepayAccountSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   if (selectedDebtAccount != null) ...[
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: selectedDebtAccount!.color.withValues(
-                          alpha: 0.15,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        selectedDebtAccount!.icon,
-                        color: selectedDebtAccount!.color,
-                        size: 13,
-                      ),
+                    AccountIconWidget(
+                      account: selectedDebtAccount!,
+                      size: 22,
+                      isDarkMode: isDarkMode,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -1292,18 +1263,10 @@ class _DebtRepayAccountSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   if (selectedAccount != null) ...[
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: selectedAccount!.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        selectedAccount!.icon,
-                        color: selectedAccount!.color,
-                        size: 13,
-                      ),
+                    AccountIconWidget(
+                      account: selectedAccount!,
+                      size: 22,
+                      isDarkMode: isDarkMode,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -1471,18 +1434,10 @@ class _AccountCategorySelector extends StatelessWidget {
                 child: Row(
                   children: [
                     if (selectedAccount != null) ...[
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: selectedAccount!.color.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          selectedAccount!.icon,
-                          color: selectedAccount!.color,
-                          size: 16,
-                        ),
+                      AccountIconWidget(
+                        account: selectedAccount!,
+                        size: 28,
+                        isDarkMode: isDarkMode,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -1556,20 +1511,10 @@ class _AccountCategorySelector extends StatelessWidget {
                   child: Row(
                     children: [
                       if (type.isTransferLike && selectedToAccount != null) ...[
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: selectedToAccount!.color.withValues(
-                              alpha: 0.15,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            selectedToAccount!.icon,
-                            color: selectedToAccount!.color,
-                            size: 16,
-                          ),
+                        AccountIconWidget(
+                          account: selectedToAccount!,
+                          size: 28,
+                          isDarkMode: isDarkMode,
                         ),
                         const SizedBox(width: 8),
                         Expanded(

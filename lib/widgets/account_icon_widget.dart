@@ -20,19 +20,27 @@ class AccountIconWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (account.iconUrl.isNotEmpty) {
-      return ClipOval(
-        child: Image.network(
-          account.iconUrl,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildIconFallback();
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return _buildLoadingIndicator();
-          },
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: account.color.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: Image.network(
+            account.iconUrl,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildIconFallback();
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return _buildLoadingIndicator();
+            },
+          ),
         ),
       );
     }
@@ -47,7 +55,13 @@ class AccountIconWidget extends StatelessWidget {
         color: account.color.withValues(alpha: 0.15),
         shape: BoxShape.circle,
       ),
-      child: Icon(account.icon, color: account.color, size: size),
+      child: Center(
+        child: Icon(
+          account.icon,
+          color: account.color,
+          size: size * 0.6,
+        ),
+      ),
     );
   }
 
