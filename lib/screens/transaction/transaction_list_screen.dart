@@ -10,6 +10,7 @@ import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/account_icon_widget.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -522,14 +523,12 @@ class _TransactionItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        _buildAccountLabel(account, toAccount, tx),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      _buildAccountWidget(
+                        account,
+                        toAccount,
+                        tx,
+                        textPrimaryColor,
+                        isDarkMode,
                       ),
                       Text(
                         _buildSubLabel(category?.name, note),
@@ -628,25 +627,85 @@ class _TransactionItem extends StatelessWidget {
     }
   }
 
-  String _buildAccountLabel(
+  Widget _buildAccountWidget(
     Account? account,
     Account? toAccount,
     AppTransaction tx,
+    Color textPrimaryColor,
+    bool isDarkMode,
   ) {
+    final style = TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      color: textPrimaryColor,
+    );
+
     if (tx.type.usesDestinationAccount) {
-      final from = account?.name ?? '-';
-      final to = toAccount?.name ?? '-';
-      return '$from → $to';
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (account != null) ...[
+            AccountIconWidget(
+              account: account,
+              size: 16,
+              isDarkMode: isDarkMode,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              account?.name ?? '-',
+              style: style,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text('→', style: style),
+          ),
+          if (toAccount != null) ...[
+            AccountIconWidget(
+              account: toAccount,
+              size: 16,
+              isDarkMode: isDarkMode,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              toAccount?.name ?? '-',
+              style: style,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
     }
 
+    String prefix = '';
     if (tx.type.isIncreaseBalance || tx.type.isDecreaseBalance) {
-      final prefix = tx.type == TransactionType.increaseBalance
-          ? 'ปรับเพิ่ม'
-          : 'ปรับลด';
-      return '$prefix ${account?.name ?? '-'}';
+      prefix = tx.type == TransactionType.increaseBalance
+          ? 'ปรับเพิ่ม '
+          : 'ปรับลด ';
     }
 
-    return account?.name ?? '-';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (prefix.isNotEmpty) Text(prefix, style: style),
+        if (account != null) ...[
+          AccountIconWidget(account: account, size: 16, isDarkMode: isDarkMode),
+          const SizedBox(width: 4),
+        ],
+        Flexible(
+          child: Text(
+            account?.name ?? '-',
+            style: style,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
   String _buildSubLabel(String? categoryName, String? note) {

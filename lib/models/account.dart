@@ -56,6 +56,7 @@ class Account {
   String currency;
   DateTime startDate;
   IconData icon;
+  String iconUrl;
   Color color;
   bool excludeFromNetWorth;
   bool isHidden;
@@ -77,6 +78,7 @@ class Account {
     this.currency = 'THB',
     DateTime? startDate,
     this.icon = Icons.account_balance_wallet,
+    this.iconUrl = '',
     this.color = const Color(0xFF607D8B),
     this.excludeFromNetWorth = false,
     this.isHidden = false,
@@ -97,6 +99,7 @@ class Account {
     'currency': currency,
     'start_date': startDate.toIso8601String(),
     'icon': icon.codePoint,
+    'icon_url': iconUrl,
     'color': color.toARGB32(),
     'exclude_from_net_worth': excludeFromNetWorth ? 1 : 0,
     'is_hidden': isHidden ? 1 : 0,
@@ -115,6 +118,7 @@ class Account {
     currency: m['currency'] as String,
     startDate: DateTime.parse(m['start_date'] as String),
     icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
+    iconUrl: m['icon_url'] as String? ?? '',
     color: Color(m['color'] as int),
     excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
     isHidden: m['is_hidden'] == 1,
@@ -131,6 +135,7 @@ class Account {
     double? initialBalance,
     String? currency,
     DateTime? startDate,
+    String? iconUrl,
     IconData? icon,
     Color? color,
     bool? autoClearTransaction,
@@ -152,6 +157,7 @@ class Account {
       initialBalance: initialBalance ?? this.initialBalance,
       currency: currency ?? this.currency,
       startDate: startDate ?? this.startDate,
+      iconUrl: iconUrl ?? this.iconUrl,
       icon: icon ?? this.icon,
       color: color ?? this.color,
       excludeFromNetWorth: excludeFromNetWorth ?? this.excludeFromNetWorth,

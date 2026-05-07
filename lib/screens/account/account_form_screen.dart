@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/account_icon_storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../utils/currency_utils.dart';
@@ -27,6 +29,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late String _selectedCurrency;
   late DateTime _startDate;
   late IconData _selectedIcon;
+  String _selectedIconUrl = '';
   late Color _selectedColor;
   late bool _excludeFromNetWorth;
   late bool _isHidden;
@@ -44,6 +47,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _selectedCurrency = acc?.currency ?? 'THB';
     _startDate = acc?.startDate ?? DateTime.now();
     _selectedIcon = acc?.icon ?? Icons.account_balance_wallet;
+    _selectedIconUrl = acc?.iconUrl ?? '';
     _selectedColor = acc?.color ?? AppColors.accountColors.first;
     _excludeFromNetWorth = acc?.excludeFromNetWorth ?? false;
     _isHidden = acc?.isHidden ?? false;
@@ -103,6 +107,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           initialBalance: initialBalance,
           currency: _selectedCurrency,
           startDate: _startDate,
+          iconUrl: _selectedIconUrl,
           icon: _selectedIcon,
           color: _selectedColor,
           excludeFromNetWorth: _excludeFromNetWorth,
@@ -126,6 +131,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           initialBalance: initialBalance,
           currency: _selectedCurrency,
           startDate: _startDate,
+          iconUrl: _selectedIconUrl,
           icon: _selectedIcon,
           color: _selectedColor,
           excludeFromNetWorth: _excludeFromNetWorth,
@@ -504,18 +510,47 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               style: TextStyle(fontSize: 16, color: textSecondaryColor),
             ),
             const Spacer(),
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+            if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
+              _buildCustomIconPreview()
+            else
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(_selectedIcon, color: _selectedColor, size: 26),
               ),
-              child: Icon(_selectedIcon, color: _selectedColor, size: 26),
-            ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Check if the currently selected icon URL is a stored icon
+  bool get _isUploadedIcon =>
+      _selectedIconUrl.isNotEmpty &&
+      AccountIconStorageService().isStoredIconUrl(_selectedIconUrl);
+
+  Widget _buildCustomIconPreview() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        _selectedIconUrl,
+        width: 44,
+        height: 44,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _selectedColor.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(_selectedIcon, color: _selectedColor, size: 26),
         ),
       ),
     );
@@ -745,66 +780,90 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
   void _pickAccountType() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
+
     showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       clipBehavior: Clip.antiAlias,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final surfaceColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final headerColor = isDarkMode
-              ? AppColors.darkIncome
-              : AppColors.header;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
+      builder: (_) => MediaQuery(
+        data: mediaQuery,
+        child: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, _) {
+            final surfaceColor = isDarkMode
+                ? AppColors.darkSurface
+                : AppColors.surface;
+            final textPrimaryColor = isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary;
+            final headerColor = isDarkMode
+                ? AppColors.darkIncome
+                : AppColors.header;
+            final handleColor = isDarkMode
+                ? AppColors.darkDivider
+                : Colors.grey.shade300;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...AccountType.values.map(
-                  (type) => ListTile(
-                    tileColor: surfaceColor,
-                    title: Text(
-                      type.label,
-                      style: TextStyle(color: textPrimaryColor),
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    trailing: _selectedType == type
-                        ? Icon(Icons.check, color: headerColor)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _selectedType = type;
-                        // Clear balance field when switching type
-                        _initialBalanceController.clear();
-                      });
-                      Navigator.pop(context);
-                    },
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'เลือกชนิดบัญชี',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        ...AccountType.values.map(
+                          (type) => ListTile(
+                            tileColor: surfaceColor,
+                            title: Text(
+                              type.label,
+                              style: TextStyle(color: textPrimaryColor),
+                            ),
+                            trailing: _selectedType == type
+                                ? Icon(Icons.check, color: headerColor)
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedType = type;
+                                _initialBalanceController.clear();
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -819,6 +878,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       context: context,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       clipBehavior: Clip.antiAlias,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -841,36 +901,46 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ? AppColors.darkDivider
               : Colors.grey.shade300;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'เลือกสกุลเงิน',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimaryColor,
+          return DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.85,
+            expand: false,
+            builder: (context, scrollController) => SafeArea(
+              child: CustomScrollView(
+                controller: scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: handleColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'เลือกสกุลเงิน',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: textPrimaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: CurrencyUtils.currencies.length,
-                    itemBuilder: (_, i) {
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((_, i) {
                       final currency = CurrencyUtils.currencies[i];
                       final code = currency['code']!;
                       final symbol = currency['symbol']!;
@@ -900,10 +970,10 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           Navigator.pop(context);
                         },
                       );
-                    },
+                    }, childCount: CurrencyUtils.currencies.length),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -926,6 +996,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _pickIcon() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
+    // First, show a menu to choose between icons or custom image
     showModalBottomSheet(
       context: context,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
@@ -936,18 +1007,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode
-              ? AppColors.darkBackground
-              : AppColors.background;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final textSecondaryColor = isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
               : Colors.grey.shade300;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
 
           return SafeArea(
             child: Column(
@@ -963,57 +1028,40 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'เลือกไอคอน',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: textPrimaryColor,
+                if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline),
+                    title: Text(
+                      'ลบรูปที่อัปโหลด',
+                      style: TextStyle(color: AppColors.expense),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
-                    itemCount: AppColors.accountIcons.length,
-                    itemBuilder: (_, i) {
-                      final icon = AppColors.accountIcons[i];
-                      final selected = icon == _selectedIcon;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedIcon = icon);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? _selectedColor.withValues(alpha: 0.2)
-                                : bgColor,
-                            borderRadius: BorderRadius.circular(10),
-                            border: selected
-                                ? Border.all(color: _selectedColor, width: 2)
-                                : null,
-                          ),
-                          child: Icon(
-                            icon,
-                            color: selected
-                                ? _selectedColor
-                                : textSecondaryColor,
-                            size: 24,
-                          ),
-                        ),
-                      );
+                    onTap: () {
+                      setState(() {
+                        _selectedIconUrl = '';
+                      });
+                      Navigator.pop(context);
                     },
                   ),
+                ListTile(
+                  leading: const Icon(Icons.image_outlined),
+                  title: Text(
+                    'อัปโหลดรูปภาพ',
+                    style: TextStyle(color: textColor),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickCustomIcon();
+                  },
                 ),
+                ListTile(
+                  leading: const Icon(Icons.grid_view_outlined),
+                  title: Text('เลือกไอคอน', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showIconGrid();
+                  },
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           );
@@ -1022,94 +1070,271 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  void _pickColor() {
+  Future<void> _pickCustomIcon() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+
+      if (pickedFile == null) return;
+
+      final bytes = await pickedFile.readAsBytes();
+      final extension = pickedFile.name.contains('.')
+          ? pickedFile.name.split('.').last.toLowerCase()
+          : 'png';
+      final contentType = _mimeTypeForExtension(extension);
+
+      if (bytes.isEmpty) return;
+
+      // Generate a temporary ID for the upload (for new accounts)
+      final tempId =
+          widget.account?.id ?? 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
+      final storageService = AccountIconStorageService();
+      final publicUrl = await storageService.uploadAccountIcon(
+        accountId: tempId,
+        bytes: bytes,
+        extension: extension,
+        contentType: contentType,
+      );
+
+      if (publicUrl != null && mounted) {
+        setState(() {
+          _selectedIconUrl = publicUrl;
+        });
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่สามารถอัปโหลดรูปภาพได้')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+      }
+    }
+  }
+
+  String _mimeTypeForExtension(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/png';
+    }
+  }
+
+  void _showIconGrid() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
 
     showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
       clipBehavior: Clip.antiAlias,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
+      builder: (_) => MediaQuery(
+        data: mediaQuery,
+        child: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, _) {
+            final isDarkMode = settingsProvider.isDarkMode;
+            final bgColor = isDarkMode
+                ? AppColors.darkBackground
+                : AppColors.background;
+            final textPrimaryColor = isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary;
+            final textSecondaryColor = isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary;
+            final handleColor = isDarkMode
+                ? AppColors.darkDivider
+                : Colors.grey.shade300;
 
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'เลือกสี',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: textPrimaryColor,
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
-                    itemCount: AppColors.accountColors.length,
-                    itemBuilder: (_, i) {
-                      final color = AppColors.accountColors[i];
-                      final selected =
-                          color.toARGB32() == _selectedColor.toARGB32();
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: selected
-                                ? Border.all(color: Colors.black45, width: 2)
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'เลือกไอคอน',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                      itemCount: AppColors.accountIcons.length,
+                      itemBuilder: (_, i) {
+                        final icon = AppColors.accountIcons[i];
+                        final selected = icon == _selectedIcon;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedIcon = icon;
+                              _selectedIconUrl = '';
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? _selectedColor.withValues(alpha: 0.2)
+                                  : bgColor,
+                              borderRadius: BorderRadius.circular(10),
+                              border: selected
+                                  ? Border.all(color: _selectedColor, width: 2)
+                                  : null,
+                            ),
+                            child: Icon(
+                              icon,
+                              color: selected
+                                  ? _selectedColor
+                                  : textSecondaryColor,
+                              size: 24,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _pickColor() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: false,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      clipBehavior: Clip.antiAlias,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => MediaQuery(
+        data: mediaQuery,
+        child: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, _) {
+            final isDarkMode = settingsProvider.isDarkMode;
+            final textPrimaryColor = isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary;
+            final handleColor = isDarkMode
+                ? AppColors.darkDivider
+                : Colors.grey.shade300;
+
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'เลือกสี',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                      itemCount: AppColors.accountColors.length,
+                      itemBuilder: (_, i) {
+                        final color = AppColors.accountColors[i];
+                        final selected =
+                            color.toARGB32() == _selectedColor.toARGB32();
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedColor = color);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(10),
+                              border: selected
+                                  ? Border.all(color: Colors.black45, width: 2)
+                                  : null,
+                            ),
+                            child: selected
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
                                 : null,
                           ),
-                          child: selected
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                              : null,
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

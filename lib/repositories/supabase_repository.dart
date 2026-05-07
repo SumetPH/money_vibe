@@ -164,6 +164,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'currency': account.currency,
       'start_date': account.startDate.toIso8601String(),
       'icon': account.icon.codePoint,
+      'icon_url': account.iconUrl,
       'color': _colorToSupabase(account.color.toARGB32()),
       'exclude_from_net_worth': account.excludeFromNetWorth ? 1 : 0,
       'is_hidden': account.isHidden ? 1 : 0,

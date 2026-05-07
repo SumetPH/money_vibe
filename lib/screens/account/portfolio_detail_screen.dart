@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/account_icon_widget.dart';
 import '../../main.dart';
 import 'holding_form_screen.dart';
 
@@ -698,7 +699,11 @@ class _SummaryCard extends StatelessWidget {
                         color: account.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(account.icon, color: account.color, size: 24),
+                      child: AccountIconWidget(
+                        account: account,
+                        size: 24,
+                        isDarkMode: isDarkMode,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

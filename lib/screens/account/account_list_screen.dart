@@ -6,6 +6,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
@@ -613,7 +614,11 @@ class _AccountItem extends StatelessWidget {
                     color: account.color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(account.icon, color: account.color, size: 20),
+                  child: AccountIconWidget(
+                    account: account,
+                    size: 20,
+                    isDarkMode: isDarkMode,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // Name and balance
@@ -878,10 +883,10 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                               color: account.color.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              account.icon,
-                              color: account.color,
+                            child: AccountIconWidget(
+                              account: account,
                               size: 20,
+                              isDarkMode: isDarkMode,
                             ),
                           ),
                           title: Row(
