@@ -18,4 +18,8 @@ git add .
 git commit -m "deploy web build"
 git push origin main
 
+cd /Users/sumetph/Development/money/money_vibe
+flutter clean
+flutter pub get
+
 echo "✅ Build complete!"
