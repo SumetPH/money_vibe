@@ -147,6 +147,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     catProvider: catProvider,
                                     onTap: () => _openForm(context, tx),
                                     isDarkMode: isDarkMode,
+                                    viewingAccountId: widget.accountId,
                                   ),
                                   if (index < txs.length - 1)
                                     Divider(
@@ -449,6 +450,7 @@ class _TransactionItem extends StatelessWidget {
   final CategoryProvider catProvider;
   final VoidCallback onTap;
   final bool isDarkMode;
+  final String? viewingAccountId;
 
   const _TransactionItem({
     required this.tx,
@@ -456,6 +458,7 @@ class _TransactionItem extends StatelessWidget {
     required this.catProvider,
     required this.onTap,
     required this.isDarkMode,
+    this.viewingAccountId,
   });
 
   @override
@@ -469,9 +472,23 @@ class _TransactionItem extends StatelessWidget {
         : null;
 
     final typeColor = _typeColor(tx.type, isDarkMode);
-    final displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
+    double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
         ? -tx.amount
         : tx.amount;
+
+    if (viewingAccountId != null) {
+      if ((tx.type == TransactionType.debtRepay ||
+              tx.type == TransactionType.debtTransfer) &&
+          tx.toAccountId == viewingAccountId) {
+        displayAmount = tx.amount;
+      } else if (tx.type == TransactionType.transfer) {
+        if (tx.accountId == viewingAccountId) {
+          displayAmount = -tx.amount;
+        } else if (tx.toAccountId == viewingAccountId) {
+          displayAmount = tx.amount;
+        }
+      }
+    }
 
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
@@ -555,21 +572,26 @@ class _TransactionItem extends StatelessWidget {
                       style: TextStyle(fontSize: 13, color: textSecondaryColor),
                     ),
                     Text(
-                      tx.type == TransactionType.transfer
+                      (tx.type == TransactionType.transfer &&
+                              viewingAccountId == null)
                           ? formatAmount(tx.amount)
                           : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: tx.type == TransactionType.transfer
+                        color:
+                            (tx.type == TransactionType.transfer &&
+                                viewingAccountId == null)
                             ? (isDarkMode
                                   ? AppColors.darkTransfer
                                   : AppColors.transfer)
-                            : tx.type == TransactionType.debtRepay
+                            : (tx.type == TransactionType.debtRepay &&
+                                  viewingAccountId == null)
                             ? (isDarkMode
                                   ? AppColors.darkExpense
                                   : AppColors.expense)
-                            : tx.type == TransactionType.debtTransfer
+                            : (tx.type == TransactionType.debtTransfer &&
+                                  viewingAccountId == null)
                             ? (isDarkMode
                                   ? AppColors.darkDebtTransfer
                                   : AppColors.debtTransfer)
