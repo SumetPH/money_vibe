@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
@@ -87,8 +88,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       ),
                 title: Text(
                   widget.title != null
-                      ? '${widget.title} (${allTx.length})'
-                      : '${_filter.label} (${allTx.length})',
+                      ? '${widget.title} (${NumberFormat('#,###').format(allTx.length)})'
+                      : '${_filter.label} (${NumberFormat('#,###').format(allTx.length)})',
                   style: const TextStyle(fontSize: 16),
                 ),
                 centerTitle: true,
@@ -189,6 +190,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
     } else {
       switch (_filter) {
+        case _PeriodFilter.all:
+          transactions = List.of(provider.transactions)
+            ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
         case _PeriodFilter.last30Days:
           final from = now.subtract(const Duration(days: 30));
           transactions = provider.getTransactionsForPeriod(
@@ -257,40 +261,65 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   void _showPeriodPicker(bool isDarkMode) {
     final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final checkColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: bgColor,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: handleColor,
-                borderRadius: BorderRadius.circular(2),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            ..._PeriodFilter.values.map(
-              (f) => ListTile(
-                title: Text(f.label),
-                trailing: _filter == f
-                    ? const Icon(Icons.check, color: AppColors.header)
-                    : null,
-                onTap: () {
-                  setState(() => _filter = f);
-                  Navigator.pop(context);
-                },
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  children: _PeriodFilter.values
+                      .map(
+                        (f) => ListTile(
+                          title: Text(
+                            f.label,
+                            style: TextStyle(color: textColor),
+                          ),
+                          trailing: _filter == f
+                              ? Icon(Icons.check, color: checkColor)
+                              : null,
+                          onTap: () {
+                            setState(() => _filter = f);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -305,6 +334,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 }
 
 enum _PeriodFilter {
+  all('ทั้งหมด'),
   last30Days('30 วันล่าสุด'),
   last90Days('90 วันล่าสุด'),
   last180Days('180 วันล่าสุด'),
