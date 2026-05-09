@@ -1066,6 +1066,8 @@ class _TypeSelector extends StatelessWidget {
   void _showTypePicker(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1098,10 +1100,12 @@ class _TypeSelector extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(height: 1),
             Expanded(
-              child: ListView.builder(
+              child: ListView.separated(
                 controller: scrollController,
                 padding: EdgeInsets.zero,
                 itemCount: TransactionType.values.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: dividerColor),
                 itemBuilder: (context, index) {
                   final type = TransactionType.values[index];
                   final (icon, color) = _getTypeStyle(type);

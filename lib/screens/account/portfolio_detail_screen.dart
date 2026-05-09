@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:money_vibe/screens/account/portfolio_analyze_screen.dart';
 import 'package:provider/provider.dart';
@@ -151,15 +152,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   tooltip: 'อัพเดทราคาหุ้น',
                   onPressed: _refreshPrices,
                 ),
-              IconButton(
-                icon: const Icon(Icons.auto_awesome),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PortfolioAnalyzeScreen(accountId: acc.id),
-                  ),
-                ),
-              ),
+
               IconButton(
                 icon: const Icon(Icons.more_vert),
                 onPressed: () => _showMenuSheet(context),
@@ -610,6 +603,26 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         context.read<AccountProvider>(),
                         widget.account.id,
                         null,
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(Icons.auto_awesome, color: textColor),
+                    title: Text(
+                      'วิเคราะห์พอร์ต',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PortfolioAnalyzeScreen(
+                            accountId: widget.account.id,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -1418,15 +1431,13 @@ class _HoldingThumbnail extends StatelessWidget {
           ? fallback()
           : ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: Image.network(
-                logoUrl,
+              child: CachedNetworkImage(
+                imageUrl: logoUrl,
                 fit: BoxFit.contain,
-                webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return fallback();
-                },
-                errorBuilder: (_, _, _) => fallback(),
+                placeholder: (context, url) => fallback(),
+                errorWidget: (context, url, error) => fallback(),
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
               ),
             ),
     );

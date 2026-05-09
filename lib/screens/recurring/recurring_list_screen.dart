@@ -68,7 +68,6 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ),
             ),
             title: const Text('รายการประจำ'),
-            centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.more_vert),

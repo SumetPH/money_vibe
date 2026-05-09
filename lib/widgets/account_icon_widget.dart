@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/account.dart';
 import '../theme/app_colors.dart';
 
 /// A widget that displays an account icon.
-/// Shows a network image if [account.iconUrl] is set (user-uploaded),
+/// Shows a cached network image if [account.iconUrl] is set (user-uploaded),
 /// otherwise falls back to the Material [account.icon].
 class AccountIconWidget extends StatelessWidget {
   final Account account;
@@ -28,18 +29,15 @@ class AccountIconWidget extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: ClipOval(
-          child: Image.network(
-            account.iconUrl,
+          child: CachedNetworkImage(
+            imageUrl: account.iconUrl,
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildIconFallback();
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return _buildLoadingIndicator();
-            },
+            placeholder: (context, url) => _buildLoadingIndicator(),
+            errorWidget: (context, url, error) => _buildIconFallback(),
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
           ),
         ),
       );

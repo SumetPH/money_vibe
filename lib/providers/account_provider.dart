@@ -171,14 +171,23 @@ class AccountProvider extends ChangeNotifier {
   // ── Account CRUD ──────────────────────────────────────────────────────────
 
   Future<void> addAccount(Account account) async {
-    _accounts.add(account);
+    // Calculate new sortOrder (max + 10)
+    final sortOrder = _accounts.isEmpty
+        ? 0
+        : (_accounts.map((a) => a.sortOrder).reduce((a, b) => a > b ? a : b) +
+            10);
+    final updated = account.copyWith(sortOrder: sortOrder);
+
+    _accounts.add(updated);
+    // Keep list sorted in memory
+    _accounts.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {
-      await _db.insertAccount(account);
+      await _db.insertAccount(updated);
     } catch (e) {
       debugPrint('AccountProvider: Error adding account: $e');
-      _accounts.removeWhere((a) => a.id == account.id);
+      _accounts.removeWhere((a) => a.id == updated.id);
       notifyListeners();
       rethrow;
     }
@@ -190,6 +199,8 @@ class AccountProvider extends ChangeNotifier {
 
     final oldAccount = _accounts[idx];
     _accounts[idx] = updated;
+    // Keep list sorted in memory
+    _accounts.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {
@@ -234,13 +245,13 @@ class AccountProvider extends ChangeNotifier {
 
     // Update sort order for all affected accounts
     for (int i = 0; i < _accounts.length; i++) {
-      _accounts[i] = _accounts[i].copyWith(sortOrder: i);
+      _accounts[i] = _accounts[i].copyWith(sortOrder: i * 10);
     }
     notifyListeners();
 
     try {
       for (int i = 0; i < _accounts.length; i++) {
-        await _db.updateAccountSortOrder(_accounts[i].id, i);
+        await _db.updateAccountSortOrder(_accounts[i].id, _accounts[i].sortOrder);
       }
     } catch (e) {
       debugPrint('AccountProvider: Error reordering accounts: $e');
@@ -305,14 +316,24 @@ class AccountProvider extends ChangeNotifier {
   // ── Holdings CRUD ──────────────────────────────────────────────────────────
 
   Future<void> addHolding(StockHolding holding) async {
-    _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
+    final list = _holdings.putIfAbsent(holding.portfolioId, () => []);
+
+    // Calculate new sortOrder (max + 10) for this portfolio
+    final sortOrder = list.isEmpty
+        ? 0
+        : (list.map((h) => h.sortOrder).reduce((a, b) => a > b ? a : b) + 10);
+    final updated = holding.copyWith(sortOrder: sortOrder);
+
+    list.add(updated);
+    // Keep list sorted in memory
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {
-      await _db.insertHolding(holding);
+      await _db.insertHolding(updated);
     } catch (e) {
       debugPrint('AccountProvider: Error adding holding: $e');
-      _holdings[holding.portfolioId]?.removeWhere((h) => h.id == holding.id);
+      _holdings[holding.portfolioId]?.removeWhere((h) => h.id == updated.id);
       notifyListeners();
       rethrow;
     }
@@ -327,6 +348,8 @@ class AccountProvider extends ChangeNotifier {
 
     final oldHolding = list[idx];
     list[idx] = updated;
+    // Keep list sorted in memory
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {

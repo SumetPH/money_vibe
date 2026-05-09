@@ -43,6 +43,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
         title: const Text('บัญชี'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () => _showSummaryModal(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () => _showAppMenu(context),
           ),
@@ -330,6 +334,152 @@ class _AccountListScreenState extends State<AccountListScreen> {
           );
         },
       ),
+    );
+  }
+
+  void _showSummaryModal(BuildContext context) {
+    final accountProvider = context.read<AccountProvider>();
+    final txProvider = context.read<TransactionProvider>();
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+
+    final transactions = txProvider.transactions;
+    final groupTotals = accountProvider.getGroupTotals(transactions);
+
+    // Calculate Assets, Liabilities, Net Worth from all groups
+    double totalAssets =
+        (groupTotals['ลงทุน'] ?? 0) +
+        (groupTotals['เงินสด / เงินฝาก'] ?? 0) +
+        (groupTotals['ทรัพย์สิน'] ?? 0);
+    double totalLiabilities =
+        (groupTotals['บัตรเครดิต'] ?? 0) + (groupTotals['หนี้สิน'] ?? 0);
+    double netWorth = totalAssets + totalLiabilities;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final handleColor = isDarkMode
+            ? AppColors.darkDivider
+            : Colors.grey.shade300;
+        final textPrimary = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final textSecondary = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'สรุปภาพรวมการเงิน',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                _SummaryRow(
+                  label: 'ยอดสุทธิ',
+                  amount: netWorth,
+                  isDarkMode: isDarkMode,
+                  fontSize: 20,
+                  isBold: true,
+                ),
+                const SizedBox(height: 16),
+                Divider(color: dividerColor),
+                const SizedBox(height: 16),
+
+                // Main Summary
+                _SummaryRow(
+                  label: 'ทรัพย์สินรวม',
+                  amount: totalAssets,
+                  isDarkMode: isDarkMode,
+                  fontSize: 16,
+                ),
+                const SizedBox(height: 12),
+                _SummaryRow(
+                  label: 'หนี้สินรวม',
+                  amount: totalLiabilities,
+                  isDarkMode: isDarkMode,
+                  fontSize: 16,
+                ),
+                const SizedBox(height: 16),
+                Divider(color: dividerColor),
+                const SizedBox(height: 16),
+
+                // Breakdown Header
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'รายละเอียดแยกตามกลุ่ม',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Group breakdown
+                ...[
+                  'ลงทุน',
+                  'เงินสด / เงินฝาก',
+                  'ทรัพย์สิน',
+                  'บัตรเครดิต',
+                  'หนี้สิน',
+                ].map((group) {
+                  final total = groupTotals[group] ?? 0;
+                  if (total == 0) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          group,
+                          style: TextStyle(color: textPrimary, fontSize: 15),
+                        ),
+                        Text(
+                          '${formatAmount(total)} บาท',
+                          style: TextStyle(
+                            color: AppColors.getAmountColor(total, isDarkMode),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -960,6 +1110,51 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final double amount;
+  final bool isDarkMode;
+  final double fontSize;
+  final bool isBold;
+
+  const _SummaryRow({
+    required this.label,
+    required this.amount,
+    required this.isDarkMode,
+    this.fontSize = 15,
+    this.isBold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: textPrimary,
+          ),
+        ),
+        Text(
+          '${formatAmount(amount)} บาท',
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: AppColors.getAmountColor(amount, isDarkMode),
+          ),
+        ),
+      ],
     );
   }
 }

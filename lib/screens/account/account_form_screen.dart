@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -538,12 +539,21 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   Widget _buildCustomIconPreview() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        _selectedIconUrl,
+      child: CachedNetworkImage(
+        imageUrl: _selectedIconUrl,
         width: 44,
         height: 44,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => Container(
+        placeholder: (context, url) => Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _selectedColor.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        errorWidget: (context, url, error) => Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
@@ -552,6 +562,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           ),
           child: Icon(_selectedIcon, color: _selectedColor, size: 26),
         ),
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
       ),
     );
   }

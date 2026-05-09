@@ -13,6 +13,7 @@ class AppTheme {
       backgroundColor: AppColors.header,
       foregroundColor: Colors.white,
       elevation: 0,
+      centerTitle: true,
       iconTheme: const IconThemeData(color: Colors.white),
       titleTextStyle: GoogleFonts.ibmPlexSansThai(
         color: Colors.white,
@@ -101,6 +102,7 @@ class AppTheme {
         backgroundColor: darkHeader,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: GoogleFonts.ibmPlexSansThai(
           color: Colors.white,

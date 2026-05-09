@@ -98,7 +98,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       : '${_filter.label} (${NumberFormat('#,###').format(allTx.length)})',
                   style: const TextStyle(fontSize: 16),
                 ),
-                centerTitle: true,
                 actions: [
                   if (widget.fixedDateRange == null &&
                       widget.transactionIds == null)

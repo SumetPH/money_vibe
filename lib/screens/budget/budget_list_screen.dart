@@ -228,7 +228,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ),
             ),
             title: const Text('งบประมาณ'),
-            centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.list_alt_outlined),

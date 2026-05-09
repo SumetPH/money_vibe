@@ -60,7 +60,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           ),
         ),
         title: const Text('หมวดหมู่'),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),

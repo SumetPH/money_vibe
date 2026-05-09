@@ -87,14 +87,25 @@ class CategoryProvider extends ChangeNotifier {
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   Future<void> addCategory(Category cat) async {
-    _categories.add(cat);
+    // Get categories of the same type
+    final typeCats = _categories.where((c) => c.type == cat.type).toList();
+    
+    // Calculate new sortOrder (max + 10) for this type
+    final sortOrder = typeCats.isEmpty
+        ? 0
+        : (typeCats.map((c) => c.sortOrder).reduce((a, b) => a > b ? a : b) + 10);
+    final updated = cat.copyWith(sortOrder: sortOrder);
+
+    _categories.add(updated);
+    // Keep list sorted in memory
+    _categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {
-      await _db.insertCategory(cat);
+      await _db.insertCategory(updated);
     } catch (e) {
       debugPrint('CategoryProvider: Error adding category: $e');
-      _categories.removeWhere((c) => c.id == cat.id);
+      _categories.removeWhere((c) => c.id == updated.id);
       notifyListeners();
       rethrow;
     }
@@ -106,6 +117,8 @@ class CategoryProvider extends ChangeNotifier {
 
     final oldCat = _categories[idx];
     _categories[idx] = updated;
+    // Keep list sorted in memory
+    _categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     try {
