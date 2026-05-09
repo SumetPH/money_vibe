@@ -221,6 +221,7 @@ class CsvService {
         'currency',
         'start_date',
         'icon',
+        'icon_url',
         'color',
         'exclude_from_net_worth',
         'is_hidden',
@@ -241,6 +242,7 @@ class CsvService {
         account.currency,
         account.startDate.toIso8601String(),
         account.icon.codePoint, // Export as int
+        account.iconUrl,
         account.color.toARGB32(), // Export as int
         account.excludeFromNetWorth ? 1 : 0,
         account.isHidden ? 1 : 0,
@@ -302,6 +304,7 @@ class CsvService {
         'to_account_id',
         'date_time',
         'note',
+        'tags',
       ],
     ];
 
@@ -315,6 +318,7 @@ class CsvService {
         tx.toAccountId ?? '',
         tx.dateTime.toIso8601String(),
         tx.note ?? '',
+        tx.tags,
       ]);
     }
 
@@ -370,7 +374,7 @@ class CsvService {
         'color',
         'sort_order',
         'group_name',
-        'type',
+        'budget_type',
       ],
     ];
 
@@ -507,22 +511,23 @@ class CsvService {
           startDate:
               DateTime.tryParse(row[5]?.toString() ?? '') ?? DateTime.now(),
           icon: _parseIcon(int.tryParse(row[6]?.toString() ?? '')),
-          color: _parseColor(int.tryParse(row[7]?.toString() ?? '')),
+          iconUrl: row.length > 7 ? row[7]?.toString() ?? '' : '',
+          color: _parseColor(int.tryParse(row[8]?.toString() ?? '')),
           excludeFromNetWorth:
-              (int.tryParse(row[8]?.toString() ?? '') ?? 0) == 1,
-          isHidden: (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
-          sortOrder: int.tryParse(row[10]?.toString() ?? '') ?? 0,
-          cashBalance: row.length > 11
-              ? (double.tryParse(row[11]?.toString() ?? '') ?? 0)
+              (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
+          isHidden: (int.tryParse(row[10]?.toString() ?? '') ?? 0) == 1,
+          sortOrder: int.tryParse(row[11]?.toString() ?? '') ?? 0,
+          cashBalance: row.length > 12
+              ? (double.tryParse(row[12]?.toString() ?? '') ?? 0)
               : 0,
-          exchangeRate: row.length > 12
-              ? (double.tryParse(row[12]?.toString() ?? '') ?? 35.0)
+          exchangeRate: row.length > 13
+              ? (double.tryParse(row[13]?.toString() ?? '') ?? 35.0)
               : 35.0,
-          autoUpdateRate: row.length > 13
-              ? (int.tryParse(row[13]?.toString() ?? '') ?? 1) == 1
+          autoUpdateRate: row.length > 14
+              ? (int.tryParse(row[14]?.toString() ?? '') ?? 1) == 1
               : true,
-          statementDay: row.length > 14
-              ? int.tryParse(row[14]?.toString() ?? '')
+          statementDay: row.length > 15
+              ? int.tryParse(row[15]?.toString() ?? '')
               : null,
         ),
       );
@@ -647,6 +652,7 @@ class CsvService {
           dateTime:
               DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
           note: row[7]?.toString(),
+          tags: row.length > 8 ? row[8]?.toString() ?? '' : '',
         ),
       );
     }

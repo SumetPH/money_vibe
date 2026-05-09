@@ -233,6 +233,7 @@ CREATE TABLE IF NOT EXISTS public.recurring_transactions (
     category_id text references public.categories (id) on delete set null,
     note text,
     sort_order integer not null default 0,
+    is_hidden integer not null default 0,
     notification_enabled boolean not null default false,
     notification_hour integer not null default 9,
     notification_minute integer not null default 0,
@@ -472,6 +473,9 @@ ADD COLUMN IF NOT EXISTS notification_hour integer NOT NULL DEFAULT 9;
 
 ALTER TABLE public.recurring_transactions
 ADD COLUMN IF NOT EXISTS notification_minute integer NOT NULL DEFAULT 0;
+
+ALTER TABLE public.recurring_transactions
+ADD COLUMN IF NOT EXISTS is_hidden integer NOT NULL DEFAULT 0;
 
 
 -- ============================================
