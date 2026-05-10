@@ -319,9 +319,6 @@ class _SetupScreenState extends State<SetupScreen> {
                                 )
                               : const Icon(Icons.arrow_forward, size: 18),
                           label: const Text('บันทึกและเข้าสู่ระบบ'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.header,
-                          ),
                         ),
                       ],
                     ),

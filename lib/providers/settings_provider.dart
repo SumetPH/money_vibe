@@ -15,7 +15,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _llmApiKey;
   String? _llmBaseUrl;
   String? _llmModel;
-  bool _isDarkMode = false;
+  bool _isDarkMode = true;
   bool _isLoaded = false;
   int _budgetStartDay = 1;
   Set<String>? _netWorthFilterIds; // null = all accounts
@@ -39,7 +39,7 @@ class SettingsProvider extends ChangeNotifier {
     _llmApiKey = prefs.getString(_llmApiKeyKey);
     _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
     _llmModel = prefs.getString(_llmModelKey);
-    _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
+    _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
     _budgetStartDay = prefs.getInt(_budgetStartDayKey) ?? 1;
     final filterJson = prefs.getString(_netWorthFilterKey);
     if (filterJson != null) {

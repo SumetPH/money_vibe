@@ -1,178 +1,95 @@
 # Money Vibe
 
-Money Vibe คือแอป Flutter สำหรับจัดการการเงินส่วนบุคคล รองรับบัญชีหลายประเภท รายการรับ-จ่าย งบประมาณ รายการประจำ หมวดหมู่ สถิติ และพอร์ตการลงทุน โดยใช้ Supabase เป็นฐานข้อมูลบน Cloud เพื่อให้ข้อมูลซิงค์ข้ามอุปกรณ์ได้
+Money Vibe คือแอป Flutter สำหรับจัดการการเงินส่วนบุคคลที่เน้นความเรียบง่าย แต่ทรงพลัง รองรับการใช้งานแบบ **Online-First (Supabase)** เพื่อให้ข้อมูลซิงค์ตรงกันทุกอุปกรณ์แบบ Real-time พร้อมฟีเจอร์การวิเคราะห์อัจฉริยะด้วย AI และการจัดการพอร์ตการลงทุนที่ครบวงจร
 
 ## ฟีเจอร์หลัก
 
-- จัดการบัญชีเงินสด ธนาคาร บัตรเครดิต และพอร์ตการลงทุน
-- บันทึกรายการรายรับ รายจ่าย และโอนเงิน
-- จัดการหมวดหมู่และงบประมาณ
-- สร้างรายการประจำ พร้อมระบบแจ้งเตือน
-- ดูสถิติและสรุปภาพรวมการเงิน
-- ติดตาม holdings ในพอร์ต พร้อมการตั้งค่า Finnhub API สำหรับราคาหุ้น
-- วิเคราะห์พอร์ตด้วย LLM API
-- นำเข้าและส่งออกข้อมูลผ่าน CSV
-- รองรับ Light Mode และ Dark Mode
-- ใช้งานบน Android, iOS, Web, macOS, Linux และ Windows ตาม platform ที่ Flutter รองรับ
+- **Cloud-First Architecture**: ข้อมูลซิงค์อัตโนมัติข้ามทุกอุปกรณ์ผ่าน Supabase
+- **Financial Tracking**: จัดการบัญชีเงินสด, ธนาคาร, และบัตรเครดิต
+- **Smart Transactions**: บันทึกรายรับ-รายจ่าย พร้อมระบบโอนเงินและชำระหนี้สิน
+- **AI Analysis (LLM)**: วิเคราะห์พอร์ตการลงทุนและข้อมูลทางการเงินด้วย AI อัจฉริยะ
+- **Portfolio & Stocks**: ติดตามราคาหุ้นอัตโนมัติ (Finnhub) และจัดการพอร์ตการลงทุน
+- **Recurring Transactions**: ระบบรายการอัตโนมัติที่เกิดซ้ำ (รายวัน, รายสัปดาห์, รายเดือน)
+- **Budgeting**: วางแผนงบประมาณตามหมวดหมู่ พร้อมระบบแจ้งเตือนเมื่อใกล้เต็ม
+- **Visual Statistics**: กราฟและสรุปภาพรวมการเงินที่สวยงามและเข้าใจง่าย
+- **Data Portability**: นำเข้าและส่งออกข้อมูลผ่านไฟล์ CSV
+- **Dark Mode Native**: รองรับทั้ง Light และ Dark Mode อย่างสมบูรณ์แบบ
+- **Multi-Platform**: รองรับ Android, iOS, Web, macOS, Linux และ Windows
 
 ## Tech Stack
 
-- Flutter / Dart
-- Provider สำหรับ state management
-- GoRouter สำหรับ navigation
-- Supabase สำหรับ authentication และ cloud database
-- Shared Preferences สำหรับ config ภายในเครื่อง
-- fl_chart สำหรับกราฟและสถิติ
-- flutter_local_notifications สำหรับแจ้งเตือนรายการประจำ
+- **Framework**: Flutter / Dart
+- **State Management**: Provider
+- **Architecture**: Repository Pattern (Cloud-First)
+- **Database & Auth**: Supabase
+- **Navigation**: GoRouter
+- **Storage**: Shared Preferences (Local Config) & Supabase Storage (Icons/Logos)
+- **Charts**: fl_chart
+- **AI Integration**: Edge Functions & Provider-based LLM Service
 
 ## เริ่มต้นใช้งาน
 
 ### Prerequisites
 
-- Flutter SDK ที่รองรับ Dart `^3.10.0`
-- Supabase project
-- Xcode สำหรับ build iOS/macOS
-- Android Studio หรือ Android SDK สำหรับ build Android
+- Flutter SDK `^3.10.0`
+- Supabase Project (URL & Anon Key)
+- Finnhub API Key (สำหรับการดึงราคาหุ้น)
 
-### ติดตั้ง dependencies
+### การตั้งค่า
 
-```bash
-flutter pub get
-```
+1. **Install Dependencies**:
+   ```bash
+   flutter pub get
+   ```
 
-### ตั้งค่า Supabase
+2. **Supabase Setup**:
+   - สร้างโปรเจกต์ใน Supabase Dashboard
+   - รัน SQL schema จาก `supabase/schema.sql`
+   - ดูขั้นตอนละเอียดได้ที่ [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 
-1. สร้าง Supabase project
-2. เปิดใช้งาน Email authentication
-3. รัน SQL schema จากไฟล์ `supabase/schema.sql`
-4. คัดลอก `Project URL` และ `anon public key`
-5. เปิดแอปครั้งแรก แล้วกรอกค่าทั้งสองในหน้า Setup
-
-รายละเอียดเต็มดูได้ที่ [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
-
-### Run
-
-```bash
-flutter run
-```
-
-สำหรับ Web:
-
-```bash
-flutter run -d chrome
-```
+3. **Run App**:
+   - เปิดแอปและกรอก Supabase URL/Key ในหน้า Setup ครั้งแรก
+   - สมัครสมาชิก/เข้าสู่ระบบเพื่อเริ่มใช้งาน
 
 ## คำสั่งที่ใช้บ่อย
 
-### Analyze
+### Quality Control
 
 ```bash
-flutter analyze
+flutter analyze  # ตรวจสอบคุณภาพโค้ด
+flutter test     # รัน unit และ widget tests
+dart format .    # จัดรูปแบบโค้ดตามมาตรฐาน
 ```
 
-### Test
+### Build Scripts
+
+เราได้เตรียม scripts สำหรับการ build ในแต่ละ platform ไว้ที่โฟลเดอร์ `scripts/`:
 
 ```bash
-flutter test
+./scripts/build_android.sh  # Build Android APK
+./scripts/build_ios.sh      # Build iOS Framework
+./scripts/build_web.sh      # Build Web App
+./scripts/build_macos.sh    # Build macOS App
 ```
 
-### Build Android
+## มาตรฐานการพัฒนา (Development Standards)
 
-```bash
-flutter build apk --debug
-flutter build apk --release
-```
+เพื่อให้โค้ดมีคุณภาพและเป็นไปในทิศทางเดียวกัน:
 
-หรือใช้ script:
+- **Dark Mode**: ทุก UI Component ต้องรองรับทั้ง Light และ Dark Mode
+- **Coloring**: ใช้สีจาก `AppColors` เท่านั้น ห้าม Hard-code
+- **DateTime**: ใช้เวลา Local ตามเครื่องผู้ใช้เสมอ (ISO8601)
+- **No SQLite**: แอปทำงานบน Supabase เท่านั้น ไม่ต้อง implement logic สำหรับ local database
+- **Validation**: ต้องรัน `flutter analyze` และผ่านทั้งหมดก่อนส่งงาน
 
-```bash
-./scripts/build_android.sh
-```
-
-### Build iOS IPA
-
-```bash
-flutter build ipa --release --no-tree-shake-icons --export-options-plist=ios/ExportOptions-development.plist
-```
-
-รายละเอียดสำหรับ AltStore ดูได้ที่ [IOS_IPA_ALTSTORE.md](IOS_IPA_ALTSTORE.md)
-
-### Build Web
-
-```bash
-./scripts/build_web.sh
-```
-
-### Build macOS
-
-```bash
-./scripts/build_macos.sh
-```
-
-## โครงสร้างโปรเจกต์
-
-```text
-lib/
-├── main.dart
-├── models/
-├── providers/
-├── repositories/
-├── screens/
-│   ├── account/
-│   ├── auth/
-│   ├── budget/
-│   ├── category/
-│   ├── recurring/
-│   ├── settings/
-│   ├── splash/
-│   ├── statistics/
-│   └── transaction/
-├── services/
-├── theme/
-├── utils/
-└── widgets/
-
-supabase/
-├── functions/
-└── migrations/
-
-
-scripts/
-├── build_android.sh
-├── build_ios.sh
-├── build_macos.sh
-├── build_release.sh
-└── build_web.sh
-```
-
-## การตั้งค่า API เพิ่มเติม
-
-ตั้งค่าได้จากหน้า `ตั้งค่า` ภายในแอป:
-
-- `Finnhub API Key` สำหรับดึงราคาหุ้น
-- `LLM API Key` สำหรับฟีเจอร์วิเคราะห์พอร์ต
-- `จัดการข้อมูล` สำหรับ Supabase config, import และ export CSV
-
-## แนวทางการพัฒนา
-
-- ทุก screen/widget ใหม่ต้องรองรับทั้ง Light Mode และ Dark Mode
-- ใช้สีจาก `lib/theme/app_colors.dart`
-- ดึงสถานะ dark mode จาก `SettingsProvider`
-- ส่ง `isDarkMode` ผ่าน constructor ไปยัง private child widgets
-- รัน `flutter analyze` และ `flutter test` ก่อนส่งงานเมื่อมีการแก้ logic
-
-รายละเอียดมาตรฐานสำหรับ agent/developer ดูได้ที่ [AGENTS.md](AGENTS.md)
+รายละเอียดเพิ่มเติมดูได้ที่ [AGENTS.md](AGENTS.md)
 
 ## เอกสารที่เกี่ยวข้อง
 
-- [SUPABASE_SETUP.md](SUPABASE_SETUP.md) - วิธีตั้งค่า Supabase
-- [IOS_IPA_ALTSTORE.md](IOS_IPA_ALTSTORE.md) - วิธี build IPA สำหรับ AltStore
-- [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md) - บันทึก migration
+- [AGENTS.md](AGENTS.md) - มาตรฐานการพัฒนาสำหรับ Developer/Agent
+- [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) - คู่มือตั้งค่าระบบ Cloud
+- [MIGRATION_SUMMARY.md](docs/MIGRATION_SUMMARY.md) - สรุปการเปลี่ยนผ่านสถาปัตยกรรม
+- [IOS_IPA_ALTSTORE.md](docs/IOS_IPA_ALTSTORE.md) - คู่มือ Build สำหรับ iOS (AltStore)
 
-## Version
-
-เวอร์ชันปัจจุบันกำหนดใน `pubspec.yaml`
-
-```yaml
-version: 1.0.1+1
-```
+---
+*Money Vibe - Your personal finance, perfectly in sync.*

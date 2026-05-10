@@ -42,6 +42,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   late DateTime _selectedDateTime;
 
   double _accountBalance = 0.0;
+  bool _isLoading = false;
 
   bool get _isEditing => widget.transaction != null;
 
@@ -181,14 +182,36 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           : _noteController.text.trim(),
     );
 
-    if (_isEditing) {
-      await txProvider.updateTransaction(tx);
-    } else {
-      await txProvider.addTransaction(tx);
-    }
+    setState(() => _isLoading = true);
 
-    widget.onSaved?.call(tx.id);
-    if (mounted) Navigator.pop(context);
+    try {
+      if (_isEditing) {
+        await txProvider.updateTransaction(tx);
+      } else {
+        await txProvider.addTransaction(tx);
+      }
+
+      widget.onSaved?.call(tx.id);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _delete() {
@@ -304,43 +327,63 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
             ),
-            title: _TypeSelector(
-              selectedType: _type,
-              onChanged: (t) => setState(() {
-                _type = t;
-                _selectedCategoryId = null;
-                if (t != TransactionType.transfer) {
-                  _selectedToAccountId = null;
-                }
-                if (!t.requiresDebtAccount) {
-                  _selectedDebtAccountId = null;
-                }
+            title: AbsorbPointer(
+              absorbing: _isLoading,
+              child: _TypeSelector(
+                selectedType: _type,
+                onChanged: (t) => setState(() {
+                  _type = t;
+                  _selectedCategoryId = null;
+                  if (t != TransactionType.transfer) {
+                    _selectedToAccountId = null;
+                  }
+                  if (!t.requiresDebtAccount) {
+                    _selectedDebtAccountId = null;
+                  }
 
-                _calculateAccountBalance();
-              }),
+                  _calculateAccountBalance();
+                }),
+              ),
             ),
             actions: [
               if (_isEditing)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: _delete,
+                  onPressed: _isLoading ? null : _delete,
                   tooltip: 'ลบรายการ',
                 ),
-              IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 16),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
-          body: ListView(
-            children: _buildFormItems(
-              accountProvider: accountProvider,
-              accounts: accounts,
-              selectedAccount: selectedAccount,
-              selectedToAccount: selectedToAccount,
-              selectedDebtAccount: selectedDebtAccount,
-              categories: categories,
-              selectedCategory: selectedCategory,
-              type: _type,
+          body: AbsorbPointer(
+            absorbing: _isLoading,
+            child: ListView(
+              children: _buildFormItems(
+                accountProvider: accountProvider,
+                accounts: accounts,
+                selectedAccount: selectedAccount,
+                selectedToAccount: selectedToAccount,
+                selectedDebtAccount: selectedDebtAccount,
+                categories: categories,
+                selectedCategory: selectedCategory,
+                type: _type,
+              ),
             ),
           ),
         );

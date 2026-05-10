@@ -29,6 +29,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   String? _parentId;
 
   bool get _isEditing => widget.category != null;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -49,7 +50,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -60,37 +61,59 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
 
     final provider = context.read<CategoryProvider>();
 
-    if (_isEditing) {
-      provider.updateCategory(
-        widget.category!.copyWith(
-          name: name,
-          icon: _selectedIcon,
-          color: _selectedColor,
-          parentId: _parentId,
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
-          clearParent: _parentId == null,
-          clearNote: _noteController.text.trim().isEmpty,
-        ),
-      );
-    } else {
-      provider.addCategory(
-        Category(
-          id: provider.generateId(),
-          name: name,
-          icon: _selectedIcon,
-          color: _selectedColor,
-          type: _type,
-          parentId: _parentId,
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
-        ),
-      );
-    }
+    setState(() => _isLoading = true);
 
-    Navigator.pop(context);
+    try {
+      if (_isEditing) {
+        await provider.updateCategory(
+          widget.category!.copyWith(
+            name: name,
+            icon: _selectedIcon,
+            color: _selectedColor,
+            parentId: _parentId,
+            note: _noteController.text.trim().isEmpty
+                ? null
+                : _noteController.text.trim(),
+            clearParent: _parentId == null,
+            clearNote: _noteController.text.trim().isEmpty,
+          ),
+        );
+      } else {
+        await provider.addCategory(
+          Category(
+            id: provider.generateId(),
+            name: name,
+            icon: _selectedIcon,
+            color: _selectedColor,
+            type: _type,
+            parentId: _parentId,
+            note: _noteController.text.trim().isEmpty
+                ? null
+                : _noteController.text.trim(),
+          ),
+        );
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _delete() {
@@ -174,79 +197,99 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
             ),
             title: Text(_isEditing ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'),
             actions: [
               if (_isEditing)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: _delete,
+                  onPressed: _isLoading ? null : _delete,
                   tooltip: 'ลบหมวดหมู่',
                 ),
-              IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 16),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
-          body: ListView(
-            children: [
-              const SizedBox(height: 8),
-              // Name
-              _buildTextField(
-                controller: _nameController,
-                hintText: 'ชื่อ',
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Parent category
-              _buildPickerRow(
-                label: 'เป็นหมวดหมู่ย่อยของ',
-                value: parentCategory?.name ?? '(หมวดหมู่หลัก)',
-                onTap: () => _pickParent(context, parentCandidates),
-                surfaceColor: surfaceColor,
-                textPrimaryColor: textPrimaryColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Icon
-              _buildIconRow(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Color
-              _buildColorRow(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              const SizedBox(height: 8),
-              // Note
-              _buildNoteField(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              const SizedBox(height: 16),
-              // Edit history note (only when editing)
-              if (_isEditing)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '*ยังไม่มีข้อมูลการแก้ไข',
-                      style: TextStyle(fontSize: 14, color: textSecondaryColor),
+          body: AbsorbPointer(
+            absorbing: _isLoading,
+            child: ListView(
+              children: [
+                const SizedBox(height: 8),
+                // Name
+                _buildTextField(
+                  controller: _nameController,
+                  hintText: 'ชื่อ',
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Parent category
+                _buildPickerRow(
+                  label: 'เป็นหมวดหมู่ย่อยของ',
+                  value: parentCategory?.name ?? '(หมวดหมู่หลัก)',
+                  onTap: () => _pickParent(context, parentCandidates),
+                  surfaceColor: surfaceColor,
+                  textPrimaryColor: textPrimaryColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Icon
+                _buildIconRow(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Color
+                _buildColorRow(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                const SizedBox(height: 8),
+                // Note
+                _buildNoteField(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                const SizedBox(height: 16),
+                // Edit history note (only when editing)
+                if (_isEditing)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '*ยังไม่มีข้อมูลการแก้ไข',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: textSecondaryColor,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         );
       },

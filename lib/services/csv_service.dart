@@ -304,7 +304,6 @@ class CsvService {
         'to_account_id',
         'date_time',
         'note',
-        'tags',
       ],
     ];
 
@@ -318,7 +317,6 @@ class CsvService {
         tx.toAccountId ?? '',
         tx.dateTime.toIso8601String(),
         tx.note ?? '',
-        tx.tags,
       ]);
     }
 
@@ -652,7 +650,6 @@ class CsvService {
           dateTime:
               DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
           note: row[7]?.toString(),
-          tags: row.length > 8 ? row[8]?.toString() ?? '' : '',
         ),
       );
     }

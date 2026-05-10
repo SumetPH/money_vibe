@@ -56,7 +56,6 @@ class AppTransaction {
   String? toAccountId;
   DateTime dateTime;
   String? note;
-  String tags;
 
   AppTransaction({
     required this.id,
@@ -67,7 +66,6 @@ class AppTransaction {
     this.toAccountId,
     DateTime? dateTime,
     this.note,
-    this.tags = '',
   }) : dateTime = dateTime ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -79,7 +77,6 @@ class AppTransaction {
     'to_account_id': toAccountId,
     'date_time': dateTime.toIso8601String(),
     'note': note,
-    'tags': tags,
   };
 
   static AppTransaction fromMap(Map<String, dynamic> m) {
@@ -92,7 +89,6 @@ class AppTransaction {
       toAccountId: m['to_account_id'] as String?,
       dateTime: DateTime.parse(m['date_time'] as String),
       note: m['note'] as String?,
-      tags: m['tags'] as String? ?? '',
     );
   }
 
@@ -107,7 +103,6 @@ class AppTransaction {
     bool clearToAccountId = false,
     DateTime? dateTime,
     String? note,
-    String? tags,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -118,7 +113,6 @@ class AppTransaction {
       toAccountId: clearToAccountId ? null : (toAccountId ?? this.toAccountId),
       dateTime: dateTime ?? this.dateTime,
       note: note ?? this.note,
-      tags: tags ?? this.tags,
     );
   }
 }

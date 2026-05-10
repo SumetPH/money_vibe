@@ -38,6 +38,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
   bool get _isEditing => widget.account != null;
   bool _isDarkMode = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -78,7 +79,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -100,53 +101,75 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
     final provider = context.read<AccountProvider>();
 
-    if (_isEditing) {
-      provider.updateAccount(
-        widget.account!.copyWith(
-          name: name,
-          type: _selectedType,
-          initialBalance: initialBalance,
-          currency: _selectedCurrency,
-          startDate: _startDate,
-          iconUrl: _selectedIconUrl,
-          icon: _selectedIcon,
-          color: _selectedColor,
-          excludeFromNetWorth: _excludeFromNetWorth,
-          isHidden: _isHidden,
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
-          cashBalance: cashBalance,
-          exchangeRate: exchangeRate,
-          statementDay: _selectedType == AccountType.creditCard
-              ? _statementDay
-              : null,
-        ),
-      );
-    } else {
-      provider.addAccount(
-        Account(
-          id: provider.generateId(),
-          name: name,
-          type: _selectedType,
-          initialBalance: initialBalance,
-          currency: _selectedCurrency,
-          startDate: _startDate,
-          iconUrl: _selectedIconUrl,
-          icon: _selectedIcon,
-          color: _selectedColor,
-          excludeFromNetWorth: _excludeFromNetWorth,
-          isHidden: _isHidden,
-          cashBalance: cashBalance,
-          exchangeRate: exchangeRate,
-          statementDay: _selectedType == AccountType.creditCard
-              ? _statementDay
-              : null,
-        ),
-      );
-    }
+    setState(() => _isLoading = true);
 
-    Navigator.pop(context);
+    try {
+      if (_isEditing) {
+        await provider.updateAccount(
+          widget.account!.copyWith(
+            name: name,
+            type: _selectedType,
+            initialBalance: initialBalance,
+            currency: _selectedCurrency,
+            startDate: _startDate,
+            iconUrl: _selectedIconUrl,
+            icon: _selectedIcon,
+            color: _selectedColor,
+            excludeFromNetWorth: _excludeFromNetWorth,
+            isHidden: _isHidden,
+            note: _noteController.text.trim().isEmpty
+                ? null
+                : _noteController.text.trim(),
+            cashBalance: cashBalance,
+            exchangeRate: exchangeRate,
+            statementDay: _selectedType == AccountType.creditCard
+                ? _statementDay
+                : null,
+          ),
+        );
+      } else {
+        await provider.addAccount(
+          Account(
+            id: provider.generateId(),
+            name: name,
+            type: _selectedType,
+            initialBalance: initialBalance,
+            currency: _selectedCurrency,
+            startDate: _startDate,
+            iconUrl: _selectedIconUrl,
+            icon: _selectedIcon,
+            color: _selectedColor,
+            excludeFromNetWorth: _excludeFromNetWorth,
+            isHidden: _isHidden,
+            cashBalance: cashBalance,
+            exchangeRate: exchangeRate,
+            statementDay: _selectedType == AccountType.creditCard
+                ? _statementDay
+                : null,
+          ),
+        );
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _delete() {
@@ -222,113 +245,130 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
             ),
             title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
             actions: [
               if (_isEditing)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: _delete,
+                  onPressed: _isLoading ? null : _delete,
                   tooltip: 'ลบบัญชี',
                 ),
-              IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 16),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
-          body: ListView(
-            children: [
-              const SizedBox(height: 8),
-              // Name
-              _buildTextField(
-                controller: _nameController,
-                hintText: 'ชื่อ',
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Account Type
-              _buildPickerRow(
-                label: 'ชนิดบัญชี',
-                value: _selectedType.label,
-                onTap: _pickAccountType,
-                surfaceColor: surfaceColor,
-                textPrimaryColor: textPrimaryColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Initial Balance / Cash Balance
-              _buildBalanceField(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Exchange Rate (portfolio only)
-              if (_selectedType == AccountType.portfolio) ...[
-                _buildExchangeRateField(
+          body: AbsorbPointer(
+            absorbing: _isLoading,
+            child: ListView(
+              children: [
+                const SizedBox(height: 8),
+                // Name
+                _buildTextField(
+                  controller: _nameController,
+                  hintText: 'ชื่อ',
                   surfaceColor: surfaceColor,
                   textSecondaryColor: textSecondaryColor,
                 ),
                 _buildDivider(color: dividerColor),
-              ],
-              // Currency
-              _buildPickerRow(
-                label: 'สกุลเงิน',
-                value: _getCurrencyDisplay(_selectedCurrency),
-                onTap: _pickCurrency,
-                surfaceColor: surfaceColor,
-                textPrimaryColor: textPrimaryColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Start Date
-              _buildPickerRow(
-                label: 'เริ่มวันที่',
-                value: _formatThaiDate(_startDate),
-                onTap: _pickDate,
-                surfaceColor: surfaceColor,
-                textPrimaryColor: textPrimaryColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Icon
-              _buildIconRow(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              // Color
-              _buildColorRow(
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              const SizedBox(height: 8),
-              // Credit Card Statement Day
-              if (_selectedType == AccountType.creditCard) ...[
-                _buildDivider(color: dividerColor),
-                _buildStatementDayPicker(
+                // Account Type
+                _buildPickerRow(
+                  label: 'ชนิดบัญชี',
+                  value: _selectedType.label,
+                  onTap: _pickAccountType,
                   surfaceColor: surfaceColor,
                   textPrimaryColor: textPrimaryColor,
                   textSecondaryColor: textSecondaryColor,
                 ),
+                _buildDivider(color: dividerColor),
+                // Initial Balance / Cash Balance
+                _buildBalanceField(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Exchange Rate (portfolio only)
+                if (_selectedType == AccountType.portfolio) ...[
+                  _buildExchangeRateField(
+                    surfaceColor: surfaceColor,
+                    textSecondaryColor: textSecondaryColor,
+                  ),
+                  _buildDivider(color: dividerColor),
+                ],
+                // Currency
+                _buildPickerRow(
+                  label: 'สกุลเงิน',
+                  value: _getCurrencyDisplay(_selectedCurrency),
+                  onTap: _pickCurrency,
+                  surfaceColor: surfaceColor,
+                  textPrimaryColor: textPrimaryColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Start Date
+                _buildPickerRow(
+                  label: 'เริ่มวันที่',
+                  value: _formatThaiDate(_startDate),
+                  onTap: _pickDate,
+                  surfaceColor: surfaceColor,
+                  textPrimaryColor: textPrimaryColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Icon
+                _buildIconRow(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                // Color
+                _buildColorRow(
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                const SizedBox(height: 8),
+                // Credit Card Statement Day
+                if (_selectedType == AccountType.creditCard) ...[
+                  _buildDivider(color: dividerColor),
+                  _buildStatementDayPicker(
+                    surfaceColor: surfaceColor,
+                    textPrimaryColor: textPrimaryColor,
+                    textSecondaryColor: textSecondaryColor,
+                  ),
+                ],
+                // Switches
+                const SizedBox(height: 8),
+                _buildSwitchRow(
+                  label: 'ไม่รวมในทรัพย์สินสุทธิ',
+                  value: _excludeFromNetWorth,
+                  onChanged: (v) => setState(() => _excludeFromNetWorth = v),
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
+                _buildDivider(color: dividerColor),
+                _buildSwitchRow(
+                  label: 'ซ่อนบัญชีนี้',
+                  value: _isHidden,
+                  onChanged: (v) => setState(() => _isHidden = v),
+                  surfaceColor: surfaceColor,
+                  textSecondaryColor: textSecondaryColor,
+                ),
               ],
-              // Switches
-              const SizedBox(height: 8),
-              _buildSwitchRow(
-                label: 'ไม่รวมในทรัพย์สินสุทธิ',
-                value: _excludeFromNetWorth,
-                onChanged: (v) => setState(() => _excludeFromNetWorth = v),
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-              _buildDivider(color: dividerColor),
-              _buildSwitchRow(
-                label: 'ซ่อนบัญชีนี้',
-                value: _isHidden,
-                onChanged: (v) => setState(() => _isHidden = v),
-                surfaceColor: surfaceColor,
-                textSecondaryColor: textSecondaryColor,
-              ),
-            ],
+            ),
           ),
         );
       },

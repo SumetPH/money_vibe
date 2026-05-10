@@ -26,6 +26,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   late Color _selectedColor;
   late Set<String> _selectedCategoryIds;
   late BudgetType _selectedType;
+  bool _isLoading = false;
 
   bool get _isEditing => widget.budget != null;
 
@@ -50,7 +51,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -71,34 +72,57 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     final groupName = _groupController.text.trim().isEmpty
         ? null
         : _groupController.text.trim();
-    if (_isEditing) {
-      provider.updateBudget(
-        widget.budget!.copyWith(
-          name: name,
-          amount: amount,
-          categoryIds: _selectedCategoryIds.toList(),
-          icon: _selectedIcon,
-          color: _selectedColor,
-          groupName: groupName,
-          clearGroupName: groupName == null,
-          type: _selectedType,
-        ),
-      );
-    } else {
-      provider.addBudget(
-        Budget(
-          id: provider.generateId(),
-          name: name,
-          amount: amount,
-          categoryIds: _selectedCategoryIds.toList(),
-          icon: _selectedIcon,
-          color: _selectedColor,
-          groupName: groupName,
-          type: _selectedType,
-        ),
-      );
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isEditing) {
+        await provider.updateBudget(
+          widget.budget!.copyWith(
+            name: name,
+            amount: amount,
+            categoryIds: _selectedCategoryIds.toList(),
+            icon: _selectedIcon,
+            color: _selectedColor,
+            groupName: groupName,
+            clearGroupName: groupName == null,
+            type: _selectedType,
+          ),
+        );
+      } else {
+        await provider.addBudget(
+          Budget(
+            id: provider.generateId(),
+            name: name,
+            amount: amount,
+            categoryIds: _selectedCategoryIds.toList(),
+            icon: _selectedIcon,
+            color: _selectedColor,
+            groupName: groupName,
+            type: _selectedType,
+          ),
+        );
+      }
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    Navigator.pop(context);
   }
 
   void _delete() {
@@ -143,12 +167,33 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       ? AppColors.darkExpense
                       : AppColors.expense,
                 ),
-                onPressed: () {
-                  context.read<BudgetProvider>().deleteBudget(
-                    widget.budget!.id,
-                  );
-                  Navigator.pop(context);
-                  Navigator.pop(context);
+                onPressed: () async {
+                  final provider = context.read<BudgetProvider>();
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                  setState(() => _isLoading = true);
+                  try {
+                    await provider.deleteBudget(widget.budget!.id);
+                    if (mounted) {
+                      navigator.pop(); // Close dialog
+                      navigator.pop(); // Close form
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      navigator.pop(); // Close dialog
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: Text('ลบงบประมาณไม่สำเร็จ: $e'),
+                          backgroundColor: AppColors.expense,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isLoading = false);
+                    }
+                  }
                 },
                 child: const Text('ลบ'),
               ),
@@ -194,310 +239,342 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
             ),
             title: Text(_isEditing ? 'แก้ไขงบประมาณ' : 'เพิ่มงบประมาณ'),
             actions: [
               if (_isEditing)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: _delete,
+                  onPressed: _isLoading ? null : _delete,
                 ),
-              IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 16),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
-          body: ListView(
-            children: [
-              const SizedBox(height: 8),
-              // Name
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'ชื่อ',
-                      style: TextStyle(fontSize: 16, color: textSecondary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: _nameController,
-                        textAlign: TextAlign.right,
-                        decoration: InputDecoration(
-                          hintText: 'ชื่องบประมาณ',
-                          hintStyle: TextStyle(color: textSecondary),
-                          hintTextDirection: TextDirection.rtl,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                          ),
-                        ),
-                        style: TextStyle(fontSize: 16, color: textPrimary),
+          body: AbsorbPointer(
+            absorbing: _isLoading,
+            child: ListView(
+              children: [
+                const SizedBox(height: 8),
+                // Name
+                Container(
+                  color: surfaceColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'ชื่อ',
+                        style: TextStyle(fontSize: 16, color: textSecondary),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: dividerColor),
-              // Group Name
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'กลุ่ม',
-                      style: TextStyle(fontSize: 16, color: textSecondary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: _groupController,
-                        textAlign: TextAlign.right,
-                        decoration: InputDecoration(
-                          hintText: 'ชื่อกลุ่ม (ไม่บังคับ)',
-                          hintStyle: TextStyle(color: textSecondary),
-                          hintTextDirection: TextDirection.rtl,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                          ),
-                        ),
-                        style: TextStyle(fontSize: 16, color: textPrimary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: dividerColor),
-              // Amount
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'จำนวน',
-                      style: TextStyle(fontSize: 16, color: textSecondary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: _amountController,
-                        textAlign: TextAlign.right,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: '0.00',
-                          hintStyle: TextStyle(color: textSecondary),
-                          hintTextDirection: TextDirection.rtl,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                          ),
-                          suffixText: 'บาท',
-                          suffixStyle: TextStyle(
-                            color: textSecondary,
-                            fontSize: 15,
-                          ),
-                        ),
-                        style: TextStyle(fontSize: 16, color: textPrimary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Type selector
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'ประเภท',
-                      style: TextStyle(fontSize: 16, color: textSecondary),
-                    ),
-                    const Spacer(),
-                    ...BudgetType.values.map((t) {
-                      final isSelected = _selectedType == t;
-                      final accentColor = isDark
-                          ? AppColors.darkHeader
-                          : AppColors.header;
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedType = t),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _nameController,
+                          textAlign: TextAlign.right,
+                          decoration: InputDecoration(
+                            hintText: 'ชื่องบประมาณ',
+                            hintStyle: TextStyle(color: textSecondary),
+                            hintTextDirection: TextDirection.rtl,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
                             ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? accentColor
-                                  : accentColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
+                          ),
+                          style: TextStyle(fontSize: 16, color: textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: dividerColor),
+                // Group Name
+                Container(
+                  color: surfaceColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'กลุ่ม',
+                        style: TextStyle(fontSize: 16, color: textSecondary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _groupController,
+                          textAlign: TextAlign.right,
+                          decoration: InputDecoration(
+                            hintText: 'ชื่อกลุ่ม (ไม่บังคับ)',
+                            hintStyle: TextStyle(color: textSecondary),
+                            hintTextDirection: TextDirection.rtl,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
                             ),
-                            child: Text(
-                              t.label,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected ? Colors.white : accentColor,
+                          ),
+                          style: TextStyle(fontSize: 16, color: textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: dividerColor),
+                // Amount
+                Container(
+                  color: surfaceColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'จำนวน',
+                        style: TextStyle(fontSize: 16, color: textSecondary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _amountController,
+                          textAlign: TextAlign.right,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.]'),
+                            ),
+                          ],
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            hintStyle: TextStyle(color: textSecondary),
+                            hintTextDirection: TextDirection.rtl,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                            suffixText: 'บาท',
+                            suffixStyle: TextStyle(
+                              color: textSecondary,
+                              fontSize: 15,
+                            ),
+                          ),
+                          style: TextStyle(fontSize: 16, color: textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Type selector
+                Container(
+                  color: surfaceColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'ประเภท',
+                        style: TextStyle(fontSize: 16, color: textSecondary),
+                      ),
+                      const Spacer(),
+                      ...BudgetType.values.map((t) {
+                        final isSelected = _selectedType == t;
+                        final accentColor = isDark
+                            ? AppColors.darkHeader
+                            : AppColors.header;
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedType = t),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? accentColor
+                                    : accentColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                t.label,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : accentColor,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
-                  ],
+                        );
+                      }),
+                    ],
+                  ),
                 ),
-              ),
-              Divider(height: 1, color: dividerColor),
-              // Categories (shown only for expense type)
-              if (_selectedType == BudgetType.expense) ...[
+                Divider(height: 1, color: dividerColor),
+                // Categories (shown only for expense type)
+                if (_selectedType == BudgetType.expense) ...[
+                  InkWell(
+                    onTap: () =>
+                        _pickCategories(context, expenseCategories, isDark),
+                    child: Container(
+                      color: surfaceColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'หมวดหมู่',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: textSecondary,
+                            ),
+                          ),
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    categoryLabel,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.end,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: textSecondary,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                ], // end if expense
+                // Icon
                 InkWell(
-                  onTap: () =>
-                      _pickCategories(context, expenseCategories, isDark),
+                  onTap: () => _pickIcon(isDark),
                   child: Container(
                     color: surfaceColor,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 14,
+                      vertical: 12,
                     ),
                     child: Row(
                       children: [
                         Text(
-                          'หมวดหมู่',
+                          'ไอคอน',
                           style: TextStyle(fontSize: 16, color: textSecondary),
                         ),
-                        SizedBox(width: 20),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  categoryLabel,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.chevron_right,
-                                color: textSecondary,
-                                size: 18,
-                              ),
-                            ],
+                        const Spacer(),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _selectedColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          child: Icon(
+                            _selectedIcon,
+                            color: _selectedColor,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right,
+                          color: textSecondary,
+                          size: 18,
                         ),
                       ],
                     ),
                   ),
                 ),
                 Divider(height: 1, color: dividerColor),
-              ], // end if expense
-              // Icon
-              InkWell(
-                onTap: () => _pickIcon(isDark),
-                child: Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'ไอคอน',
-                        style: TextStyle(fontSize: 16, color: textSecondary),
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _selectedColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
+                // Color
+                InkWell(
+                  onTap: () => _pickColor(isDark),
+                  child: Container(
+                    color: surfaceColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'สี',
+                          style: TextStyle(fontSize: 16, color: textSecondary),
                         ),
-                        child: Icon(
-                          _selectedIcon,
-                          color: _selectedColor,
-                          size: 26,
+                        const Spacer(),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _selectedColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, color: textSecondary, size: 18),
-                    ],
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right,
+                          color: textSecondary,
+                          size: 18,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Divider(height: 1, color: dividerColor),
-              // Color
-              InkWell(
-                onTap: () => _pickColor(isDark),
-                child: Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'สี',
-                        style: TextStyle(fontSize: 16, color: textSecondary),
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _selectedColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, color: textSecondary, size: 18),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         );
       },

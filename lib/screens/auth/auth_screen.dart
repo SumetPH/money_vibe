@@ -112,13 +112,15 @@ class _AuthScreenState extends State<AuthScreen> {
         title: Text(_isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'),
         elevation: 0,
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+      body: AbsorbPointer(
+        absorbing: authProvider.isLoading,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 // Logo/Icon
                 Container(
                   width: 80,
@@ -413,8 +415,9 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showForgotPasswordDialog(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;

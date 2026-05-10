@@ -98,6 +98,18 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       if (mounted) {
         Navigator.pop(context, true);
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -140,9 +152,25 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 
     if (confirmed != true) return;
 
-    await widget.onDelete!();
-    if (mounted) {
-      Navigator.pop(context, true);
+    setState(() => _isSaving = true);
+    try {
+      await widget.onDelete!();
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เกิดข้อผิดพลาดในการลบ: $e'),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -159,7 +187,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
         title: Text(_isEditing ? 'แก้ไขหุ้น' : 'เพิ่มหุ้น'),
         actions: [
@@ -169,82 +197,101 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               onPressed: _isSaving ? null : _delete,
               tooltip: 'ลบหุ้น',
             ),
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _isSaving ? null : _save,
-            tooltip: 'บันทึก',
-          ),
+          _isSaving
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 16),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.check),
+                  onPressed: _isSaving ? null : _save,
+                  tooltip: 'บันทึก',
+                ),
         ],
       ),
-      body: ListView(
-        children: [
-          Container(
-            color:
-                theme.cardTheme.color ??
-                (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 150,
-                  child: Text(
-                    'Ticker',
-                    style: TextStyle(fontSize: 15, color: labelColor),
-                  ),
-                ),
-                // const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _tickerController,
-                    textCapitalization: TextCapitalization.characters,
-                    textAlign: TextAlign.right,
-                    autofocus: !_isEditing,
-                    decoration: InputDecoration(
-                      hintText: 'เช่น AAPL',
-                      hintStyle: TextStyle(color: labelColor),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      errorBorder: InputBorder.none,
-                      focusedErrorBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w300,
-                      color: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
+      body: AbsorbPointer(
+        absorbing: _isSaving,
+        child: ListView(
+          children: [
+            Container(
+              color:
+                  theme.cardTheme.color ??
+                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: Text(
+                      'Ticker',
+                      style: TextStyle(fontSize: 15, color: labelColor),
                     ),
                   ),
-                ),
-              ],
+                  // const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: _tickerController,
+                      textCapitalization: TextCapitalization.characters,
+                      textAlign: TextAlign.right,
+                      autofocus: !_isEditing,
+                      decoration: InputDecoration(
+                        hintText: 'เช่น AAPL',
+                        hintStyle: TextStyle(color: labelColor),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w300,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          _HoldingNumberFieldRow(
-            label: 'จำนวนหุ้น',
-            controller: _sharesController,
-            hintText: '0',
-            isDarkMode: isDarkMode,
-          ),
-          _buildDivider(isDarkMode),
-          _HoldingNumberFieldRow(
-            label: 'ราคาทุน (USD)',
-            controller: _costController,
-            hintText: '0.00',
-            isDarkMode: isDarkMode,
-          ),
-          _buildDivider(isDarkMode),
-          _HoldingNumberFieldRow(
-            label: 'ราคาปัจจุบัน (USD)',
-            controller: _priceController,
-            hintText: '0.00',
-            isDarkMode: isDarkMode,
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 8),
+            _HoldingNumberFieldRow(
+              label: 'จำนวนหุ้น',
+              controller: _sharesController,
+              hintText: '0',
+              isDarkMode: isDarkMode,
+            ),
+            _buildDivider(isDarkMode),
+            _HoldingNumberFieldRow(
+              label: 'ราคาทุน (USD)',
+              controller: _costController,
+              hintText: '0.00',
+              isDarkMode: isDarkMode,
+            ),
+            _buildDivider(isDarkMode),
+            _HoldingNumberFieldRow(
+              label: 'ราคาปัจจุบัน (USD)',
+              controller: _priceController,
+              hintText: '0.00',
+              isDarkMode: isDarkMode,
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
