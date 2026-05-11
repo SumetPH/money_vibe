@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _finnhubApiKeyKey = 'finnhub_api_key';
+  static const _priceSourceFinnhubKey = 'price_source_finnhub';
   static const _llmApiKeyKey = 'llm_api_key';
   static const _llmBaseUrlKey = 'llm_base_url';
   static const _llmModelKey = 'llm_model';
@@ -12,6 +13,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _netWorthFilterKey = 'net_worth_filter_ids';
 
   String? _finnhubApiKey;
+  bool _priceSourceFinnhub = false;
   String? _llmApiKey;
   String? _llmBaseUrl;
   String? _llmModel;
@@ -33,9 +35,12 @@ class SettingsProvider extends ChangeNotifier {
   bool get isFinnhubConfigured =>
       _finnhubApiKey != null && _finnhubApiKey!.isNotEmpty;
 
+  bool get useFinnhubForPrices => _priceSourceFinnhub && isFinnhubConfigured;
+
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
+    _priceSourceFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? false;
     _llmApiKey = prefs.getString(_llmApiKeyKey);
     _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
     _llmModel = prefs.getString(_llmModelKey);
@@ -78,6 +83,13 @@ class SettingsProvider extends ChangeNotifier {
       await prefs.setString(_finnhubApiKeyKey, apiKey);
       _finnhubApiKey = apiKey;
     }
+    notifyListeners();
+  }
+
+  Future<void> setUseFinnhubForPrices(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_priceSourceFinnhubKey, value);
+    _priceSourceFinnhub = value;
     notifyListeners();
   }
 

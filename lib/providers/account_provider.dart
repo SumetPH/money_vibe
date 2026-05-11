@@ -362,6 +362,28 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateHoldingsBatch(List<StockHolding> holdings) async {
+    if (holdings.isEmpty) return;
+    final portfolioId = holdings.first.portfolioId;
+    final list = _holdings[portfolioId];
+    if (list == null) return;
+
+    // Update all in memory at once
+    for (final h in holdings) {
+      final idx = list.indexWhere((e) => e.id == h.id);
+      if (idx != -1) list[idx] = h;
+    }
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    notifyListeners();
+
+    // Fire all Supabase updates in parallel
+    await Future.wait(
+      holdings.map((h) => _db.updateHolding(h).catchError((e) {
+        debugPrint('AccountProvider: Error updating holding ${h.id}: $e');
+      })),
+    );
+  }
+
   Future<void> deleteHolding(String id, String portfolioId) async {
     final list = _holdings[portfolioId];
     if (list == null) return;

@@ -9,19 +9,26 @@ class StockCompanyProfile {
 }
 
 class StockPriceService {
+  static const _yahooChartBase =
+      'https://query1.finance.yahoo.com/v8/finance/chart';
   static const _finnhubBase = 'https://finnhub.io/api/v1';
   static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
-  final String? apiKey;
+  final String? _finnhubApiKey;
+  final bool _useFinnhub;
 
-  StockPriceService({this.apiKey});
+  StockPriceService({String? finnhubApiKey, bool useFinnhub = false})
+    : _finnhubApiKey = finnhubApiKey,
+      _useFinnhub = useFinnhub;
 
-  bool get isConfigured => apiKey != null && apiKey!.isNotEmpty;
+  bool get isConfigured {
+    final key = _finnhubApiKey;
+    return key != null && key.isNotEmpty;
+  }
 
-  /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน (parallel requests)
+  /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน (Yahoo หรือ Finnhub ตาม toggle)
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {
     if (tickers.isEmpty) return {};
-    if (!isConfigured) throw Exception('ยังไม่ได้ตั้งค่า Finnhub API key');
 
     final results = await Future.wait(
       tickers.map(_fetchSinglePrice),
@@ -35,26 +42,70 @@ class StockPriceService {
     return prices;
   }
 
-  Future<double?> _fetchSinglePrice(String ticker) async {
+  Future<double?> _fetchSinglePrice(String ticker) {
+    return _useFinnhub && isConfigured
+        ? _fetchFinnhubPrice(ticker)
+        : _fetchYahooPrice(ticker);
+  }
+
+  Future<double?> _fetchYahooPrice(String ticker) async {
     try {
-      final uri = Uri.parse('$_finnhubBase/quote?symbol=$ticker&token=$apiKey');
+      final uri = Uri.parse(
+        '$_yahooChartBase/$ticker?interval=2m&range=1d&includePrePost=true',
+      );
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return null;
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final result =
+          (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
+      if (result == null) return null;
+
+      final meta = result['meta'] as Map<String, dynamic>?;
+      if (meta == null) return null;
+
+      final regularPrice = (meta['regularMarketPrice'] as num?)?.toDouble();
+      if (regularPrice == null || regularPrice <= 0) return null;
+
+      // ใช้ราคาจาก candle ล่าสุด — รวม pre/regular/post ทุกช่วงตลาด
+      final timestamps = (result['timestamp'] as List?)?.cast<num>();
+      final quotes =
+          (result['indicators']?['quote'] as List?)?.first
+              as Map<String, dynamic>?;
+      if (timestamps != null && timestamps.isNotEmpty && quotes != null) {
+        final closes = (quotes['close'] as List?)?.cast<num>();
+        if (closes != null && closes.isNotEmpty) {
+          final lastClose = closes.last.toDouble();
+          if (lastClose > 0) return lastClose;
+        }
+      }
+
+      return regularPrice;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<double?> _fetchFinnhubPrice(String ticker) async {
+    try {
+      final uri = Uri.parse(
+        '$_finnhubBase/quote?symbol=$ticker&token=$_finnhubApiKey',
+      );
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final price = (data['c'] as num?)?.toDouble();
-      // Finnhub ส่ง c=0 ถ้า ticker ไม่ถูกต้อง
       return (price != null && price > 0) ? price : null;
     } catch (_) {
       return null;
     }
   }
 
-  /// ดึง company profile หลายตัวพร้อมกันเพื่อใช้ชื่อ/โลโก้
+  /// ดึง company profile หลายตัวพร้อมกันเพื่อใช้ชื่อ/โลโก้ (Finnhub ต้องมี API key)
   Future<Map<String, StockCompanyProfile>> fetchProfiles(
     List<String> tickers,
   ) async {
-    if (tickers.isEmpty) return {};
-    if (!isConfigured) throw Exception('ยังไม่ได้ตั้งค่า Finnhub API key');
+    if (tickers.isEmpty || !isConfigured) return {};
 
     final uniqueTickers = tickers.toSet().toList();
     final results = await Future.wait(
@@ -71,14 +122,14 @@ class StockPriceService {
   }
 
   Future<StockCompanyProfile?> fetchProfile(String ticker) async {
-    if (!isConfigured) throw Exception('ยังไม่ได้ตั้งค่า Finnhub API key');
+    if (!isConfigured) return null;
     return _fetchSingleProfile(ticker);
   }
 
   Future<StockCompanyProfile?> _fetchSingleProfile(String ticker) async {
     try {
       final uri = Uri.parse(
-        '$_finnhubBase/stock/profile2?symbol=$ticker&token=$apiKey',
+        '$_finnhubBase/stock/profile2?symbol=$ticker&token=$_finnhubApiKey',
       );
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return null;

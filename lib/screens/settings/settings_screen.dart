@@ -175,6 +175,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // API Section
                 _buildSectionHeader('API', textColor),
+
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) {
+                    final finnhubReady = settings.isFinnhubConfigured;
+
+                    return SwitchListTile(
+                      secondary: Icon(
+                        Icons.toggle_on_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'ราคาจาก Finnhub',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        finnhubReady
+                            ? settings.useFinnhubForPrices
+                                  ? 'Finnhub API'
+                                  : 'Yahoo Finance'
+                            : 'ยังไม่ได้ตั้งค่า Finnhub API key',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      value: settings.useFinnhubForPrices,
+                      onChanged: finnhubReady
+                          ? (value) => settings.setUseFinnhubForPrices(value)
+                          : null,
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
                 ListTile(
                   leading: Icon(Icons.api, color: secondaryTextColor),
                   title: Text(
@@ -200,6 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 Divider(color: dividerColor),
+
                 ListTile(
                   leading: Icon(Icons.auto_awesome, color: secondaryTextColor),
                   title: Text(

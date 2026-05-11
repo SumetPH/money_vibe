@@ -35,11 +35,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
   void initState() {
     super.initState();
     final settings = context.read<SettingsProvider>();
-    _priceService = StockPriceService(apiKey: settings.finnhubApiKey);
+    _priceService = StockPriceService(
+      finnhubApiKey: settings.finnhubApiKey,
+      useFinnhub: settings.useFinnhubForPrices,
+    );
     _logoStorageService = StockLogoStorageService();
-    if (_priceService.isConfigured) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
   }
 
   Future<void> _refreshPrices() async {
@@ -53,11 +54,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     setState(() => _isRefreshing = true);
     try {
       final tickers = holdings.map((h) => h.ticker).toList();
-      final tickersNeedingProfile = holdings
-          .where((h) => h.logoUrl.isEmpty)
-          .map((h) => h.ticker)
-          .toSet()
-          .toList();
+      final tickersNeedingProfile = _priceService.isConfigured
+          ? holdings
+                .where((h) => h.logoUrl.isEmpty)
+                .map((h) => h.ticker)
+                .toSet()
+                .toList()
+          : <String>[];
       final futures = await Future.wait([
         _priceService.fetchPrices(tickers),
         _priceService.fetchUsdThbRate(),
@@ -73,6 +76,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       if (acc.autoUpdateRate) {
         provider.updateAccount(acc.copyWith(exchangeRate: rate));
       }
+      final updatedHoldings = <StockHolding>[];
       for (final h in holdings) {
         var updatedHolding = h;
         var hasChanges = false;
@@ -94,13 +98,18 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             currentLogoUrl: h.logoUrl,
           );
           if (mirroredLogoUrl.isNotEmpty && mirroredLogoUrl != h.logoUrl) {
-            updatedHolding = updatedHolding.copyWith(logoUrl: mirroredLogoUrl);
+            updatedHolding = updatedHolding.copyWith(
+              logoUrl: mirroredLogoUrl,
+            );
             hasChanges = true;
           }
         }
         if (hasChanges) {
-          await provider.updateHolding(updatedHolding);
+          updatedHoldings.add(updatedHolding);
         }
+      }
+      if (updatedHoldings.isNotEmpty) {
+        await provider.updateHoldingsBatch(updatedHoldings);
       }
     } catch (e) {
       if (mounted) {
