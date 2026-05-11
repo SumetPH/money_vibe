@@ -144,6 +144,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               income: dayIncome,
                               expense: dayExpense,
                               isDarkMode: isDarkMode,
+                              currency: 'บาท',
                             ),
                             ...txs.asMap().entries.map((entry) {
                               final index = entry.key;
@@ -177,6 +178,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 totalExpense: totalExpense,
                 onAdd: () => _openForm(context, null),
                 isDarkMode: isDarkMode,
+                currency: 'บาท',
               ),
             );
           },
@@ -275,32 +277,50 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     TransactionProvider txProvider,
     AccountProvider accountProvider,
   ) {
-    if (widget.accountId == null) {
-      return txProvider.getTotalIncome(txs);
-    }
-    double total = 0;
+    double totalThb = 0;
     for (final tx in txs) {
-      double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
-          ? -tx.amount
-          : tx.amount;
+      final account = accountProvider.findById(tx.accountId);
+      final rate = account?.exchangeRate ?? 1.0;
 
-      if ((tx.type == TransactionType.debtRepay ||
-              tx.type == TransactionType.debtTransfer) &&
-          tx.toAccountId == widget.accountId) {
-        displayAmount = tx.amount;
-      } else if (tx.type == TransactionType.transfer) {
-        if (tx.accountId == widget.accountId) {
-          displayAmount = -tx.amount;
-        } else if (tx.toAccountId == widget.accountId) {
+      if (widget.accountId == null) {
+        if (tx.type == TransactionType.income ||
+            tx.type == TransactionType.increaseBalance) {
+          totalThb += tx.amount * rate;
+        }
+      } else {
+        final toAccount = tx.toAccountId != null
+            ? accountProvider.findById(tx.toAccountId!)
+            : null;
+        final toRate = toAccount?.exchangeRate ?? 1.0;
+
+        double displayAmount =
+            tx.type.isExpenseLike || tx.type.isDecreaseBalance
+            ? -tx.amount
+            : tx.amount;
+
+        double amountInThb = tx.amount * rate;
+
+        if ((tx.type == TransactionType.debtRepay ||
+                tx.type == TransactionType.debtTransfer) &&
+            tx.toAccountId == widget.accountId) {
           displayAmount = tx.amount;
+          amountInThb = tx.amount * toRate;
+        } else if (tx.type == TransactionType.transfer) {
+          if (tx.accountId == widget.accountId) {
+            displayAmount = -tx.amount;
+            amountInThb = -tx.amount * rate;
+          } else if (tx.toAccountId == widget.accountId) {
+            displayAmount = tx.toAmount ?? tx.amount;
+            amountInThb = displayAmount * toRate;
+          }
+        }
+
+        if (displayAmount > 0) {
+          totalThb += amountInThb;
         }
       }
-
-      if (displayAmount > 0) {
-        total += displayAmount;
-      }
     }
-    return total;
+    return totalThb;
   }
 
   double _calculateTotalExpense(
@@ -308,32 +328,50 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     TransactionProvider txProvider,
     AccountProvider accountProvider,
   ) {
-    if (widget.accountId == null) {
-      return txProvider.getTotalActualExpense(txs, accountProvider.accounts);
-    }
-    double total = 0;
+    double totalThb = 0;
     for (final tx in txs) {
-      double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
-          ? -tx.amount
-          : tx.amount;
+      final account = accountProvider.findById(tx.accountId);
+      final rate = account?.exchangeRate ?? 1.0;
 
-      if ((tx.type == TransactionType.debtRepay ||
-              tx.type == TransactionType.debtTransfer) &&
-          tx.toAccountId == widget.accountId) {
-        displayAmount = tx.amount;
-      } else if (tx.type == TransactionType.transfer) {
-        if (tx.accountId == widget.accountId) {
-          displayAmount = -tx.amount;
-        } else if (tx.toAccountId == widget.accountId) {
+      if (widget.accountId == null) {
+        if (TransactionProvider.isActualExpense(tx, accountProvider.accounts) ||
+            tx.type == TransactionType.decreaseBalance) {
+          totalThb += tx.amount * rate;
+        }
+      } else {
+        final toAccount = tx.toAccountId != null
+            ? accountProvider.findById(tx.toAccountId!)
+            : null;
+        final toRate = toAccount?.exchangeRate ?? 1.0;
+
+        double displayAmount =
+            tx.type.isExpenseLike || tx.type.isDecreaseBalance
+            ? -tx.amount
+            : tx.amount;
+
+        double amountInThb = tx.amount * rate;
+
+        if ((tx.type == TransactionType.debtRepay ||
+                tx.type == TransactionType.debtTransfer) &&
+            tx.toAccountId == widget.accountId) {
           displayAmount = tx.amount;
+          amountInThb = tx.amount * toRate;
+        } else if (tx.type == TransactionType.transfer) {
+          if (tx.accountId == widget.accountId) {
+            displayAmount = -tx.amount;
+            amountInThb = -tx.amount * rate;
+          } else if (tx.toAccountId == widget.accountId) {
+            displayAmount = tx.toAmount ?? tx.amount;
+            amountInThb = displayAmount * toRate;
+          }
+        }
+
+        if (displayAmount < 0) {
+          totalThb += amountInThb.abs();
         }
       }
-
-      if (displayAmount < 0) {
-        total += displayAmount.abs();
-      }
     }
-    return total;
+    return totalThb;
   }
 
   void _showPeriodPicker(bool isDarkMode) {
@@ -428,12 +466,14 @@ class _DateHeader extends StatelessWidget {
   final double income;
   final double expense;
   final bool isDarkMode;
+  final String currency;
 
   const _DateHeader({
     required this.date,
     required this.income,
     required this.expense,
     required this.isDarkMode,
+    required this.currency,
   });
 
   @override
@@ -562,10 +602,16 @@ class _TransactionItem extends StatelessWidget {
         if (tx.accountId == viewingAccountId) {
           displayAmount = -tx.amount;
         } else if (tx.toAccountId == viewingAccountId) {
-          displayAmount = tx.amount;
+          displayAmount = tx.toAmount ?? tx.amount;
         }
       }
     }
+
+    final currency = viewingAccountId != null
+        ? (viewingAccountId == tx.toAccountId
+              ? toAccount?.currency
+              : account?.currency)
+        : account?.currency;
 
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
@@ -651,8 +697,8 @@ class _TransactionItem extends StatelessWidget {
                     Text(
                       (tx.type == TransactionType.transfer &&
                               viewingAccountId == null)
-                          ? formatAmount(tx.amount)
-                          : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}',
+                          ? '${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
+                          : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}${currency == 'THB' ? '' : ' ${currency ?? ''}'}',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -827,12 +873,14 @@ class _BottomSummaryBar extends StatelessWidget {
   final double totalExpense;
   final VoidCallback onAdd;
   final bool isDarkMode;
+  final String currency;
 
   const _BottomSummaryBar({
     required this.totalIncome,
     required this.totalExpense,
     required this.onAdd,
     required this.isDarkMode,
+    required this.currency,
   });
 
   @override
@@ -863,7 +911,7 @@ class _BottomSummaryBar extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${formatAmount(totalIncome)} บาท',
+                        '${formatAmount(totalIncome)}${currency == 'บาท' || currency == 'THB' ? '' : ' $currency'}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -898,7 +946,7 @@ class _BottomSummaryBar extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '-${formatAmount(totalExpense)} บาท',
+                        '-${formatAmount(totalExpense)}${currency == 'บาท' || currency == 'THB' ? '' : ' $currency'}',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

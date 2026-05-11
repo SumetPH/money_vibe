@@ -32,6 +32,8 @@ class TransactionFormScreen extends StatefulWidget {
 
 class _TransactionFormScreenState extends State<TransactionFormScreen> {
   final _amountController = TextEditingController();
+  final _toAmountController =
+      TextEditingController(); // cross-currency transfer
   final _noteController = TextEditingController();
 
   late TransactionType _type;
@@ -61,6 +63,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _amountController.text = (tx != null && tx.amount > 0)
         ? formatAmount(tx.amount)
         : '';
+    _toAmountController.text = (tx?.toAmount != null && tx!.toAmount! > 0)
+        ? formatAmount(tx.toAmount!)
+        : '';
     _noteController.text = tx?.note ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -71,6 +76,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _toAmountController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -161,12 +167,34 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
 
     final txProvider = context.read<TransactionProvider>();
+    final accountProvider = context.read<AccountProvider>();
 
     String? toAccountId;
     if (_type == TransactionType.transfer) {
       toAccountId = _selectedToAccountId;
     } else if (_type.requiresDebtAccount) {
       toAccountId = _selectedDebtAccountId;
+    }
+
+    // cross-currency: ตรวจสอบว่า from/to account ต่างสกุลเงินกัน
+    double? toAmount;
+    if (_type == TransactionType.transfer && toAccountId != null) {
+      final fromAcc = accountProvider.findById(_selectedAccountId!);
+      final toAcc = accountProvider.findById(toAccountId);
+      if (fromAcc != null &&
+          toAcc != null &&
+          fromAcc.currency != toAcc.currency) {
+        final toAmountText = _toAmountController.text
+            .replaceAll(',', '')
+            .trim();
+        toAmount = double.tryParse(toAmountText);
+        if (toAmount == null || toAmount <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('กรุณากรอกจำนวนที่ได้รับ')),
+          );
+          return;
+        }
+      }
     }
 
     final tx = AppTransaction(
@@ -180,6 +208,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       note: _noteController.text.trim().isEmpty
           ? null
           : _noteController.text.trim(),
+      toAmount: toAmount,
     );
 
     setState(() => _isLoading = true);
@@ -409,8 +438,22 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final theme = Theme.of(context);
 
+    // ── helpers ────────────────────────────────────────────────────────────
+    // สัญลักษณ์สกุลเงินตาม account ที่เลือก
+    String fromCurrencySymbol = selectedAccount?.currency == 'USD'
+        ? 'USD'
+        : 'บาท';
+    String toCurrencySymbol = selectedToAccount?.currency == 'USD'
+        ? 'USD'
+        : 'บาท';
+    final isCrossCurrency =
+        _type == TransactionType.transfer &&
+        selectedAccount != null &&
+        selectedToAccount != null &&
+        selectedAccount.currency != selectedToAccount.currency;
+
     return [
-      // Amount section
+      // Amount section (from)
       Container(
         color:
             theme.cardTheme.color ??
@@ -460,8 +503,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   filled: false,
-                  suffixText: 'บาท',
-                  suffixStyle: TextStyle(fontSize: 15),
+                  suffixText: fromCurrencySymbol,
+                  suffixStyle: const TextStyle(fontSize: 15),
                 ),
                 autofocus: !_isEditing,
                 onChanged: (value) {
@@ -474,6 +517,68 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           ],
         ),
       ),
+
+      // toAmount field — แสดงเฉพาะ cross-currency transfer
+      if (isCrossCurrency) ...[
+        const Divider(height: 1),
+        Container(
+          color:
+              theme.cardTheme.color ??
+              (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Text(
+                'จำนวนที่ได้รับ',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  controller: _toAmountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    hintStyle: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w300,
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    filled: false,
+                    suffixText: toCurrencySymbol,
+                    suffixStyle: const TextStyle(fontSize: 15),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
 
       if (type == TransactionType.decreaseBalance ||
           type == TransactionType.increaseBalance)
@@ -520,6 +625,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           onAccountTap: () => _pickAccount(context, accounts, false),
           onClearAccount: () => setState(() => _selectedAccountId = null),
           onCategoryTap: () => _pickCategory(context, categories),
+          accountProvider: accountProvider,
+          transactions: transactions,
         )
       else
         _AccountCategorySelector(
@@ -1204,6 +1311,8 @@ class _DebtRepayAccountSection extends StatelessWidget {
   final VoidCallback onAccountTap;
   final VoidCallback onClearAccount;
   final VoidCallback onCategoryTap;
+  final AccountProvider accountProvider;
+  final List<AppTransaction> transactions;
 
   const _DebtRepayAccountSection({
     required this.selectedDebtAccount,
@@ -1213,6 +1322,8 @@ class _DebtRepayAccountSection extends StatelessWidget {
     required this.onAccountTap,
     required this.onClearAccount,
     required this.onCategoryTap,
+    required this.accountProvider,
+    required this.transactions,
   });
 
   @override
@@ -1254,15 +1365,38 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
-                        selectedDebtAccount!.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.textPrimary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selectedDebtAccount!.name,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            formatAmount(
+                              accountProvider.getBalance(
+                                selectedDebtAccount!.id,
+                                transactions,
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.getAmountColor(
+                                accountProvider.getBalance(
+                                  selectedDebtAccount!.id,
+                                  transactions,
+                                ),
+                                isDarkMode,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ] else
@@ -1317,15 +1451,38 @@ class _DebtRepayAccountSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
-                        selectedAccount!.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.textPrimary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selectedAccount!.name,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            formatAmount(
+                              accountProvider.getBalance(
+                                selectedAccount!.id,
+                                transactions,
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.getAmountColor(
+                                accountProvider.getBalance(
+                                  selectedAccount!.id,
+                                  transactions,
+                                ),
+                                isDarkMode,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ] else
@@ -1462,6 +1619,9 @@ class _AccountCategorySelector extends StatelessWidget {
     final balance = selectedAccount != null
         ? accountProvider.getBalance(selectedAccount!.id, transactions)
         : 0.0;
+    final toBalance = selectedToAccount != null
+        ? accountProvider.getBalance(selectedToAccount!.id, transactions)
+        : 0.0;
 
     return Container(
       color:
@@ -1565,15 +1725,30 @@ class _AccountCategorySelector extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            selectedToAccount!.name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDarkMode
-                                  ? AppColors.darkTextPrimary
-                                  : AppColors.textPrimary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                selectedToAccount!.name,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                formatAmount(toBalance),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.getAmountColor(
+                                    toBalance,
+                                    isDarkMode,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ] else if (type.supportsCategory &&

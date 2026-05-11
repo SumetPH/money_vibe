@@ -776,14 +776,31 @@ class _AccountItem extends StatelessWidget {
                           color: textPrimaryColor,
                         ),
                       ),
-                      Text(
-                        '${formatAmount(balance)} บาท',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.getAmountColor(balance, isDarkMode),
+                      if (account.currency == 'USD')
+                        Text(
+                          // '\$${formatAmount(balance)} • ≈${formatAmount(balance * account.exchangeRate)} บาท',
+                          '${formatAmount(balance * account.exchangeRate)} บาท • ${formatAmount(balance)} USD',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.getAmountColor(
+                              balance,
+                              isDarkMode,
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          '${formatAmount(balance)} บาท',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.getAmountColor(
+                              balance,
+                              isDarkMode,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

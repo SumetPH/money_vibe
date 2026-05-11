@@ -56,6 +56,9 @@ class AppTransaction {
   String? toAccountId;
   DateTime dateTime;
   String? note;
+  // toAmount: จำนวนเงินในสกุลของ destination account สำหรับ cross-currency transfer
+  // null = same currency (ใช้ amount เดิม)
+  double? toAmount;
 
   AppTransaction({
     required this.id,
@@ -66,6 +69,7 @@ class AppTransaction {
     this.toAccountId,
     DateTime? dateTime,
     this.note,
+    this.toAmount,
   }) : dateTime = dateTime ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -77,6 +81,7 @@ class AppTransaction {
     'to_account_id': toAccountId,
     'date_time': dateTime.toIso8601String(),
     'note': note,
+    'to_amount': toAmount,
   };
 
   static AppTransaction fromMap(Map<String, dynamic> m) {
@@ -89,6 +94,7 @@ class AppTransaction {
       toAccountId: m['to_account_id'] as String?,
       dateTime: DateTime.parse(m['date_time'] as String),
       note: m['note'] as String?,
+      toAmount: (m['to_amount'] as num?)?.toDouble(),
     );
   }
 
@@ -103,6 +109,8 @@ class AppTransaction {
     bool clearToAccountId = false,
     DateTime? dateTime,
     String? note,
+    double? toAmount,
+    bool clearToAmount = false,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -113,6 +121,7 @@ class AppTransaction {
       toAccountId: clearToAccountId ? null : (toAccountId ?? this.toAccountId),
       dateTime: dateTime ?? this.dateTime,
       note: note ?? this.note,
+      toAmount: clearToAmount ? null : (toAmount ?? this.toAmount),
     );
   }
 }

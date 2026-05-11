@@ -1568,7 +1568,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     double portfolioValue = 0;
     for (final a in effectiveAccounts) {
       if (a.type == AccountType.portfolio) {
-        portfolioValue += accountProvider.getBalance(a.id, transactions);
+        portfolioValue += accountProvider.getBalanceInThb(a.id, transactions);
       }
     }
 

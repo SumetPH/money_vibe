@@ -740,7 +740,7 @@ class _SummaryCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${formatAmount(totalValue)} บาท',
+                            '${formatAmount(totalValue * rate)} บาท',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,

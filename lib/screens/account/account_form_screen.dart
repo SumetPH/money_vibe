@@ -34,6 +34,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late Color _selectedColor;
   late bool _excludeFromNetWorth;
   late bool _isHidden;
+  late bool _autoUpdateRate;
   int? _statementDay;
 
   bool get _isEditing => widget.account != null;
@@ -53,6 +54,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _selectedColor = acc?.color ?? AppColors.accountColors.first;
     _excludeFromNetWorth = acc?.excludeFromNetWorth ?? false;
     _isHidden = acc?.isHidden ?? false;
+    _autoUpdateRate = acc?.autoUpdateRate ?? true;
     _statementDay = acc?.statementDay;
 
     if (_selectedType == AccountType.portfolio) {
@@ -122,6 +124,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 : _noteController.text.trim(),
             cashBalance: cashBalance,
             exchangeRate: exchangeRate,
+            autoUpdateRate: _autoUpdateRate,
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
                 : null,
@@ -143,6 +146,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             isHidden: _isHidden,
             cashBalance: cashBalance,
             exchangeRate: exchangeRate,
+            autoUpdateRate: _autoUpdateRate,
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
                 : null,
@@ -301,13 +305,23 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   textSecondaryColor: textSecondaryColor,
                 ),
                 _buildDivider(color: dividerColor),
-                // Exchange Rate (portfolio only)
-                if (_selectedType == AccountType.portfolio) ...[
-                  _buildExchangeRateField(
+                // Exchange Rate & Auto Update (USD only)
+                if (_selectedCurrency == 'USD') ...[
+                  _buildSwitchRow(
+                    label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
+                    value: _autoUpdateRate,
+                    onChanged: (v) => setState(() => _autoUpdateRate = v),
                     surfaceColor: surfaceColor,
                     textSecondaryColor: textSecondaryColor,
                   ),
                   _buildDivider(color: dividerColor),
+                  if (!_autoUpdateRate) ...[
+                    _buildExchangeRateField(
+                      surfaceColor: surfaceColor,
+                      textSecondaryColor: textSecondaryColor,
+                    ),
+                    _buildDivider(color: dividerColor),
+                  ],
                 ],
                 // Currency
                 _buildPickerRow(
@@ -434,7 +448,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               decoration: InputDecoration(
                 hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',
                 hintStyle: TextStyle(color: textSecondaryColor),
-                suffixText: isPortfolio ? 'USD' : null,
+                suffixText: _selectedCurrency == 'USD' ? 'USD' : 'บาท',
                 suffixStyle: TextStyle(
                   color: textSecondaryColor,
                   fontSize: 16,

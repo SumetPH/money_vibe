@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
+import '../services/stock_price_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/transaction.dart';
@@ -62,6 +63,9 @@ class AccountProvider extends ChangeNotifier {
       debugPrint(
         'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings',
       );
+
+      // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
+      await _refreshUsdExchangeRate();
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
     } finally {
@@ -73,6 +77,30 @@ class AccountProvider extends ChangeNotifier {
   Future<void> reload() async {
     debugPrint('AccountProvider: Reloading...');
     return init(); // Same logic
+  }
+
+  /// Fetch USD/THB rate และ update เฉพาะ USD accounts ที่มี autoUpdateRate == true
+  Future<void> _refreshUsdExchangeRate() async {
+    final usdAccounts = _accounts
+        .where((a) => a.currency == 'USD' && a.autoUpdateRate)
+        .toList();
+    if (usdAccounts.isEmpty) return;
+
+    try {
+      final rate = await StockPriceService().fetchUsdThbRate();
+      debugPrint('AccountProvider: USD/THB rate fetched: $rate');
+      // fetch ครั้งเดียว แล้ว apply ให้ทุก USD account
+      for (final acc in usdAccounts) {
+        final updated = acc.copyWith(exchangeRate: rate);
+        final idx = _accounts.indexWhere((a) => a.id == acc.id);
+        if (idx != -1) _accounts[idx] = updated;
+        await _db.updateAccount(updated);
+      }
+      notifyListeners();
+    } catch (e) {
+      // Silently fail — ใช้ rate เก่าต่อไป (offline-safe)
+      debugPrint('AccountProvider: Failed to fetch USD/THB rate: $e');
+    }
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -111,16 +139,16 @@ class AccountProvider extends ChangeNotifier {
     final account = findById(accountId);
     if (account == null) return 0;
 
-    // Portfolio: balance = (cashBalance in USD * exchangeRate) + sum of holdings value in THB
+    // Portfolio: balance = (cashBalance in USD) + sum of holdings value in USD
     if (account.type == AccountType.portfolio) {
-      double total = account.cashBalance * account.exchangeRate;
+      double total = account.cashBalance;
       for (final h in (_holdings[accountId] ?? [])) {
-        total += h.shares * h.priceUsd * account.exchangeRate;
+        total += h.shares * h.priceUsd;
       }
       return total;
     }
 
-    // Regular accounts: computed from transactions
+    // Regular accounts: computed from transactions (in account's native currency)
     double balance = account.initialBalance;
 
     for (final tx in transactions) {
@@ -134,11 +162,27 @@ class AccountProvider extends ChangeNotifier {
           balance -= tx.amount;
         }
       }
+      // destination account: ใช้ toAmount ถ้ามี (cross-currency) ไม่งั้นใช้ amount เดิม
       if (tx.toAccountId == accountId && tx.type.usesDestinationAccount) {
-        balance += tx.amount;
+        balance += tx.toAmount ?? tx.amount;
       }
     }
 
+    return balance;
+  }
+
+  /// คืนค่า balance แปลงเป็น THB เสมอ (สำหรับ net worth และ group totals)
+  double getBalanceInThb(
+    String accountId,
+    List<AppTransaction> transactions,
+  ) {
+    final account = findById(accountId);
+    if (account == null) return 0;
+    final balance = getBalance(accountId, transactions);
+    // Portfolio และ USD account ต้อง convert ด้วย exchangeRate
+    if (account.currency == 'USD') {
+      return balance * account.exchangeRate;
+    }
     return balance;
   }
 
@@ -152,7 +196,7 @@ class AccountProvider extends ChangeNotifier {
               !a.excludeFromNetWorth &&
               (filterIds == null || filterIds.contains(a.id)),
         )
-        .fold(0.0, (sum, a) => sum + getBalance(a.id, transactions));
+        .fold(0.0, (sum, a) => sum + getBalanceInThb(a.id, transactions));
   }
 
   Map<String, double> getGroupTotals(List<AppTransaction> transactions) {
@@ -163,7 +207,7 @@ class AccountProvider extends ChangeNotifier {
     for (final account in accountsToShow) {
       final group = accountTypeDisplayGroup(account.type);
       totals[group] =
-          (totals[group] ?? 0) + getBalance(account.id, transactions);
+          (totals[group] ?? 0) + getBalanceInThb(account.id, transactions);
     }
     return totals;
   }
