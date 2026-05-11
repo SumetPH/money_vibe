@@ -84,7 +84,7 @@ class Account {
     this.isHidden = false,
     this.sortOrder = 0,
     this.cashBalance = 0,
-    this.exchangeRate = 35.0,
+    this.exchangeRate = 0,
     this.autoUpdateRate = true,
     this.statementDay,
   }) : startDate = startDate ?? DateTime.now();
@@ -124,7 +124,7 @@ class Account {
     isHidden: m['is_hidden'] == 1,
     sortOrder: m['sort_order'] as int? ?? 0,
     cashBalance: (m['cash_balance'] as num? ?? 0).toDouble(),
-    exchangeRate: (m['exchange_rate'] as num? ?? 35.0).toDouble(),
+    exchangeRate: (m['exchange_rate'] as num? ?? 0).toDouble(),
     autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
     statementDay: m['statement_day'] as int?,
   );
