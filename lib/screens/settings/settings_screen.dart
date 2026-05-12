@@ -206,6 +206,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Divider(color: dividerColor),
 
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) {
+                    return SwitchListTile(
+                      secondary: Icon(
+                        Icons.schedule_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'Yahoo ใช้ราคา Pre/Post',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        settings.useYahooExtendedHoursPrice
+                            ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
+                            : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      value: settings.useYahooExtendedHoursPrice,
+                      onChanged: (value) =>
+                          settings.setUseYahooExtendedHoursPrice(value),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
                 ListTile(
                   leading: Icon(Icons.api, color: secondaryTextColor),
                   title: Text(

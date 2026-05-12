@@ -16,10 +16,15 @@ class StockPriceService {
 
   final String? _finnhubApiKey;
   final bool _useFinnhub;
+  final bool _useYahooExtendedHoursPrice;
 
-  StockPriceService({String? finnhubApiKey, bool useFinnhub = false})
-    : _finnhubApiKey = finnhubApiKey,
-      _useFinnhub = useFinnhub;
+  StockPriceService({
+    String? finnhubApiKey,
+    bool useFinnhub = false,
+    bool useYahooExtendedHoursPrice = true,
+  }) : _finnhubApiKey = finnhubApiKey,
+       _useFinnhub = useFinnhub,
+       _useYahooExtendedHoursPrice = useYahooExtendedHoursPrice;
 
   bool get isConfigured {
     final key = _finnhubApiKey;
@@ -51,7 +56,7 @@ class StockPriceService {
   Future<double?> _fetchYahooPrice(String ticker) async {
     try {
       final uri = Uri.parse(
-        '$_yahooChartBase/$ticker?interval=2m&range=1d&includePrePost=true',
+        '$_yahooChartBase/$ticker?interval=2m&range=1d&includePrePost=$_useYahooExtendedHoursPrice',
       );
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return null;
@@ -66,6 +71,10 @@ class StockPriceService {
 
       final regularPrice = (meta['regularMarketPrice'] as num?)?.toDouble();
       if (regularPrice == null || regularPrice <= 0) return null;
+
+      if (!_useYahooExtendedHoursPrice) {
+        return regularPrice;
+      }
 
       // ใช้ราคาจาก candle ล่าสุด — รวม pre/regular/post ทุกช่วงตลาด
       final timestamps = (result['timestamp'] as List?)?.cast<num>();

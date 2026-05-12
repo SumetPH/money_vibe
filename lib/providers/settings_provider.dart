@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsProvider extends ChangeNotifier {
   static const _finnhubApiKeyKey = 'finnhub_api_key';
   static const _priceSourceFinnhubKey = 'price_source_finnhub';
+  static const _yahooExtendedHoursKey = 'yahoo_extended_hours_price';
   static const _llmApiKeyKey = 'llm_api_key';
   static const _llmBaseUrlKey = 'llm_base_url';
   static const _llmModelKey = 'llm_model';
@@ -14,6 +15,7 @@ class SettingsProvider extends ChangeNotifier {
 
   String? _finnhubApiKey;
   bool _priceSourceFinnhub = false;
+  bool _useYahooExtendedHoursPrice = true;
   String? _llmApiKey;
   String? _llmBaseUrl;
   String? _llmModel;
@@ -36,11 +38,13 @@ class SettingsProvider extends ChangeNotifier {
       _finnhubApiKey != null && _finnhubApiKey!.isNotEmpty;
 
   bool get useFinnhubForPrices => _priceSourceFinnhub && isFinnhubConfigured;
+  bool get useYahooExtendedHoursPrice => _useYahooExtendedHoursPrice;
 
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
     _priceSourceFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? false;
+    _useYahooExtendedHoursPrice = prefs.getBool(_yahooExtendedHoursKey) ?? true;
     _llmApiKey = prefs.getString(_llmApiKeyKey);
     _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
     _llmModel = prefs.getString(_llmModelKey);
@@ -90,6 +94,13 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_priceSourceFinnhubKey, value);
     _priceSourceFinnhub = value;
+    notifyListeners();
+  }
+
+  Future<void> setUseYahooExtendedHoursPrice(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_yahooExtendedHoursKey, value);
+    _useYahooExtendedHoursPrice = value;
     notifyListeners();
   }
 

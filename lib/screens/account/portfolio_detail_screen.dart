@@ -34,17 +34,23 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
   @override
   void initState() {
     super.initState();
-    final settings = context.read<SettingsProvider>();
-    _priceService = StockPriceService(
-      finnhubApiKey: settings.finnhubApiKey,
-      useFinnhub: settings.useFinnhubForPrices,
-    );
+    _priceService = _buildPriceService();
     _logoStorageService = StockLogoStorageService();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
   }
 
+  StockPriceService _buildPriceService() {
+    final settings = context.read<SettingsProvider>();
+    return StockPriceService(
+      finnhubApiKey: settings.finnhubApiKey,
+      useFinnhub: settings.useFinnhubForPrices,
+      useYahooExtendedHoursPrice: settings.useYahooExtendedHoursPrice,
+    );
+  }
+
   Future<void> _refreshPrices() async {
     if (_isRefreshing) return;
+    _priceService = _buildPriceService();
     final provider = context.read<AccountProvider>();
     final acc = provider.findById(widget.account.id);
     if (acc == null) return;
@@ -98,9 +104,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             currentLogoUrl: h.logoUrl,
           );
           if (mirroredLogoUrl.isNotEmpty && mirroredLogoUrl != h.logoUrl) {
-            updatedHolding = updatedHolding.copyWith(
-              logoUrl: mirroredLogoUrl,
-            );
+            updatedHolding = updatedHolding.copyWith(logoUrl: mirroredLogoUrl);
             hasChanges = true;
           }
         }
