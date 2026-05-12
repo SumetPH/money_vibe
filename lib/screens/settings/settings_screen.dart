@@ -180,11 +180,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (context, settings, _) {
                     return SwitchListTile(
                       secondary: Icon(
+                        Icons.currency_exchange_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'อัตราแลกเปลี่ยนจาก Yahoo',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        settings.useYahooForExchangeRate
+                            ? 'ใช้ Yahoo Finance สำหรับ USD/THB'
+                            : 'ใช้ Frankfurter สำหรับ USD/THB',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      value: settings.useYahooForExchangeRate,
+                      onChanged: (value) => settings.setExchangeRateSource(
+                        value
+                            ? ExchangeRateSource.yahoo
+                            : ExchangeRateSource.frankfurter,
+                      ),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) {
+                    return SwitchListTile(
+                      secondary: Icon(
                         Icons.schedule_outlined,
                         color: secondaryTextColor,
                       ),
                       title: Text(
-                        'Yahoo ใช้ราคา Pre/Post',
+                        'ราคา Pre/Post จาก Yahoo',
                         style: TextStyle(color: textColor),
                       ),
                       subtitle: Text(

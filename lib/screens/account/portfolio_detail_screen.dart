@@ -47,6 +47,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       finnhubApiKey: settings.finnhubApiKey,
       useFinnhub: settings.useFinnhubForPrices,
       useYahooExtendedHoursPrice: settings.useYahooExtendedHoursPrice,
+      exchangeRateSource: settings.exchangeRateSource,
     );
   }
 

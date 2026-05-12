@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../providers/settings_provider.dart';
+
 class StockCompanyProfile {
   final String name;
   final String logoUrl;
@@ -12,18 +14,22 @@ class StockPriceService {
   static const _yahooChartBase =
       'https://query1.finance.yahoo.com/v8/finance/chart';
   static const _finnhubBase = 'https://finnhub.io/api/v1';
+  static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
   final String? _finnhubApiKey;
   final bool _useFinnhub;
   final bool _useYahooExtendedHoursPrice;
+  final ExchangeRateSource _exchangeRateSource;
 
   StockPriceService({
     String? finnhubApiKey,
     bool useFinnhub = false,
     bool useYahooExtendedHoursPrice = true,
+    ExchangeRateSource exchangeRateSource = ExchangeRateSource.yahoo,
   }) : _finnhubApiKey = finnhubApiKey,
        _useFinnhub = useFinnhub,
-       _useYahooExtendedHoursPrice = useYahooExtendedHoursPrice;
+       _useYahooExtendedHoursPrice = useYahooExtendedHoursPrice,
+       _exchangeRateSource = exchangeRateSource;
 
   bool get isConfigured {
     final key = _finnhubApiKey;
@@ -154,8 +160,20 @@ class StockPriceService {
   }
 
   /// ดึงอัตราแลกเปลี่ยน USD/THB (ไม่ต้อง API key)
-  Future<double> fetchUsdThbRate() async {
-    final uri = Uri.parse('$_yahooChartBase/THB=x?interval=1m&range=1d');
+  Future<double> fetchUsdThbRateFrankfurter() async {
+    final uri = Uri.parse('$_frankfurterBase/latest?base=USD&symbols=THB');
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) {
+      throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final rate = (data['rates']?['THB'] as num?)?.toDouble();
+    if (rate == null) throw Exception('ไม่พบอัตราแลกเปลี่ยน THB');
+    return rate;
+  }
+
+  Future<double> fetchUsdThbRateYahoo() async {
+    final uri = Uri.parse('$_yahooChartBase/THB=X?interval=1m&range=1d');
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
       throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
@@ -173,5 +191,11 @@ class StockPriceService {
     }
 
     return rate;
+  }
+
+  Future<double> fetchUsdThbRate() {
+    return _exchangeRateSource == ExchangeRateSource.frankfurter
+        ? fetchUsdThbRateFrankfurter()
+        : fetchUsdThbRateYahoo();
   }
 }

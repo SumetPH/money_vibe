@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum ExchangeRateSource { yahoo, frankfurter }
+
 class SettingsProvider extends ChangeNotifier {
   static const _finnhubApiKeyKey = 'finnhub_api_key';
   static const _priceSourceFinnhubKey = 'price_source_finnhub';
   static const _yahooExtendedHoursKey = 'yahoo_extended_hours_price';
+  static const _exchangeRateSourceKey = 'exchange_rate_source';
   static const _llmApiKeyKey = 'llm_api_key';
   static const _llmBaseUrlKey = 'llm_base_url';
   static const _llmModelKey = 'llm_model';
@@ -16,6 +19,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _finnhubApiKey;
   bool _priceSourceFinnhub = false;
   bool _useYahooExtendedHoursPrice = true;
+  ExchangeRateSource _exchangeRateSource = ExchangeRateSource.yahoo;
   String? _llmApiKey;
   String? _llmBaseUrl;
   String? _llmModel;
@@ -39,12 +43,20 @@ class SettingsProvider extends ChangeNotifier {
 
   bool get useFinnhubForPrices => _priceSourceFinnhub && isFinnhubConfigured;
   bool get useYahooExtendedHoursPrice => _useYahooExtendedHoursPrice;
+  ExchangeRateSource get exchangeRateSource => _exchangeRateSource;
+  bool get useYahooForExchangeRate =>
+      _exchangeRateSource == ExchangeRateSource.yahoo;
 
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
     _priceSourceFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? false;
     _useYahooExtendedHoursPrice = prefs.getBool(_yahooExtendedHoursKey) ?? true;
+    final exchangeRateSourceRaw = prefs.getString(_exchangeRateSourceKey);
+    _exchangeRateSource =
+        exchangeRateSourceRaw == ExchangeRateSource.frankfurter.name
+        ? ExchangeRateSource.frankfurter
+        : ExchangeRateSource.yahoo;
     _llmApiKey = prefs.getString(_llmApiKeyKey);
     _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
     _llmModel = prefs.getString(_llmModelKey);
@@ -101,6 +113,13 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_yahooExtendedHoursKey, value);
     _useYahooExtendedHoursPrice = value;
+    notifyListeners();
+  }
+
+  Future<void> setExchangeRateSource(ExchangeRateSource value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_exchangeRateSourceKey, value.name);
+    _exchangeRateSource = value;
     notifyListeners();
   }
 

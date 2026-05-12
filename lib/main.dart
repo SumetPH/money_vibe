@@ -53,11 +53,11 @@ void main() async {
     debugPrint('Main: Stack trace: $stackTrace');
   }
 
-  final accountProvider = AccountProvider();
+  final settingsProvider = SettingsProvider();
+  final accountProvider = AccountProvider(settingsProvider: settingsProvider);
   final budgetProvider = BudgetProvider();
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
-  final settingsProvider = SettingsProvider();
   final recurringProvider = RecurringTransactionProvider();
   final authProvider = AuthProvider();
   final llmProvider = LlmProvider();

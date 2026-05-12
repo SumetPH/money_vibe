@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
+import 'settings_provider.dart';
 import '../services/database_manager.dart';
 import '../services/stock_price_service.dart';
 import '../models/account.dart';
@@ -10,6 +11,10 @@ import '../models/transaction.dart';
 class AccountProvider extends ChangeNotifier {
   final _uuid = const Uuid();
   final DatabaseManager _dbManager = DatabaseManager();
+  final SettingsProvider? _settingsProvider;
+
+  AccountProvider({SettingsProvider? settingsProvider})
+    : _settingsProvider = settingsProvider;
 
   final List<Account> _accounts = [];
   final Map<String, List<StockHolding>> _holdings =
@@ -87,7 +92,10 @@ class AccountProvider extends ChangeNotifier {
     if (usdAccounts.isEmpty) return;
 
     try {
-      final rate = await StockPriceService().fetchUsdThbRate();
+      final rate = await StockPriceService(
+        exchangeRateSource:
+            _settingsProvider?.exchangeRateSource ?? ExchangeRateSource.yahoo,
+      ).fetchUsdThbRate();
       debugPrint('AccountProvider: USD/THB rate fetched: $rate');
       // fetch ครั้งเดียว แล้ว apply ให้ทุก USD account
       for (final acc in usdAccounts) {
@@ -172,10 +180,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   /// คืนค่า balance แปลงเป็น THB เสมอ (สำหรับ net worth และ group totals)
-  double getBalanceInThb(
-    String accountId,
-    List<AppTransaction> transactions,
-  ) {
+  double getBalanceInThb(String accountId, List<AppTransaction> transactions) {
     final account = findById(accountId);
     if (account == null) return 0;
     final balance = getBalance(accountId, transactions);
@@ -219,7 +224,7 @@ class AccountProvider extends ChangeNotifier {
     final sortOrder = _accounts.isEmpty
         ? 0
         : (_accounts.map((a) => a.sortOrder).reduce((a, b) => a > b ? a : b) +
-            10);
+              10);
     final updated = account.copyWith(sortOrder: sortOrder);
 
     _accounts.add(updated);
@@ -295,7 +300,10 @@ class AccountProvider extends ChangeNotifier {
 
     try {
       for (int i = 0; i < _accounts.length; i++) {
-        await _db.updateAccountSortOrder(_accounts[i].id, _accounts[i].sortOrder);
+        await _db.updateAccountSortOrder(
+          _accounts[i].id,
+          _accounts[i].sortOrder,
+        );
       }
     } catch (e) {
       debugPrint('AccountProvider: Error reordering accounts: $e');
@@ -422,9 +430,11 @@ class AccountProvider extends ChangeNotifier {
 
     // Fire all Supabase updates in parallel
     await Future.wait(
-      holdings.map((h) => _db.updateHolding(h).catchError((e) {
-        debugPrint('AccountProvider: Error updating holding ${h.id}: $e');
-      })),
+      holdings.map(
+        (h) => _db.updateHolding(h).catchError((e) {
+          debugPrint('AccountProvider: Error updating holding ${h.id}: $e');
+        }),
+      ),
     );
   }
 
