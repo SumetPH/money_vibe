@@ -1310,12 +1310,12 @@ class _HoldingItem extends StatelessWidget {
                       ),
 
                       if (sellPlanStatus != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 12),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 4,
-                            vertical: 10,
+                            // vertical: 10,
                           ),
                           decoration: BoxDecoration(
                             color: sellPlanStatus.backgroundColor,
