@@ -178,6 +178,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 Consumer<SettingsProvider>(
                   builder: (context, settings, _) {
+                    return SwitchListTile(
+                      secondary: Icon(
+                        Icons.schedule_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text(
+                        'Yahoo ใช้ราคา Pre/Post',
+                        style: TextStyle(color: textColor),
+                      ),
+                      subtitle: Text(
+                        settings.useYahooExtendedHoursPrice
+                            ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
+                            : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      value: settings.useYahooExtendedHoursPrice,
+                      onChanged: (value) =>
+                          settings.setUseYahooExtendedHoursPrice(value),
+                    );
+                  },
+                ),
+                Divider(color: dividerColor),
+
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) {
                     final finnhubReady = settings.isFinnhubConfigured;
 
                     return SwitchListTile(
@@ -201,31 +226,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: finnhubReady
                           ? (value) => settings.setUseFinnhubForPrices(value)
                           : null,
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                Consumer<SettingsProvider>(
-                  builder: (context, settings, _) {
-                    return SwitchListTile(
-                      secondary: Icon(
-                        Icons.schedule_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text(
-                        'Yahoo ใช้ราคา Pre/Post',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        settings.useYahooExtendedHoursPrice
-                            ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
-                            : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      value: settings.useYahooExtendedHoursPrice,
-                      onChanged: (value) =>
-                          settings.setUseYahooExtendedHoursPrice(value),
                     );
                   },
                 ),

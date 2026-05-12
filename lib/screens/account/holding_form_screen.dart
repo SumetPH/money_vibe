@@ -6,6 +6,17 @@ import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 
+final _twoDecimalInputFormatter = TextInputFormatter.withFunction((
+  oldValue,
+  newValue,
+) {
+  final text = newValue.text;
+  if (text.isEmpty) return newValue;
+
+  final match = RegExp(r'^\d+(\.\d{0,2})?$').hasMatch(text);
+  return match ? newValue : oldValue;
+});
+
 class HoldingFormScreen extends StatefulWidget {
   final String portfolioId;
   final StockHolding? existing;
@@ -31,7 +42,15 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   final _sharesController = TextEditingController();
   final _priceController = TextEditingController();
   final _costController = TextEditingController();
+  final _takeProfitController = TextEditingController();
+  final _trailingStopController = TextEditingController();
+  final _peakProfitController = TextEditingController();
   bool _isSaving = false;
+  bool _sellPlanEnabled = false;
+  String? _takeProfitError;
+  String? _trailingStopError;
+  String? _peakProfitError;
+  String? _sellPlanError;
 
   bool get _isEditing => widget.existing != null;
 
@@ -46,6 +65,16 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       if (holding.costBasisUsd > 0) {
         _costController.text = _formatNum(holding.costBasisUsd);
       }
+      _sellPlanEnabled = holding.sellPlanEnabled;
+      if (holding.takeProfitPct > 0) {
+        _takeProfitController.text = _formatNum(holding.takeProfitPct);
+      }
+      if (holding.trailingStopPct > 0) {
+        _trailingStopController.text = _formatNum(holding.trailingStopPct);
+      }
+      if (holding.peakProfitPct != null) {
+        _peakProfitController.text = _formatPct(holding.peakProfitPct!);
+      }
     }
   }
 
@@ -55,6 +84,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     _sharesController.dispose();
     _priceController.dispose();
     _costController.dispose();
+    _takeProfitController.dispose();
+    _trailingStopController.dispose();
+    _peakProfitController.dispose();
     super.dispose();
   }
 
@@ -64,6 +96,10 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     }
     return value.toString();
   }
+
+  String _formatPct(double value) => value.toStringAsFixed(2);
+
+  double _roundPct(double value) => double.parse(value.toStringAsFixed(2));
 
   Future<void> _save() async {
     if (_isSaving) return;
@@ -79,6 +115,56 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
     final price = double.tryParse(_priceController.text.trim()) ?? 0;
     final cost = double.tryParse(_costController.text.trim()) ?? 0;
+    final takeProfit = double.tryParse(_takeProfitController.text.trim()) ?? 0;
+    final trailingStop =
+        double.tryParse(_trailingStopController.text.trim()) ?? 0;
+    final peakProfitText = _peakProfitController.text.trim();
+    final manualPeakProfit = peakProfitText.isEmpty
+        ? null
+        : double.tryParse(peakProfitText);
+
+    setState(() {
+      _takeProfitError = null;
+      _trailingStopError = null;
+      _peakProfitError = null;
+      _sellPlanError = null;
+    });
+
+    if (_sellPlanEnabled) {
+      var hasError = false;
+      if (cost <= 0) {
+        _sellPlanError = 'ต้องมีราคาทุนมากกว่า 0 เพื่อใช้แผนขาย';
+        hasError = true;
+      }
+      if (takeProfit <= 0) {
+        _takeProfitError = 'กรุณากรอก Take Profit %';
+        hasError = true;
+      }
+      if (trailingStop <= 0) {
+        _trailingStopError = 'กรุณากรอก Trailing Stop %';
+        hasError = true;
+      }
+      if (peakProfitText.isNotEmpty && manualPeakProfit == null) {
+        _peakProfitError = 'กรุณากรอกกำไรสูงสุด % ให้ถูกต้อง';
+        hasError = true;
+      } else if (manualPeakProfit != null && manualPeakProfit < takeProfit) {
+        _peakProfitError = 'กำไรสูงสุด % ต้องมากกว่าหรือเท่ากับ Take Profit %';
+        hasError = true;
+      }
+      if (hasError) {
+        setState(() {});
+        return;
+      }
+    }
+
+    final peakProfitPct = _resolvePeakProfitPct(
+      shares: shares,
+      priceUsd: price,
+      costBasisUsd: cost,
+      sellPlanEnabled: _sellPlanEnabled,
+      takeProfitPct: takeProfit,
+      manualPeakProfitPct: manualPeakProfit,
+    );
 
     final holding = StockHolding(
       id: widget.existing?.id ?? widget.generateId(),
@@ -90,6 +176,16 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       costBasisUsd: cost,
       logoUrl: widget.existing?.logoUrl ?? '',
       sortOrder: widget.existing?.sortOrder ?? 0,
+      sellPlanEnabled: _sellPlanEnabled,
+      takeProfitPct: _sellPlanEnabled
+          ? takeProfit
+          : (widget.existing?.takeProfitPct ?? takeProfit),
+      trailingStopPct: _sellPlanEnabled
+          ? trailingStop
+          : (widget.existing?.trailingStopPct ?? trailingStop),
+      peakProfitPct: _sellPlanEnabled
+          ? peakProfitPct
+          : widget.existing?.peakProfitPct,
     );
 
     setState(() => _isSaving = true);
@@ -115,6 +211,76 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  double _calculatePnlPct({
+    required double shares,
+    required double priceUsd,
+    required double costBasisUsd,
+  }) {
+    final totalCostUsd = shares * costBasisUsd;
+    if (totalCostUsd <= 0) return 0;
+    final unrealizedPnlUsd = (shares * priceUsd) - totalCostUsd;
+    return (unrealizedPnlUsd / totalCostUsd) * 100;
+  }
+
+  double? _resolvePeakProfitPct({
+    required double shares,
+    required double priceUsd,
+    required double costBasisUsd,
+    required bool sellPlanEnabled,
+    required double takeProfitPct,
+    required double? manualPeakProfitPct,
+  }) {
+    final existing = widget.existing;
+    if (!sellPlanEnabled) {
+      return existing?.peakProfitPct;
+    }
+
+    if (manualPeakProfitPct != null) {
+      return _roundPct(manualPeakProfitPct);
+    }
+
+    final currentPnlPct = _calculatePnlPct(
+      shares: shares,
+      priceUsd: priceUsd,
+      costBasisUsd: costBasisUsd,
+    );
+    if (currentPnlPct < takeProfitPct) {
+      return null;
+    }
+
+    if (existing == null) {
+      return _roundPct(currentPnlPct);
+    }
+
+    // Buying more or selling part of a position changes the investment basis,
+    // so any historical peak profit percentage must start over from
+    // the new position state.
+    final basisChanged = StockHolding(
+      id: existing.id,
+      portfolioId: existing.portfolioId,
+      ticker: existing.ticker,
+      name: existing.name,
+      shares: shares,
+      priceUsd: priceUsd,
+      costBasisUsd: costBasisUsd,
+      logoUrl: existing.logoUrl,
+      sortOrder: existing.sortOrder,
+      sellPlanEnabled: sellPlanEnabled,
+      takeProfitPct: takeProfitPct,
+      trailingStopPct: existing.trailingStopPct,
+      peakProfitPct: existing.peakProfitPct,
+    ).hasInvestmentBasisChangedFrom(existing);
+    if (basisChanged || !existing.sellPlanEnabled) {
+      return _roundPct(currentPnlPct);
+    }
+
+    final previousPeak = existing.peakProfitPct;
+    if (previousPeak == null || currentPnlPct > previousPeak) {
+      return _roundPct(currentPnlPct);
+    }
+    return _roundPct(previousPeak);
   }
 
   Future<void> _delete() async {
@@ -290,6 +456,83 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               isDarkMode: isDarkMode,
             ),
             const SizedBox(height: 16),
+            Container(
+              color:
+                  theme.cardTheme.color ??
+                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+              child: SwitchListTile(
+                value: _sellPlanEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    _sellPlanEnabled = value;
+                    _takeProfitError = null;
+                    _trailingStopError = null;
+                    _peakProfitError = null;
+                    _sellPlanError = null;
+                  });
+                },
+                title: Text(
+                  'เปิดแผนขาย',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'ตั้ง Take Profit % และ Trailing Stop %',
+                  style: TextStyle(fontSize: 13, color: labelColor),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+            if (_sellPlanEnabled) ...[
+              _buildDivider(isDarkMode),
+              _HoldingNumberFieldRow(
+                label: 'Take Profit %',
+                controller: _takeProfitController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _takeProfitError,
+              ),
+              _buildDivider(isDarkMode),
+              _HoldingNumberFieldRow(
+                label: 'Trailing Stop %',
+                controller: _trailingStopController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _trailingStopError,
+              ),
+              _buildDivider(isDarkMode),
+              _HoldingNumberFieldRow(
+                label: 'กำไรสูงสุด %',
+                controller: _peakProfitController,
+                hintText: 'ปล่อยว่างให้ระบบคำนวณ',
+                isDarkMode: isDarkMode,
+                errorText: _peakProfitError,
+                inputFormatters: [_twoDecimalInputFormatter],
+              ),
+              if (_sellPlanError != null)
+                Container(
+                  width: double.infinity,
+                  color:
+                      theme.cardTheme.color ??
+                      (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Text(
+                    _sellPlanError!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode
+                          ? AppColors.darkExpense
+                          : AppColors.expense,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+            ],
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -309,12 +552,16 @@ class _HoldingNumberFieldRow extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool isDarkMode;
+  final String? errorText;
+  final List<TextInputFormatter>? inputFormatters;
 
   const _HoldingNumberFieldRow({
     required this.label,
     required this.controller,
     required this.hintText,
     required this.isDarkMode,
+    this.errorText,
+    this.inputFormatters,
   });
 
   @override
@@ -332,39 +579,59 @@ class _HoldingNumberFieldRow extends StatelessWidget {
           theme.cardTheme.color ??
           (isDarkMode ? AppColors.darkSurface : AppColors.surface),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      child: Row(
+      child: Column(
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 15, color: labelColor),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+          Row(
+            children: [
+              SizedBox(
+                width: 150,
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 15, color: labelColor),
+                ),
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-              ],
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: labelColor),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters:
+                      inputFormatters ??
+                      [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                  textAlign: TextAlign.right,
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintStyle: TextStyle(color: labelColor),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  style: TextStyle(fontSize: 15, color: textColor),
+                ),
               ),
-              style: TextStyle(fontSize: 15, color: textColor),
-            ),
+            ],
           ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  errorText!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode
+                        ? AppColors.darkExpense
+                        : AppColors.expense,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

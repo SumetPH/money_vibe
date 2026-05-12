@@ -12,7 +12,6 @@ class StockPriceService {
   static const _yahooChartBase =
       'https://query1.finance.yahoo.com/v8/finance/chart';
   static const _finnhubBase = 'https://finnhub.io/api/v1';
-  static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
   final String? _finnhubApiKey;
   final bool _useFinnhub;
@@ -156,14 +155,23 @@ class StockPriceService {
 
   /// ดึงอัตราแลกเปลี่ยน USD/THB (ไม่ต้อง API key)
   Future<double> fetchUsdThbRate() async {
-    final uri = Uri.parse('$_frankfurterBase/latest?base=USD&symbols=THB');
+    final uri = Uri.parse('$_yahooChartBase/THB=x?interval=1m&range=1d');
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
       throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
     }
+
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final rate = (data['rates']?['THB'] as num?)?.toDouble();
-    if (rate == null) throw Exception('ไม่พบอัตราแลกเปลี่ยน THB');
+    final result =
+        (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
+    final meta = result?['meta'] as Map<String, dynamic>?;
+    final regularMarketPrice = (meta?['regularMarketPrice'] as num?)
+        ?.toDouble();
+    final rate = (regularMarketPrice ?? 0);
+    if (rate <= 0) {
+      throw Exception('ไม่พบอัตราแลกเปลี่ยน USD/THB');
+    }
+
     return rate;
   }
 }

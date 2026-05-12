@@ -340,6 +340,10 @@ class CsvService {
         'cost_basis_usd',
         'sort_order',
         'logo_url',
+        'sell_plan_enabled',
+        'take_profit_pct',
+        'trailing_stop_pct',
+        'peak_profit_pct',
       ],
     ];
 
@@ -354,6 +358,10 @@ class CsvService {
         holding.costBasisUsd,
         holding.sortOrder,
         holding.logoUrl,
+        holding.sellPlanEnabled,
+        holding.takeProfitPct,
+        holding.trailingStopPct,
+        holding.peakProfitPct ?? '',
       ]);
     }
 
@@ -731,6 +739,18 @@ class CsvService {
               ? (int.tryParse(row[7]?.toString() ?? '') ?? 0)
               : 0,
           logoUrl: row.length > 8 ? row[8]?.toString() ?? '' : '',
+          sellPlanEnabled: row.length > 9
+              ? (row[9]?.toString().toLowerCase() == 'true')
+              : false,
+          takeProfitPct: row.length > 10
+              ? (double.tryParse(row[10]?.toString() ?? '0') ?? 0)
+              : 0,
+          trailingStopPct: row.length > 11
+              ? (double.tryParse(row[11]?.toString() ?? '0') ?? 0)
+              : 0,
+          peakProfitPct: row.length > 12
+              ? double.tryParse(row[12]?.toString() ?? '')
+              : null,
         ),
       );
     }

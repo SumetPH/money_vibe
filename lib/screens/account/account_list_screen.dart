@@ -777,17 +777,31 @@ class _AccountItem extends StatelessWidget {
                         ),
                       ),
                       if (account.currency == 'USD')
-                        Text(
-                          // '\$${formatAmount(balance)} • ≈${formatAmount(balance * account.exchangeRate)} บาท',
-                          '${formatAmount(balance * account.exchangeRate)} บาท • ${formatAmount(balance)} USD',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.getAmountColor(
-                              balance,
-                              isDarkMode,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              '${formatAmount(balance * account.exchangeRate)} บาท',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.getAmountColor(
+                                  balance,
+                                  isDarkMode,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '= ${formatAmount(balance)} USD',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                          ],
                         )
                       else
                         Text(

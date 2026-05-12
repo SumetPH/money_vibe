@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
@@ -91,6 +93,11 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           updatedHolding = updatedHolding.copyWith(priceUsd: newPrice);
           hasChanges = true;
         }
+        final sellPlanHolding = _syncSellPlanProgress(updatedHolding);
+        if (sellPlanHolding.peakProfitPct != updatedHolding.peakProfitPct) {
+          updatedHolding = sellPlanHolding;
+          hasChanges = true;
+        }
         final profile = profiles[h.ticker];
         final sourceLogoUrl =
             h.logoUrl.isNotEmpty &&
@@ -125,6 +132,32 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       if (mounted) setState(() => _isRefreshing = false);
     }
   }
+
+  StockHolding _syncSellPlanProgress(StockHolding holding) {
+    if (!holding.sellPlanEnabled ||
+        !holding.canCalculateSellPlan ||
+        holding.takeProfitPct <= 0 ||
+        holding.trailingStopPct <= 0) {
+      return holding;
+    }
+
+    final currentPnlPct = holding.unrealizedPnlPct;
+    final peakProfitPct = holding.peakProfitPct;
+    if (peakProfitPct == null) {
+      if (currentPnlPct >= holding.takeProfitPct) {
+        return holding.copyWith(peakProfitPct: _roundPct(currentPnlPct));
+      }
+      return holding;
+    }
+
+    if (currentPnlPct > peakProfitPct) {
+      return holding.copyWith(peakProfitPct: _roundPct(currentPnlPct));
+    }
+
+    return holding;
+  }
+
+  double _roundPct(double value) => double.parse(value.toStringAsFixed(2));
 
   @override
   Widget build(BuildContext context) {
@@ -1055,6 +1088,10 @@ class _HoldingItem extends StatelessWidget {
     final headerColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.header;
+    final sellPlanStatus = _buildSellPlanStatus(
+      holding: holding,
+      isDarkMode: isDarkMode,
+    );
 
     return Column(
       children: [
@@ -1169,7 +1206,8 @@ class _HoldingItem extends StatelessWidget {
                           const SizedBox(width: 4),
                         ],
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -1269,6 +1307,43 @@ class _HoldingItem extends StatelessWidget {
                           ),
                         ],
                       ),
+
+                      if (sellPlanStatus != null) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: sellPlanStatus.backgroundColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                sellPlanStatus.title,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: sellPlanStatus.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                sellPlanStatus.message,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: sellPlanStatus.textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1402,6 +1477,89 @@ class _HoldingItem extends StatelessWidget {
       ),
     );
   }
+
+  _SellPlanStatus? _buildSellPlanStatus({
+    required StockHolding holding,
+    required bool isDarkMode,
+  }) {
+    if (!holding.sellPlanEnabled ||
+        !holding.canCalculateSellPlan ||
+        holding.takeProfitPct <= 0 ||
+        holding.trailingStopPct <= 0) {
+      return null;
+    }
+
+    final currentPnlPct = holding.unrealizedPnlPct;
+    final textSecondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final peakProfitPct = holding.peakProfitPct;
+
+    if (peakProfitPct == null) {
+      return _SellPlanStatus(
+        title: 'ยังไม่ถึงเป้า',
+        message:
+            'เป้า ${_formatSignedPct(holding.takeProfitPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+        textColor: textSecondaryColor,
+        backgroundColor: surfaceColor,
+      );
+    }
+
+    final trailingStopTriggerPct = math.max(
+      holding.takeProfitPct,
+      peakProfitPct - holding.trailingStopPct,
+    );
+    final trailingStopPrice = _calculateStopPrice(
+      costBasisUsd: holding.costBasisUsd,
+      stopProfitPct: trailingStopTriggerPct,
+    );
+    if (currentPnlPct <= trailingStopTriggerPct) {
+      return _SellPlanStatus(
+        title: 'ขายได้แล้ว',
+        message:
+            'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+        textColor: expenseColor,
+        backgroundColor: surfaceColor,
+      );
+    }
+
+    final remainingPct = currentPnlPct - trailingStopTriggerPct;
+    return _SellPlanStatus(
+      title: 'ถึงเป้าแล้ว รอ Trailing Stop',
+      message:
+          'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • เหลืออีก ${remainingPct.toStringAsFixed(2)}%',
+      textColor: incomeColor,
+      backgroundColor: surfaceColor,
+    );
+  }
+
+  String _formatSignedPct(double value) {
+    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}%';
+  }
+
+  double _calculateStopPrice({
+    required double costBasisUsd,
+    required double stopProfitPct,
+  }) {
+    return costBasisUsd * (1 + (stopProfitPct / 100));
+  }
+}
+
+class _SellPlanStatus {
+  final String title;
+  final String message;
+  final Color textColor;
+  final Color backgroundColor;
+
+  const _SellPlanStatus({
+    required this.title,
+    required this.message,
+    required this.textColor,
+    required this.backgroundColor,
+  });
 }
 
 class _HoldingThumbnail extends StatelessWidget {

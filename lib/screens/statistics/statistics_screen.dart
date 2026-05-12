@@ -1347,7 +1347,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'รวม account ที่ซ่อนจาก Net Worth',
+                    'รวมบัญชีที่ซ่อนจาก Net Worth',
                     style: TextStyle(fontSize: 13, color: secondaryTextColor),
                   ),
                   Switch(

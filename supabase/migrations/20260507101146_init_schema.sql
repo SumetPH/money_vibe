@@ -154,6 +154,10 @@ CREATE TABLE IF NOT EXISTS public.portfolio_holdings (
     cost_basis_usd numeric(15, 4) not null default 0,
     logo_url text not null default '',
     sort_order integer not null default 0,
+    sell_plan_enabled boolean not null default false,
+    take_profit_pct numeric(15, 4) not null default 0,
+    trailing_stop_pct numeric(15, 4) not null default 0,
+    peak_profit_pct numeric(15, 4),
     created_at timestamp without time zone default now(),
     updated_at timestamp without time zone default now()
 );
@@ -484,6 +488,18 @@ ADD COLUMN IF NOT EXISTS is_hidden integer NOT NULL DEFAULT 0;
 ALTER TABLE public.portfolio_holdings
 ADD COLUMN IF NOT EXISTS logo_url text NOT NULL DEFAULT '';
 
+ALTER TABLE public.portfolio_holdings
+ADD COLUMN IF NOT EXISTS sell_plan_enabled boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.portfolio_holdings
+ADD COLUMN IF NOT EXISTS take_profit_pct numeric(15, 4) NOT NULL DEFAULT 0;
+
+ALTER TABLE public.portfolio_holdings
+ADD COLUMN IF NOT EXISTS trailing_stop_pct numeric(15, 4) NOT NULL DEFAULT 0;
+
+ALTER TABLE public.portfolio_holdings
+ADD COLUMN IF NOT EXISTS peak_profit_pct numeric(15, 4);
+
 
 -- ============================================
 -- MIGRATION SCRIPT FROM: create_account_icons_bucket.sql
@@ -595,5 +611,4 @@ using (
   bucket_id = 'stock-logos' and
   (storage.foldername(name))[1] = (select auth.uid()::text)
 );
-
 
