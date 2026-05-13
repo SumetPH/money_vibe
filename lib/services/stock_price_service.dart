@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/settings_provider.dart';
 
@@ -11,8 +12,6 @@ class StockCompanyProfile {
 }
 
 class StockPriceService {
-  static const _yahooChartBase =
-      'https://query1.finance.yahoo.com/v8/finance/chart';
   static const _finnhubBase = 'https://finnhub.io/api/v1';
   static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
@@ -20,6 +19,8 @@ class StockPriceService {
   final bool _useFinnhub;
   final bool _useYahooExtendedHoursPrice;
   final ExchangeRateSource _exchangeRateSource;
+
+  late final supabase = Supabase.instance.client;
 
   StockPriceService({
     String? finnhubApiKey,
@@ -60,13 +61,18 @@ class StockPriceService {
 
   Future<double?> _fetchYahooPrice(String ticker) async {
     try {
-      final uri = Uri.parse(
-        '$_yahooChartBase/$ticker?interval=2m&range=1d&includePrePost=$_useYahooExtendedHoursPrice',
+      final res = await supabase.functions.invoke(
+        'yfinance',
+        body: {
+          "symbol": ticker,
+          "interval": "1m",
+          "range": "1d",
+          "includePrePost": _useYahooExtendedHoursPrice,
+        },
       );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return null;
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = res.data;
+
       final result =
           (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
       if (result == null) return null;
@@ -173,13 +179,18 @@ class StockPriceService {
   }
 
   Future<double> fetchUsdThbRateYahoo() async {
-    final uri = Uri.parse('$_yahooChartBase/THB=X?interval=1m&range=1d');
-    final response = await http.get(uri).timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) {
-      throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
-    }
+    final res = await supabase.functions.invoke(
+      'yfinance',
+      body: {
+        "symbol": "THB=X",
+        "interval": "1m",
+        "range": "1d",
+        "includePrePost": false,
+      },
+    );
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = res.data;
+
     final result =
         (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
     final meta = result?['meta'] as Map<String, dynamic>?;
