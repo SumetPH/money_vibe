@@ -118,9 +118,15 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
       setState(() => _loading = true);
     }
 
+    // กรองเฉพาะธุรกรรมของบัตรใบนี้ก่อนส่งเข้า Isolate เพื่อลด overhead ในการ copy ข้อมูลข้ามเทรด
+    final relevantTransactions = CreditCardBillService.filterCardTransactions(
+      widget.account.id,
+      transactions,
+    );
+
     final bills = await compute(
       _computeBillsIsolate,
-      _BillParams(widget.account, List.of(transactions)),
+      _BillParams(widget.account, relevantTransactions),
     );
     if (mounted) {
       setState(() {

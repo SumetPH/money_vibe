@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/settings_provider.dart';
+import 'exchange_rate_service.dart';
 
 class StockCompanyProfile {
   final String name;
@@ -13,7 +14,6 @@ class StockCompanyProfile {
 
 class StockPriceService {
   static const _finnhubBase = 'https://finnhub.io/api/v1';
-  static const _frankfurterBase = 'https://api.frankfurter.dev/v1';
 
   final String? _finnhubApiKey;
   final bool _useFinnhub;
@@ -21,6 +21,9 @@ class StockPriceService {
   final ExchangeRateSource _exchangeRateSource;
 
   late final supabase = Supabase.instance.client;
+  late final _exchangeRateService = ExchangeRateService(
+    source: _exchangeRateSource,
+  );
 
   StockPriceService({
     String? finnhubApiKey,
@@ -165,48 +168,12 @@ class StockPriceService {
     }
   }
 
-  /// ดึงอัตราแลกเปลี่ยน USD/THB (ไม่ต้อง API key)
-  Future<double> fetchUsdThbRateFrankfurter() async {
-    final uri = Uri.parse('$_frankfurterBase/latest?base=USD&symbols=THB');
-    final response = await http.get(uri).timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) {
-      throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
-    }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final rate = (data['rates']?['THB'] as num?)?.toDouble();
-    if (rate == null) throw Exception('ไม่พบอัตราแลกเปลี่ยน THB');
-    return rate;
-  }
+  /// ดึงอัตราแลกเปลี่ยน USD/THB (Delegated to ExchangeRateService)
+  Future<double> fetchUsdThbRateFrankfurter() =>
+      _exchangeRateService.fetchUsdThbRateFrankfurter();
 
-  Future<double> fetchUsdThbRateYahoo() async {
-    final res = await supabase.functions.invoke(
-      'yfinance',
-      body: {
-        "symbol": "THB=X",
-        "interval": "1m",
-        "range": "1d",
-        "includePrePost": false,
-      },
-    );
+  Future<double> fetchUsdThbRateYahoo() =>
+      _exchangeRateService.fetchUsdThbRateYahoo();
 
-    final data = res.data;
-
-    final result =
-        (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
-    final meta = result?['meta'] as Map<String, dynamic>?;
-    final regularMarketPrice = (meta?['regularMarketPrice'] as num?)
-        ?.toDouble();
-    final rate = (regularMarketPrice ?? 0);
-    if (rate <= 0) {
-      throw Exception('ไม่พบอัตราแลกเปลี่ยน USD/THB');
-    }
-
-    return rate;
-  }
-
-  Future<double> fetchUsdThbRate() {
-    return _exchangeRateSource == ExchangeRateSource.frankfurter
-        ? fetchUsdThbRateFrankfurter()
-        : fetchUsdThbRateYahoo();
-  }
+  Future<double> fetchUsdThbRate() => _exchangeRateService.fetchUsdThbRate();
 }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_repository.dart';
@@ -8,6 +7,12 @@ import '../models/transaction.dart';
 import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
+import 'supabase_adapters/account_adapter.dart';
+import 'supabase_adapters/budget_adapter.dart';
+import 'supabase_adapters/category_adapter.dart';
+import 'supabase_adapters/portfolio_adapter.dart';
+import 'supabase_adapters/recurring_adapter.dart';
+import 'supabase_adapters/transaction_adapter.dart';
 
 /// Supabase Repository Implementation
 ///
@@ -27,6 +32,13 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   SupabaseClient? _client;
   bool _initialized = false;
+
+  late final _accountAdapter = SupabaseAccountAdapter(this);
+  late final _categoryAdapter = SupabaseCategoryAdapter(this);
+  late final _transactionAdapter = SupabaseTransactionAdapter(this);
+  late final _portfolioAdapter = SupabasePortfolioAdapter(this);
+  late final _budgetAdapter = SupabaseBudgetAdapter(this);
+  late final _recurringAdapter = SupabaseRecurringAdapter(this);
 
   SupabaseRepository({
     required this.supabaseUrl,
@@ -103,6 +115,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     }
   }
 
+  /// Convert Supabase response row เป็น Map ที่ใช้กับ Models (Public Helper)
+  Map<String, dynamic> normalizeRow(Map<String, dynamic> row) =>
+      _normalizeRow(row);
+
   /// Convert Supabase response row เป็น Map ที่ใช้กับ Models
   /// จัดการเรื่อง DateTime conversion ให้ถูกต้อง
   Map<String, dynamic> _normalizeRow(Map<String, dynamic> row) {
@@ -135,698 +151,170 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     return normalized;
   }
 
-  /// แปลง ARGB color เป็น signed int สำหรับ PostgreSQL
-  /// PostgreSQL integer เป็น signed 32-bit (-2,147,483,648 to 2,147,483,647)
-  /// แต่ Flutter ARGB เป็น unsigned 32-bit (0 to 4,294,967,295)
-  int _colorToSupabase(int argb) {
+  /// แปลง ARGB color เป็น signed int สำหรับ PostgreSQL (Static Helper)
+  static int colorToSupabase(int argb) {
     if (argb > 2147483647) {
       return argb - 4294967296; // แปลงเป็น signed int
     }
     return argb;
   }
 
-  /// แปลง signed int จาก PostgreSQL กลับเป็น ARGB
-  int _colorFromSupabase(int value) {
+  /// แปลง signed int จาก PostgreSQL กลับเป็น ARGB (Static Helper)
+  static int colorFromSupabase(int value) {
     if (value < 0) {
       return value + 4294967296; // แปลงกลับเป็น unsigned int
     }
     return value;
   }
 
-  /// แปลง Account เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _accountToSupabase(Account account) {
-    return {
-      'id': account.id,
-      'user_id': currentUserId,
-      'name': account.name,
-      'type': account.type.name,
-      'initial_balance': account.initialBalance,
-      'currency': account.currency,
-      'start_date': account.startDate.toIso8601String(),
-      'icon': account.icon.codePoint,
-      'icon_url': account.iconUrl,
-      'color': _colorToSupabase(account.color.toARGB32()),
-      'exclude_from_net_worth': account.excludeFromNetWorth ? 1 : 0,
-      'is_hidden': account.isHidden ? 1 : 0,
-      'sort_order': account.sortOrder,
-      'cash_balance': account.cashBalance,
-      'exchange_rate': account.exchangeRate,
-      'auto_update_rate': account.autoUpdateRate ? 1 : 0,
-      'statement_day': account.statementDay,
-    };
-  }
-
-  Account _accountFromSupabase(Map<String, dynamic> row) {
-    final normalized = Map<String, dynamic>.from(row);
-    // แปลง color จาก signed int กลับเป็น ARGB
-    if (normalized['color'] is int) {
-      normalized['color'] = _colorFromSupabase(normalized['color'] as int);
-    }
-    // Debug: ตรวจสอบค่า sort_order
-    if (normalized['sort_order'] == null) {
-      log('Warning: sort_order is null for account ${normalized['id']}');
-    }
-    return Account.fromMap(normalized);
-  }
-
-  /// แปลง Category เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _categoryToSupabase(Category category) {
-    return {
-      'id': category.id,
-      'user_id': currentUserId,
-      'name': category.name,
-      'type': category.type.name,
-      'icon': category.icon.codePoint,
-      'color': _colorToSupabase(category.color.toARGB32()),
-      'parent_id': category.parentId,
-      'note': category.note ?? '',
-      'sort_order': category.sortOrder,
-    };
-  }
-
-  Category _categoryFromSupabase(Map<String, dynamic> row) {
-    final normalized = Map<String, dynamic>.from(row);
-    // แปลง color จาก signed int กลับเป็น ARGB
-    if (normalized['color'] is int) {
-      normalized['color'] = _colorFromSupabase(normalized['color'] as int);
-    }
-    return Category.fromMap(normalized);
-  }
-
-  /// แปลง Transaction เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _transactionToSupabase(AppTransaction transaction) {
-    return {
-      'id': transaction.id,
-      'user_id': currentUserId,
-      'type': transaction.type.name,
-      'amount': transaction.amount,
-      'account_id': transaction.accountId,
-      'category_id': transaction.categoryId,
-      'to_account_id': transaction.toAccountId,
-      'date_time': transaction.dateTime.toIso8601String(),
-      'note': transaction.note,
-      'to_amount': transaction.toAmount, // cross-currency transfer amount
-    };
-  }
-
-  AppTransaction _transactionFromSupabase(Map<String, dynamic> row) {
-    final normalized = _normalizeRow(row);
-    return AppTransaction.fromMap(normalized);
-  }
-
-  /// แปลง Budget เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _budgetToSupabase(Budget budget) {
-    return {
-      'id': budget.id,
-      'user_id': currentUserId,
-      'name': budget.name,
-      'amount': budget.amount,
-      'category_ids': jsonEncode(budget.categoryIds),
-      'icon': budget.icon.codePoint,
-      'color': _colorToSupabase(budget.color.toARGB32()),
-      'sort_order': budget.sortOrder,
-      'group_name': budget.groupName,
-      'budget_type': budget.type.name,
-    };
-  }
-
-  Budget _budgetFromSupabase(Map<String, dynamic> row) {
-    final normalized = Map<String, dynamic>.from(row);
-    // แปลง color จาก signed int กลับเป็น ARGB
-    if (normalized['color'] is int) {
-      normalized['color'] = _colorFromSupabase(normalized['color'] as int);
-    }
-    return Budget.fromMap(normalized);
-  }
-
-  /// แปลง RecurringTransaction เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _recurringToSupabase(RecurringTransaction recurring) {
-    return {
-      'id': recurring.id,
-      'user_id': currentUserId,
-      'name': recurring.name,
-      'icon': recurring.icon.codePoint,
-      'color': _colorToSupabase(recurring.color.toARGB32()),
-      'start_date': recurring.startDate.toIso8601String(),
-      'end_date': recurring.endDate?.toIso8601String(),
-      'day_of_month': recurring.dayOfMonth,
-      'transaction_type': recurring.transactionType.name,
-      'amount': recurring.amount,
-      'account_id': recurring.accountId,
-      'to_account_id': recurring.toAccountId,
-      'category_id': recurring.categoryId,
-      'note': recurring.note,
-      'sort_order': recurring.sortOrder,
-      'is_hidden': recurring.isHidden ? 1 : 0,
-      'notification_enabled': recurring.notificationEnabled,
-      'notification_hour': recurring.notificationHour,
-      'notification_minute': recurring.notificationMinute,
-    };
-  }
-
-  RecurringTransaction _recurringFromSupabase(Map<String, dynamic> row) {
-    final normalized = Map<String, dynamic>.from(row);
-    // แปลง color จาก signed int กลับเป็น ARGB
-    if (normalized['color'] is int) {
-      normalized['color'] = _colorFromSupabase(normalized['color'] as int);
-    }
-    return RecurringTransaction.fromMap(normalized);
-  }
-
-  /// แปลง RecurringOccurrence เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _occurrenceToSupabase(RecurringOccurrence occurrence) {
-    return {
-      'id': occurrence.id,
-      'user_id': currentUserId,
-      'recurring_id': occurrence.recurringId,
-      'due_date': occurrence.dueDate.toIso8601String(),
-      'transaction_id': occurrence.transactionId,
-      'status': occurrence.status.name,
-    };
-  }
-
-  RecurringOccurrence _occurrenceFromSupabase(Map<String, dynamic> row) {
-    final normalized = _normalizeRow(row);
-    return RecurringOccurrence.fromMap(normalized);
-  }
-
-  /// แปลง StockHolding เป็น format ที่ Supabase เข้าใจ (รวม user_id)
-  Map<String, dynamic> _holdingToSupabase(StockHolding holding) {
-    return {
-      'id': holding.id,
-      'user_id': currentUserId,
-      'portfolio_id': holding.portfolioId,
-      'ticker': holding.ticker,
-      'name': holding.name,
-      'shares': holding.shares,
-      'price_usd': holding.priceUsd,
-      'cost_basis_usd': holding.costBasisUsd,
-      'logo_url': holding.logoUrl,
-      'sort_order': holding.sortOrder,
-      'sell_plan_enabled': holding.sellPlanEnabled,
-      'take_profit_pct': holding.takeProfitPct,
-      'trailing_stop_pct': holding.trailingStopPct,
-      'peak_profit_pct': holding.peakProfitPct,
-      'portfolio_group': holding.portfolioGroup,
-    };
-  }
-
-  StockHolding _holdingFromSupabase(Map<String, dynamic> row) {
-    final normalized = _normalizeRow(row);
-    return StockHolding.fromMap(normalized);
-  }
-
-  // ── Accounts ──────────────────────────────────────────────────────────────
+  // ── Accounts (Delegated to Adapter) ───────────────────────────────────────
 
   @override
-  Future<List<Account>> getAccounts() async {
-    _requireAuth();
-    log('Fetching accounts for user: $currentUserId');
-    final response = await client
-        .from('accounts')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('sort_order');
-    return (response as List).map((row) => _accountFromSupabase(row)).toList();
-  }
+  Future<List<Account>> getAccounts() => _accountAdapter.getAccounts();
 
   @override
-  Future<void> insertAccount(Account account) async {
-    _requireAuth();
-    log('Inserting account: ${account.id} for user: $currentUserId');
-    await client.from('accounts').insert(_accountToSupabase(account));
-  }
+  Future<void> insertAccount(Account account) =>
+      _accountAdapter.insertAccount(account);
 
   @override
-  Future<void> updateAccount(Account account) async {
-    _requireAuth();
-    log('Updating account: ${account.id} for user: $currentUserId');
-    await client
-        .from('accounts')
-        .update(_accountToSupabase(account))
-        .eq('id', account.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> updateAccount(Account account) =>
+      _accountAdapter.updateAccount(account);
 
   @override
-  Future<void> updateAccountSortOrder(String id, int sortOrder) async {
-    _requireAuth();
-    log('Updating account sort order: $id -> $sortOrder');
-    try {
-      final response = await client
-          .from('accounts')
-          .update({'sort_order': sortOrder})
-          .eq('id', id)
-          .eq('user_id', currentUserId!)
-          .select();
-
-      if ((response as List).isEmpty) {
-        throw Exception(
-          'Failed to update account sort order: No rows affected',
-        );
-      }
-      log('Updated account sort order successfully: $id');
-    } catch (e) {
-      logError('Error updating account sort order', e);
-      rethrow;
-    }
-  }
+  Future<void> updateAccountSortOrder(String id, int sortOrder) =>
+      _accountAdapter.updateAccountSortOrder(id, sortOrder);
 
   @override
-  Future<void> deleteAccount(String id) async {
-    _requireAuth();
-    log('Deleting account: $id for user: $currentUserId');
-    await client
-        .from('accounts')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteAccount(String id) => _accountAdapter.deleteAccount(id);
 
-  // ── Categories ────────────────────────────────────────────────────────────
+  // ── Categories (Delegated to Adapter) ─────────────────────────────────────
 
   @override
-  Future<List<Category>> getCategories() async {
-    _requireAuth();
-    log('Fetching categories for user: $currentUserId');
-    final response = await client
-        .from('categories')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('sort_order');
-    return (response as List).map((row) => _categoryFromSupabase(row)).toList();
-  }
+  Future<List<Category>> getCategories() => _categoryAdapter.getCategories();
 
   @override
-  Future<void> insertCategory(Category category) async {
-    _requireAuth();
-    log('Inserting category: ${category.id} for user: $currentUserId');
-    await client.from('categories').insert(_categoryToSupabase(category));
-  }
+  Future<void> insertCategory(Category category) =>
+      _categoryAdapter.insertCategory(category);
 
   @override
-  Future<void> updateCategory(Category category) async {
-    _requireAuth();
-    log('Updating category: ${category.id} for user: $currentUserId');
-    await client
-        .from('categories')
-        .update(_categoryToSupabase(category))
-        .eq('id', category.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> updateCategory(Category category) =>
+      _categoryAdapter.updateCategory(category);
 
   @override
-  Future<void> updateCategorySortOrder(String id, int sortOrder) async {
-    _requireAuth();
-    log('Updating category sort order: $id -> $sortOrder');
-    try {
-      final response = await client
-          .from('categories')
-          .update({'sort_order': sortOrder})
-          .eq('id', id)
-          .eq('user_id', currentUserId!)
-          .select();
-
-      if ((response as List).isEmpty) {
-        throw Exception(
-          'Failed to update category sort order: No rows affected',
-        );
-      }
-      log('Updated category sort order successfully: $id');
-    } catch (e) {
-      logError('Error updating category sort order', e);
-      rethrow;
-    }
-  }
+  Future<void> updateCategorySortOrder(String id, int sortOrder) =>
+      _categoryAdapter.updateCategorySortOrder(id, sortOrder);
 
   @override
-  Future<void> deleteCategory(String id) async {
-    _requireAuth();
-    log('Deleting category: $id for user: $currentUserId');
-    await client
-        .from('categories')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteCategory(String id) => _categoryAdapter.deleteCategory(id);
 
-  // ── Transactions ──────────────────────────────────────────────────────────
+  // ── Transactions (Delegated to Adapter) ───────────────────────────────────
 
   @override
-  Future<List<AppTransaction>> getTransactions() async {
-    _requireAuth();
-    log('Fetching transactions for user: $currentUserId');
-    final allTransactions = <AppTransaction>[];
-    int offset = 0;
-    const int pageSize = 1000;
-
-    while (true) {
-      final response = await client
-          .from('transactions')
-          .select()
-          .eq('user_id', currentUserId!)
-          .order('date_time', ascending: false)
-          .range(offset, offset + pageSize - 1);
-
-      final batch = (response as List)
-          .map((row) => _transactionFromSupabase(row))
-          .toList();
-
-      if (batch.isEmpty) {
-        break;
-      }
-
-      allTransactions.addAll(batch);
-
-      if (batch.length < pageSize) {
-        break;
-      }
-
-      offset += pageSize;
-    }
-
-    log('Fetched ${allTransactions.length} transactions total');
-    return allTransactions;
-  }
+  Future<List<AppTransaction>> getTransactions() =>
+      _transactionAdapter.getTransactions();
 
   @override
-  Future<void> insertTransaction(AppTransaction transaction) async {
-    _requireAuth();
-    log('Inserting transaction: ${transaction.id} for user: $currentUserId');
-    await client
-        .from('transactions')
-        .insert(_transactionToSupabase(transaction));
-  }
+  Future<void> insertTransaction(AppTransaction transaction) =>
+      _transactionAdapter.insertTransaction(transaction);
 
   @override
-  Future<void> updateTransaction(AppTransaction transaction) async {
-    _requireAuth();
-    log('Updating transaction: ${transaction.id} for user: $currentUserId');
-    await client
-        .from('transactions')
-        .update(_transactionToSupabase(transaction))
-        .eq('id', transaction.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> updateTransaction(AppTransaction transaction) =>
+      _transactionAdapter.updateTransaction(transaction);
 
   @override
-  Future<void> deleteTransaction(String id) async {
-    _requireAuth();
-    log('Deleting transaction: $id for user: $currentUserId');
-    await client
-        .from('transactions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteTransaction(String id) =>
+      _transactionAdapter.deleteTransaction(id);
 
-  // ── Portfolio Holdings ─────────────────────────────────────────────────────
+  // ── Portfolio Holdings (Delegated to Adapter) ─────────────────────────────
 
   @override
-  Future<List<StockHolding>> getPortfolioHoldings() async {
-    _requireAuth();
-    log('Fetching portfolio holdings for user: $currentUserId');
-    final response = await client
-        .from('portfolio_holdings')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('sort_order');
-    return (response as List).map((row) => _holdingFromSupabase(row)).toList();
-  }
+  Future<List<StockHolding>> getPortfolioHoldings() =>
+      _portfolioAdapter.getPortfolioHoldings();
 
   @override
-  Future<void> insertHolding(StockHolding holding) async {
-    _requireAuth();
-    log('Inserting holding: ${holding.id} for user: $currentUserId');
-    await client.from('portfolio_holdings').insert(_holdingToSupabase(holding));
-  }
+  Future<void> insertHolding(StockHolding holding) =>
+      _portfolioAdapter.insertHolding(holding);
 
   @override
-  Future<void> updateHolding(StockHolding holding) async {
-    _requireAuth();
-    log('Updating holding: ${holding.id} for user: $currentUserId');
-    await client
-        .from('portfolio_holdings')
-        .update(_holdingToSupabase(holding))
-        .eq('id', holding.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> updateHolding(StockHolding holding) =>
+      _portfolioAdapter.updateHolding(holding);
 
   @override
-  Future<void> updateHoldingSortOrder(String id, int sortOrder) async {
-    _requireAuth();
-    log('Updating holding sort order: $id -> $sortOrder');
-    try {
-      final response = await client
-          .from('portfolio_holdings')
-          .update({'sort_order': sortOrder})
-          .eq('id', id)
-          .eq('user_id', currentUserId!)
-          .select();
-
-      if ((response as List).isEmpty) {
-        throw Exception(
-          'Failed to update holding sort order: No rows affected',
-        );
-      }
-      log('Updated holding sort order successfully: $id');
-    } catch (e) {
-      logError('Error updating holding sort order', e);
-      rethrow;
-    }
-  }
+  Future<void> updateHoldingSortOrder(String id, int sortOrder) =>
+      _portfolioAdapter.updateHoldingSortOrder(id, sortOrder);
 
   @override
-  Future<void> deleteHolding(String id) async {
-    _requireAuth();
-    log('Deleting holding: $id for user: $currentUserId');
-    await client
-        .from('portfolio_holdings')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteHolding(String id) => _portfolioAdapter.deleteHolding(id);
 
   @override
-  Future<void> deleteHoldingsByPortfolio(String portfolioId) async {
-    _requireAuth();
-    log('Deleting holdings for portfolio: $portfolioId, user: $currentUserId');
-    await client
-        .from('portfolio_holdings')
-        .delete()
-        .eq('portfolio_id', portfolioId)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteHoldingsByPortfolio(String portfolioId) =>
+      _portfolioAdapter.deleteHoldingsByPortfolio(portfolioId);
 
   // ── Budgets ────────────────────────────────────────────────────────────────
 
-  @override
-  Future<List<Budget>> getBudgets() async {
-    _requireAuth();
-    log('Fetching budgets for user: $currentUserId');
-    final response = await client
-        .from('budgets')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('sort_order');
-    return (response as List).map((row) => _budgetFromSupabase(row)).toList();
-  }
+  // ── Budgets (Delegated to Adapter) ────────────────────────────────────────
 
   @override
-  Future<void> insertBudget(Budget budget) async {
-    _requireAuth();
-    log('Inserting budget: ${budget.id} for user: $currentUserId');
-    await client.from('budgets').insert(_budgetToSupabase(budget));
-  }
+  Future<List<Budget>> getBudgets() => _budgetAdapter.getBudgets();
 
   @override
-  Future<void> updateBudget(Budget budget) async {
-    _requireAuth();
-    log('Updating budget: ${budget.id} for user: $currentUserId');
-    await client
-        .from('budgets')
-        .update(_budgetToSupabase(budget))
-        .eq('id', budget.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> insertBudget(Budget budget) =>
+      _budgetAdapter.insertBudget(budget);
 
   @override
-  Future<void> updateBudgetSortOrder(String id, int sortOrder) async {
-    _requireAuth();
-    log('Updating budget sort order: $id -> $sortOrder');
-    try {
-      final response = await client
-          .from('budgets')
-          .update({'sort_order': sortOrder})
-          .eq('id', id)
-          .eq('user_id', currentUserId!)
-          .select();
-
-      if ((response as List).isEmpty) {
-        throw Exception('Failed to update budget sort order: No rows affected');
-      }
-      log('Updated budget sort order successfully: $id');
-    } catch (e) {
-      logError('Error updating budget sort order', e);
-      rethrow;
-    }
-  }
+  Future<void> updateBudget(Budget budget) =>
+      _budgetAdapter.updateBudget(budget);
 
   @override
-  Future<void> deleteBudget(String id) async {
-    _requireAuth();
-    log('Deleting budget: $id for user: $currentUserId');
-    await client
-        .from('budgets')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
-
-  // ── Recurring Transactions ─────────────────────────────────────────────────
+  Future<void> updateBudgetSortOrder(String id, int sortOrder) =>
+      _budgetAdapter.updateBudgetSortOrder(id, sortOrder);
 
   @override
-  Future<List<RecurringTransaction>> getRecurringTransactions() async {
-    _requireAuth();
-    log('Fetching recurring transactions for user: $currentUserId');
-    final response = await client
-        .from('recurring_transactions')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('sort_order');
-    return (response as List)
-        .map((row) => _recurringFromSupabase(row))
-        .toList();
-  }
+  Future<void> deleteBudget(String id) => _budgetAdapter.deleteBudget(id);
+
+  // ── Recurring Transactions (Delegated to Adapter) ─────────────────────────
 
   @override
-  Future<void> insertRecurringTransaction(
-    RecurringTransaction recurring,
-  ) async {
-    _requireAuth();
-    log(
-      'Inserting recurring transaction: ${recurring.id} for user: $currentUserId',
-    );
-    await client
-        .from('recurring_transactions')
-        .insert(_recurringToSupabase(recurring));
-  }
+  Future<List<RecurringTransaction>> getRecurringTransactions() =>
+      _recurringAdapter.getRecurringTransactions();
 
   @override
-  Future<void> updateRecurringTransaction(
-    RecurringTransaction recurring,
-  ) async {
-    _requireAuth();
-    log(
-      'Updating recurring transaction: ${recurring.id} for user: $currentUserId',
-    );
-    await client
-        .from('recurring_transactions')
-        .update(_recurringToSupabase(recurring))
-        .eq('id', recurring.id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> insertRecurringTransaction(RecurringTransaction recurring) =>
+      _recurringAdapter.insertRecurringTransaction(recurring);
 
   @override
-  Future<void> deleteRecurringTransaction(String id) async {
-    _requireAuth();
-    log('Deleting recurring transaction: $id for user: $currentUserId');
-    await client
-        .from('recurring_transactions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> updateRecurringTransaction(RecurringTransaction recurring) =>
+      _recurringAdapter.updateRecurringTransaction(recurring);
 
   @override
-  Future<void> updateRecurringSortOrder(String id, int sortOrder) async {
-    _requireAuth();
-    log('Updating recurring sort order: $id -> $sortOrder');
-    try {
-      final response = await client
-          .from('recurring_transactions')
-          .update({'sort_order': sortOrder})
-          .eq('id', id)
-          .eq('user_id', currentUserId!)
-          .select();
-
-      if ((response as List).isEmpty) {
-        throw Exception(
-          'Failed to update recurring sort order: No rows affected',
-        );
-      }
-      log('Updated recurring sort order successfully: $id');
-    } catch (e) {
-      logError('Error updating recurring sort order', e);
-      rethrow;
-    }
-  }
-
-  // ── Recurring Occurrences ──────────────────────────────────────────────────
+  Future<void> deleteRecurringTransaction(String id) =>
+      _recurringAdapter.deleteRecurringTransaction(id);
 
   @override
-  Future<List<RecurringOccurrence>> getRecurringOccurrences() async {
-    _requireAuth();
-    log('Fetching recurring occurrences for user: $currentUserId');
-    final response = await client
-        .from('recurring_occurrences')
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('due_date');
-    return (response as List)
-        .map((row) => _occurrenceFromSupabase(row))
-        .toList();
-  }
+  Future<void> updateRecurringSortOrder(String id, int sortOrder) =>
+      _recurringAdapter.updateRecurringSortOrder(id, sortOrder);
+
+  // ── Recurring Occurrences (Delegated to Adapter) ──────────────────────────
 
   @override
-  Future<List<RecurringOccurrence>> getOccurrencesFor(
-    String recurringId,
-  ) async {
-    _requireAuth();
-    log('Fetching occurrences for: $recurringId, user: $currentUserId');
-    final response = await client
-        .from('recurring_occurrences')
-        .select()
-        .eq('recurring_id', recurringId)
-        .eq('user_id', currentUserId!)
-        .order('due_date');
-    return (response as List)
-        .map((row) => _occurrenceFromSupabase(row))
-        .toList();
-  }
+  Future<List<RecurringOccurrence>> getRecurringOccurrences() =>
+      _recurringAdapter.getRecurringOccurrences();
 
   @override
-  Future<void> insertRecurringOccurrence(RecurringOccurrence occurrence) async {
-    _requireAuth();
-    log('Inserting occurrence: ${occurrence.id} for user: $currentUserId');
-    await client
-        .from('recurring_occurrences')
-        .insert(_occurrenceToSupabase(occurrence));
-  }
+  Future<List<RecurringOccurrence>> getOccurrencesFor(String recurringId) =>
+      _recurringAdapter.getOccurrencesFor(recurringId);
 
   @override
-  Future<void> deleteOccurrence(String id) async {
-    _requireAuth();
-    log('Deleting occurrence: $id for user: $currentUserId');
-    await client
-        .from('recurring_occurrences')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> insertRecurringOccurrence(RecurringOccurrence occurrence) =>
+      _recurringAdapter.insertRecurringOccurrence(occurrence);
 
   @override
-  Future<void> deleteOccurrencesByRecurring(String recurringId) async {
-    _requireAuth();
-    log(
-      'Deleting occurrences for recurring: $recurringId, user: $currentUserId',
-    );
-    await client
-        .from('recurring_occurrences')
-        .delete()
-        .eq('recurring_id', recurringId)
-        .eq('user_id', currentUserId!);
-  }
+  Future<void> deleteOccurrence(String id) =>
+      _recurringAdapter.deleteOccurrence(id);
+
+  @override
+  Future<void> deleteOccurrencesByRecurring(String recurringId) =>
+      _recurringAdapter.deleteOccurrencesByRecurring(recurringId);
 
   // ── Migration Helpers ──────────────────────────────────────────────────────
 
@@ -955,179 +443,73 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   static const int _batchSize = 500;
 
   @override
-  Future<void> bulkInsertAccounts(List<Account> accounts) async {
-    _requireAuth();
-    log('Bulk inserting ${accounts.length} accounts for user: $currentUserId');
-
-    // ตรวจสอบว่ามี ID ซ้ำใน list หรือไม่
-    final ids = accounts.map((a) => a.id).toList();
-    final uniqueIds = ids.toSet();
-    if (ids.length != uniqueIds.length) {
-      log(
-        'WARNING: Found ${ids.length - uniqueIds.length} duplicate IDs in accounts list',
-      );
-      log(
-        'Duplicate IDs: ${ids.where((id) => ids.where((x) => x == id).length > 1).toSet()}',
-      );
-    }
-
-    // Log ตัวอย่าง IDs ที่จะ insert (5 ตัวแรก)
-    log('Sample IDs to insert: ${ids.take(5).toList()}');
-    log(
-      'Sample account names: ${accounts.take(5).map((a) => '${a.id.substring(0, 8)}:${a.name}').toList()}',
-    );
-
-    await _batchInsert(
-      'accounts',
-      accounts.map((a) => _accountToSupabase(a)).toList(),
-    );
-  }
+  Future<void> bulkInsertAccounts(List<Account> accounts) =>
+      _accountAdapter.bulkInsertAccounts(accounts);
 
   @override
-  Future<void> bulkInsertCategories(List<Category> categories) async {
-    _requireAuth();
-    log(
-      'Bulk inserting ${categories.length} categories for user: $currentUserId',
-    );
-    await _batchInsert(
-      'categories',
-      categories.map((c) => _categoryToSupabase(c)).toList(),
-    );
-  }
+  Future<void> bulkInsertCategories(List<Category> categories) =>
+      _categoryAdapter.bulkInsertCategories(categories);
 
   @override
-  Future<void> bulkInsertTransactions(List<AppTransaction> transactions) async {
-    _requireAuth();
-    log(
-      'Bulk inserting ${transactions.length} transactions for user: $currentUserId',
-    );
-    await _batchInsert(
-      'transactions',
-      transactions.map((t) => _transactionToSupabase(t)).toList(),
-    );
-  }
+  Future<void> bulkInsertTransactions(List<AppTransaction> transactions) =>
+      _transactionAdapter.bulkInsertTransactions(transactions);
 
   @override
-  Future<void> bulkInsertBudgets(List<Budget> budgets) async {
-    _requireAuth();
-    log('Bulk inserting ${budgets.length} budgets for user: $currentUserId');
-    await _batchInsert(
-      'budgets',
-      budgets.map((b) => _budgetToSupabase(b)).toList(),
-    );
-  }
+  Future<void> bulkInsertBudgets(List<Budget> budgets) =>
+      _budgetAdapter.bulkInsertBudgets(budgets);
 
   @override
-  Future<void> bulkInsertHoldings(List<StockHolding> holdings) async {
-    _requireAuth();
-    log('Bulk inserting ${holdings.length} holdings for user: $currentUserId');
-    await _batchInsert(
-      'portfolio_holdings',
-      holdings.map((h) => _holdingToSupabase(h)).toList(),
-    );
-  }
+  Future<void> bulkInsertHoldings(List<StockHolding> holdings) =>
+      _portfolioAdapter.bulkInsertHoldings(holdings);
 
   @override
-  Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring) async {
-    _requireAuth();
-    log(
-      'Bulk inserting ${recurring.length} recurring transactions for user: $currentUserId',
-    );
-    await _batchInsert(
-      'recurring_transactions',
-      recurring.map((r) => _recurringToSupabase(r)).toList(),
-    );
-  }
+  Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring) =>
+      _recurringAdapter.bulkInsertRecurring(recurring);
 
   @override
-  Future<void> bulkInsertOccurrences(
-    List<RecurringOccurrence> occurrences,
-  ) async {
-    _requireAuth();
-    log(
-      'Bulk inserting ${occurrences.length} occurrences for user: $currentUserId',
-    );
-    await _batchInsert(
-      'recurring_occurrences',
-      occurrences.map((o) => _occurrenceToSupabase(o)).toList(),
-    );
-  }
+  Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences) =>
+      _recurringAdapter.bulkInsertOccurrences(occurrences);
 
   // ── Bulk Import: Get Existing IDs ──────────────────────────────────────────
 
   @override
   @override
-  Future<Set<String>> getExistingAccountIds() async {
-    _requireAuth();
-    final response = await client
-        .from('accounts')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingAccountIds() =>
+      _accountAdapter.getExistingAccountIds();
 
   @override
   @override
-  Future<Set<String>> getExistingCategoryIds() async {
-    _requireAuth();
-    final response = await client
-        .from('categories')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingCategoryIds() =>
+      _categoryAdapter.getExistingCategoryIds();
 
   @override
   @override
-  Future<Set<String>> getExistingTransactionIds() async {
-    _requireAuth();
-    final response = await client
-        .from('transactions')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingTransactionIds() =>
+      _transactionAdapter.getExistingTransactionIds();
 
   @override
   @override
-  Future<Set<String>> getExistingBudgetIds() async {
-    _requireAuth();
-    final response = await client
-        .from('budgets')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingBudgetIds() =>
+      _budgetAdapter.getExistingBudgetIds();
 
   @override
   @override
-  Future<Set<String>> getExistingHoldingIds() async {
-    _requireAuth();
-    final response = await client
-        .from('portfolio_holdings')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingHoldingIds() =>
+      _portfolioAdapter.getExistingHoldingIds();
 
   @override
   @override
-  Future<Set<String>> getExistingRecurringIds() async {
-    _requireAuth();
-    final response = await client
-        .from('recurring_transactions')
-        .select('id')
-        .eq('user_id', currentUserId!);
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingRecurringIds() =>
+      _recurringAdapter.getExistingRecurringIds();
 
   @override
   @override
-  Future<Set<String>> getExistingOccurrenceIds() async {
-    _requireAuth();
-    final response = await client.from('recurring_occurrences').select('id');
-    return (response as List).map((r) => r['id'] as String).toSet();
-  }
+  Future<Set<String>> getExistingOccurrenceIds() =>
+      _recurringAdapter.getExistingOccurrenceIds();
+
+  /// Helper สำหรับ batch insert (Public wrapper สำหรับ Adapter)
+  Future<void> batchInsert(String table, List<Map<String, dynamic>> data) =>
+      _batchInsert(table, data);
 
   /// Helper สำหรับ batch insert
   /// ใช้ insert แบบ ignore conflicts (upsert แต่ไม่ update)

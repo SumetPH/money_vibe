@@ -97,10 +97,20 @@ class CreditCardBill {
 
 /// Service คำนวณบิลบัตรเครดิตแบบสด (on-the-fly)
 class CreditCardBillService {
+  /// คัดกรองเฉพาะธุรกรรมที่เกี่ยวข้องกับบัญชีบัตรเครดิตที่กำหนด (Seam สำหรับลดโหลด Isolate)
+  static List<AppTransaction> filterCardTransactions(
+    String accountId,
+    List<AppTransaction> allTransactions,
+  ) {
+    return allTransactions
+        .where((t) => t.accountId == accountId || t.toAccountId == accountId)
+        .toList();
+  }
+
   /// คำนวณรอบบิลบัตรเครดิตทั้งหมดตั้งแต่วันสร้างบัญชี
   ///
   /// [account] - บัญชีบัตรเครดิต (ต้องมี statementDay)
-  /// [transactions] - รายการธุรกรรมทั้งหมด
+  /// [transactions] - รายการธุรกรรมทั้งหมด (หรือเฉพาะที่กรองแล้วผ่าน filterCardTransactions)
   /// [monthsBack] - ไม่ได้ใช้แล้ว (deprecated, kept for API compatibility)
   static List<CreditCardBill> calculateBills({
     required Account account,
@@ -125,10 +135,8 @@ class CreditCardBillService {
       until: closedUntil,
     );
 
-    // กรองธุรกรรมของบัตรนี้เท่านั้น
-    final cardTransactions = transactions
-        .where((t) => t.accountId == account.id || t.toAccountId == account.id)
-        .toList();
+    // กรองธุรกรรมของบัตรนี้เท่านั้น (รองรับทั้งกรองมาแล้วและยังไม่กรอง)
+    final cardTransactions = filterCardTransactions(account.id, transactions);
 
     final bills = <CreditCardBill>[];
     // initialBalance ของ credit card เป็นค่าลบ (เช่น -5000 = ค้างอยู่ 5000 บาท)
