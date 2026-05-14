@@ -276,9 +276,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                           ),
 
                           // Cash balance row
-                          _SectionHeader(
-                            title: 'เงินสดใน Broker',
-                            isDarkMode: isDarkMode,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Divider(
+                              color: isDarkMode
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider,
+                            ),
                           ),
                           _CashRow(
                             cashBalance: acc.cashBalance,
@@ -1529,30 +1533,6 @@ class _SummaryCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final bool isDarkMode;
-  const _SectionHeader({required this.title, required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: isDarkMode ? AppColors.darkBackground : AppColors.background,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary,
-        ),
       ),
     );
   }
