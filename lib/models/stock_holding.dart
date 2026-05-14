@@ -12,6 +12,7 @@ class StockHolding {
   double takeProfitPct;
   double trailingStopPct;
   double? peakProfitPct;
+  String portfolioGroup;
 
   StockHolding({
     required this.id,
@@ -27,6 +28,7 @@ class StockHolding {
     this.takeProfitPct = 0,
     this.trailingStopPct = 0,
     this.peakProfitPct,
+    this.portfolioGroup = '',
   });
 
   double get valueUsd => shares * priceUsd;
@@ -54,6 +56,7 @@ class StockHolding {
     'take_profit_pct': takeProfitPct,
     'trailing_stop_pct': trailingStopPct,
     'peak_profit_pct': peakProfitPct,
+    'portfolio_group': portfolioGroup,
   };
 
   static StockHolding fromMap(Map<String, dynamic> m) => StockHolding(
@@ -70,6 +73,7 @@ class StockHolding {
     takeProfitPct: (m['take_profit_pct'] as num? ?? 0).toDouble(),
     trailingStopPct: (m['trailing_stop_pct'] as num? ?? 0).toDouble(),
     peakProfitPct: (m['peak_profit_pct'] as num?)?.toDouble(),
+    portfolioGroup: m['portfolio_group'] as String? ?? '',
   );
 
   StockHolding copyWith({
@@ -84,6 +88,7 @@ class StockHolding {
     double? takeProfitPct,
     double? trailingStopPct,
     Object? peakProfitPct = _noPeakProfitPct,
+    String? portfolioGroup,
   }) => StockHolding(
     id: id,
     portfolioId: portfolioId,
@@ -100,6 +105,7 @@ class StockHolding {
     peakProfitPct: identical(peakProfitPct, _noPeakProfitPct)
         ? this.peakProfitPct
         : peakProfitPct as double?,
+    portfolioGroup: portfolioGroup ?? this.portfolioGroup,
   );
 }
 

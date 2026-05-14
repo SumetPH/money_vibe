@@ -39,6 +39,7 @@ class HoldingFormScreen extends StatefulWidget {
 
 class _HoldingFormScreenState extends State<HoldingFormScreen> {
   final _tickerController = TextEditingController();
+  final _groupController = TextEditingController();
   final _sharesController = TextEditingController();
   final _priceController = TextEditingController();
   final _costController = TextEditingController();
@@ -60,6 +61,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     final holding = widget.existing;
     if (holding != null) {
       _tickerController.text = holding.ticker;
+      _groupController.text = holding.portfolioGroup;
       _sharesController.text = _formatNum(holding.shares);
       _priceController.text = _formatNum(holding.priceUsd);
       if (holding.costBasisUsd > 0) {
@@ -81,6 +83,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   @override
   void dispose() {
     _tickerController.dispose();
+    _groupController.dispose();
     _sharesController.dispose();
     _priceController.dispose();
     _costController.dispose();
@@ -112,6 +115,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       return;
     }
 
+    final group = _groupController.text.trim();
     final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
     final price = double.tryParse(_priceController.text.trim()) ?? 0;
     final cost = double.tryParse(_costController.text.trim()) ?? 0;
@@ -186,6 +190,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       peakProfitPct: _sellPlanEnabled
           ? peakProfitPct
           : widget.existing?.peakProfitPct,
+      portfolioGroup: group,
     );
 
     setState(() => _isSaving = true);
@@ -425,6 +430,49 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w300,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _buildDivider(isDarkMode),
+            Container(
+              color:
+                  theme.cardTheme.color ??
+                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: Text(
+                      'กลุ่ม / พอร์ต',
+                      style: TextStyle(fontSize: 15, color: labelColor),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _groupController,
+                      textAlign: TextAlign.right,
+                      decoration: InputDecoration(
+                        hintText: 'ทั่วไป',
+                        hintStyle: TextStyle(color: labelColor),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: 15,
                         color: isDarkMode
                             ? AppColors.darkTextPrimary
                             : AppColors.textPrimary,

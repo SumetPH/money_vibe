@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:money_vibe/screens/account/portfolio_analyze_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -32,13 +33,62 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
   late StockLogoStorageService _logoStorageService;
   bool _isRefreshing = false;
   bool _isReorderMode = false;
+  Map<String, String> _groupSortTypes =
+      {}; // Key: groupName, Value: 'value' หรือ 'pnl'
+  List<String> _groupOrder = [];
 
   @override
   void initState() {
     super.initState();
+    _loadGroupOrder();
     _priceService = _buildPriceService();
     _logoStorageService = StockLogoStorageService();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
+  }
+
+  Future<void> _loadGroupOrder() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(
+        'portfolio_group_order_${widget.account.id}',
+      );
+      final Map<String, String> sorts = {};
+      if (list != null) {
+        for (final g in list) {
+          final st = prefs.getString(
+            'portfolio_group_sort_${widget.account.id}_$g',
+          );
+          if (st != null) sorts[g] = st;
+        }
+        setState(() {
+          _groupOrder = list;
+          _groupSortTypes = sorts;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setGroupSortType(String groupName, String sortType) async {
+    setState(() {
+      _groupSortTypes[groupName] = sortType;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'portfolio_group_sort_${widget.account.id}_$groupName',
+        sortType,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _saveGroupOrder() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        'portfolio_group_order_${widget.account.id}',
+        _groupOrder,
+      );
+    } catch (_) {}
   }
 
   StockPriceService _buildPriceService() {
@@ -207,112 +257,88 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             ],
           ),
           body: SafeArea(
-            child: ListView(
-              children: [
-                // Summary card
-                _SummaryCard(
-                  account: acc,
-                  totalValue: totalValue,
-                  holdings: holdings,
-                  onRateTap: () => _editExchangeRate(context, provider, acc),
-                  isDarkMode: isDarkMode,
-                ),
+            child: DefaultTabController(
+              length: 2,
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          // Summary card
+                          _SummaryCard(
+                            account: acc,
+                            totalValue: totalValue,
+                            holdings: holdings,
+                            onRateTap: () =>
+                                _editExchangeRate(context, provider, acc),
+                            isDarkMode: isDarkMode,
+                          ),
 
-                // Cash balance row
-                _SectionHeader(
-                  title: 'เงินสดใน Broker',
-                  isDarkMode: isDarkMode,
-                ),
-                _CashRow(
-                  cashBalance: acc.cashBalance,
-                  exchangeRate: acc.exchangeRate,
-                  onTap: () => _editCashBalance(context, provider, acc),
-                  isDarkMode: isDarkMode,
-                ),
-
-                // Holdings
-                _SectionHeader(
-                  title: 'หุ้น US (${holdings.length} ตัว)',
-                  isDarkMode: isDarkMode,
-                ),
-                if (holdings.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text(
-                        'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
-                        style: TextStyle(
-                          color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
-                        ),
+                          // Cash balance row
+                          _SectionHeader(
+                            title: 'เงินสดใน Broker',
+                            isDarkMode: isDarkMode,
+                          ),
+                          _CashRow(
+                            cashBalance: acc.cashBalance,
+                            exchangeRate: acc.exchangeRate,
+                            onTap: () =>
+                                _editCashBalance(context, provider, acc),
+                            isDarkMode: isDarkMode,
+                          ),
+                        ],
                       ),
                     ),
-                  )
-                else
-                  ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    buildDefaultDragHandles: _isReorderMode,
-                    itemCount: holdings.length,
-                    onReorder: _isReorderMode
-                        ? (oldIndex, newIndex) {
-                            provider.reorderHoldings(
-                              acc.id,
-                              oldIndex,
-                              newIndex,
-                            );
-                          }
-                        : (_, _) {},
-                    proxyDecorator: (child, index, animation) {
-                      return AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, child) {
-                          final animValue = Curves.easeInOut.transform(
-                            animation.value,
-                          );
-                          final elevation = 1 + animValue * 8;
-                          final scale = 1 + animValue * 0.02;
-                          return Transform.scale(
-                            scale: scale,
-                            child: Material(
-                              elevation: elevation,
-                              color: isDarkMode
-                                  ? AppColors.darkSurface
-                                  : AppColors.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: child,
-                      );
-                    },
-                    itemBuilder: (context, index) {
-                      final h = holdings[index];
-                      return _HoldingItem(
-                        key: ValueKey(h.id),
-                        holding: h,
-                        exchangeRate: acc.exchangeRate,
-                        totalHoldingsValueUsd: totalHoldingsValueUsd,
-                        isReorderMode: _isReorderMode,
-                        onEdit: () =>
-                            _openHoldingForm(context, provider, acc.id, h),
-                        onChangeLogo: () =>
-                            _pickAndUploadHoldingLogo(context, provider, h),
-                        onClearLogo: h.logoUrl.isNotEmpty
-                            ? () => provider.updateHolding(
-                                h.copyWith(logoUrl: ''),
-                              )
-                            : null,
-                        onDelete: () => provider.deleteHolding(h.id, acc.id),
-                        isDarkMode: isDarkMode,
-                      );
-                    },
-                  ),
-
-                const SizedBox(height: 80),
-              ],
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _TabBarDelegate(
+                        TabBar(
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorColor: isDarkMode
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                          labelColor: isDarkMode
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                          unselectedLabelColor: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                          tabs: const [
+                            Tab(text: 'พอร์ต'),
+                            Tab(text: 'หุ้นทั้งหมด'),
+                          ],
+                        ),
+                        isDarkMode
+                            ? AppColors.darkBackground
+                            : AppColors.background,
+                      ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  children: [
+                    // Tab พอร์ต
+                    _buildPortfolioTab(
+                      context,
+                      provider,
+                      acc,
+                      holdings,
+                      totalHoldingsValueUsd,
+                      isDarkMode,
+                    ),
+                    // Tab หุ้นทั้งหมด
+                    _buildAllStocksTab(
+                      context,
+                      provider,
+                      acc,
+                      holdings,
+                      totalHoldingsValueUsd,
+                      isDarkMode,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -697,6 +723,570 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       },
     );
   }
+
+  Widget _buildPortfolioTab(
+    BuildContext context,
+    AccountProvider provider,
+    Account acc,
+    List<StockHolding> holdings,
+    double totalHoldingsValueUsd,
+    bool isDarkMode,
+  ) {
+    if (holdings.isEmpty) {
+      return Center(
+        child: Text(
+          'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
+          style: TextStyle(
+            color: isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    final groups = <String, List<StockHolding>>{};
+    for (final h in holdings) {
+      final g = h.portfolioGroup.trim().isEmpty
+          ? 'ทั่วไป'
+          : h.portfolioGroup.trim();
+      groups.putIfAbsent(g, () => []).add(h);
+    }
+
+    final currentGroups = groups.keys.toList();
+    var orderChanged = false;
+    for (final g in currentGroups) {
+      if (!_groupOrder.contains(g)) {
+        _groupOrder.add(g);
+        orderChanged = true;
+        SharedPreferences.getInstance().then((prefs) {
+          final st = prefs.getString(
+            'portfolio_group_sort_${widget.account.id}_$g',
+          );
+          if (st != null && mounted) {
+            setState(() {
+              _groupSortTypes[g] = st;
+            });
+          }
+        });
+      }
+    }
+    final sortedGroupKeys = _groupOrder
+        .where((g) => groups.containsKey(g))
+        .toList();
+    if (orderChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _saveGroupOrder());
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 80),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.reorder, size: 16),
+                label: const Text(
+                  'จัดลำดับกลุ่ม',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: isDarkMode
+                      ? AppColors.darkIncome
+                      : AppColors.income,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () => _showGroupReorderDialog(
+                  context,
+                  sortedGroupKeys,
+                  isDarkMode,
+                ),
+              ),
+            ],
+          ),
+        ),
+        for (final groupName in sortedGroupKeys) ...[
+          _buildGroupSection(
+            context,
+            groupName,
+            groups[groupName]!,
+            acc,
+            totalHoldingsValueUsd,
+            isDarkMode,
+            provider,
+          ),
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildGroupSection(
+    BuildContext context,
+    String groupName,
+    List<StockHolding> groupHoldings,
+    Account acc,
+    double totalHoldingsValueUsd,
+    bool isDarkMode,
+    AccountProvider provider,
+  ) {
+    final rate = acc.exchangeRate;
+    final groupValueUsd = groupHoldings.fold<double>(
+      0,
+      (sum, h) => sum + h.valueUsd,
+    );
+    final groupCostUsd = groupHoldings.fold<double>(
+      0,
+      (sum, h) => sum + h.totalCostUsd,
+    );
+    final groupValueThb = groupValueUsd * rate;
+    final groupPnlUsd = groupCostUsd > 0 ? groupValueUsd - groupCostUsd : 0.0;
+    final groupPnlThb = groupPnlUsd * rate;
+    final groupPnlPct = groupCostUsd > 0
+        ? (groupPnlUsd / groupCostUsd * 100)
+        : 0.0;
+
+    final sortType = _groupSortTypes[groupName] ?? 'value';
+    final sortedHoldings = List<StockHolding>.from(groupHoldings);
+    if (sortType == 'value') {
+      sortedHoldings.sort((a, b) => b.valueUsd.compareTo(a.valueUsd));
+    } else {
+      sortedHoldings.sort(
+        (a, b) => b.unrealizedPnlUsd.compareTo(a.unrealizedPnlUsd),
+      );
+    }
+
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final headerBgColor = isDarkMode
+        ? AppColors.darkSurface.withValues(alpha: 0.6)
+        : Colors.grey.shade100;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: headerBgColor,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.folder_special, size: 18, color: incomeColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        groupName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${sortedHoldings.length} ตัว',
+                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'มูลค่าปัจจุบัน',
+                          style: TextStyle(fontSize: 11, color: secondaryColor),
+                        ),
+                        Text(
+                          formatAmount(groupValueThb),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                          ),
+                        ),
+                        Text(
+                          '${formatAmount(groupValueUsd)} USD',
+                          style: TextStyle(fontSize: 13, color: secondaryColor),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'กำไร/ขาดทุน',
+                          style: TextStyle(fontSize: 11, color: secondaryColor),
+                        ),
+                        Text(
+                          '${groupPnlPct >= 0 ? '+' : ''}${groupPnlPct.toStringAsFixed(2)}%',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: groupPnlUsd >= 0
+                                ? incomeColor
+                                : expenseColor,
+                          ),
+                        ),
+                        Text(
+                          '${groupPnlUsd >= 0 ? '+' : ''}${formatAmount(groupPnlThb)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: groupPnlUsd >= 0
+                                ? incomeColor
+                                : expenseColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (groupName != 'ทั่วไป')
+            Container(
+              padding: const EdgeInsets.only(left: 16, top: 4, bottom: 8),
+              alignment: Alignment.centerLeft,
+              child: PopupMenuButton<String>(
+                initialValue: sortType,
+                color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                padding: EdgeInsets.zero,
+                tooltip: 'เปลี่ยนรูปแบบการเรียง',
+                onSelected: (val) => _setGroupSortType(groupName, val),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      sortType == 'value'
+                          ? 'เรียงตามมูลค่า'
+                          : 'เรียงตามกำไร/ขาดทุน',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      size: 16,
+                      color: secondaryColor,
+                    ),
+                  ],
+                ),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'value',
+                    child: Text(
+                      'เรียงตามมูลค่า',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                        fontWeight: sortType == 'value'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pnl',
+                    child: Text(
+                      'เรียงตามกำไร/ขาดทุน',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                        fontWeight: sortType == 'pnl'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sortedHoldings.length,
+            itemBuilder: (context, index) {
+              final h = sortedHoldings[index];
+              return Column(
+                key: ValueKey(h.id),
+                children: [
+                  Divider(height: 1, color: dividerColor),
+                  _HoldingItem(
+                    holding: h,
+                    exchangeRate: acc.exchangeRate,
+                    totalHoldingsValueUsd: totalHoldingsValueUsd,
+                    isReorderMode: false,
+                    onEdit: () =>
+                        _openHoldingForm(context, provider, acc.id, h),
+                    onChangeLogo: () =>
+                        _pickAndUploadHoldingLogo(context, provider, h),
+                    onClearLogo: h.logoUrl.isNotEmpty
+                        ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
+                        : null,
+                    onDelete: () => provider.deleteHolding(h.id, acc.id),
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGroupReorderDialog(
+    BuildContext context,
+    List<String> currentGroups,
+    bool isDarkMode,
+  ) {
+    final dialogGroups = List<String>.from(currentGroups);
+    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: bgColor,
+              title: Text(
+                'จัดลำดับกลุ่มพอร์ต',
+                style: TextStyle(color: textColor, fontSize: 18),
+              ),
+              contentPadding: const EdgeInsets.only(top: 16, bottom: 8),
+              content: Column(
+                children: [
+                  Divider(height: 1, color: dividerColor),
+                  SizedBox(
+                    width: double.maxFinite,
+                    height: 300,
+                    child: ReorderableListView.builder(
+                      itemCount: dialogGroups.length,
+                      onReorder: (oldIndex, newIndex) {
+                        setStateDialog(() {
+                          if (newIndex > oldIndex) newIndex -= 1;
+                          final item = dialogGroups.removeAt(oldIndex);
+                          dialogGroups.insert(newIndex, item);
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final g = dialogGroups[index];
+                        return ListTile(
+                          key: ValueKey(g),
+                          title: Text(g, style: TextStyle(color: textColor)),
+                          trailing: Icon(
+                            Icons.drag_handle,
+                            color: dividerColor,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _groupOrder = dialogGroups;
+                    });
+                    _saveGroupOrder();
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(
+                    'บันทึก',
+                    style: TextStyle(
+                      color: isDarkMode
+                          ? AppColors.darkIncome
+                          : AppColors.income,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAllStocksTab(
+    BuildContext context,
+    AccountProvider provider,
+    Account acc,
+    List<StockHolding> holdings,
+    double totalHoldingsValueUsd,
+    bool isDarkMode,
+  ) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    if (holdings.isEmpty) {
+      return Center(
+        child: Text(
+          'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
+          style: TextStyle(
+            color: isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(left: 0, right: 0, top: 16),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 80),
+        children: [
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: _isReorderMode,
+            itemCount: holdings.length,
+            onReorder: _isReorderMode
+                ? (oldIndex, newIndex) {
+                    provider.reorderHoldings(acc.id, oldIndex, newIndex);
+                  }
+                : (_, _) {},
+            proxyDecorator: (child, index, animation) {
+              return AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  final animValue = Curves.easeInOut.transform(animation.value);
+                  final elevation = 1 + animValue * 8;
+                  final scale = 1 + animValue * 0.02;
+                  return Transform.scale(
+                    scale: scale,
+                    child: Material(
+                      elevation: elevation,
+                      color: isDarkMode
+                          ? AppColors.darkSurface
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      child: child,
+                    ),
+                  );
+                },
+                child: child,
+              );
+            },
+            itemBuilder: (context, index) {
+              final h = holdings[index];
+              return Column(
+                key: ValueKey(h.id),
+                children: [
+                  _HoldingItem(
+                    holding: h,
+                    exchangeRate: acc.exchangeRate,
+                    totalHoldingsValueUsd: totalHoldingsValueUsd,
+                    isReorderMode: _isReorderMode,
+                    onEdit: () =>
+                        _openHoldingForm(context, provider, acc.id, h),
+                    onChangeLogo: () =>
+                        _pickAndUploadHoldingLogo(context, provider, h),
+                    onClearLogo: h.logoUrl.isNotEmpty
+                        ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
+                        : null,
+                    onDelete: () => provider.deleteHolding(h.id, acc.id),
+                    isDarkMode: isDarkMode,
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  final Color backgroundColor;
+
+  _TabBarDelegate(this.tabBar, this.backgroundColor);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: backgroundColor, child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) {
+    return tabBar != oldDelegate.tabBar ||
+        backgroundColor != oldDelegate.backgroundColor;
+  }
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -778,7 +1368,7 @@ class _SummaryCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${formatAmount(totalValue * rate)} บาท',
+                            formatAmount(totalValue * rate),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -915,7 +1505,7 @@ class _SummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                        '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}',
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontSize: 16,
@@ -924,7 +1514,7 @@ class _SummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}',
+                        '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontSize: 13,
@@ -957,7 +1547,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 15,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: isDarkMode
               ? AppColors.darkTextSecondary
@@ -1023,7 +1613,7 @@ class _CashRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${formatAmount(cashBalanceThb)} บาท',
+                  formatAmount(cashBalanceThb),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1055,7 +1645,6 @@ class _HoldingItem extends StatelessWidget {
   final bool isDarkMode;
 
   const _HoldingItem({
-    super.key,
     required this.holding,
     required this.exchangeRate,
     required this.totalHoldingsValueUsd,
@@ -1130,7 +1719,7 @@ class _HoldingItem extends StatelessWidget {
                                     Text(
                                       holding.ticker,
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                         color: textPrimaryColor,
                                       ),
@@ -1157,7 +1746,7 @@ class _HoldingItem extends StatelessWidget {
                                 Text(
                                   formatAmount(valueTHB),
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: textPrimaryColor,
                                   ),
@@ -1183,7 +1772,7 @@ class _HoldingItem extends StatelessWidget {
                                 Text(
                                   '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: pnlTHB >= 0
                                         ? incomeColor
@@ -1192,7 +1781,7 @@ class _HoldingItem extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)} THB',
+                                  '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -1352,7 +1941,6 @@ class _HoldingItem extends StatelessWidget {
             ),
           ),
         ),
-        Divider(height: 1, color: dividerColor),
       ],
     );
   }

@@ -327,6 +327,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       'take_profit_pct': holding.takeProfitPct,
       'trailing_stop_pct': holding.trailingStopPct,
       'peak_profit_pct': holding.peakProfitPct,
+      'portfolio_group': holding.portfolioGroup,
     };
   }
 
