@@ -529,8 +529,8 @@ class CsvService {
               ? (double.tryParse(row[12]?.toString() ?? '') ?? 0)
               : 0,
           exchangeRate: row.length > 13
-              ? (double.tryParse(row[13]?.toString() ?? '') ?? 0)
-              : 0,
+              ? (double.tryParse(row[13]?.toString() ?? '1.0') ?? 1.0)
+              : 1.0,
           autoUpdateRate: row.length > 14
               ? (int.tryParse(row[14]?.toString() ?? '') ?? 1) == 1
               : true,

@@ -28,7 +28,7 @@ class BudgetProvider extends ChangeNotifier {
   Future<void> init() async {
     debugPrint('BudgetProvider: Initializing...');
     _setLoading(true);
-    
+
     try {
       final budgets = await _db.getBudgets();
       // Sort by sortOrder to ensure correct order
@@ -57,7 +57,7 @@ class BudgetProvider extends ChangeNotifier {
         : (_budgets.map((b) => b.sortOrder).reduce((a, b) => a > b ? a : b) +
               10);
     final b = budget.copyWith(sortOrder: sortOrder);
-    
+
     _budgets.add(b);
     notifyListeners();
 
@@ -109,10 +109,10 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> reorderBudgets(int oldIndex, int newIndex) async {
     if (newIndex > oldIndex) newIndex--;
-    
+
     final moved = _budgets.removeAt(oldIndex);
     _budgets.insert(newIndex, moved);
-    
+
     for (var i = 0; i < _budgets.length; i++) {
       _budgets[i] = _budgets[i].copyWith(sortOrder: i * 10);
     }

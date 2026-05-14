@@ -76,7 +76,7 @@ abstract class DatabaseRepository {
   Future<void> deleteOccurrencesByRecurring(String recurringId);
 
   // ── Bulk Import Helpers ────────────────────────────────────────────────────
-  
+
   /// ดึง IDs ที่มีอยู่แล้วเพื่อเช็ค duplicates
   Future<Set<String>> getExistingAccountIds();
   Future<Set<String>> getExistingCategoryIds();
@@ -85,7 +85,7 @@ abstract class DatabaseRepository {
   Future<Set<String>> getExistingHoldingIds();
   Future<Set<String>> getExistingRecurringIds();
   Future<Set<String>> getExistingOccurrenceIds();
-  
+
   /// Bulk insert (สำหรับ CSV import)
   Future<void> bulkInsertAccounts(List<Account> accounts);
   Future<void> bulkInsertCategories(List<Category> categories);

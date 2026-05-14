@@ -123,14 +123,13 @@ class TransactionProvider extends ChangeNotifier {
     if (tx.type == TransactionType.debtRepay) {
       final toAccount = accounts.firstWhere(
         (a) => a.id == tx.toAccountId,
-        orElse:
-            () => Account(
-              id: '',
-              name: '',
-              type: AccountType.debt,
-              initialBalance: 0,
-              currency: 'THB',
-            ),
+        orElse: () => Account(
+          id: '',
+          name: '',
+          type: AccountType.debt,
+          initialBalance: 0,
+          currency: 'THB',
+        ),
       );
       // การชำระบัตรเครดิตไม่นับเป็นรายจ่ายจริง เพราะนับตอนรูดบัตรไปแล้ว
       return toAccount.type != AccountType.creditCard;

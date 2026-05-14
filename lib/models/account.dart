@@ -84,7 +84,7 @@ class Account {
     this.isHidden = false,
     this.sortOrder = 0,
     this.cashBalance = 0,
-    this.exchangeRate = 0,
+    this.exchangeRate = 1.0,
     this.autoUpdateRate = true,
     this.statementDay,
   }) : startDate = startDate ?? DateTime.now();
@@ -110,24 +110,27 @@ class Account {
     'statement_day': statementDay,
   };
 
-  static Account fromMap(Map<String, dynamic> m) => Account(
-    id: m['id'] as String,
-    name: m['name'] as String,
-    type: AccountType.values.firstWhere((e) => e.name == m['type'] as String),
-    initialBalance: (m['initial_balance'] as num).toDouble(),
-    currency: m['currency'] as String,
-    startDate: DateTime.parse(m['start_date'] as String),
-    icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
-    iconUrl: m['icon_url'] as String? ?? '',
-    color: Color(m['color'] as int),
-    excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
-    isHidden: m['is_hidden'] == 1,
-    sortOrder: m['sort_order'] as int? ?? 0,
-    cashBalance: (m['cash_balance'] as num? ?? 0).toDouble(),
-    exchangeRate: (m['exchange_rate'] as num? ?? 0).toDouble(),
-    autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
-    statementDay: m['statement_day'] as int?,
-  );
+  static Account fromMap(Map<String, dynamic> m) {
+    final rawRate = (m['exchange_rate'] as num? ?? 1.0).toDouble();
+    return Account(
+      id: m['id'] as String,
+      name: m['name'] as String,
+      type: AccountType.values.firstWhere((e) => e.name == m['type'] as String),
+      initialBalance: (m['initial_balance'] as num).toDouble(),
+      currency: m['currency'] as String,
+      startDate: DateTime.parse(m['start_date'] as String),
+      icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
+      iconUrl: m['icon_url'] as String? ?? '',
+      color: Color(m['color'] as int),
+      excludeFromNetWorth: m['exclude_from_net_worth'] == 1,
+      isHidden: m['is_hidden'] == 1,
+      sortOrder: m['sort_order'] as int? ?? 0,
+      cashBalance: (m['cash_balance'] as num? ?? 0).toDouble(),
+      exchangeRate: rawRate <= 0 ? 1.0 : rawRate,
+      autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
+      statementDay: m['statement_day'] as int?,
+    );
+  }
 
   Account copyWith({
     String? name,

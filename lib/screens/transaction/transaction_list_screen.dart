@@ -280,7 +280,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     double totalThb = 0;
     for (final tx in txs) {
       final account = accountProvider.findById(tx.accountId);
-      final rate = account?.exchangeRate ?? 1.0;
+      final rate = (account?.exchangeRate ?? 0) > 0
+          ? account!.exchangeRate
+          : 1.0;
 
       if (widget.accountId == null) {
         if (tx.type == TransactionType.income ||
@@ -291,7 +293,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         final toAccount = tx.toAccountId != null
             ? accountProvider.findById(tx.toAccountId!)
             : null;
-        final toRate = toAccount?.exchangeRate ?? 1.0;
+        final toRate = (toAccount?.exchangeRate ?? 0) > 0
+            ? toAccount!.exchangeRate
+            : 1.0;
 
         double displayAmount =
             tx.type.isExpenseLike || tx.type.isDecreaseBalance
@@ -331,7 +335,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     double totalThb = 0;
     for (final tx in txs) {
       final account = accountProvider.findById(tx.accountId);
-      final rate = account?.exchangeRate ?? 1.0;
+      final rate = (account?.exchangeRate ?? 0) > 0
+          ? account!.exchangeRate
+          : 1.0;
 
       if (widget.accountId == null) {
         if (TransactionProvider.isActualExpense(tx, accountProvider.accounts) ||
@@ -342,7 +348,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         final toAccount = tx.toAccountId != null
             ? accountProvider.findById(tx.toAccountId!)
             : null;
-        final toRate = toAccount?.exchangeRate ?? 1.0;
+        final toRate = (toAccount?.exchangeRate ?? 0) > 0
+            ? toAccount!.exchangeRate
+            : 1.0;
 
         double displayAmount =
             tx.type.isExpenseLike || tx.type.isDecreaseBalance

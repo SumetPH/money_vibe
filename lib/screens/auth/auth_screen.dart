@@ -121,186 +121,126 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                // Logo/Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: headerColor,
-                    borderRadius: BorderRadius.circular(20),
+                  // Logo/Icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: headerColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      Icons.account_balance_wallet,
+                      size: 40,
+                      color: isDarkMode
+                          ? AppColors.darkFabYellow
+                          : AppColors.fabYellow,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    size: 40,
-                    color: isDarkMode
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
+                  const SizedBox(height: 24),
+                  // App Name
+                  Text(
+                    'Money Vibe',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                // App Name
-                Text(
-                  'Money Vibe',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+                  const SizedBox(height: 8),
+                  Text(
+                    _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
+                    style: TextStyle(fontSize: 18, color: secondaryTextColor),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
-                  style: TextStyle(fontSize: 18, color: secondaryTextColor),
-                ),
-                const SizedBox(height: 32),
-                // Form
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkMode
-                            ? Colors.black.withValues(alpha: 0.3)
-                            : Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Email Field
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          enabled: !authProvider.isLoading,
-                          style: TextStyle(color: textColor),
-                          decoration: InputDecoration(
-                            labelText: 'อีเมล',
-                            labelStyle: TextStyle(color: secondaryTextColor),
-                            prefixIcon: Icon(
-                              Icons.email,
-                              color: secondaryTextColor,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: headerColor),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'กรุณากรอกอีเมล';
-                            }
-                            if (!value.contains('@')) {
-                              return 'กรุณากรอกอีเมลให้ถูกต้อง';
-                            }
-                            return null;
-                          },
+                  const SizedBox(height: 32),
+                  // Form
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDarkMode
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        const SizedBox(height: 16),
-                        // Password Field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          enabled: !authProvider.isLoading,
-                          style: TextStyle(color: textColor),
-                          decoration: InputDecoration(
-                            labelText: 'รหัสผ่าน',
-                            labelStyle: TextStyle(color: secondaryTextColor),
-                            prefixIcon: Icon(
-                              Icons.lock,
-                              color: secondaryTextColor,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: secondaryTextColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: headerColor),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'กรุณากรอกรหัสผ่าน';
-                            }
-                            if (value.length < 6) {
-                              return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
-                            }
-                            return null;
-                          },
-                        ),
-                        // Confirm Password (Register only)
-                        if (!_isLogin) ...[
-                          const SizedBox(height: 16),
+                      ],
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Email Field
                           TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
                             enabled: !authProvider.isLoading,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
-                              labelText: 'ยืนยันรหัสผ่าน',
+                              labelText: 'อีเมล',
                               labelStyle: TextStyle(color: secondaryTextColor),
                               prefixIcon: Icon(
-                                Icons.lock_outline,
+                                Icons.email,
+                                color: secondaryTextColor,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: isDarkMode
+                                      ? AppColors.darkDivider
+                                      : AppColors.divider,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: isDarkMode
+                                      ? AppColors.darkDivider
+                                      : AppColors.divider,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: headerColor),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'กรุณากรอกอีเมล';
+                              }
+                              if (!value.contains('@')) {
+                                return 'กรุณากรอกอีเมลให้ถูกต้อง';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // Password Field
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            enabled: !authProvider.isLoading,
+                            style: TextStyle(color: textColor),
+                            decoration: InputDecoration(
+                              labelText: 'รหัสผ่าน',
+                              labelStyle: TextStyle(color: secondaryTextColor),
+                              prefixIcon: Icon(
+                                Icons.lock,
                                 color: secondaryTextColor,
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscureConfirmPassword
+                                  _obscurePassword
                                       ? Icons.visibility_off
                                       : Icons.visibility,
                                   color: secondaryTextColor,
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
+                                    _obscurePassword = !_obscurePassword;
                                   });
                                 },
                               ),
@@ -327,97 +267,162 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'กรุณายืนยันรหัสผ่าน';
+                                return 'กรุณากรอกรหัสผ่าน';
                               }
-                              if (value != _passwordController.text) {
-                                return 'รหัสผ่านไม่ตรงกัน';
+                              if (value.length < 6) {
+                                return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
                               }
                               return null;
                             },
                           ),
-                        ],
-                        const SizedBox(height: 24),
-                        // Submit Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: authProvider.isLoading ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: headerColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          // Confirm Password (Register only)
+                          if (!_isLogin) ...[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              enabled: !authProvider.isLoading,
+                              style: TextStyle(color: textColor),
+                              decoration: InputDecoration(
+                                labelText: 'ยืนยันรหัสผ่าน',
+                                labelStyle: TextStyle(
+                                  color: secondaryTextColor,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline,
+                                  color: secondaryTextColor,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: secondaryTextColor,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: headerColor),
+                                ),
                               ),
-                              disabledBackgroundColor: headerColor.withValues(
-                                alpha: 0.6,
-                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'กรุณายืนยันรหัสผ่าน';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'รหัสผ่านไม่ตรงกัน';
+                                }
+                                return null;
+                              },
                             ),
-                            child: authProvider.isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                          ],
+                          const SizedBox(height: 24),
+                          // Submit Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: authProvider.isLoading
+                                  ? null
+                                  : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: headerColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                disabledBackgroundColor: headerColor.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                              child: authProvider.isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : Text(
+                                      _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  )
-                                : Text(
-                                    _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Toggle Login/Register
-                TextButton(
-                  onPressed: authProvider.isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _isLogin = !_isLogin;
-                            authProvider.clearError();
-                          });
-                        },
-                  child: Text(
-                    _isLogin
-                        ? 'ยังไม่มีบัญชี? สมัครสมาชิก'
-                        : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ',
-                    style: TextStyle(
-                      color: isDarkMode
-                          ? AppColors.darkTransfer
-                          : AppColors.transfer,
-                    ),
-                  ),
-                ),
-                // Forgot Password
-                if (_isLogin)
+                  const SizedBox(height: 24),
+                  // Toggle Login/Register
                   TextButton(
                     onPressed: authProvider.isLoading
                         ? null
-                        : () => _showForgotPasswordDialog(context),
+                        : () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                              authProvider.clearError();
+                            });
+                          },
                     child: Text(
-                      'ลืมรหัสผ่าน?',
-                      style: TextStyle(color: secondaryTextColor),
+                      _isLogin
+                          ? 'ยังไม่มีบัญชี? สมัครสมาชิก'
+                          : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ',
+                      style: TextStyle(
+                        color: isDarkMode
+                            ? AppColors.darkTransfer
+                            : AppColors.transfer,
+                      ),
                     ),
                   ),
-              ],
+                  // Forgot Password
+                  if (_isLogin)
+                    TextButton(
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _showForgotPasswordDialog(context),
+                      child: Text(
+                        'ลืมรหัสผ่าน?',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showForgotPasswordDialog(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;

@@ -54,11 +54,7 @@ class AccountIconWidget extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: Icon(
-          account.icon,
-          color: account.color,
-          size: size * 0.6,
-        ),
+        child: Icon(account.icon, color: account.color, size: size * 0.6),
       ),
     );
   }

@@ -4,7 +4,7 @@ import '../repositories/database_repository.dart';
 import '../repositories/supabase_repository.dart';
 
 /// Service สำหรับจัดการ Database - Supabase Only
-/// 
+///
 /// ออกแบบสำหรับ Multi-device usage:
 /// - ข้อมูลอยู่บน Supabase (Cloud)
 /// - ตรงกันทุก device แบบ real-time
@@ -18,7 +18,7 @@ class DatabaseManager extends ChangeNotifier {
   DatabaseManager._internal();
 
   DatabaseRepository? _repository;
-  
+
   String? _supabaseUrl;
   String? _supabaseAnonKey;
   bool _isLoading = false;
@@ -37,7 +37,7 @@ class DatabaseManager extends ChangeNotifier {
   String? get error => _error;
   bool get hasError => _error != null;
   bool get isConfigured => _supabaseUrl != null && _supabaseAnonKey != null;
-  
+
   // Getters for saved config (for auto-fill in settings)
   String? get supabaseUrl => _supabaseUrl;
   String? get supabaseAnonKey => _supabaseAnonKey;
@@ -89,7 +89,7 @@ class DatabaseManager extends ChangeNotifier {
         supabaseAnonKey: anonKey,
       );
       await testRepo.init();
-      
+
       if (!await testRepo.isConnected()) {
         throw Exception('Cannot connect to Supabase');
       }

@@ -41,7 +41,7 @@ class AuthProvider extends ChangeNotifier {
   /// ต้องเรียกหลังจาก Supabase ถูก initialize แล้วเท่านั้น
   Future<void> init() async {
     if (_isInitialized) return;
-    
+
     _setLoading(true);
     try {
       final client = _safeClient;
@@ -73,7 +73,7 @@ class AuthProvider extends ChangeNotifier {
         }
         notifyListeners();
       });
-      
+
       _isInitialized = true;
     } catch (e) {
       _error = e.toString();
@@ -84,10 +84,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// สมัครสมาชิกด้วย Email/Password
-  Future<bool> signUp({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signUp({required String email, required String password}) async {
     _setLoading(true);
     _clearError();
     try {
@@ -123,10 +120,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// เข้าสู่ระบบด้วย Email/Password
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     _setLoading(true);
     _clearError();
     try {
@@ -218,9 +212,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      await client.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      await client.auth.updateUser(UserAttributes(password: newPassword));
       return true;
     } on AuthException catch (e) {
       _error = _getErrorMessage(e.message);

@@ -49,10 +49,7 @@ class SplashScreen extends StatelessWidget {
             // สโลแกน
             const Text(
               'บริหารเงินให้เป็นเรื่องง่าย',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 48),
             // Loading indicator

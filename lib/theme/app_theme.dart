@@ -164,7 +164,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.header, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         hintStyle: TextStyle(color: darkTextSecondary),
       ),
       textTheme: GoogleFonts.ibmPlexSansThaiTextTheme().apply(
@@ -175,5 +178,6 @@ class AppTheme {
     );
   }
 
-  static ThemeData getTheme(bool isDarkMode) => isDarkMode ? darkTheme : lightTheme;
+  static ThemeData getTheme(bool isDarkMode) =>
+      isDarkMode ? darkTheme : lightTheme;
 }

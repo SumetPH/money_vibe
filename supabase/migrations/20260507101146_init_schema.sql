@@ -32,7 +32,7 @@ create table if not exists public.accounts (
     is_hidden integer not null default 0,
     sort_order integer not null default 0,
     cash_balance numeric(15, 2) not null default 0,
-    exchange_rate numeric(15, 4) not null default 0,
+    exchange_rate numeric(15, 4) not null default 1,
     auto_update_rate integer not null default 1,
     statement_day integer,
     created_at timestamp without time zone default now(),

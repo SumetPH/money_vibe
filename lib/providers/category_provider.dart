@@ -28,7 +28,7 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> init() async {
     debugPrint('CategoryProvider: Initializing...');
     _setLoading(true);
-    
+
     try {
       final categories = await _db.getCategories();
       // Sort by sortOrder to ensure correct order
@@ -78,9 +78,7 @@ class CategoryProvider extends ChangeNotifier {
     List<AppTransaction> transactions,
   ) {
     return transactions
-        .where(
-          (t) => t.categoryId == categoryId && !t.type.isTransferLike,
-        )
+        .where((t) => t.categoryId == categoryId && !t.type.isTransferLike)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
@@ -89,11 +87,12 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> addCategory(Category cat) async {
     // Get categories of the same type
     final typeCats = _categories.where((c) => c.type == cat.type).toList();
-    
+
     // Calculate new sortOrder (max + 10) for this type
     final sortOrder = typeCats.isEmpty
         ? 0
-        : (typeCats.map((c) => c.sortOrder).reduce((a, b) => a > b ? a : b) + 10);
+        : (typeCats.map((c) => c.sortOrder).reduce((a, b) => a > b ? a : b) +
+              10);
     final updated = cat.copyWith(sortOrder: sortOrder);
 
     _categories.add(updated);
@@ -149,21 +148,33 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> reorderCategories(CategoryType type, int oldIndex, int newIndex) async {
-    debugPrint('CategoryProvider: Reordering - type=$type, oldIndex=$oldIndex, newIndex=$newIndex');
-    
+  Future<void> reorderCategories(
+    CategoryType type,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    debugPrint(
+      'CategoryProvider: Reordering - type=$type, oldIndex=$oldIndex, newIndex=$newIndex',
+    );
+
     // Get categories of this type sorted by current order
     final typeCategories = _categories.where((c) => c.type == type).toList()
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
-    debugPrint('CategoryProvider: Found ${typeCategories.length} categories of type $type');
+    debugPrint(
+      'CategoryProvider: Found ${typeCategories.length} categories of type $type',
+    );
 
     if (oldIndex < 0 || oldIndex >= typeCategories.length) {
-      debugPrint('CategoryProvider: Invalid oldIndex=$oldIndex, length=${typeCategories.length}');
+      debugPrint(
+        'CategoryProvider: Invalid oldIndex=$oldIndex, length=${typeCategories.length}',
+      );
       return;
     }
     if (newIndex < 0 || newIndex > typeCategories.length) {
-      debugPrint('CategoryProvider: Invalid newIndex=$newIndex, length=${typeCategories.length}');
+      debugPrint(
+        'CategoryProvider: Invalid newIndex=$newIndex, length=${typeCategories.length}',
+      );
       return;
     }
 
@@ -175,18 +186,23 @@ class CategoryProvider extends ChangeNotifier {
     // Remove and re-insert
     final movedCategory = typeCategories.removeAt(oldIndex);
     typeCategories.insert(newIndex, movedCategory);
-    debugPrint('CategoryProvider: Moved ${movedCategory.name} from $oldIndex to $newIndex');
+    debugPrint(
+      'CategoryProvider: Moved ${movedCategory.name} from $oldIndex to $newIndex',
+    );
 
     // Update sortOrder for all categories in this type
     for (var i = 0; i < typeCategories.length; i++) {
-      typeCategories[i].sortOrder = i * 10; // Use multiples of 10 for flexibility
-      debugPrint('CategoryProvider: ${typeCategories[i].name} sortOrder = ${typeCategories[i].sortOrder}');
+      typeCategories[i].sortOrder =
+          i * 10; // Use multiples of 10 for flexibility
+      debugPrint(
+        'CategoryProvider: ${typeCategories[i].name} sortOrder = ${typeCategories[i].sortOrder}',
+      );
     }
-    
+
     // Sort _categories by sortOrder to ensure correct order for UI
     _categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     debugPrint('CategoryProvider: _categories sorted by sortOrder');
-    
+
     notifyListeners();
 
     try {

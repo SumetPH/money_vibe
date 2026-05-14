@@ -63,12 +63,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           : '';
       _exchangeRateController.text = acc != null
           ? acc.exchangeRate.toString()
-          : '0';
+          : '1.0';
     } else {
       _initialBalanceController.text = acc != null
           ? formatAmount(acc.initialBalance)
           : '';
-      _exchangeRateController.text = '0';
+      _exchangeRateController.text = '1';
     }
   }
 
@@ -95,7 +95,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         .trim();
     final balanceValue = double.tryParse(balanceText) ?? 0;
     final exchangeRate =
-        double.tryParse(_exchangeRateController.text.trim()) ?? 0;
+        double.tryParse(_exchangeRateController.text.trim()) ?? 1.0;
 
     final isPortfolio = _selectedType == AccountType.portfolio;
     final initialBalance = isPortfolio ? 0.0 : balanceValue;
@@ -498,7 +498,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ],
               textAlign: TextAlign.right,
               decoration: InputDecoration(
-                hintText: '0',
+                hintText: '1',
                 hintStyle: TextStyle(color: textSecondaryColor),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
