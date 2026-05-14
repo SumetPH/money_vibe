@@ -1055,7 +1055,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   PortfolioHoldingItemWidget(
                     holding: h,
                     exchangeRate: acc.exchangeRate,
-                    totalHoldingsValueUsd: totalHoldingsValueUsd,
+                    totalHoldingsValueUsd: groupValueUsd,
                     isReorderMode: false,
                     onEdit: () =>
                         _openHoldingForm(context, provider, acc.id, h),
