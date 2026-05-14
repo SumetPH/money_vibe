@@ -273,6 +273,9 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                     fixedDateRange: bill.isOpen
                         ? _buildCurrentCycleDateRange(bill)
                         : null,
+                    creditCardPaymentStartDate: bill.isOpen
+                        ? bill.paymentStartDate
+                        : null,
                     title: bill.isOpen
                         ? 'รอบปัจจุบัน'
                         : 'รอบบิล ${bill.billName}',

@@ -6,6 +6,7 @@ class CreditCardBill {
   final DateTime statementDate; // วันสรุปยอด
   final DateTime startDate; // วันเริ่มต้นรอบ
   final DateTime dueDate; // วันครบกำหนดชำระ (สรุปยอด + 15 วัน)
+  final DateTime paymentStartDate; // วันเริ่มต้นนับการชำระของรอบนี้
 
   // ยอดต่างๆ
   final double expensesAmount; // ยอดใช้จ่ายในรอบนี้
@@ -31,6 +32,7 @@ class CreditCardBill {
     required this.statementDate,
     required this.startDate,
     required this.dueDate,
+    required this.paymentStartDate,
     required this.expensesAmount,
     required this.carriedOverAmount,
     required this.totalAmount,
@@ -222,6 +224,7 @@ class CreditCardBillService {
           statementDate: statementDate,
           startDate: startDate,
           dueDate: dueDate,
+          paymentStartDate: paymentStartDay,
           expensesAmount: expensesAmount,
           carriedOverAmount: carryOverAmount,
           totalAmount: totalAmount,
@@ -319,6 +322,7 @@ class CreditCardBillService {
           statementDate: nextStatementDate,
           startDate: openStartDate,
           dueDate: nextStatementDate.add(const Duration(days: 15)),
+          paymentStartDate: openPaymentStartDay,
           expensesAmount: openExpensesAmount,
           carriedOverAmount: carryOverAmount,
           totalAmount: openTotalAmount,

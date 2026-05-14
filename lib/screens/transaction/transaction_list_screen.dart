@@ -18,6 +18,7 @@ class TransactionListScreen extends StatefulWidget {
   final List<String>? categoryIds;
   final List<String>? transactionIds;
   final DateTimeRange? fixedDateRange;
+  final DateTime? creditCardPaymentStartDate;
   final String? title;
 
   const TransactionListScreen({
@@ -26,6 +27,7 @@ class TransactionListScreen extends StatefulWidget {
     this.categoryIds,
     this.transactionIds,
     this.fixedDateRange,
+    this.creditCardPaymentStartDate,
     this.title,
   });
 
@@ -262,11 +264,34 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           .toList();
     }
 
-    if (transactionIds != null && transactionIds.isNotEmpty) {
+    if (transactionIds != null) {
       final transactionIdSet = transactionIds.toSet();
       transactions = transactions
           .where((tx) => transactionIdSet.contains(tx.id))
           .toList();
+    }
+
+    final paymentStartDate = widget.creditCardPaymentStartDate;
+    if (paymentStartDate != null && accountId != null) {
+      transactions = transactions.where((tx) {
+        final isPayment =
+            ((tx.type == TransactionType.transfer ||
+                    tx.type == TransactionType.debtRepay) &&
+                tx.toAccountId == accountId) ||
+            (tx.type == TransactionType.income && tx.accountId == accountId);
+
+        if (isPayment) {
+          final txDay = DateTime(
+            tx.dateTime.year,
+            tx.dateTime.month,
+            tx.dateTime.day,
+          );
+          if (txDay.isBefore(paymentStartDate)) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
     }
 
     return transactions;
