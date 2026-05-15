@@ -861,7 +861,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       sortedHoldings.sort((a, b) => b.valueUsd.compareTo(a.valueUsd));
     } else {
       sortedHoldings.sort(
-        (a, b) => b.unrealizedPnlUsd.compareTo(a.unrealizedPnlUsd),
+        (a, b) => b.unrealizedPnlPct.compareTo(a.unrealizedPnlPct),
       );
     }
 
