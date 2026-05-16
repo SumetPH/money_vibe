@@ -53,9 +53,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   }
 
   /// ดึง user_id ของผู้ใช้ปัจจุบัน
+  @override
   String? get currentUserId => _client?.auth.currentUser?.id;
 
-  /// ตรวจสอบว่า user ได้ login หรือยัง
+  @override
   bool get isAuthenticated => currentUserId != null;
 
   @override
@@ -315,6 +316,46 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> deleteOccurrencesByRecurring(String recurringId) =>
       _recurringAdapter.deleteOccurrencesByRecurring(recurringId);
+
+  // ── Sync Logs ─────────────────────────────────────────────────────────────
+
+  @override
+  Future<void> updateSyncLog(String moduleName) async {
+    if (!isAuthenticated) return;
+    try {
+      log('Updating sync log for module: $moduleName');
+      await client.from('sync_logs').upsert({
+        'user_id': currentUserId,
+        'module_name': moduleName,
+        'last_updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'user_id, module_name');
+    } catch (e) {
+      logError('Failed to update sync log for $moduleName', e);
+    }
+  }
+
+  @override
+  Future<Map<String, DateTime>> getSyncLogs() async {
+    if (!isAuthenticated) return {};
+    try {
+      log('Fetching sync logs for user: $currentUserId');
+      final response = await client
+          .from('sync_logs')
+          .select('module_name, last_updated_at')
+          .eq('user_id', currentUserId!);
+
+      final Map<String, DateTime> logs = {};
+      for (final row in (response as List)) {
+        final module = row['module_name'] as String;
+        final timestamp = row['last_updated_at'] as String;
+        logs[module] = DateTime.parse(timestamp);
+      }
+      return logs;
+    } catch (e) {
+      logError('Failed to fetch sync logs', e);
+      return {};
+    }
+  }
 
   // ── Migration Helpers ──────────────────────────────────────────────────────
 

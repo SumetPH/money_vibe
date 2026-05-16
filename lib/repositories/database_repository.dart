@@ -84,6 +84,15 @@ abstract class RecurringRepositoryInterface {
   Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences);
 }
 
+/// Interface สำหรับจัดการข้อมูล Sync Log
+abstract class SyncRepositoryInterface {
+  /// อัปเดตเวลาล่าสุดของโมดูล
+  Future<void> updateSyncLog(String moduleName);
+
+  /// ดึงข้อมูล Sync Log ทั้งหมดของผู้ใช้ปัจจุบัน
+  Future<Map<String, DateTime>> getSyncLogs();
+}
+
 // ── Composite Repository Interface ──────────────────────────────────────────
 
 /// Abstract Repository Interface หลักของแอปพลิเคชัน
@@ -95,9 +104,16 @@ abstract class DatabaseRepository
         TransactionRepositoryInterface,
         PortfolioRepositoryInterface,
         BudgetRepositoryInterface,
-        RecurringRepositoryInterface {
+        RecurringRepositoryInterface,
+        SyncRepositoryInterface {
   /// ชื่อของ repository (สำหรับ debug)
   String get name;
+
+  /// ตรวจสอบว่าผู้ใช้ Login หรือยัง
+  bool get isAuthenticated;
+
+  /// ID ของผู้ใช้ปัจจุบัน
+  String? get currentUserId;
 
   /// เริ่มต้นการเชื่อมต่อ/initialize
   Future<void> init();

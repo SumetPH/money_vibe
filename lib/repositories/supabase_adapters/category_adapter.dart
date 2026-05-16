@@ -59,6 +59,7 @@ class SupabaseCategoryAdapter implements CategoryRepositoryInterface {
     _requireAuth();
     repo.log('Inserting category: ${category.id} for user: $currentUserId');
     await client.from('categories').insert(_categoryToSupabase(category));
+    await repo.updateSyncLog('categories');
   }
 
   @override
@@ -70,6 +71,7 @@ class SupabaseCategoryAdapter implements CategoryRepositoryInterface {
         .update(_categoryToSupabase(category))
         .eq('id', category.id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('categories');
   }
 
   @override
@@ -90,6 +92,7 @@ class SupabaseCategoryAdapter implements CategoryRepositoryInterface {
         );
       }
       repo.log('Updated category sort order successfully: $id');
+      await repo.updateSyncLog('categories');
     } catch (e) {
       repo.logError('Error updating category sort order', e);
       rethrow;
@@ -105,6 +108,7 @@ class SupabaseCategoryAdapter implements CategoryRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('categories');
   }
 
   @override

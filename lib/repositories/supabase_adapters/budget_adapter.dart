@@ -61,6 +61,7 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
     _requireAuth();
     repo.log('Inserting budget: ${budget.id} for user: $currentUserId');
     await client.from('budgets').insert(_budgetToSupabase(budget));
+    await repo.updateSyncLog('budgets');
   }
 
   @override
@@ -72,6 +73,7 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
         .update(_budgetToSupabase(budget))
         .eq('id', budget.id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('budgets');
   }
 
   @override
@@ -90,6 +92,7 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
         throw Exception('Failed to update budget sort order: No rows affected');
       }
       repo.log('Updated budget sort order successfully: $id');
+      await repo.updateSyncLog('budgets');
     } catch (e) {
       repo.logError('Error updating budget sort order', e);
       rethrow;
@@ -105,6 +108,7 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('budgets');
   }
 
   @override

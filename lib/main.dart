@@ -12,6 +12,7 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/recurring_transaction_provider.dart';
+import 'providers/sync_provider.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
 import 'screens/account/account_list_screen.dart';
@@ -61,6 +62,14 @@ void main() async {
   final recurringProvider = RecurringTransactionProvider();
   final authProvider = AuthProvider();
   final llmProvider = LlmProvider();
+  final syncProvider = SyncProvider(
+    repository: dbManager.repository,
+    accountProvider: accountProvider,
+    categoryProvider: categoryProvider,
+    transactionProvider: transactionProvider,
+    budgetProvider: budgetProvider,
+    recurringProvider: recurringProvider,
+  );
 
   try {
     await RecurringNotificationService.instance.init();
@@ -103,6 +112,7 @@ void main() async {
       settingsProvider: settingsProvider,
       recurringProvider: recurringProvider,
       llmProvider: llmProvider,
+      syncProvider: syncProvider,
     ),
   );
 
@@ -131,6 +141,7 @@ class MyApp extends StatefulWidget {
   final SettingsProvider settingsProvider;
   final RecurringTransactionProvider recurringProvider;
   final LlmProvider llmProvider;
+  final SyncProvider syncProvider;
 
   const MyApp({
     super.key,
@@ -142,13 +153,14 @@ class MyApp extends StatefulWidget {
     required this.settingsProvider,
     required this.recurringProvider,
     required this.llmProvider,
+    required this.syncProvider,
   });
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final DatabaseManager _databaseManager;
   late final _AppRouterRefreshNotifier _routerRefreshNotifier;
   late final GoRouter _router;
@@ -156,6 +168,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _databaseManager = DatabaseManager();
     _routerRefreshNotifier = _AppRouterRefreshNotifier(
       listenables: [widget.authProvider, _databaseManager],
@@ -165,6 +178,12 @@ class _MyAppState extends State<MyApp> {
       initialLocation: initialLocation,
       overridePlatformDefaultLocation: _shouldOverridePlatformInitialLocation(),
       refreshListenable: _routerRefreshNotifier,
+      observers: [
+        _SyncNavigatorObserver(
+          syncProvider: widget.syncProvider,
+          authProvider: widget.authProvider,
+        ),
+      ],
       routes: [
         GoRoute(
           path: '/',
@@ -228,6 +247,15 @@ class _MyAppState extends State<MyApp> {
         return null;
       },
     );
+
+    // Note: Old routerDelegate listener removed in favor of NavigatorObserver
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.authProvider.isLoggedIn) {
+      widget.syncProvider.checkAndSync();
+    }
   }
 
   String _getDefaultTopLevelLocation() {
@@ -264,6 +292,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: widget.recurringProvider),
         ChangeNotifierProvider.value(value: _databaseManager),
         ChangeNotifierProvider.value(value: widget.llmProvider),
+        ChangeNotifierProvider.value(value: widget.syncProvider),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
@@ -311,7 +340,40 @@ class _MyAppState extends State<MyApp> {
   void dispose() {
     _routerRefreshNotifier.dispose();
     _router.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+}
+
+/// Observer สำหรับเช็ค Sync ทุกครั้งที่มีการเปลี่ยนหน้า
+class _SyncNavigatorObserver extends NavigatorObserver {
+  final SyncProvider syncProvider;
+  final AuthProvider authProvider;
+
+  _SyncNavigatorObserver({
+    required this.syncProvider,
+    required this.authProvider,
+  });
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _checkSync();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _checkSync();
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    _checkSync();
+  }
+
+  void _checkSync() {
+    if (authProvider.isLoggedIn) {
+      syncProvider.checkAndSync();
+    }
   }
 }
 

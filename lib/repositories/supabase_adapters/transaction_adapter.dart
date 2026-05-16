@@ -84,6 +84,7 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
     await client
         .from('transactions')
         .insert(_transactionToSupabase(transaction));
+    await repo.updateSyncLog('transactions');
   }
 
   @override
@@ -97,6 +98,7 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
         .update(_transactionToSupabase(transaction))
         .eq('id', transaction.id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('transactions');
   }
 
   @override
@@ -108,6 +110,7 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('transactions');
   }
 
   @override

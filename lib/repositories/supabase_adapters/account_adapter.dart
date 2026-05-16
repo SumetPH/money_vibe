@@ -70,6 +70,7 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
     _requireAuth();
     repo.log('Inserting account: ${account.id} for user: $currentUserId');
     await client.from('accounts').insert(_accountToSupabase(account));
+    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -81,6 +82,7 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .update(_accountToSupabase(account))
         .eq('id', account.id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -101,6 +103,7 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         );
       }
       repo.log('Updated account sort order successfully: $id');
+      await repo.updateSyncLog('accounts');
     } catch (e) {
       repo.logError('Error updating account sort order', e);
       rethrow;
@@ -116,6 +119,7 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('accounts');
   }
 
   @override
