@@ -918,7 +918,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     ),
                     Text(
                       '${sortedHoldings.length} ตัว',
-                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                      style: TextStyle(fontSize: 13, color: secondaryColor),
                     ),
                   ],
                 ),
@@ -931,12 +931,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                       children: [
                         Text(
                           'มูลค่าปัจจุบัน',
-                          style: TextStyle(fontSize: 11, color: secondaryColor),
+                          style: TextStyle(fontSize: 13, color: secondaryColor),
                         ),
                         Text(
                           formatAmount(groupValueThb),
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: textColor,
                           ),
@@ -952,12 +952,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                       children: [
                         Text(
                           'กำไร/ขาดทุน',
-                          style: TextStyle(fontSize: 11, color: secondaryColor),
+                          style: TextStyle(fontSize: 13, color: secondaryColor),
                         ),
                         Text(
                           '${groupPnlPct >= 0 ? '+' : ''}${groupPnlPct.toStringAsFixed(2)}%',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: groupPnlUsd >= 0
                                 ? incomeColor
