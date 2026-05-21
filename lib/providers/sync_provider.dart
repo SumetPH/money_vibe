@@ -37,7 +37,7 @@ class SyncProvider extends ChangeNotifier {
 
     // 3. Debouncing (ไม่เช็คซ้ำภายใน 2 วินาที)
     final now = DateTime.now();
-    if (_lastCheckTime != null && 
+    if (_lastCheckTime != null &&
         now.difference(_lastCheckTime!) < const Duration(seconds: 2)) {
       return;
     }
@@ -48,7 +48,7 @@ class SyncProvider extends ChangeNotifier {
     try {
       debugPrint('[SyncProvider] Checking for remote updates...');
       final remoteLogs = await repository.getSyncLogs();
-      
+
       if (remoteLogs.isEmpty) {
         debugPrint('[SyncProvider] No remote logs found.');
         return;
@@ -61,8 +61,10 @@ class SyncProvider extends ChangeNotifier {
 
         // ถ้ายังไม่มีเวลาในเครื่อง หรือเวลาใน Server ใหม่กว่า
         if (localTime == null || remoteTime.isAfter(localTime)) {
-          debugPrint('[SyncProvider] Module "$module" needs refresh. Remote: $remoteTime, Local: $localTime');
-          
+          debugPrint(
+            '[SyncProvider] Module "$module" needs refresh. Remote: $remoteTime, Local: $localTime',
+          );
+
           _refreshModule(module);
           _localTimestamps[module] = remoteTime;
         }

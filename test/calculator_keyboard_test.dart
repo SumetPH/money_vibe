@@ -5,10 +5,13 @@ import 'package:money_vibe/providers/settings_provider.dart';
 import 'package:money_vibe/widgets/calculator_keyboard.dart';
 
 void main() {
-  testWidgets('CalculatorKeyboard updates text controller and triggers done', (WidgetTester tester) async {
+  testWidgets('CalculatorKeyboard updates text controller and triggers done', (
+    WidgetTester tester,
+  ) async {
     final controller = TextEditingController();
     bool doneCalled = false;
-    final settingsProvider = SettingsProvider(); // defaults to isDarkMode = true
+    final settingsProvider =
+        SettingsProvider(); // defaults to isDarkMode = true
 
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(

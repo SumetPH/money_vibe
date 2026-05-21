@@ -33,6 +33,10 @@ class DatabaseManager extends ChangeNotifier {
     return _repository!;
   }
 
+  set repository(DatabaseRepository repo) {
+    _repository = repo;
+  }
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasError => _error != null;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
@@ -15,6 +14,7 @@ import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
+import '../../widgets/calculator_keyboard.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -33,6 +33,13 @@ class TransactionFormScreen extends StatefulWidget {
 }
 
 class _TransactionFormScreenState extends State<TransactionFormScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _amountFocusNode = FocusNode();
+  final _toAmountFocusNode = FocusNode();
+  PersistentBottomSheetController? _keyboardController;
+  TextEditingController? _activeKeyboardController;
+  bool _isUpdatingController = false;
+
   final _amountController = TextEditingController();
   final _toAmountController =
       TextEditingController(); // cross-currency transfer
@@ -70,6 +77,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         : '';
     _noteController.text = tx?.note ?? '';
 
+    _amountFocusNode.addListener(_onFocusChange);
+    _toAmountFocusNode.addListener(_onFocusChange);
+    _amountController.addListener(_handleAmountChanged);
+    _toAmountController.addListener(_handleToAmountChanged);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateAccountBalance();
     });
@@ -77,6 +89,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   @override
   void dispose() {
+    _amountFocusNode.removeListener(_onFocusChange);
+    _toAmountFocusNode.removeListener(_onFocusChange);
+    _amountController.removeListener(_handleAmountChanged);
+    _toAmountController.removeListener(_handleToAmountChanged);
+    _amountFocusNode.dispose();
+    _toAmountFocusNode.dispose();
     _amountController.dispose();
     _toAmountController.dispose();
     _noteController.dispose();
@@ -108,13 +126,169 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
+  void _onFocusChange() {
+    if (!mounted) return;
+
+    final hasAmountFocus = _amountFocusNode.hasFocus;
+    final hasToAmountFocus = _toAmountFocusNode.hasFocus;
+
+    if (hasAmountFocus) {
+      _showKeyboard(_amountController);
+    } else if (hasToAmountFocus) {
+      _showKeyboard(_toAmountController);
+    } else {
+      _closeKeyboard();
+    }
+  }
+
+  void _handleAmountChanged() {
+    if (_isUpdatingController) return;
+    _isUpdatingController = true;
+    try {
+      final text = _amountController.text;
+      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
+
+      if (!hasOperator) {
+        _formatAmountInput(text);
+      } else {
+        // Strip commas if operator is present
+        final sanitized = text.replaceAll(',', '');
+        if (text != sanitized) {
+          final selection = _amountController.selection;
+          int commasBeforeCursor = 0;
+          if (selection.isValid) {
+            final textBeforeCursor = text.substring(0, selection.end);
+            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
+          }
+          final newOffset = selection.isValid
+              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
+              : sanitized.length;
+
+          _amountController.value = TextEditingValue(
+            text: sanitized,
+            selection: TextSelection.collapsed(offset: newOffset),
+          );
+        }
+      }
+
+      _calculateAccountBalance();
+      if (_type.requiresDebtAccount) {
+        setState(() {});
+      }
+    } finally {
+      _isUpdatingController = false;
+    }
+  }
+
+  void _handleToAmountChanged() {
+    if (_isUpdatingController) return;
+    _isUpdatingController = true;
+    try {
+      final text = _toAmountController.text;
+      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
+
+      if (!hasOperator) {
+        _formatToAmountInput(text);
+      } else {
+        // Strip commas if operator is present
+        final sanitized = text.replaceAll(',', '');
+        if (text != sanitized) {
+          final selection = _toAmountController.selection;
+          int commasBeforeCursor = 0;
+          if (selection.isValid) {
+            final textBeforeCursor = text.substring(0, selection.end);
+            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
+          }
+          final newOffset = selection.isValid
+              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
+              : sanitized.length;
+
+          _toAmountController.value = TextEditingValue(
+            text: sanitized,
+            selection: TextSelection.collapsed(offset: newOffset),
+          );
+        }
+      }
+
+      setState(() {});
+    } finally {
+      _isUpdatingController = false;
+    }
+  }
+
+  Color _getActionButtonColor() {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    switch (_type) {
+      case TransactionType.income:
+      case TransactionType.increaseBalance:
+        return isDarkMode ? AppColors.darkIncome : AppColors.income;
+      case TransactionType.expense:
+      case TransactionType.decreaseBalance:
+        return isDarkMode ? AppColors.darkExpense : AppColors.expense;
+      case TransactionType.transfer:
+        return isDarkMode ? AppColors.darkTransfer : AppColors.transfer;
+      case TransactionType.debtRepay:
+        return isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay;
+      case TransactionType.debtTransfer:
+        return isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer;
+    }
+  }
+
+  void _showKeyboard(TextEditingController controller) {
+    if (_keyboardController != null) {
+      if (_activeKeyboardController == controller) {
+        return;
+      }
+      _closeKeyboard();
+    }
+
+    _activeKeyboardController = controller;
+    final actionColor = _getActionButtonColor();
+
+    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
+        return CalculatorKeyboard(
+          controller: controller,
+          actionButtonColor: actionColor,
+          onDone: () {
+            _amountFocusNode.unfocus();
+            _toAmountFocusNode.unfocus();
+          },
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    );
+
+    _keyboardController?.closed.then((_) {
+      if (_activeKeyboardController == controller) {
+        _keyboardController = null;
+        _activeKeyboardController = null;
+        if (_amountFocusNode.hasFocus || _toAmountFocusNode.hasFocus) {
+          _amountFocusNode.unfocus();
+          _toAmountFocusNode.unfocus();
+        }
+      }
+    });
+  }
+
+  void _closeKeyboard() {
+    if (_keyboardController != null) {
+      _keyboardController?.close();
+      _keyboardController = null;
+      _activeKeyboardController = null;
+    }
+  }
+
   /// Format amount with commas while typing
   void _formatAmountInput(String value) {
     // Remove commas and get raw digits
     final raw = value.replaceAll(',', '');
     if (raw.isEmpty) {
-      _amountController.text = '';
-      _amountController.selection = const TextSelection.collapsed(offset: 0);
+      if (_amountController.text.isNotEmpty) {
+        _amountController.text = '';
+        _amountController.selection = const TextSelection.collapsed(offset: 0);
+      }
       return;
     }
 
@@ -140,6 +314,42 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     // Update text if different
     if (_amountController.text != formatted) {
       _amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
+
+  void _formatToAmountInput(String value) {
+    final raw = value.replaceAll(',', '');
+    if (raw.isEmpty) {
+      if (_toAmountController.text.isNotEmpty) {
+        _toAmountController.text = '';
+        _toAmountController.selection = const TextSelection.collapsed(
+          offset: 0,
+        );
+      }
+      return;
+    }
+
+    final hasDecimal = raw.contains('.');
+    final parts = raw.split('.');
+    final intPart = parts[0];
+
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+
+    String formatted;
+    if (hasDecimal && parts.length > 1) {
+      formatted = '$formattedInt.${parts[1]}';
+    } else {
+      formatted = formattedInt;
+    }
+
+    if (_toAmountController.text != formatted) {
+      _toAmountController.value = TextEditingValue(
         text: formatted,
         selection: TextSelection.collapsed(offset: formatted.length),
       );
@@ -354,6 +564,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             : null;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             leading: IconButton(
@@ -402,18 +613,24 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   : IconButton(icon: const Icon(Icons.check), onPressed: _save),
             ],
           ),
-          body: AbsorbPointer(
-            absorbing: _isLoading,
-            child: ListView(
-              children: _buildFormItems(
-                accountProvider: accountProvider,
-                accounts: accounts,
-                selectedAccount: selectedAccount,
-                selectedToAccount: selectedToAccount,
-                selectedDebtAccount: selectedDebtAccount,
-                categories: categories,
-                selectedCategory: selectedCategory,
-                type: _type,
+          body: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              FocusScope.of(context).unfocus();
+            },
+            child: AbsorbPointer(
+              absorbing: _isLoading,
+              child: ListView(
+                children: _buildFormItems(
+                  accountProvider: accountProvider,
+                  accounts: accounts,
+                  selectedAccount: selectedAccount,
+                  selectedToAccount: selectedToAccount,
+                  selectedDebtAccount: selectedDebtAccount,
+                  categories: categories,
+                  selectedCategory: selectedCategory,
+                  type: _type,
+                ),
               ),
             ),
           ),
@@ -434,7 +651,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   }) {
     final bool isDebtRepay = _type == TransactionType.debtRepay;
     final bool isDebtTransfer = _type == TransactionType.debtTransfer;
-    final bool usesDebtAccount = _type.requiresDebtAccount;
     final txProvider = context.read<TransactionProvider>();
     final transactions = txProvider.transactions;
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
@@ -480,14 +696,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             Expanded(
               child: TextField(
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                ],
+                focusNode: _amountFocusNode,
+                readOnly: true,
+                showCursor: true,
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w300),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                ),
                 decoration: InputDecoration(
                   hintText: 'จำนวน',
                   hintStyle: TextStyle(
@@ -509,11 +725,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   suffixStyle: const TextStyle(fontSize: 15),
                 ),
                 autofocus: !_isEditing,
-                onChanged: (value) {
-                  _formatAmountInput(value);
-                  _calculateAccountBalance();
-                  if (usesDebtAccount) setState(() {});
-                },
               ),
             ),
           ],
@@ -543,12 +754,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               Expanded(
                 child: TextField(
                   controller: _toAmountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
+                  focusNode: _toAmountFocusNode,
+                  readOnly: true,
+                  showCursor: true,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     fontSize: 24,
@@ -574,7 +782,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     suffixText: toCurrencySymbol,
                     suffixStyle: const TextStyle(fontSize: 15),
                   ),
-                  onChanged: (_) => setState(() {}),
                 ),
               ),
             ],

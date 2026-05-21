@@ -10,6 +10,7 @@ import '../../services/account_icon_storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../utils/currency_utils.dart';
+import '../../widgets/calculator_keyboard.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -21,6 +22,12 @@ class AccountFormScreen extends StatefulWidget {
 }
 
 class _AccountFormScreenState extends State<AccountFormScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _amountFocusNode = FocusNode();
+  PersistentBottomSheetController? _keyboardController;
+  TextEditingController? _activeKeyboardController;
+  bool _isUpdatingController = false;
+
   final _nameController = TextEditingController();
   final _initialBalanceController = TextEditingController();
   final _exchangeRateController = TextEditingController();
@@ -70,15 +77,142 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           : '';
       _exchangeRateController.text = '1';
     }
+
+    _amountFocusNode.addListener(_onFocusChange);
+    _initialBalanceController.addListener(_handleAmountChanged);
   }
 
   @override
   void dispose() {
+    _amountFocusNode.removeListener(_onFocusChange);
+    _initialBalanceController.removeListener(_handleAmountChanged);
+    _amountFocusNode.dispose();
     _nameController.dispose();
     _initialBalanceController.dispose();
     _exchangeRateController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!mounted) return;
+    if (_amountFocusNode.hasFocus) {
+      _showKeyboard(_initialBalanceController);
+    } else {
+      _closeKeyboard();
+    }
+  }
+
+  void _handleAmountChanged() {
+    if (_isUpdatingController) return;
+    _isUpdatingController = true;
+    try {
+      final text = _initialBalanceController.text;
+      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
+
+      if (!hasOperator) {
+        _formatAmountInput(text);
+      } else {
+        // Strip commas if operator is present
+        final sanitized = text.replaceAll(',', '');
+        if (text != sanitized) {
+          final selection = _initialBalanceController.selection;
+          int commasBeforeCursor = 0;
+          if (selection.isValid) {
+            final textBeforeCursor = text.substring(0, selection.end);
+            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
+          }
+          final newOffset = selection.isValid
+              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
+              : sanitized.length;
+
+          _initialBalanceController.value = TextEditingValue(
+            text: sanitized,
+            selection: TextSelection.collapsed(offset: newOffset),
+          );
+        }
+      }
+    } finally {
+      _isUpdatingController = false;
+    }
+  }
+
+  void _showKeyboard(TextEditingController controller) {
+    if (_keyboardController != null) {
+      if (_activeKeyboardController == controller) {
+        return;
+      }
+      _closeKeyboard();
+    }
+
+    _activeKeyboardController = controller;
+    final actionColor = _selectedColor;
+
+    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
+        return CalculatorKeyboard(
+          controller: controller,
+          actionButtonColor: actionColor,
+          onDone: () {
+            _amountFocusNode.unfocus();
+          },
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    );
+
+    _keyboardController?.closed.then((_) {
+      if (_activeKeyboardController == controller) {
+        _keyboardController = null;
+        _activeKeyboardController = null;
+        if (_amountFocusNode.hasFocus) {
+          _amountFocusNode.unfocus();
+        }
+      }
+    });
+  }
+
+  void _closeKeyboard() {
+    if (_keyboardController != null) {
+      _keyboardController?.close();
+      _keyboardController = null;
+      _activeKeyboardController = null;
+    }
+  }
+
+  void _formatAmountInput(String value) {
+    final raw = value.replaceAll(',', '');
+    if (raw.isEmpty) {
+      if (_initialBalanceController.text.isNotEmpty) {
+        _initialBalanceController.text = '';
+        _initialBalanceController.selection = const TextSelection.collapsed(offset: 0);
+      }
+      return;
+    }
+
+    final hasDecimal = raw.contains('.');
+    final parts = raw.split('.');
+    final intPart = parts[0];
+
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+
+    String formatted;
+    if (hasDecimal && parts.length > 1) {
+      formatted = '$formattedInt.${parts[1]}';
+    } else {
+      formatted = formattedInt;
+    }
+
+    if (_initialBalanceController.text != formatted) {
+      _initialBalanceController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   Future<void> _save() async {
@@ -245,6 +379,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             : AppColors.divider;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: bgColor,
           appBar: AppBar(
             leading: IconButton(
@@ -437,13 +572,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           Expanded(
             child: TextField(
               controller: _initialBalanceController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
-              ],
+              focusNode: _amountFocusNode,
+              readOnly: true,
+              showCursor: true,
               textAlign: TextAlign.right,
               decoration: InputDecoration(
                 hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',

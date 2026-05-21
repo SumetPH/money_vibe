@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
@@ -12,6 +11,8 @@ import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../main.dart';
+import '../../widgets/calculator_keyboard.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -23,6 +24,12 @@ class RecurringFormScreen extends StatefulWidget {
 }
 
 class _RecurringFormScreenState extends State<RecurringFormScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _amountFocusNode = FocusNode();
+  PersistentBottomSheetController? _keyboardController;
+  TextEditingController? _activeKeyboardController;
+  bool _isUpdatingController = false;
+
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
@@ -50,7 +57,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final r = widget.recurring;
     _nameController.text = r?.name ?? '';
     _amountController.text = r != null && r.amount > 0
-        ? r.amount.toStringAsFixed(2)
+        ? formatAmount(r.amount)
         : '';
     _noteController.text = r?.note ?? '';
     _type = r?.transactionType ?? TransactionType.expense;
@@ -69,14 +76,141 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       hour: r?.notificationHour ?? 9,
       minute: r?.notificationMinute ?? 0,
     );
+
+    _amountFocusNode.addListener(_onFocusChange);
+    _amountController.addListener(_handleAmountChanged);
   }
 
   @override
   void dispose() {
+    _amountFocusNode.removeListener(_onFocusChange);
+    _amountController.removeListener(_handleAmountChanged);
+    _amountFocusNode.dispose();
     _nameController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!mounted) return;
+    if (_amountFocusNode.hasFocus) {
+      _showKeyboard(_amountController);
+    } else {
+      _closeKeyboard();
+    }
+  }
+
+  void _handleAmountChanged() {
+    if (_isUpdatingController) return;
+    _isUpdatingController = true;
+    try {
+      final text = _amountController.text;
+      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
+
+      if (!hasOperator) {
+        _formatAmountInput(text);
+      } else {
+        // Strip commas if operator is present
+        final sanitized = text.replaceAll(',', '');
+        if (text != sanitized) {
+          final selection = _amountController.selection;
+          int commasBeforeCursor = 0;
+          if (selection.isValid) {
+            final textBeforeCursor = text.substring(0, selection.end);
+            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
+          }
+          final newOffset = selection.isValid
+              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
+              : sanitized.length;
+
+          _amountController.value = TextEditingValue(
+            text: sanitized,
+            selection: TextSelection.collapsed(offset: newOffset),
+          );
+        }
+      }
+    } finally {
+      _isUpdatingController = false;
+    }
+  }
+
+  void _showKeyboard(TextEditingController controller) {
+    if (_keyboardController != null) {
+      if (_activeKeyboardController == controller) {
+        return;
+      }
+      _closeKeyboard();
+    }
+
+    _activeKeyboardController = controller;
+    final actionColor = _color;
+
+    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
+        return CalculatorKeyboard(
+          controller: controller,
+          actionButtonColor: actionColor,
+          onDone: () {
+            _amountFocusNode.unfocus();
+          },
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    );
+
+    _keyboardController?.closed.then((_) {
+      if (_activeKeyboardController == controller) {
+        _keyboardController = null;
+        _activeKeyboardController = null;
+        if (_amountFocusNode.hasFocus) {
+          _amountFocusNode.unfocus();
+        }
+      }
+    });
+  }
+
+  void _closeKeyboard() {
+    if (_keyboardController != null) {
+      _keyboardController?.close();
+      _keyboardController = null;
+      _activeKeyboardController = null;
+    }
+  }
+
+  void _formatAmountInput(String value) {
+    final raw = value.replaceAll(',', '');
+    if (raw.isEmpty) {
+      if (_amountController.text.isNotEmpty) {
+        _amountController.text = '';
+        _amountController.selection = const TextSelection.collapsed(offset: 0);
+      }
+      return;
+    }
+
+    final hasDecimal = raw.contains('.');
+    final parts = raw.split('.');
+    final intPart = parts[0];
+
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+
+    String formatted;
+    if (hasDecimal && parts.length > 1) {
+      formatted = '$formattedInt.${parts[1]}';
+    } else {
+      formatted = formattedInt;
+    }
+
+    if (_amountController.text != formatted) {
+      _amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   Future<void> _save() async {
@@ -341,6 +475,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             : null;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: bgColor,
           appBar: AppBar(
             leading: IconButton(
@@ -409,12 +544,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                   child: TextField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
+                    focusNode: _amountFocusNode,
+                    readOnly: true,
+                    showCursor: true,
                     decoration: InputDecoration(
                       hintText: 'จำนวนเงิน',
                       hintStyle: TextStyle(color: textSecondary),

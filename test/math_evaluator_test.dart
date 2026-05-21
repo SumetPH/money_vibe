@@ -22,7 +22,7 @@ void main() {
     test('should handle decimal values correctly', () {
       expect(MathEvaluator.evaluate('10.5+2.3'), 12.8);
     });
-    
+
     test('should handle negative numbers at the beginning', () {
       expect(MathEvaluator.evaluate('-100+50'), -50.0);
     });

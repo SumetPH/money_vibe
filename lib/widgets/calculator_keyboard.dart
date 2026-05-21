@@ -19,7 +19,7 @@ class CalculatorKeyboard extends StatelessWidget {
   void _handleKeyPress(String key) {
     final text = controller.text;
     final selection = controller.selection;
-    
+
     // Default to cursor at end if no selection
     int start = selection.isValid ? selection.start : text.length;
     int end = selection.isValid ? selection.end : text.length;
@@ -64,7 +64,8 @@ class CalculatorKeyboard extends StatelessWidget {
         final prevChar = text.substring(start - 1, start);
         if (RegExp(r'[+\-*/]').hasMatch(prevChar)) {
           // Replace operator
-          final newText = text.substring(0, start - 1) + key + text.substring(end);
+          final newText =
+              text.substring(0, start - 1) + key + text.substring(end);
           controller.value = TextEditingValue(
             text: newText,
             selection: TextSelection.collapsed(offset: start),
@@ -112,10 +113,16 @@ class CalculatorKeyboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final keyboardBg = isDarkMode ? AppColors.darkBackground : AppColors.background;
-    final primaryText = isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final keyboardBg = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
+    final primaryText = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
     final numberKeyBg = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final opKeyBg = isDarkMode ? AppColors.darkSurfaceVariant : AppColors.sectionHeader;
+    final opKeyBg = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
 
     return Container(
       color: keyboardBg,
@@ -139,18 +146,24 @@ class CalculatorKeyboard extends StatelessWidget {
             const SizedBox(height: 6),
             // Row 5
             _buildRow(['0', '.', 'ตกลง'], primaryText, numberKeyBg, opKeyBg),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRow(List<String> keys, Color textColor, Color numBg, Color opBg) {
+  Widget _buildRow(
+    List<String> keys,
+    Color textColor,
+    Color numBg,
+    Color opBg,
+  ) {
     return Row(
       children: keys.map((key) {
         final isOp = RegExp(r'[+\-*/C⌫=]').hasMatch(key);
         final isDone = key == 'ตกลง';
-        
+
         Color bg = numBg;
         Color txtColor = textColor;
         if (isDone) {
@@ -186,7 +199,9 @@ class CalculatorKeyboard extends StatelessWidget {
                         key,
                         style: TextStyle(
                           fontSize: isDone ? 16 : 18,
-                          fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isDone
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
               ),
