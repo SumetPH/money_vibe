@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../providers/settings_provider.dart';
@@ -17,6 +18,9 @@ class CalculatorKeyboard extends StatelessWidget {
   });
 
   void _handleKeyPress(String key) {
+    HapticFeedback.lightImpact();
+    SystemSound.play(SystemSoundType.click);
+
     final text = controller.text;
     final selection = controller.selection;
 
@@ -124,30 +128,59 @@ class CalculatorKeyboard extends StatelessWidget {
         ? AppColors.darkSurfaceVariant
         : AppColors.sectionHeader;
 
-    return Container(
-      color: keyboardBg,
-      padding: const EdgeInsets.all(6),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Row 1
-            _buildRow(['C', '/', '*', '⌫'], primaryText, numberKeyBg, opKeyBg),
-            const SizedBox(height: 6),
-            // Row 2
-            _buildRow(['7', '8', '9', '-'], primaryText, numberKeyBg, opKeyBg),
-            const SizedBox(height: 6),
-            // Row 3
-            _buildRow(['4', '5', '6', '+'], primaryText, numberKeyBg, opKeyBg),
-            const SizedBox(height: 6),
-            // Row 4
-            _buildRow(['1', '2', '3', '='], primaryText, numberKeyBg, opKeyBg),
-            const SizedBox(height: 6),
-            // Row 5
-            _buildRow(['0', '.', 'ตกลง'], primaryText, numberKeyBg, opKeyBg),
-            const SizedBox(height: 32),
-          ],
+    return TextFieldTapRegion(
+      child: ExcludeFocus(
+        child: Container(
+          color: keyboardBg,
+          padding: const EdgeInsets.all(6),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Row 1
+                _buildRow(
+                  ['C', '/', '*', '⌫'],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
+                const SizedBox(height: 6),
+                // Row 2
+                _buildRow(
+                  ['7', '8', '9', '-'],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
+                const SizedBox(height: 6),
+                // Row 3
+                _buildRow(
+                  ['4', '5', '6', '+'],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
+                const SizedBox(height: 6),
+                // Row 4
+                _buildRow(
+                  ['1', '2', '3', '='],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
+                const SizedBox(height: 6),
+                // Row 5
+                _buildRow(
+                  ['0', '.', 'ตกลง'],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
         ),
       ),
     );
