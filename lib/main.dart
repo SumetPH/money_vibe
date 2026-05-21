@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,7 @@ import 'screens/account/account_list_screen.dart';
 import 'screens/budget/budget_list_screen.dart';
 import 'screens/category/category_list_screen.dart';
 import 'screens/recurring/recurring_list_screen.dart';
+import 'screens/recurring/recurring_detail_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/statistics/statistics_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
@@ -164,6 +167,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final DatabaseManager _databaseManager;
   late final _AppRouterRefreshNotifier _routerRefreshNotifier;
   late final GoRouter _router;
+  String? _pendingRecurringDetailId;
 
   @override
   void initState() {
@@ -209,6 +213,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GoRoute(
           path: '/recurring',
           builder: (context, state) => const RecurringListScreen(),
+          routes: [
+            GoRoute(
+              path: ':id',
+              builder: (context, state) => _RecurringDetailRouteScreen(
+                recurringId: state.pathParameters['id']!,
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: '/categories',
@@ -248,7 +260,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       },
     );
 
-    // Note: Old routerDelegate listener removed in favor of NavigatorObserver
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      RecurringNotificationService.instance.setOnNotificationTap(
+        _handleRecurringNotificationTap,
+      );
+    });
   }
 
   @override
@@ -338,11 +354,58 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    RecurringNotificationService.instance.clearOnNotificationTap();
     _routerRefreshNotifier.dispose();
     _router.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
+  Future<void> _handleRecurringNotificationTap(String payload) async {
+    final recurringId = RecurringNotificationService.recurringIdFromPayload(
+      payload,
+    );
+    if (recurringId == null || !mounted || !widget.authProvider.isLoggedIn) {
+      return;
+    }
+
+    await _waitForRecurringProvider();
+    if (!mounted) return;
+
+    final recurring = widget.recurringProvider.allRecurring
+        .where((item) => item.id == recurringId)
+        .firstOrNull;
+    final currentPath = _currentPath;
+    final detailPath = '/recurring/$recurringId';
+
+    if (recurring == null) {
+      if (currentPath != '/recurring') {
+        _router.go('/recurring');
+      }
+      return;
+    }
+
+    if (currentPath == detailPath) return;
+
+    _pendingRecurringDetailId = recurringId;
+    _router.go('/recurring');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _pendingRecurringDetailId != recurringId) return;
+
+      _pendingRecurringDetailId = null;
+      if (_currentPath == detailPath) return;
+      _router.push(detailPath);
+    });
+  }
+
+  Future<void> _waitForRecurringProvider() async {
+    while (mounted && widget.recurringProvider.isLoading) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  }
+
+  String get _currentPath => _router.routeInformationProvider.value.uri.path;
 }
 
 /// Observer สำหรับเช็ค Sync ทุกครั้งที่มีการเปลี่ยนหน้า
@@ -404,6 +467,48 @@ double _getWebMobileBottomPadding(MediaQueryData mediaQuery) {
   }
 
   return 24;
+}
+
+class _RecurringDetailRouteScreen extends StatefulWidget {
+  final String recurringId;
+
+  const _RecurringDetailRouteScreen({required this.recurringId});
+
+  @override
+  State<_RecurringDetailRouteScreen> createState() =>
+      _RecurringDetailRouteScreenState();
+}
+
+class _RecurringDetailRouteScreenState
+    extends State<_RecurringDetailRouteScreen> {
+  bool _redirectScheduled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<RecurringTransactionProvider>(
+      builder: (context, provider, _) {
+        final recurring = provider.allRecurring
+            .where((item) => item.id == widget.recurringId)
+            .firstOrNull;
+
+        if (recurring != null) {
+          _redirectScheduled = false;
+          return RecurringDetailScreen(recurring: recurring);
+        }
+
+        if (!provider.isLoading && !_redirectScheduled) {
+          _redirectScheduled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.go('/recurring');
+            }
+          });
+        }
+
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
+    );
+  }
 }
 
 // Shared helper for amount formatting

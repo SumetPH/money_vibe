@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -21,6 +23,26 @@ class RecurringNotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  final List<String> _pendingPayloads = [];
+  Future<void> Function(String payload)? _onNotificationTap;
+
+  static String recurringPayload(String recurringId) =>
+      'recurring:$recurringId';
+
+  static String? recurringIdFromPayload(String? payload) {
+    if (payload == null || payload.isEmpty) return null;
+
+    final separatorIndex = payload.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex == payload.length - 1) {
+      return null;
+    }
+
+    final type = payload.substring(0, separatorIndex);
+    final id = payload.substring(separatorIndex + 1);
+
+    if (type != 'recurring' || id.isEmpty) return null;
+    return id;
+  }
 
   Future<void> init() async {
     if (_initialized || kIsWeb) return;
@@ -54,7 +76,17 @@ class RecurringNotificationService {
       macOS: darwin,
     );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (response) {
+        _handleNotificationPayload(response.payload);
+      },
+    );
+
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      _handleNotificationPayload(launchDetails?.notificationResponse?.payload);
+    }
 
     final androidPlugin = _plugin
         .resolvePlatformSpecificImplementation<
@@ -114,7 +146,7 @@ class RecurringNotificationService {
         iOS: const DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: recurring.id,
+      payload: recurringPayload(recurring.id),
     );
 
     debugPrint(
@@ -165,9 +197,18 @@ class RecurringNotificationService {
           iOS: const DarwinNotificationDetails(),
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: item.id,
+        payload: recurringPayload(item.id),
       );
     }
+  }
+
+  void setOnNotificationTap(Future<void> Function(String payload) handler) {
+    _onNotificationTap = handler;
+    _flushPendingPayloads();
+  }
+
+  void clearOnNotificationTap() {
+    _onNotificationTap = null;
   }
 
   Future<void> cancelRecurringNotification(String recurringId) async {
@@ -269,5 +310,28 @@ class RecurringNotificationService {
 
   String _formatAmount(double amount) {
     return NumberFormat('#,##0.00', 'en_US').format(amount);
+  }
+
+  void _handleNotificationPayload(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+
+    if (_onNotificationTap == null) {
+      _pendingPayloads.add(payload);
+      return;
+    }
+
+    unawaited(_onNotificationTap!(payload));
+  }
+
+  void _flushPendingPayloads() {
+    final handler = _onNotificationTap;
+    if (handler == null || _pendingPayloads.isEmpty) return;
+
+    final payloads = List<String>.from(_pendingPayloads);
+    _pendingPayloads.clear();
+
+    for (final payload in payloads) {
+      unawaited(handler(payload));
+    }
   }
 }

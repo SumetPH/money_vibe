@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
@@ -8,7 +9,6 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import 'recurring_form_screen.dart';
-import 'recurring_detail_screen.dart';
 
 class RecurringListScreen extends StatefulWidget {
   const RecurringListScreen({super.key});
@@ -323,10 +323,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
   }
 
   void _openDetail(BuildContext context, RecurringTransaction r) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => RecurringDetailScreen(recurring: r)),
-    );
+    context.push('/recurring/${r.id}');
   }
 }
 

@@ -97,7 +97,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
       if (!mounted) return;
       // Refresh if recurring was updated (provider will notify)
       final provider = context.read<RecurringTransactionProvider>();
-      final updated = provider.recurring.where((r) => r.id == _recurring.id);
+      final updated = provider.allRecurring.where((r) => r.id == _recurring.id);
       if (updated.isNotEmpty) {
         setState(() => _recurring = updated.first);
       }
