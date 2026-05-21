@@ -186,7 +186,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     if (raw.isEmpty) {
       if (_initialBalanceController.text.isNotEmpty) {
         _initialBalanceController.text = '';
-        _initialBalanceController.selection = const TextSelection.collapsed(offset: 0);
+        _initialBalanceController.selection = const TextSelection.collapsed(
+          offset: 0,
+        );
       }
       return;
     }

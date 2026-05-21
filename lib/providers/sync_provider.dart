@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../repositories/database_repository.dart';
 import 'account_provider.dart';
@@ -17,6 +18,7 @@ class SyncProvider extends ChangeNotifier {
   final Map<String, DateTime> _localTimestamps = {};
   bool _isChecking = false;
   DateTime? _lastCheckTime;
+  StreamSubscription<String>? _localSyncSubscription;
 
   SyncProvider({
     required this.repository,
@@ -25,7 +27,21 @@ class SyncProvider extends ChangeNotifier {
     required this.transactionProvider,
     required this.budgetProvider,
     required this.recurringProvider,
-  });
+  }) {
+    _localSyncSubscription = repository.onLocalSyncLogUpdate.listen((module) {
+      final now = DateTime.now();
+      debugPrint(
+        '[SyncProvider] Local write detected for module "$module". Updating local timestamp to $now.',
+      );
+      _localTimestamps[module] = now;
+    });
+  }
+
+  @override
+  void dispose() {
+    _localSyncSubscription?.cancel();
+    super.dispose();
+  }
 
   /// เช็คและอัปเดตข้อมูลจาก Server
   Future<void> checkAndSync() async {
@@ -35,10 +51,10 @@ class SyncProvider extends ChangeNotifier {
     // 2. ป้องกันการเรียกซ้อนกัน
     if (_isChecking) return;
 
-    // 3. Debouncing (ไม่เช็คซ้ำภายใน 2 วินาที)
+    // 3. Debouncing (ไม่เช็คซ้ำภายใน 30 วินาที)
     final now = DateTime.now();
     if (_lastCheckTime != null &&
-        now.difference(_lastCheckTime!) < const Duration(seconds: 2)) {
+        now.difference(_lastCheckTime!) < const Duration(seconds: 30)) {
       return;
     }
 

@@ -7,6 +7,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../../providers/sync_provider.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
 
@@ -22,6 +23,16 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   bool _isReorderMode = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SyncProvider>().checkAndSync();
+      }
+    });
+  }
 
   @override
   void dispose() {

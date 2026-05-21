@@ -9,6 +9,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
@@ -30,6 +31,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SyncProvider>().checkAndSync();
+      }
+    });
   }
 
   @override

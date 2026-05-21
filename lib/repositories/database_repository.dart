@@ -91,6 +91,9 @@ abstract class SyncRepositoryInterface {
 
   /// ดึงข้อมูล Sync Log ทั้งหมดของผู้ใช้ปัจจุบัน
   Future<Map<String, DateTime>> getSyncLogs();
+
+  /// Stream แจ้งเตือนเมื่อมีการอัปเดตข้อมูลในเครื่อง (เพื่อให้อัปเดต local timestamp ทันที)
+  Stream<String> get onLocalSyncLogUpdate;
 }
 
 // ── Composite Repository Interface ──────────────────────────────────────────

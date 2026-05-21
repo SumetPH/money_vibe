@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_repository.dart';
@@ -32,6 +33,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   SupabaseClient? _client;
   bool _initialized = false;
+
+  final _localSyncUpdateController = StreamController<String>.broadcast();
+
+  @override
+  Stream<String> get onLocalSyncLogUpdate => _localSyncUpdateController.stream;
 
   late final _accountAdapter = SupabaseAccountAdapter(this);
   late final _categoryAdapter = SupabaseCategoryAdapter(this);
@@ -329,6 +335,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         'module_name': moduleName,
         'last_updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'user_id, module_name');
+      _localSyncUpdateController.add(moduleName);
     } catch (e) {
       logError('Failed to update sync log for $moduleName', e);
     }

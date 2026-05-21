@@ -74,6 +74,9 @@ class FakeDatabaseRepository implements DatabaseRepository {
     if (name.contains('getBudgets')) {
       return Future.value(<Budget>[]);
     }
+    if (name.contains('onLocalSyncLogUpdate')) {
+      return const Stream<String>.empty();
+    }
     return null;
   }
 }

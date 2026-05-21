@@ -182,12 +182,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       initialLocation: initialLocation,
       overridePlatformDefaultLocation: _shouldOverridePlatformInitialLocation(),
       refreshListenable: _routerRefreshNotifier,
-      observers: [
-        _SyncNavigatorObserver(
-          syncProvider: widget.syncProvider,
-          authProvider: widget.authProvider,
-        ),
-      ],
       routes: [
         GoRoute(
           path: '/',
@@ -406,38 +400,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   String get _currentPath => _router.routeInformationProvider.value.uri.path;
-}
-
-/// Observer สำหรับเช็ค Sync ทุกครั้งที่มีการเปลี่ยนหน้า
-class _SyncNavigatorObserver extends NavigatorObserver {
-  final SyncProvider syncProvider;
-  final AuthProvider authProvider;
-
-  _SyncNavigatorObserver({
-    required this.syncProvider,
-    required this.authProvider,
-  });
-
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    _checkSync();
-  }
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    _checkSync();
-  }
-
-  @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    _checkSync();
-  }
-
-  void _checkSync() {
-    if (authProvider.isLoggedIn) {
-      syncProvider.checkAndSync();
-    }
-  }
 }
 
 class _AppRouterRefreshNotifier extends ChangeNotifier {

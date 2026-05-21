@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../../providers/sync_provider.dart';
 import 'recurring_form_screen.dart';
 
 class RecurringListScreen extends StatefulWidget {
@@ -19,6 +20,16 @@ class RecurringListScreen extends StatefulWidget {
 
 class _RecurringListScreenState extends State<RecurringListScreen> {
   bool _isReorderMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SyncProvider>().checkAndSync();
+      }
+    });
+  }
 
   static const _thaiMonths = [
     'ม.ค.',

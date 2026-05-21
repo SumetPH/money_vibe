@@ -6,6 +6,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../providers/sync_provider.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
@@ -23,6 +24,16 @@ class AccountListScreen extends StatefulWidget {
 
 class _AccountListScreenState extends State<AccountListScreen> {
   bool _isReorderMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SyncProvider>().checkAndSync();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
