@@ -48,15 +48,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
+    final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
+        leading: isLargeScreen ? null : null,
         backgroundColor: AppColors.header,
         foregroundColor: textColor,
         title: Text('ตั้งค่า'),
         elevation: 0,
       ),
-      drawer: const AppDrawer(currentRoute: '/settings'),
+      drawer: isLargeScreen ? null : const AppDrawer(currentRoute: '/settings'),
       body: Consumer<DatabaseManager>(
         builder: (context, dbManager, _) {
           return SafeArea(

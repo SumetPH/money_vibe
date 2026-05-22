@@ -223,16 +223,22 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         );
         final periodLabel = _formatBudgetPeriodLabel(period);
 
+        final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
         return Scaffold(
           backgroundColor: bgColor,
-          drawer: const AppDrawer(currentRoute: '/budgets'),
+          drawer: isLargeScreen
+              ? null
+              : const AppDrawer(currentRoute: '/budgets'),
           appBar: AppBar(
-            leading: Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
+            leading: isLargeScreen
+                ? null
+                : Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
             title: const Text('งบประมาณ'),
             actions: [
               IconButton(
@@ -1224,54 +1230,51 @@ class _GroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final headerBg = isDarkMode
-        ? AppColors.darkBackground
+        ? AppColors.darkSurfaceVariant
         : AppColors.background;
     final percentageColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textSecondary;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+    return Container(
+      color: headerBg,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       child: Column(
         children: [
-          Container(
-            color: headerBg,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    groupName,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: textSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Text(
-                  formatAmount(groupTotal),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  groupName,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: textPrimary,
+                    color: textSecondary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(
-                  width: 52,
-                  child: Text(
-                    '${groupPct.toStringAsFixed(1)}%',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: percentageColor,
-                    ),
+              ),
+              Text(
+                formatAmount(groupTotal),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
+              ),
+              SizedBox(
+                width: 52,
+                child: Text(
+                  '${groupPct.toStringAsFixed(1)}%',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: percentageColor,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

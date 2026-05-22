@@ -289,6 +289,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                                 _editCashBalance(context, provider, acc),
                             isDarkMode: isDarkMode,
                           ),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -311,8 +312,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                             Tab(text: 'หุ้นทั้งหมด'),
                           ],
                         ),
+                        // isDarkMode ? AppColors.darkHeader : AppColors.header,
                         isDarkMode
-                            ? AppColors.darkBackground
+                            ? AppColors.darkSurfaceVariant
                             : AppColors.background,
                       ),
                     ),
@@ -784,7 +786,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       padding: const EdgeInsets.only(bottom: 80),
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -799,8 +801,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                       ? AppColors.darkIncome
                       : AppColors.income,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 0,
+                    vertical: 0,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -824,7 +826,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             isDarkMode,
             provider,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
         ],
       ],
     );
@@ -874,9 +876,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
         : AppColors.textSecondary;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    // final headerBgColor = isDarkMode
+    //     ? AppColors.darkSurface.withValues(alpha: 0.6)
+    //     : Colors.grey.shade100;
     final headerBgColor = isDarkMode
-        ? AppColors.darkSurface.withValues(alpha: 0.6)
-        : Colors.grey.shade100;
+        ? AppColors.darkSurfaceVariant
+        : AppColors.background;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
@@ -983,7 +988,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           ),
           if (groupName != 'ทั่วไป')
             Container(
-              padding: const EdgeInsets.only(left: 16, top: 4, bottom: 8),
+              padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
               alignment: Alignment.centerLeft,
               child: PopupMenuButton<String>(
                 initialValue: sortType,
@@ -1185,7 +1190,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(left: 0, right: 0, top: 16),
+      margin: const EdgeInsets.only(left: 0, right: 0, top: 24),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(12),

@@ -42,15 +42,19 @@ class _AccountListScreenState extends State<AccountListScreen> {
       (settingsProvider) => settingsProvider.netWorthFilterIds,
     );
 
+    final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
     return Scaffold(
-      drawer: const AppDrawer(currentRoute: '/accounts'),
+      drawer: isLargeScreen ? null : const AppDrawer(currentRoute: '/accounts'),
       appBar: AppBar(
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
+        leading: isLargeScreen
+            ? null
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
         title: const Text('บัญชี'),
         actions: [
           IconButton(
@@ -671,8 +675,11 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // final bgColor = isDarkMode
+    //     ? AppColors.darkBackground
+    //     : AppColors.background;
     final bgColor = isDarkMode
-        ? AppColors.darkBackground
+        ? AppColors.darkSurfaceVariant
         : AppColors.background;
     final textColor = isDarkMode
         ? AppColors.darkTextSecondary
@@ -680,7 +687,7 @@ class _SectionHeader extends StatelessWidget {
 
     return Container(
       color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           Expanded(

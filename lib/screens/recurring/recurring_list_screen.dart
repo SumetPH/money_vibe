@@ -68,16 +68,22 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
 
         final list = provider.recurring;
 
+        final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
         return Scaffold(
           backgroundColor: bgColor,
-          drawer: const AppDrawer(currentRoute: '/recurring'),
+          drawer: isLargeScreen
+              ? null
+              : const AppDrawer(currentRoute: '/recurring'),
           appBar: AppBar(
-            leading: Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
+            leading: isLargeScreen
+                ? null
+                : Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
             title: const Text('รายการประจำ'),
             actions: [
               IconButton(

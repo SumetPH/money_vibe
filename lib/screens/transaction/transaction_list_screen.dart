@@ -89,8 +89,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 widget.transactionIds != null ||
                 widget.fixedDateRange != null;
 
+            final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
             return Scaffold(
-              drawer: isFiltered
+              drawer: (isLargeScreen || isFiltered)
                   ? null
                   : const AppDrawer(currentRoute: '/transactions'),
               appBar: AppBar(
@@ -99,12 +101,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () => Navigator.pop(context),
                       )
-                    : Builder(
-                        builder: (ctx) => IconButton(
-                          icon: const Icon(Icons.menu),
-                          onPressed: () => Scaffold.of(ctx).openDrawer(),
-                        ),
-                      ),
+                    : (isLargeScreen
+                          ? null
+                          : Builder(
+                              builder: (ctx) => IconButton(
+                                icon: const Icon(Icons.menu),
+                                onPressed: () => Scaffold.of(ctx).openDrawer(),
+                              ),
+                            )),
                 title: Text(
                   widget.title != null
                       ? '${widget.title} (${NumberFormat('#,###').format(allTx.length)})'
@@ -533,7 +537,7 @@ class _DateHeader extends StatelessWidget {
 
     return Container(
       color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
           Expanded(

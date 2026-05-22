@@ -48,15 +48,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             ? AppColors.darkBackground
             : AppColors.background;
 
+        final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
         return Scaffold(
-          drawer: const AppDrawer(currentRoute: '/statistics'),
+          drawer: isLargeScreen
+              ? null
+              : const AppDrawer(currentRoute: '/statistics'),
           appBar: AppBar(
-            leading: Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
+            leading: isLargeScreen
+                ? null
+                : Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
             title: const Text('สถิติ'),
             backgroundColor: headerColor,
             foregroundColor: Colors.white,

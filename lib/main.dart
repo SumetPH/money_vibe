@@ -32,6 +32,7 @@ import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 import 'utils/web_safe_area_insets.dart';
+import 'widgets/app_sidebar.dart';
 
 void main() async {
   // Initialize and preserve native splash screen
@@ -314,6 +315,74 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             builder: kIsWeb
                 ? (context, child) {
                     final mediaQuery = MediaQuery.of(context);
+                    final isLargeScreen = mediaQuery.size.width >= 800;
+
+                    final authProvider = context.watch<AuthProvider>();
+                    final isLoggedIn = authProvider.isLoggedIn;
+
+                    final currentPath =
+                        _router.routeInformationProvider.value.uri.path;
+                    final isAuthOrSetup =
+                        currentPath == '/auth' || currentPath == '/setup';
+
+                    if (isLargeScreen && !isAuthOrSetup && isLoggedIn) {
+                      final isDarkMode = settingsProvider.isDarkMode;
+                      final bgColor = isDarkMode
+                          ? AppColors.darkBackground
+                          : AppColors.background;
+
+                      return ColoredBox(
+                        color: bgColor,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 260,
+                              child: Overlay(
+                                initialEntries: [
+                                  OverlayEntry(
+                                    builder: (context) {
+                                      return ListenableBuilder(
+                                        listenable:
+                                            _router.routeInformationProvider,
+                                        builder: (context, _) {
+                                          final activePath = _router
+                                              .routeInformationProvider
+                                              .value
+                                              .uri
+                                              .path;
+                                          return AppSidebar(
+                                            currentRoute: activePath,
+                                            onNavigate: (route) =>
+                                                _router.go(route),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 1100,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: child!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
                     final extraBottomPadding = _getWebMobileBottomPadding(
                       mediaQuery,
                     );
@@ -333,7 +402,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       color: Theme.of(context).colorScheme.surfaceContainerLow,
                       child: Center(
                         child: SizedBox(
-                          width: 480,
+                          width: 800,
                           child: ClipRect(child: app),
                         ),
                       ),
