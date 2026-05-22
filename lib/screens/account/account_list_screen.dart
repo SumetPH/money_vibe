@@ -687,7 +687,7 @@ class _SectionHeader extends StatelessWidget {
 
     return Container(
       color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3.5),
       child: Row(
         children: [
           Expanded(

@@ -786,7 +786,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       padding: const EdgeInsets.only(bottom: 80),
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4.5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -1190,7 +1190,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(left: 0, right: 0, top: 24),
+      margin: const EdgeInsets.only(left: 0, right: 0, top: 28),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(12),

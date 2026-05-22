@@ -12,4 +12,7 @@ destination_file="${destination_dir}/Money Vibe-${random_suffix}.ipa"
 find "$destination_dir" -maxdepth 1 -type f -name "*.ipa" -delete
 cp "./build/ios/ipa/Money Vibe.ipa" "$destination_file"
 
+flutter clean
+flutter pub get
+
 echo "✅ IPA built!"

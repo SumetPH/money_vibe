@@ -1238,7 +1238,7 @@ class _GroupHeader extends StatelessWidget {
 
     return Container(
       color: headerBg,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4.5),
       child: Column(
         children: [
           Row(
