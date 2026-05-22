@@ -319,18 +319,21 @@ class _CategoryItem extends StatelessWidget {
     final textPrimaryColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Column(
       children: [
         InkWell(
           onTap: isReorderMode ? null : onTap,
+          onLongPress: isReorderMode ? null : () => _showCategoryMenu(context),
           child: Container(
             color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 0,
+              top: 10,
+              bottom: 10,
+            ),
             child: Row(
               children: [
                 // Drag handle (only visible in reorder mode)
@@ -384,25 +387,11 @@ class _CategoryItem extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (!isReorderMode) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => _showCategoryMenu(context),
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 8,
-                              right: 0,
-                              top: 8,
-                              bottom: 8,
-                            ),
-                            child: Icon(
-                              Icons.more_vert,
-                              color: textSecondaryColor,
-                              size: 18,
-                            ),
-                          ),
+                      if (!isReorderMode)
+                        IconButton(
+                          icon: const Icon(Icons.more_vert, size: 20),
+                          onPressed: () => _showCategoryMenu(context),
                         ),
-                      ],
                     ],
                   ),
                 ),

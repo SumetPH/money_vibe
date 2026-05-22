@@ -976,6 +976,7 @@ class _BudgetItem extends StatelessWidget {
           onTap: isReorderMode || budget.type == BudgetType.savings
               ? null
               : onTap,
+          onLongPress: isReorderMode ? null : () => _showBudgetMenu(context),
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1133,25 +1134,6 @@ class _BudgetItem extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if (!isReorderMode) ...[
-                              const SizedBox(width: 2),
-                              GestureDetector(
-                                onTap: () => _showBudgetMenu(context),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 8,
-                                    right: 0,
-                                    top: 8,
-                                    bottom: 8,
-                                  ),
-                                  child: Icon(
-                                    Icons.more_vert,
-                                    color: textSecondary,
-                                    size: 18,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),

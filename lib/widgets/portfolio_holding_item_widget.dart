@@ -7,7 +7,8 @@ import '../main.dart';
 
 /// วิดเจ็ตแสดงข้อมูลหุ้นถือครองแต่ละตัวในพอร์ต (Deep Module)
 /// ควบรวมตรรกะคำนวณกำไร/ขาดทุน Trailing Stop และเมนูย่อยเบ็ดเสร็จในตัวเอง
-class PortfolioHoldingItemWidget extends StatelessWidget {
+/// รองรับการ collapse/expand รายละเอียดด้วยการกดที่ปุ่มลูกศร
+class PortfolioHoldingItemWidget extends StatefulWidget {
   final StockHolding holding;
   final double exchangeRate;
   final double totalHoldingsValueUsd;
@@ -32,295 +33,292 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final valueTHB = holding.valueUsd * exchangeRate;
-    final allocationPct = totalHoldingsValueUsd > 0
-        ? (holding.valueUsd / totalHoldingsValueUsd) * 100
-        : 0.0;
-    final pnlTHB = holding.unrealizedPnlUsd * exchangeRate;
-    final pnlPct = holding.unrealizedPnlPct;
+  State<PortfolioHoldingItemWidget> createState() =>
+      _PortfolioHoldingItemWidgetState();
+}
 
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textPrimaryColor = isDarkMode
+class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+
+  void _toggleExpand() {
+    setState(() => _isExpanded = !_isExpanded);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final valueTHB = widget.holding.valueUsd * widget.exchangeRate;
+    final allocationPct = widget.totalHoldingsValueUsd > 0
+        ? (widget.holding.valueUsd / widget.totalHoldingsValueUsd) * 100
+        : 0.0;
+    final pnlTHB = widget.holding.unrealizedPnlUsd * widget.exchangeRate;
+    final pnlPct = widget.holding.unrealizedPnlPct;
+
+    final surfaceColor = widget.isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
+    final textPrimaryColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode
+    final textSecondaryColor = widget.isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    final headerColor = isDarkMode
+    final dividerColor = widget.isDarkMode
+        ? AppColors.darkDivider
+        : AppColors.divider;
+    final incomeColor = widget.isDarkMode
+        ? AppColors.darkIncome
+        : AppColors.income;
+    final expenseColor = widget.isDarkMode
+        ? AppColors.darkExpense
+        : AppColors.expense;
+    final headerColor = widget.isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.header;
     final sellPlanStatus = _buildSellPlanStatus();
 
     return Column(
       children: [
+        // ── แถวหลัก (เห็นเสมอ) ──────────────────────────────────────────
         GestureDetector(
-          onTap: isReorderMode ? null : onEdit,
-          onLongPress: isReorderMode ? null : () => _openListMenu(context),
+          onTap: widget.isReorderMode ? null : _toggleExpand,
+          onLongPress: widget.isReorderMode
+              ? null
+              : () => _openListMenu(context),
           child: Container(
             color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Drag handle (only visible in reorder mode)
-                if (isReorderMode) ...[
+                if (widget.isReorderMode) ...[
                   Icon(Icons.drag_indicator, color: dividerColor, size: 20),
                   const SizedBox(width: 8),
                 ],
                 Expanded(
-                  child: Column(
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                HoldingThumbnailWidget(
-                                  ticker: holding.ticker,
-                                  logoUrl: holding.logoUrl,
-                                  accentColor: headerColor,
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      holding.ticker,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: textPrimaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${allocationPct.toStringAsFixed(2)}%',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: textSecondaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  formatAmount(valueTHB),
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: textPrimaryColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${formatAmount(holding.valueUsd)} USD',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: textSecondaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Value + P&L
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: pnlTHB >= 0
-                                        ? incomeColor
-                                        : expenseColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: pnlTHB >= 0
-                                        ? incomeColor
-                                        : expenseColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                        ],
+                      HoldingThumbnailWidget(
+                        ticker: widget.holding.ticker,
+                        logoUrl: widget.holding.logoUrl,
+                        accentColor: headerColor,
+                        badge: _buildSellPlanBadgeWidget(),
                       ),
-
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'จำนวนหุ้น',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: textSecondaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  holding.shares.toStringAsFixed(4),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: textPrimaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'ราคา',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: textSecondaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  holding.priceUsd.toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: textPrimaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'ต้นทุนต่อหุ้น',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: textSecondaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  holding.costBasisUsd.toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: textPrimaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'ต้นทุนรวม',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: textSecondaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  holding.totalCostUsd.toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: textPrimaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      if (sellPlanStatus != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: sellPlanStatus.backgroundColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                sellPlanStatus.title,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: sellPlanStatus.textColor,
-                                ),
+                      const SizedBox(width: 12),
+                      // Ticker + allocation
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.holding.ticker,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                sellPlanStatus.message,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: sellPlanStatus.textColor,
-                                ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${allocationPct.toStringAsFixed(2)}%',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: textSecondaryColor,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 8),
+                      // มูลค่า
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              formatAmount(valueTHB),
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${formatAmount(widget.holding.valueUsd)} USD',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: textSecondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // P&L
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: pnlTHB >= 0 ? incomeColor : expenseColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: pnlTHB >= 0 ? incomeColor : expenseColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+                // ปุ่ม collapse/expand
+                // if (!widget.isReorderMode)
+                //   Padding(
+                //     padding: const EdgeInsets.symmetric(
+                //       horizontal: 8,
+                //       vertical: 4,
+                //     ),
+                //     child: RotationTransition(
+                //       turns: _rotationAnimation,
+                //       child: Icon(
+                //         Icons.keyboard_arrow_down_rounded,
+                //         size: 20,
+                //         color: textSecondaryColor,
+                //       ),
+                //     ),
+                //   ),
               ],
             ),
           ),
+        ),
+
+        // ── ส่วนรายละเอียด (collapse/expand) ────────────────────────────
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity, height: 0),
+          secondChild: Container(
+            color: surfaceColor,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Column(
+              children: [
+                Divider(height: 1, color: dividerColor),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DetailCell(
+                        label: 'จำนวนหุ้น',
+                        value: widget.holding.shares.toStringAsFixed(4),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DetailCell(
+                        label: 'ต้นทุนรวม',
+                        value: widget.holding.totalCostUsd.toStringAsFixed(2),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DetailCell(
+                        label: 'ต้นทุนต่อหุ้น',
+                        value: widget.holding.costBasisUsd.toStringAsFixed(2),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DetailCell(
+                        label: 'ราคาปัจจุบัน',
+                        value: widget.holding.priceUsd.toStringAsFixed(2),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                if (sellPlanStatus != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: sellPlanStatus.backgroundColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          sellPlanStatus.title,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: sellPlanStatus.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          sellPlanStatus.message,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: sellPlanStatus.textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          crossFadeState: _isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 250),
+          sizeCurve: Curves.easeInOut,
         ),
       ],
     );
   }
 
   void _openListMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-    final textColor = isDarkMode
+    final bgColor = widget.isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    final handleColor = isDarkMode
+    final expenseColor = widget.isDarkMode
+        ? AppColors.darkExpense
+        : AppColors.expense;
+    final handleColor = widget.isDarkMode
         ? AppColors.darkDivider
         : Colors.grey.shade300;
 
@@ -348,46 +346,46 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.edit_outlined, color: textColor),
               title: Text(
-                'แก้ไข ${holding.ticker}',
+                'แก้ไข ${widget.holding.ticker}',
                 style: TextStyle(color: textColor),
               ),
               tileColor: bgColor,
               onTap: () {
                 Navigator.pop(context);
-                onEdit();
+                widget.onEdit();
               },
             ),
             ListTile(
               leading: Icon(Icons.image_outlined, color: textColor),
               title: Text(
-                holding.logoUrl.isEmpty
-                    ? 'เพิ่มโลโก้ ${holding.ticker}'
-                    : 'เปลี่ยนโลโก้ ${holding.ticker}',
+                widget.holding.logoUrl.isEmpty
+                    ? 'เพิ่มโลโก้ ${widget.holding.ticker}'
+                    : 'เปลี่ยนโลโก้ ${widget.holding.ticker}',
                 style: TextStyle(color: textColor),
               ),
               tileColor: bgColor,
               onTap: () {
                 Navigator.pop(context);
-                onChangeLogo();
+                widget.onChangeLogo();
               },
             ),
-            if (onClearLogo != null)
+            if (widget.onClearLogo != null)
               ListTile(
                 leading: Icon(Icons.hide_image_outlined, color: textColor),
                 title: Text(
-                  'ลบโลโก้ ${holding.ticker}',
+                  'ลบโลโก้ ${widget.holding.ticker}',
                   style: TextStyle(color: textColor),
                 ),
                 tileColor: bgColor,
                 onTap: () {
                   Navigator.pop(context);
-                  onClearLogo!();
+                  widget.onClearLogo!();
                 },
               ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: expenseColor),
               title: Text(
-                'ลบ ${holding.ticker}',
+                'ลบ ${widget.holding.ticker}',
                 style: TextStyle(color: expenseColor),
               ),
               tileColor: bgColor,
@@ -403,11 +401,15 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
-    final dialogBgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
-    final textColor = isDarkMode
+    final dialogBgColor = widget.isDarkMode
+        ? AppColors.darkSurface
+        : Colors.white;
+    final textColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final expenseColor = widget.isDarkMode
+        ? AppColors.darkExpense
+        : AppColors.expense;
 
     showDialog(
       context: context,
@@ -415,7 +417,7 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
         backgroundColor: dialogBgColor,
         title: Text('ยืนยันการลบหุ้น', style: TextStyle(color: textColor)),
         content: Text(
-          'คุณต้องการลบ ${holding.ticker} ใช่หรือไม่?',
+          'คุณต้องการลบ ${widget.holding.ticker} ใช่หรือไม่?',
           style: TextStyle(color: textColor),
         ),
         actions: [
@@ -426,7 +428,7 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              onDelete();
+              widget.onDelete();
             },
             style: TextButton.styleFrom(foregroundColor: expenseColor),
             child: const Text('ลบ'),
@@ -437,38 +439,44 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
   }
 
   _SellPlanStatusHelper? _buildSellPlanStatus() {
-    if (!holding.sellPlanEnabled ||
-        !holding.canCalculateSellPlan ||
-        holding.takeProfitPct <= 0 ||
-        holding.trailingStopPct <= 0) {
+    if (!widget.holding.sellPlanEnabled ||
+        !widget.holding.canCalculateSellPlan ||
+        widget.holding.takeProfitPct <= 0 ||
+        widget.holding.trailingStopPct <= 0) {
       return null;
     }
 
-    final currentPnlPct = holding.unrealizedPnlPct;
-    final textSecondaryColor = isDarkMode
+    final currentPnlPct = widget.holding.unrealizedPnlPct;
+    final textSecondaryColor = widget.isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final peakProfitPct = holding.peakProfitPct;
+    final incomeColor = widget.isDarkMode
+        ? AppColors.darkIncome
+        : AppColors.income;
+    final expenseColor = widget.isDarkMode
+        ? AppColors.darkExpense
+        : AppColors.expense;
+    final surfaceColor = widget.isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
+    final peakProfitPct = widget.holding.peakProfitPct;
 
     if (peakProfitPct == null) {
       return _SellPlanStatusHelper(
         title: 'ยังไม่ถึงเป้า',
         message:
-            'เป้า ${_formatSignedPct(holding.takeProfitPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+            'เป้า ${_formatSignedPct(widget.holding.takeProfitPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
         textColor: textSecondaryColor,
         backgroundColor: surfaceColor,
       );
     }
 
     final trailingStopTriggerPct = math.max(
-      holding.takeProfitPct,
-      peakProfitPct - holding.trailingStopPct,
+      widget.holding.takeProfitPct,
+      peakProfitPct - widget.holding.trailingStopPct,
     );
     final trailingStopPrice = _calculateStopPrice(
-      costBasisUsd: holding.costBasisUsd,
+      costBasisUsd: widget.holding.costBasisUsd,
       stopProfitPct: trailingStopTriggerPct,
     );
     if (currentPnlPct <= trailingStopTriggerPct) {
@@ -501,6 +509,152 @@ class PortfolioHoldingItemWidget extends StatelessWidget {
   }) {
     return costBasisUsd * (1 + (stopProfitPct / 100));
   }
+
+  Widget? _buildSellPlanBadgeWidget() {
+    if (!widget.holding.sellPlanEnabled ||
+        !widget.holding.canCalculateSellPlan ||
+        widget.holding.takeProfitPct <= 0 ||
+        widget.holding.trailingStopPct <= 0) {
+      return null;
+    }
+
+    final currentPnlPct = widget.holding.unrealizedPnlPct;
+    final peakProfitPct = widget.holding.peakProfitPct;
+
+    final incomeColor = widget.isDarkMode
+        ? AppColors.darkIncome
+        : AppColors.income;
+    final expenseColor = widget.isDarkMode
+        ? AppColors.darkExpense
+        : AppColors.expense;
+
+    if (peakProfitPct == null) {
+      // ยังไม่ถึงเป้า - Show a tiny blue dot representing sell plan is active
+      return Container(
+        width: 15,
+        height: 15,
+        decoration: BoxDecoration(
+          color: Colors.blue.shade400,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: expenseColor.withValues(alpha: 0.3),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final trailingStopTriggerPct = math.max(
+      widget.holding.takeProfitPct,
+      peakProfitPct - widget.holding.trailingStopPct,
+    );
+
+    if (currentPnlPct <= trailingStopTriggerPct) {
+      // ขายได้แล้ว (Sell signal!) - Show a prominent red warning badge with a white exclamation mark
+      return Container(
+        width: 15,
+        height: 15,
+        decoration: BoxDecoration(
+          color: expenseColor,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: expenseColor.withValues(alpha: 0.3),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            '!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ถึงเป้าแล้ว รอ Trailing Stop - Show a green badge with trending_up icon
+    return Container(
+      width: 15,
+      height: 15,
+      decoration: BoxDecoration(
+        color: incomeColor,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: incomeColor.withValues(alpha: 0.3),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: Icon(Icons.trending_up_rounded, color: Colors.white, size: 8),
+      ),
+    );
+  }
+}
+
+/// Helper widget สำหรับแสดง label + value ในส่วนรายละเอียดหุ้น
+class _DetailCell extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color textPrimaryColor;
+  final Color textSecondaryColor;
+
+  const _DetailCell({
+    required this.label,
+    required this.value,
+    required this.textPrimaryColor,
+    required this.textSecondaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: textSecondaryColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            color: textPrimaryColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SellPlanStatusHelper {
@@ -522,12 +676,14 @@ class HoldingThumbnailWidget extends StatelessWidget {
   final String ticker;
   final String logoUrl;
   final Color accentColor;
+  final Widget? badge;
 
   const HoldingThumbnailWidget({
     super.key,
     required this.ticker,
     required this.logoUrl,
     required this.accentColor,
+    this.badge,
   });
 
   @override
@@ -549,7 +705,7 @@ class HoldingThumbnailWidget extends StatelessWidget {
       ),
     );
 
-    return Container(
+    final logoContainer = Container(
       width: 42,
       height: 42,
       decoration: decoration,
@@ -569,5 +725,17 @@ class HoldingThumbnailWidget extends StatelessWidget {
               ),
             ),
     );
+
+    if (badge != null) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          logoContainer,
+          Positioned(top: -4, right: -4, child: badge!),
+        ],
+      );
+    }
+
+    return logoContainer;
   }
 }

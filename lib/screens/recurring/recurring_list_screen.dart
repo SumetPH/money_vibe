@@ -378,6 +378,7 @@ class _RecurringItem extends StatelessWidget {
       children: [
         InkWell(
           onTap: isReorderMode ? null : onTap,
+          onLongPress: isReorderMode ? null : () => _showRecurringMenu(context),
           child: Container(
             color: surfaceColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -439,10 +440,6 @@ class _RecurringItem extends StatelessWidget {
                           style: TextStyle(fontSize: 13, color: textSecondary),
                         ),
                       ],
-                      // if (statusLabel != null && statusColor != null) ...[
-                      //   const SizedBox(height: 4),
-                      //   _StatusChip(label: statusLabel!, color: statusColor!),
-                      // ],
                     ],
                   ),
                 ),
@@ -470,23 +467,6 @@ class _RecurringItem extends StatelessWidget {
                             ),
                           ],
                         ],
-                      ),
-                      const SizedBox(width: 2),
-                      GestureDetector(
-                        onTap: () => _showRecurringMenu(context),
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            left: 8,
-                            right: 0,
-                            top: 8,
-                            bottom: 8,
-                          ),
-                          child: Icon(
-                            Icons.more_vert,
-                            color: textSecondary,
-                            size: 18,
-                          ),
-                        ),
                       ),
                     ],
                   )
