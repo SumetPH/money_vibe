@@ -321,6 +321,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         );
       }
 
+      _closeKeyboard();
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -391,11 +392,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   try {
                     await provider.deleteRecurring(widget.recurring!.id);
                     if (mounted) {
+                      _closeKeyboard();
                       navigator.pop(); // Close dialog
                       navigator.pop(); // Close form
                     }
                   } catch (e) {
                     if (mounted) {
+                      _closeKeyboard();
                       navigator.pop(); // Close dialog
                       scaffoldMessenger.showSnackBar(
                         SnackBar(
@@ -480,7 +483,12 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(_isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ'),
             actions: [

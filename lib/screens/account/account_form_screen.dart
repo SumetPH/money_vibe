@@ -291,6 +291,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       }
 
       if (mounted) {
+        _closeKeyboard();
         Navigator.pop(context);
       }
     } catch (e) {
@@ -342,6 +343,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   context.read<AccountProvider>().deleteAccount(
                     widget.account!.id,
                   );
+                  _closeKeyboard();
                   Navigator.pop(context); // Close dialog
                   Navigator.pop(context); // Close form
                 },
@@ -386,7 +388,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
             actions: [

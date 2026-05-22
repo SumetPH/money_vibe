@@ -434,6 +434,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
       widget.onSaved?.call(tx.id);
       if (mounted) {
+        _closeKeyboard();
         Navigator.pop(context);
       }
     } catch (e) {
@@ -497,6 +498,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
               }
 
+              _closeKeyboard();
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close form
             },
@@ -569,7 +571,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: AbsorbPointer(
               absorbing: _isLoading,

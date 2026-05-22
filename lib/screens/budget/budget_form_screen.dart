@@ -238,6 +238,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
         );
       }
       if (mounted) {
+        _closeKeyboard();
         Navigator.pop(context);
       }
     } catch (e) {
@@ -310,11 +311,13 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   try {
                     await provider.deleteBudget(widget.budget!.id);
                     if (mounted) {
+                      _closeKeyboard();
                       navigator.pop(); // Close dialog
                       navigator.pop(); // Close form
                     }
                   } catch (e) {
                     if (mounted) {
+                      _closeKeyboard();
                       navigator.pop(); // Close dialog
                       scaffoldMessenger.showSnackBar(
                         SnackBar(
@@ -374,7 +377,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(_isEditing ? 'แก้ไขงบประมาณ' : 'เพิ่มงบประมาณ'),
             actions: [
