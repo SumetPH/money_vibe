@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/group_header.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
 
@@ -434,23 +435,37 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     for (final entry in sortedGroups) {
       final groupBudgets = entry.value;
       final groupTotal = groupBudgets.fold(0.0, (s, b) => s + b.amount);
-      final groupSpent = groupBudgets.fold(
-        0.0,
-        (s, b) => s + _getSpent(b, allTx, period, accounts),
-      );
       final groupPct = totalBudget > 0 ? groupTotal / totalBudget * 100 : 0.0;
 
       items.add(
-        _GroupHeader(
+        GroupHeader(
           key: ValueKey('group_${entry.key}'),
-          groupName: entry.key,
-          groupTotal: groupTotal,
-          groupSpent: groupSpent,
-          groupPct: groupPct,
+          title: entry.key,
           isDarkMode: isDarkMode,
-          textPrimary: textPrimary,
-          textSecondary: textSecondary,
-          dividerColor: dividerColor,
+          trailing: [
+            Text(
+              formatAmount(groupTotal),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textPrimary,
+              ),
+            ),
+            SizedBox(
+              width: 52,
+              child: Text(
+                '${groupPct.toStringAsFixed(1)}%',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
         ),
       );
 
@@ -1198,85 +1213,6 @@ class _BudgetItem extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-// ── Group Header ────────────────────────────────────────────────────────────
-
-class _GroupHeader extends StatelessWidget {
-  final String groupName;
-  final double groupTotal;
-  final double groupSpent;
-  final double groupPct;
-  final bool isDarkMode;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color dividerColor;
-
-  const _GroupHeader({
-    super.key,
-    required this.groupName,
-    required this.groupTotal,
-    required this.groupSpent,
-    required this.groupPct,
-    required this.isDarkMode,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.dividerColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final headerBg = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.background;
-    final percentageColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textSecondary;
-
-    return Container(
-      color: headerBg,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4.5),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  groupName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: textSecondary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Text(
-                formatAmount(groupTotal),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: textPrimary,
-                ),
-              ),
-              SizedBox(
-                width: 52,
-                child: Text(
-                  '${groupPct.toStringAsFixed(1)}%',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: percentageColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

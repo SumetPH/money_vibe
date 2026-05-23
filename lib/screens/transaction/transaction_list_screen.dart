@@ -12,6 +12,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/group_header.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -156,12 +157,37 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _DateHeader(
-                              date: date,
-                              income: dayIncome,
-                              expense: dayExpense,
+                            GroupHeader(
+                              title: _formatDate(date),
                               isDarkMode: isDarkMode,
-                              currency: 'บาท',
+                              trailing: [
+                                if (dayIncome > 0) ...[
+                                  Text(
+                                    '+${formatAmount(dayIncome)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDarkMode
+                                          ? AppColors.darkIncome
+                                          : AppColors.income,
+                                    ),
+                                  ),
+                                ],
+                                if (dayIncome > 0 && dayExpense > 0)
+                                  const SizedBox(width: 8),
+                                if (dayExpense > 0) ...[
+                                  Text(
+                                    '-${formatAmount(dayExpense)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDarkMode
+                                          ? AppColors.darkExpense
+                                          : AppColors.expense,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             ...txs.asMap().entries.map((entry) {
                               final index = entry.key;
@@ -509,104 +535,32 @@ enum _PeriodFilter {
   const _PeriodFilter(this.label);
 }
 
-class _DateHeader extends StatelessWidget {
-  final DateTime date;
-  final double income;
-  final double expense;
-  final bool isDarkMode;
-  final String currency;
-
-  const _DateHeader({
-    required this.date,
-    required this.income,
-    required this.expense,
-    required this.isDarkMode,
-    required this.currency,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.background;
-    final textColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-
-    return Container(
-      color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              _formatDate(date),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (income > 0) ...[
-            Text(
-              '+${formatAmount(income)}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: incomeColor,
-              ),
-            ),
-          ],
-
-          if (expense > 0) ...[
-            const SizedBox(width: 8),
-            Text(
-              '-${formatAmount(expense)}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: expenseColor,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    const thaiDays = [
-      'จันทร์',
-      'อังคาร',
-      'พุธ',
-      'พฤหัสบดี',
-      'ศุกร์',
-      'เสาร์',
-      'อาทิตย์',
-    ];
-    const thaiMonths = [
-      'มกราคม',
-      'กุมภาพันธ์',
-      'มีนาคม',
-      'เมษายน',
-      'พฤษภาคม',
-      'มิถุนายน',
-      'กรกฎาคม',
-      'สิงหาคม',
-      'กันยายน',
-      'ตุลาคม',
-      'พฤศจิกายน',
-      'ธันวาคม',
-    ];
-    final dayOfWeek = thaiDays[date.weekday - 1];
-    return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} - $dayOfWeek';
-  }
+String _formatDate(DateTime date) {
+  const thaiDays = [
+    'จันทร์',
+    'อังคาร',
+    'พุธ',
+    'พฤหัสบดี',
+    'ศุกร์',
+    'เสาร์',
+    'อาทิตย์',
+  ];
+  const thaiMonths = [
+    'มกราคม',
+    'กุมภาพันธ์',
+    'มีนาคม',
+    'เมษายน',
+    'พฤษภาคม',
+    'มิถุนายน',
+    'กรกฎาคม',
+    'สิงหาคม',
+    'กันยายน',
+    'ตุลาคม',
+    'พฤศจิกายน',
+    'ธันวาคม',
+  ];
+  final dayOfWeek = thaiDays[date.weekday - 1];
+  return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} - $dayOfWeek';
 }
 
 class _TransactionItem extends StatelessWidget {

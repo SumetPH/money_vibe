@@ -9,6 +9,7 @@ import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/group_header.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
 import 'credit_card_bill_screen.dart';
@@ -141,10 +142,22 @@ class _AccountListScreenState extends State<AccountListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _SectionHeader(
+                          GroupHeader(
                             title: groupName,
-                            total: groupTotals[groupName] ?? 0,
                             isDarkMode: isDarkMode,
+                            trailing: [
+                              Text(
+                                '${formatAmount(groupTotals[groupName] ?? 0)} บาท',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.getAmountColor(
+                                    groupTotals[groupName] ?? 0,
+                                    isDarkMode,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           ReorderableListView.builder(
                             shrinkWrap: true,
@@ -657,58 +670,6 @@ class _TotalRow extends StatelessWidget {
         filterIds: filterIds,
         isDarkMode: isDarkMode,
         onSave: (selected) => settingsProvider.setNetWorthFilterIds(selected),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final double total;
-  final bool isDarkMode;
-
-  const _SectionHeader({
-    required this.title,
-    required this.total,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // final bgColor = isDarkMode
-    //     ? AppColors.darkBackground
-    //     : AppColors.background;
-    final bgColor = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.background;
-    final textColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return Container(
-      color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3.5),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-          ),
-          Text(
-            '${formatAmount(total)} บาท',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.getAmountColor(total, isDarkMode),
-            ),
-          ),
-        ],
       ),
     );
   }
