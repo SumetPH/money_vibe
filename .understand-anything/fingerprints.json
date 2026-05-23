@@ -1,0 +1,2697 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "e1adce9950468bfd372f2a04d9c29efd7516c43c",
+  "generatedAt": "2026-05-23T09:32:18.427Z",
+  "files": {
+    ".metadata": {
+      "filePath": ".metadata",
+      "contentHash": "ba057af27e5818922fd35fdec3cb09127359b81d7436d35c71990c5c8bd18ba1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "AGENTS.md": {
+      "filePath": "AGENTS.md",
+      "contentHash": "93c5970e47b3cfc34c111c220f5c6ad60f27943dcd111a0b0a4396702a56b11b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 97,
+      "hasStructuralAnalysis": true
+    },
+    "analysis_options.yaml": {
+      "filePath": "analysis_options.yaml",
+      "contentHash": "e0ea485cfdbc3e12b93efb8679a5ea73ebfe20ea4ca0c473dc594fc2fb274ed5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "android/app/build.gradle.kts": {
+      "filePath": "android/app/build.gradle.kts",
+      "contentHash": "0c4285519b50f30af0e2ff233d7e4e6f0803bc271deb9184c2c0d46b8f31f89b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/debug/AndroidManifest.xml": {
+      "filePath": "android/app/src/debug/AndroidManifest.xml",
+      "contentHash": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/AndroidManifest.xml": {
+      "filePath": "android/app/src/main/AndroidManifest.xml",
+      "contentHash": "89f18600a738177a2c8e2f00df57ccbb6c55418be498683b18ea5e88b2c08864",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 62,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/kotlin/app/sumetph/moneyvibe/MainActivity.kt": {
+      "filePath": "android/app/src/main/kotlin/app/sumetph/moneyvibe/MainActivity.kt",
+      "contentHash": "909c143d7ea4fabac8a15e85531261282f77713de89b3f917783ebf24a6fedc1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/drawable-night-v21/launch_background.xml": {
+      "filePath": "android/app/src/main/res/drawable-night-v21/launch_background.xml",
+      "contentHash": "42b8d099f0a6d79e90a67949d7a655c09458c734aa1bd8c4d7c73a79b28397ea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/drawable-night/launch_background.xml": {
+      "filePath": "android/app/src/main/res/drawable-night/launch_background.xml",
+      "contentHash": "42b8d099f0a6d79e90a67949d7a655c09458c734aa1bd8c4d7c73a79b28397ea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/drawable-v21/launch_background.xml": {
+      "filePath": "android/app/src/main/res/drawable-v21/launch_background.xml",
+      "contentHash": "42b8d099f0a6d79e90a67949d7a655c09458c734aa1bd8c4d7c73a79b28397ea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/drawable/launch_background.xml": {
+      "filePath": "android/app/src/main/res/drawable/launch_background.xml",
+      "contentHash": "42b8d099f0a6d79e90a67949d7a655c09458c734aa1bd8c4d7c73a79b28397ea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/values-night-v31/styles.xml": {
+      "filePath": "android/app/src/main/res/values-night-v31/styles.xml",
+      "contentHash": "30ecc7c44292987c1c2a81d186a9558935e5a9ec94f0db6cbaaf0f1cdfcf1e1c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/values-night/styles.xml": {
+      "filePath": "android/app/src/main/res/values-night/styles.xml",
+      "contentHash": "359b76f252fe3d3a32950c2ba219d91e5fe07c10bed8365830add0648956d738",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/values-v31/styles.xml": {
+      "filePath": "android/app/src/main/res/values-v31/styles.xml",
+      "contentHash": "ce98a325813a27c94d78f900147c663f52ce7966a86b44ea4337ff5629a2f12d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/main/res/values/styles.xml": {
+      "filePath": "android/app/src/main/res/values/styles.xml",
+      "contentHash": "92577b5b03b0092dcf299293386819ae5a63ba605f8dbc2c70954cda9dc12f2e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "android/app/src/profile/AndroidManifest.xml": {
+      "filePath": "android/app/src/profile/AndroidManifest.xml",
+      "contentHash": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "android/build.gradle.kts": {
+      "filePath": "android/build.gradle.kts",
+      "contentHash": "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": false
+    },
+    "android/gradle.properties": {
+      "filePath": "android/gradle.properties",
+      "contentHash": "5539cf5f17c53900a72cf0065e450f0a8ba5b929dd2b364724c1296d0285d9dc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "android/gradle/wrapper/gradle-wrapper.properties": {
+      "filePath": "android/gradle/wrapper/gradle-wrapper.properties",
+      "contentHash": "297c9e63b6fa6e7e8b221900fa1787c1a0e38869d8957da66389fd0f6b00f78e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": false
+    },
+    "android/settings.gradle.kts": {
+      "filePath": "android/settings.gradle.kts",
+      "contentHash": "a9b5756048f668d4ebf355116678fd334cd5f2169b7d4518ad19b8df14d3af36",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": false
+    },
+    "devtools_options.yaml": {
+      "filePath": "devtools_options.yaml",
+      "contentHash": "e8ba6877169885107d577db47d3e9eb10b32b7aded5959dfc52cae8022a5de84",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "docs/IOS_IPA_ALTSTORE.md": {
+      "filePath": "docs/IOS_IPA_ALTSTORE.md",
+      "contentHash": "6f67305f0a2aac261389f3ce30b072e7e674ebf4d977426791a04c2fed732c14",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "docs/MIGRATION_SUMMARY.md": {
+      "filePath": "docs/MIGRATION_SUMMARY.md",
+      "contentHash": "b01b91e96cf58cc68d42120b4d92aeb5398770c51f98fba4d8571a32f7294fe3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 106,
+      "hasStructuralAnalysis": true
+    },
+    "docs/SUPABASE_SETUP.md": {
+      "filePath": "docs/SUPABASE_SETUP.md",
+      "contentHash": "69961e0c5bd60b4f96115abbb23ad502291b564c2a53ff5a1047c6535eb78141",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-05-16-modular-background-sync.md": {
+      "filePath": "docs/superpowers/plans/2026-05-16-modular-background-sync.md",
+      "contentHash": "d6e1a5056c831538d2ce51fd85c964fd8faedf829625a7d4341f79351128e27f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 160,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-05-21-calculator-keyboard.md": {
+      "filePath": "docs/superpowers/plans/2026-05-21-calculator-keyboard.md",
+      "contentHash": "7aeee4bdb359e031426c4f6bc7527053e84ddae131f1dc9489941f596a0e2d37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 458,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-05-16-modular-background-sync-design.md": {
+      "filePath": "docs/superpowers/specs/2026-05-16-modular-background-sync-design.md",
+      "contentHash": "7558eae14c58998d489e5b679e3336b62af18697959f3997a3b5f05115f5353a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 63,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-05-21-calculator-keyboard-design.md": {
+      "filePath": "docs/superpowers/specs/2026-05-21-calculator-keyboard-design.md",
+      "contentHash": "c12839d9f23631acbcff301d7d7ab88c4d20d8a4446fe66d8eef585255f57cc2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 185,
+      "hasStructuralAnalysis": true
+    },
+    "flutter_launcher_icons.yaml": {
+      "filePath": "flutter_launcher_icons.yaml",
+      "contentHash": "214ca7e7e8b29a3a9111fb1b0a58db8c5e0ea9967cd01bf84fde6fc0524b7f6e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "GEMINI.md": {
+      "filePath": "GEMINI.md",
+      "contentHash": "15a23e52ea610a7426efab56c834581d78f55194d6c2f7769f1dbec32d7e85cd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "ios/ExportOptions-development.plist": {
+      "filePath": "ios/ExportOptions-development.plist",
+      "contentHash": "2794a8596ee1f54e66bb3d113d859b83853009969bcb028432f5ed4f62e0be97",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Flutter/AppFrameworkInfo.plist": {
+      "filePath": "ios/Flutter/AppFrameworkInfo.plist",
+      "contentHash": "da12038f9b2688a8a26160fea2609fa8fcb11421448c109f09c0f573efe7698d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Flutter/Debug.xcconfig": {
+      "filePath": "ios/Flutter/Debug.xcconfig",
+      "contentHash": "690b8a8b1ae15ddd29b241429963e971bbc6720ab22f154cf8cf6b085b6d4925",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Flutter/Release.xcconfig": {
+      "filePath": "ios/Flutter/Release.xcconfig",
+      "contentHash": "6a5e00ec184dc446b04f2d76dc9f5d9381138b8ac0db66f0888b8e0466896c41",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Podfile": {
+      "filePath": "ios/Podfile",
+      "contentHash": "bf1d448973a5cb5a9c75a8b31d404d77e425329edd362129677081c54f2c5a9f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcodeproj/project.pbxproj": {
+      "filePath": "ios/Runner.xcodeproj/project.pbxproj",
+      "contentHash": "155a868ec79d03793510bd88e53f4a6e7eeab263044a323807288c08db43526d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 739,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata": {
+      "filePath": "ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "contentHash": "7f3b00b5c3fdb45242d7b87e1e5c4e25d1fa8129a16c94295ecc4e8ea2235c5f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist": {
+      "filePath": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "contentHash": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings": {
+      "filePath": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "contentHash": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme": {
+      "filePath": "ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "contentHash": "2dd28b879e66081e28a3324cf2bee7ab2f70be9a3e50e08926b7366dadff7d6e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 102,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcworkspace/contents.xcworkspacedata": {
+      "filePath": "ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "contentHash": "465e6de5660384eb6832e8078920ba6cd5305c445cb29a24a86a2fda4aa6b67e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist": {
+      "filePath": "ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "contentHash": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings": {
+      "filePath": "ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "contentHash": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner/AppDelegate.swift": {
+      "filePath": "ios/Runner/AppDelegate.swift",
+      "contentHash": "2c7e270b0108521f16e9adae8f641429d66391f0a714b3f40bd32ee00975f7b6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+      "filePath": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "contentHash": "59aee64f32dab46ad775da6ea2f3fc4efe6e8a78289a9185cd0d2d7e055845dd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json": {
+      "filePath": "ios/Runner/Assets.xcassets/LaunchBackground.imageset/Contents.json",
+      "contentHash": "d3853008fd1405c9d3b0e8c3718bf3712059cb7db94d51065a1d289c2daa0710",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json": {
+      "filePath": "ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "contentHash": "b6635160524602c26e59c1430cef0208f25cb6e9ca30096b9fd6eb7f4a370956",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md": {
+      "filePath": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+      "contentHash": "a985b626c4f7546a8ba392d135e9226c3547c8e2b46895f5f2bdf40d7b14ef9f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    "ios/Runner/Base.lproj/LaunchScreen.storyboard": {
+      "filePath": "ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "contentHash": "0cd8cac4b4eba34ecb4ca5f7f235a55afe9dcb1c0066648953578c6e2b712a00",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner/Base.lproj/Main.storyboard": {
+      "filePath": "ios/Runner/Base.lproj/Main.storyboard",
+      "contentHash": "fd367b6c43006d61b730f674970dd48b9f662c8f2264e52ffc1558102a2c9f2d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner/Info.plist": {
+      "filePath": "ios/Runner/Info.plist",
+      "contentHash": "bdada04bd1ad8537ee91759802adbcc4ec59d7b8fa06f0cb664dac6962ba0030",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 77,
+      "hasStructuralAnalysis": false
+    },
+    "ios/Runner/Runner-Bridging-Header.h": {
+      "filePath": "ios/Runner/Runner-Bridging-Header.h",
+      "contentHash": "1a8d11d01d1cc92c650c9c9ed35299240052d4683a15a719a2315ef44185e074",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "ios/Runner/SceneDelegate.swift": {
+      "filePath": "ios/Runner/SceneDelegate.swift",
+      "contentHash": "add68b905971dedfcc0d0b5b7118030de5925ba8c081ad9815463699e3a444ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
+    },
+    "ios/RunnerTests/RunnerTests.swift": {
+      "filePath": "ios/RunnerTests/RunnerTests.swift",
+      "contentHash": "5e8f4908dacea6f29b2a790e4d38bf5fded69096063f9a27a2f21584d62b30c0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
+    "lib/main.dart": {
+      "filePath": "lib/main.dart",
+      "contentHash": "5ebf7942bbdf31d44bd93dc8b452972d963a667bbcad9b48a6dfd8d313d52b34",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 573,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/account.dart": {
+      "filePath": "lib/models/account.dart",
+      "contentHash": "ea2a69a7f0e1d30d437c702168181434aaf81804bc639aada69859c922bc2b07",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 176,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/budget.dart": {
+      "filePath": "lib/models/budget.dart",
+      "contentHash": "7a5f26c424023e8dcd970fcd024c027ec355dd9d7f6d273728405049dcaf28b9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 167,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/category.dart": {
+      "filePath": "lib/models/category.dart",
+      "contentHash": "3c070641d986f3fbc73427eec1a7ec67881bad2942928729272e5429f1738490",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 71,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/recurring_transaction.dart": {
+      "filePath": "lib/models/recurring_transaction.dart",
+      "contentHash": "8abb1ca437b6e36ea99e7c2e6128cfa6aadb5a52ce77644193c84ea759bbfb0a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 261,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/stock_holding.dart": {
+      "filePath": "lib/models/stock_holding.dart",
+      "contentHash": "8fa2dd52b9b1bf35aff0b9d80482b74f6c4d1363558db662df61a254c1926036",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": false
+    },
+    "lib/models/transaction.dart": {
+      "filePath": "lib/models/transaction.dart",
+      "contentHash": "98b283030d534b075205c180099ac22b02bfd657449de759d7fb7318c9f0e4f6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 128,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/account_provider.dart": {
+      "filePath": "lib/providers/account_provider.dart",
+      "contentHash": "4085029628d8fe1ea36991791a05ab9ad6de5889d7983279a2a3db27a59ba489",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 500,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/auth_provider.dart": {
+      "filePath": "lib/providers/auth_provider.dart",
+      "contentHash": "f2e785bc57ebc8bd6d3df674914eb031186e872d9ca0ca405049cca6ca8bffa6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 293,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/budget_provider.dart": {
+      "filePath": "lib/providers/budget_provider.dart",
+      "contentHash": "ae4724a5330ae089484a961eb2a9a84cf7a530d2d1fd84ff376749e1a14be0a4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 134,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/category_provider.dart": {
+      "filePath": "lib/providers/category_provider.dart",
+      "contentHash": "1c11e191e5b2c577e7e88e5315c169efa080feaa7374ca82501516ca04a1433b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 223,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/llm_provider.dart": {
+      "filePath": "lib/providers/llm_provider.dart",
+      "contentHash": "f42a5a72069ba7d231581e8cb882bbc04f7109e67125e7b2cbf849e14c4a8ac6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/recurring_transaction_provider.dart": {
+      "filePath": "lib/providers/recurring_transaction_provider.dart",
+      "contentHash": "c0cfaa8ab87ff74ed13fd7cbfe4f201b318dfb7f31c067b05f55ff48ec3bc4eb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 326,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/settings_provider.dart": {
+      "filePath": "lib/providers/settings_provider.dart",
+      "contentHash": "86920cde1b78a005f8bac0691a13a1e2eb71f5275f8294cdccf0488d4b774cc3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 166,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/sync_provider.dart": {
+      "filePath": "lib/providers/sync_provider.dart",
+      "contentHash": "efadca7936a3422b77cb8eea510956be9072e8272202dde67106227457dcd84c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 129,
+      "hasStructuralAnalysis": false
+    },
+    "lib/providers/transaction_provider.dart": {
+      "filePath": "lib/providers/transaction_provider.dart",
+      "contentHash": "54ebf4d8e7d488569b276ae4f83289f15eaa1798e70583b0b50c39a79c3353dd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 194,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/database_repository.dart": {
+      "filePath": "lib/repositories/database_repository.dart",
+      "contentHash": "72396073d9424ffd3702fe76bbc3d309b070fdbf387b4d0e82b5e8bc01a86eb4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 147,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/repositories.dart": {
+      "filePath": "lib/repositories/repositories.dart",
+      "contentHash": "23892a0b21c4510a9ad460426ed894b1dd672713f67adf7fda4376d261390cfd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/account_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/account_adapter.dart",
+      "contentHash": "7e4be485e21efc4543f1733fcf7d4939fcec92fd259be3973fd84e188fca89f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 164,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/budget_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/budget_adapter.dart",
+      "contentHash": "ca709e90074a24c2f43f8a62f17212a84c0192afd71115e5c8f6ef3878b2ccd6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 136,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/category_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/category_adapter.dart",
+      "contentHash": "6842b1729a61fb2995adc3e412a086094b3ae7c443e6fab9f1b73badb349aeb4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 136,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/portfolio_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/portfolio_adapter.dart",
+      "contentHash": "9b0d19d5d22ee87dc3813c0c5d8b24f77c6939655f9283959609589c7a23416b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 151,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/recurring_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/recurring_adapter.dart",
+      "contentHash": "fa6a50bc08413f6a285d612ffec5220d1fe4f8e3f79e2fad3461faf3b4370b82",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 266,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_adapters/transaction_adapter.dart": {
+      "filePath": "lib/repositories/supabase_adapters/transaction_adapter.dart",
+      "contentHash": "fea31d206e2f00248fe3d9472c4c08ff0b679c28179c216371b0c8dc88697b93",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": false
+    },
+    "lib/repositories/supabase_repository.dart": {
+      "filePath": "lib/repositories/supabase_repository.dart",
+      "contentHash": "8d6424cad684cfceb8ac869221ee8d490b12f20dbd8784e350ac415606a40949",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 592,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/account_form_screen.dart": {
+      "filePath": "lib/screens/account/account_form_screen.dart",
+      "contentHash": "4d0173341cbd3dba654bdf9525ea4b203e05f0d4746ac6783a68aa3088216790",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1566,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/account_list_screen.dart": {
+      "filePath": "lib/screens/account/account_list_screen.dart",
+      "contentHash": "d294dcd89a0aeeb5dbde38bce48b5c18767f400330ec701a481840fe8587d2ec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1184,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/credit_card_bill_screen.dart": {
+      "filePath": "lib/screens/account/credit_card_bill_screen.dart",
+      "contentHash": "a09d4ba3d72f1b666d4bc8154ea95c8968290a405107d6ce8a38a729ee6d3049",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 511,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/holding_form_screen.dart": {
+      "filePath": "lib/screens/account/holding_form_screen.dart",
+      "contentHash": "770ed6a03daf5bc65642c0c70f1bbedd998552ee5cc3a9b56914b566838c4e1c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 688,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/portfolio_analyze_screen.dart": {
+      "filePath": "lib/screens/account/portfolio_analyze_screen.dart",
+      "contentHash": "a6108037067d5b77aaebfc9cd42cdef5f56bed9e78ac2028180f659fb4749506",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 527,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/account/portfolio_detail_screen.dart": {
+      "filePath": "lib/screens/account/portfolio_detail_screen.dart",
+      "contentHash": "68a86c7816c95e2320f9fbfea90ef286690ae1460cbed790a49fb90707392e5a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1618,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/auth/auth_screen.dart": {
+      "filePath": "lib/screens/auth/auth_screen.dart",
+      "contentHash": "59ca8b57b1a92a4fe787077c5c15ffa7f76744d12f5b2c92789704888f5e76f4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 513,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/auth/setup_screen.dart": {
+      "filePath": "lib/screens/auth/setup_screen.dart",
+      "contentHash": "5795268404d5ad31bfb1e2841c07f03a2d1dbc6a06829e4ec1d7faabd3c7d24e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 344,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/budget/budget_form_screen.dart": {
+      "filePath": "lib/screens/budget/budget_form_screen.dart",
+      "contentHash": "f0ec0173d746abbb42140bc71f7669241d79102d795f12b54c133c67071b8555",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 978,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/budget/budget_list_screen.dart": {
+      "filePath": "lib/screens/budget/budget_list_screen.dart",
+      "contentHash": "706bafbe723a9cea0c1bbdd73cd8368e6c9e43154f8ddd46f9dce70157847222",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1592,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/category/category_form_screen.dart": {
+      "filePath": "lib/screens/category/category_form_screen.dart",
+      "contentHash": "44ec7fa12a29a8746e105e7ca44fefd59c587a8dfbee56f7cbcf213ca434268c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 751,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/category/category_list_screen.dart": {
+      "filePath": "lib/screens/category/category_list_screen.dart",
+      "contentHash": "fb90869214a8ee7b49d7eb94395b51ba035eef8e59cb315b1b544c0a965f721e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 460,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/recurring/recurring_detail_screen.dart": {
+      "filePath": "lib/screens/recurring/recurring_detail_screen.dart",
+      "contentHash": "3fd19864863bff4bdad2d54fbf41b42586e4192b42154ae8c54c2233755cc914",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1382,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/recurring/recurring_form_screen.dart": {
+      "filePath": "lib/screens/recurring/recurring_form_screen.dart",
+      "contentHash": "4f5cadcab2878fc990698010902f3c038542e85fea7cbc30a5de6cb715dd58f2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1919,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/recurring/recurring_list_screen.dart": {
+      "filePath": "lib/screens/recurring/recurring_list_screen.dart",
+      "contentHash": "e41e3ab25355d1e323b7b2a58dacf02c77b17be26a8604ce6bbd98d760209a79",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 596,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/settings/data_management_screen.dart": {
+      "filePath": "lib/screens/settings/data_management_screen.dart",
+      "contentHash": "49ab48a0c6a159ec04189a751281edafe22a25ab49ebead9820f42e7bfe183f0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 783,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/settings/finnhubapi_key_settings_screen.dart": {
+      "filePath": "lib/screens/settings/finnhubapi_key_settings_screen.dart",
+      "contentHash": "7534292dbacfe427beb367db2899c117330c2159ee28f8809a4dda6a2cf17f64",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 160,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/settings/llm_api_key_settings_screen.dart": {
+      "filePath": "lib/screens/settings/llm_api_key_settings_screen.dart",
+      "contentHash": "c31d7953fa122997fb3661ea40298edafc9751918dcf7c97a83685be392f00f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 198,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/settings/settings_screen.dart": {
+      "filePath": "lib/screens/settings/settings_screen.dart",
+      "contentHash": "df44d1ac6107ac12c5f147003546fb8e744e937621a219811cc757e76511772c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 467,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/splash/splash_screen.dart": {
+      "filePath": "lib/screens/splash/splash_screen.dart",
+      "contentHash": "25d4897f60d4d4dab0279cd986bcbee63515cba650a5c8d091155aa6e172e765",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/statistics/statistics_screen.dart": {
+      "filePath": "lib/screens/statistics/statistics_screen.dart",
+      "contentHash": "5c14e923255c488e39b919798624e7bd4b63595d24a3fecca4d390359e8629d3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1745,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/transaction/transaction_form_screen.dart": {
+      "filePath": "lib/screens/transaction/transaction_form_screen.dart",
+      "contentHash": "13d5a2a58504bd1b0aba63d9eb00cb45a8b25a1f5112a189545c503e006a4583",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1836,
+      "hasStructuralAnalysis": false
+    },
+    "lib/screens/transaction/transaction_list_screen.dart": {
+      "filePath": "lib/screens/transaction/transaction_list_screen.dart",
+      "contentHash": "26292c4fe15a6676df3fcdf6aa4b58dfecde03a2b1bb3b7c266946b154e04b78",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1015,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/account_icon_storage_service.dart": {
+      "filePath": "lib/services/account_icon_storage_service.dart",
+      "contentHash": "2f03bd8d3d1979fa7cfe469a45006e4c84b1468f993fbcce4ec318a3ac3949b3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 80,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/credit_card_bill_service.dart": {
+      "filePath": "lib/services/credit_card_bill_service.dart",
+      "contentHash": "18383d3ad830d00f84df7f184ab5157c1fe997bb120b6fb03f976c870a3002f3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 412,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/csv_service.dart": {
+      "filePath": "lib/services/csv_service.dart",
+      "contentHash": "ba5d1b00568b59d147acec5bf1e9ddd1e9fcdb0d54f660b83de93c0d227cbb62",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1058,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/database_manager.dart": {
+      "filePath": "lib/services/database_manager.dart",
+      "contentHash": "24044644c7409ef4564b224c2ab6faf46745118c06cc44df5aa8432e72755260",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 185,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/debug_bootstrap_service.dart": {
+      "filePath": "lib/services/debug_bootstrap_service.dart",
+      "contentHash": "3cd5bd6ddef0181b3e86c6c2fbdf908a7151d4071d5f62dd91a559b16faa5a4f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 126,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/exchange_rate_service.dart": {
+      "filePath": "lib/services/exchange_rate_service.dart",
+      "contentHash": "12ffae24451a3786e660fcfbaf8b93e452a5bae6180889187cb1a4e71c72b976",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 63,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/recurring_notification_service.dart": {
+      "filePath": "lib/services/recurring_notification_service.dart",
+      "contentHash": "8cfc956414396d09134ae29bc316f6f2f820ccb85634397250a6b4d962ef7de7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 338,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/splash_service.dart": {
+      "filePath": "lib/services/splash_service.dart",
+      "contentHash": "b29238dc2c8e098bd225e3dfd09f3bcc6db85b2b1dc1ebf7880a3c2ae0a1e0b3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/stock_logo_storage_service.dart": {
+      "filePath": "lib/services/stock_logo_storage_service.dart",
+      "contentHash": "46d151ded1fe794487d0f56c89205965b7ae021a342fe8beaac71783690dfa5f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 96,
+      "hasStructuralAnalysis": false
+    },
+    "lib/services/stock_price_service.dart": {
+      "filePath": "lib/services/stock_price_service.dart",
+      "contentHash": "ca16a386941bbe0aa3606b09d69d8e563d57a52ef052a92a7248f5500b90d187",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 180,
+      "hasStructuralAnalysis": false
+    },
+    "lib/theme/app_colors.dart": {
+      "filePath": "lib/theme/app_colors.dart",
+      "contentHash": "7a784924e2e945951860e0a4dd7da81c0ad48380a7208d69c97dc49bf9bfb174",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 111,
+      "hasStructuralAnalysis": false
+    },
+    "lib/theme/app_theme.dart": {
+      "filePath": "lib/theme/app_theme.dart",
+      "contentHash": "91e2ed42af93fe53a0ab4e254f5f10796b4dfd642380bb0ec1bd6b9a96716191",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 184,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/csv_file_io_native.dart": {
+      "filePath": "lib/utils/csv_file_io_native.dart",
+      "contentHash": "39a5e4dcefe827f0c1daa3a0dab1109470a19298fd29c4e0d75969ef79b15ad7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/csv_file_io_stub.dart": {
+      "filePath": "lib/utils/csv_file_io_stub.dart",
+      "contentHash": "45c453d157f563739a510fc90574b6ec1a0d9ba08214644aa3b6f9d2a260cda4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/csv_file_io_web.dart": {
+      "filePath": "lib/utils/csv_file_io_web.dart",
+      "contentHash": "c794d6b734b05c9e8238c66649921838ea05d71ae29e5ba85c0fdd080f891835",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/csv_file_io.dart": {
+      "filePath": "lib/utils/csv_file_io.dart",
+      "contentHash": "60f79647db8856cdf13caddf0fd5a386f34140d93b26e938486bc3a3600273f8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/currency_utils.dart": {
+      "filePath": "lib/utils/currency_utils.dart",
+      "contentHash": "c90e5409ead81f0cbd689b44e6adc8566c0e48e40dccc96d1ad43a2fba29d8de",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/math_evaluator.dart": {
+      "filePath": "lib/utils/math_evaluator.dart",
+      "contentHash": "050a04bc8c69cecc0afa4e31c36645d54c8ba1bae0b6a19ba54a4a5be4ebce0b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/web_safe_area_insets_stub.dart": {
+      "filePath": "lib/utils/web_safe_area_insets_stub.dart",
+      "contentHash": "2de611dc1ac39332675dcbbe20fe30f7ac4b2d5ba88a2b98076cb1d67bf3f759",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/web_safe_area_insets_web.dart": {
+      "filePath": "lib/utils/web_safe_area_insets_web.dart",
+      "contentHash": "9fdb9be123030aba5a2175c46402730e3f6d9b07deaf9070d4cdabf97e434023",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 62,
+      "hasStructuralAnalysis": false
+    },
+    "lib/utils/web_safe_area_insets.dart": {
+      "filePath": "lib/utils/web_safe_area_insets.dart",
+      "contentHash": "1e5a80607bc27e18cfd65fd30f58ddc894894fd8d10b85862a6390eee515eeb0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/account_icon_widget.dart": {
+      "filePath": "lib/widgets/account_icon_widget.dart",
+      "contentHash": "80501706eb31c96247d0bd9a661013b56930b5ad5db381e5503b33a3a00f7bc1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/account_picker_bottom_sheet.dart": {
+      "filePath": "lib/widgets/account_picker_bottom_sheet.dart",
+      "contentHash": "2c5d90ed13a2e3a2e5bfc9d6be23e36a19acb0622cbc7fff0d19684680113200",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 251,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/app_drawer.dart": {
+      "filePath": "lib/widgets/app_drawer.dart",
+      "contentHash": "f18c3bb8675670cea708426298075dc614e44276754748c2480084b39626e255",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 247,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/app_sidebar.dart": {
+      "filePath": "lib/widgets/app_sidebar.dart",
+      "contentHash": "04412e235702922d42a79b481af5dd47197dcc567d137508fbeac943eacc393b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 327,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/calculator_keyboard.dart": {
+      "filePath": "lib/widgets/calculator_keyboard.dart",
+      "contentHash": "5450fed0b6ae7526b208c92e82b57435884fa9db1284dce1f5ed2661e94d989f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 248,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/category_picker_bottom_sheet.dart": {
+      "filePath": "lib/widgets/category_picker_bottom_sheet.dart",
+      "contentHash": "01fb446ce5c6a2aa41c6ceace7cbab409e033082bd510875f097c62b949fe1fa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 121,
+      "hasStructuralAnalysis": false
+    },
+    "lib/widgets/portfolio_holding_item_widget.dart": {
+      "filePath": "lib/widgets/portfolio_holding_item_widget.dart",
+      "contentHash": "3aabe5fffaec88e050f5f404a136e7b6db5259d1ebda72db7026b2ca8b57ea3c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 742,
+      "hasStructuralAnalysis": false
+    },
+    "linux/CMakeLists.txt": {
+      "filePath": "linux/CMakeLists.txt",
+      "contentHash": "1c799e094ac3faa9c3fcaddf7d75d5478038ab7be9e426ec6d954ece3f5a1b20",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 129,
+      "hasStructuralAnalysis": false
+    },
+    "linux/flutter/CMakeLists.txt": {
+      "filePath": "linux/flutter/CMakeLists.txt",
+      "contentHash": "787189e2623313cfee590a0b553338eb9fc68b3af922ddd77c5d39c75f989aeb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": false
+    },
+    "linux/flutter/generated_plugin_registrant.cc": {
+      "filePath": "linux/flutter/generated_plugin_registrant.cc",
+      "contentHash": "564aff042ecc0755511be9cdfdab6cfd5812b96d825426b882f0003bab5c9bf8",
+      "functions": [
+        {
+          "name": "fl_register_plugins",
+          "params": [
+            "registry"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "generated_plugin_registrant.h",
+          "specifiers": [
+            "generated_plugin_registrant.h"
+          ]
+        },
+        {
+          "source": "file_selector_linux/file_selector_plugin.h",
+          "specifiers": [
+            "file_selector_linux/file_selector_plugin.h"
+          ]
+        },
+        {
+          "source": "flutter_timezone/flutter_timezone_plugin.h",
+          "specifiers": [
+            "flutter_timezone/flutter_timezone_plugin.h"
+          ]
+        },
+        {
+          "source": "gtk/gtk_plugin.h",
+          "specifiers": [
+            "gtk/gtk_plugin.h"
+          ]
+        },
+        {
+          "source": "url_launcher_linux/url_launcher_plugin.h",
+          "specifiers": [
+            "url_launcher_linux/url_launcher_plugin.h"
+          ]
+        }
+      ],
+      "exports": [
+        "fl_register_plugins"
+      ],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "linux/flutter/generated_plugin_registrant.h": {
+      "filePath": "linux/flutter/generated_plugin_registrant.h",
+      "contentHash": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "linux/flutter/generated_plugins.cmake": {
+      "filePath": "linux/flutter/generated_plugins.cmake",
+      "contentHash": "e39fa726cbcce1928eb6a62e408583ec713c853cf2c658654b4706b0ef781433",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": false
+    },
+    "linux/runner/CMakeLists.txt": {
+      "filePath": "linux/runner/CMakeLists.txt",
+      "contentHash": "8cdcfd911e770fd7d511c97c7bce6559486a815352a47c953f7ef632e236d2cc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": false
+    },
+    "linux/runner/main.cc": {
+      "filePath": "linux/runner/main.cc",
+      "contentHash": "ea23f7cdf74091d63bba29ef60486370b766157b848f0cfe62bd8b1c1695a0c1",
+      "functions": [
+        {
+          "name": "main",
+          "params": [
+            "argc",
+            "argv"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "my_application.h",
+          "specifiers": [
+            "my_application.h"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "linux/runner/my_application.cc": {
+      "filePath": "linux/runner/my_application.cc",
+      "contentHash": "2b00ab2cc3582d581b3410f5ee699c9fbbc85ed29b3bac5fc31a774ac3d41171",
+      "functions": [
+        {
+          "name": "first_frame_cb",
+          "params": [
+            "self",
+            "view"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "my_application_activate",
+          "params": [
+            "application"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 57
+        },
+        {
+          "name": "my_application_local_command_line",
+          "params": [
+            "application",
+            "arguments",
+            "exit_status"
+          ],
+          "returnType": "gboolean",
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "my_application_startup",
+          "params": [
+            "application"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "my_application_shutdown",
+          "params": [
+            "application"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "my_application_dispose",
+          "params": [
+            "object"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "my_application_class_init",
+          "params": [
+            "klass"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "my_application_init",
+          "params": [
+            "self"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "_MyApplication",
+          "methods": [],
+          "properties": [
+            "parent_instance",
+            "dart_entrypoint_arguments"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "my_application.h",
+          "specifiers": [
+            "my_application.h"
+          ]
+        },
+        {
+          "source": "flutter_linux/flutter_linux.h",
+          "specifiers": [
+            "flutter_linux/flutter_linux.h"
+          ]
+        },
+        {
+          "source": "flutter/generated_plugin_registrant.h",
+          "specifiers": [
+            "flutter/generated_plugin_registrant.h"
+          ]
+        }
+      ],
+      "exports": [
+        "_MyApplication"
+      ],
+      "totalLines": 149,
+      "hasStructuralAnalysis": true
+    },
+    "linux/runner/my_application.h": {
+      "filePath": "linux/runner/my_application.h",
+      "contentHash": "a4218d7ac0db8a9a6716daf216b2d4fc6bdc7ac647e3183078b2c962ebdfcf70",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "macos/Flutter/Flutter-Debug.xcconfig": {
+      "filePath": "macos/Flutter/Flutter-Debug.xcconfig",
+      "contentHash": "802714a37a8fd3065fb3d8e21cbcfbb3147c7ad25f25934b64590085aa9f5b28",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Flutter/Flutter-Release.xcconfig": {
+      "filePath": "macos/Flutter/Flutter-Release.xcconfig",
+      "contentHash": "d575f436f8bab30d7096792396e73b65db242edc01913c4123d2c29e713b3a6d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Flutter/GeneratedPluginRegistrant.swift": {
+      "filePath": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "contentHash": "91a820814dbf45ca1f7031228d8bd9ed6fc07361a100ce2604c3bf76871f57dd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Podfile": {
+      "filePath": "macos/Podfile",
+      "contentHash": "e85521f1c80ceaca2c2af8578c97857fc84f4c467514025c0b89bb55c0e8543a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner.xcodeproj/project.pbxproj": {
+      "filePath": "macos/Runner.xcodeproj/project.pbxproj",
+      "contentHash": "085044c94921e7b34a0f532d89b4c859b13d668ce1e9390ee7997acadd7726bd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 811,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist": {
+      "filePath": "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "contentHash": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme": {
+      "filePath": "macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "contentHash": "9338663cca12dd14e58d6d2621a57feef2c2bcadf5b0d6bcf244f6359bc07a9d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 100,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner.xcworkspace/contents.xcworkspacedata": {
+      "filePath": "macos/Runner.xcworkspace/contents.xcworkspacedata",
+      "contentHash": "465e6de5660384eb6832e8078920ba6cd5305c445cb29a24a86a2fda4aa6b67e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist": {
+      "filePath": "macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "contentHash": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/AppDelegate.swift": {
+      "filePath": "macos/Runner/AppDelegate.swift",
+      "contentHash": "ce9dbe45a57c59e85519da50a26c471615b9c8cdd85a8f4a39d2e480e62a4af4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+      "filePath": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "contentHash": "2f6d47350f39cde7d3fabf1dc8109e0ed6638d0ca353c20d3f70b0ad43e5c102",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
+    "macos/Runner/Base.lproj/MainMenu.xib": {
+      "filePath": "macos/Runner/Base.lproj/MainMenu.xib",
+      "contentHash": "28c6681067f8b76c3fae1c589e5d58faf503f4a7c479f7515a5f1b25cab4bbc9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 349,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Configs/AppInfo.xcconfig": {
+      "filePath": "macos/Runner/Configs/AppInfo.xcconfig",
+      "contentHash": "cef271ac1420b8d4e7ccd9376d2ce3e1a568cdf3260aa594ffc95a6e2f9325df",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Configs/Debug.xcconfig": {
+      "filePath": "macos/Runner/Configs/Debug.xcconfig",
+      "contentHash": "6e3557e68fdef367a8f60859409a63cf08da75d990af81aadc7ebe4df1a8acac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Configs/Release.xcconfig": {
+      "filePath": "macos/Runner/Configs/Release.xcconfig",
+      "contentHash": "7a6a4b4d973a23052fa0a0388dd261e32d311d7b66ba1bfc3b914b361808ac61",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Configs/Warnings.xcconfig": {
+      "filePath": "macos/Runner/Configs/Warnings.xcconfig",
+      "contentHash": "0e341a392b16ad302d12890aa3dac9257a6c10ece685437604259a85341645a3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/DebugProfile.entitlements": {
+      "filePath": "macos/Runner/DebugProfile.entitlements",
+      "contentHash": "4b77487138596736b09278b81044f9375fb689f3f9ac8bcdfb3425ac5aab432d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Info.plist": {
+      "filePath": "macos/Runner/Info.plist",
+      "contentHash": "66a5138a2a40e42f30204a36b1c3dd7d4b8350e26466e119f2c9dca7b8348974",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/MainFlutterWindow.swift": {
+      "filePath": "macos/Runner/MainFlutterWindow.swift",
+      "contentHash": "65c9613c11bcedfa51416b16c975d8ba6ff12b405fc19d60db8755d92e86d9fe",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": false
+    },
+    "macos/Runner/Release.entitlements": {
+      "filePath": "macos/Runner/Release.entitlements",
+      "contentHash": "a862b8508c8496ef775426ba48b579bd9af5010a2e714d8ec9ff0d24d25e4e15",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "macos/RunnerTests/RunnerTests.swift": {
+      "filePath": "macos/RunnerTests/RunnerTests.swift",
+      "contentHash": "6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
+    "pubspec.yaml": {
+      "filePath": "pubspec.yaml",
+      "contentHash": "935dc5159cfd5d4a849f50d45102199828ba3802681f9cfd88d90c3b29b700fc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 142,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "e8d18749c660d5885dbf325e5b0f1e6197495052841cfe24bdbce126610caf38",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_android.sh": {
+      "filePath": "scripts/build_android.sh",
+      "contentHash": "0f5bb8aba77e3400eeb733c46ed4f438dbb9b742f96cc6e66f4cf198ccdc8df2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_ios.sh": {
+      "filePath": "scripts/build_ios.sh",
+      "contentHash": "796204ebf09c9d24b0a6fc71c1204c8af22fdc29b9cffe76668dc419e5c2f174",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_ipa.sh": {
+      "filePath": "scripts/build_ipa.sh",
+      "contentHash": "794567bea9d3771ad66662c1cc67e96415e6948ad6b73d18079eb027281339bf",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_macos.sh": {
+      "filePath": "scripts/build_macos.sh",
+      "contentHash": "a8d202bc99c627a361cc9aacc55dcc5adb8275d658ab6fce4bf99eff4479e4d2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_release.sh": {
+      "filePath": "scripts/build_release.sh",
+      "contentHash": "b842ab87fef14037fa8efcdf7cf406023c859a01c96f4b5a51f09571f86ac98b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/build_web.sh": {
+      "filePath": "scripts/build_web.sh",
+      "contentHash": "36062684f5b0918fec3f21468f4c6be63d064fa9f189ec394d732352e8a48bec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/clean_build.sh": {
+      "filePath": "scripts/clean_build.sh",
+      "contentHash": "8c78f52fdc00b9c25479a0033d9f7ce6346647fa36e05f39e51b27bf0e75d894",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/clean_ios_splash.sh": {
+      "filePath": "scripts/clean_ios_splash.sh",
+      "contentHash": "e4d84c7c01777ece3585510adaf51863fb8853df72e499dce1546f4c8f771a5f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/.temp/cli-latest": {
+      "filePath": "supabase/.temp/cli-latest",
+      "contentHash": "4c852c414bf227f14e947cdd1320a5a8f66840e901db19d005fbada8eb43b686",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "supabase/functions/llm-portfolio-analyze.ts": {
+      "filePath": "supabase/functions/llm-portfolio-analyze.ts",
+      "contentHash": "a6244127b0c2be8abd0b1a058703101b2cf453c3a1c4b50251ae3c3dd0a82fc1",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+          "specifiers": []
+        },
+        {
+          "source": "https://esm.sh/openai",
+          "specifiers": [
+            "OpenAI"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/mirror-stock-logo.ts": {
+      "filePath": "supabase/functions/mirror-stock-logo.ts",
+      "contentHash": "d433f12f64bb0accef50c4ab0daf7658f377654a983232fef478d9ad544845fe",
+      "functions": [
+        {
+          "name": "getExtension",
+          "params": [
+            "contentType",
+            "sourceUrl"
+          ],
+          "exported": false,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+          "specifiers": []
+        },
+        {
+          "source": "@supabase/supabase-js",
+          "specifiers": [
+            "createClient"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 149,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/yfinance.ts": {
+      "filePath": "supabase/functions/yfinance.ts",
+      "contentHash": "c8f07fe46594332f64e0e94e2abe6bef4479a850f5666422473fee0db1609e3d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+          "specifiers": []
+        }
+      ],
+      "exports": [],
+      "totalLines": 86,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260507101146_init_schema.sql": {
+      "filePath": "supabase/migrations/20260507101146_init_schema.sql",
+      "contentHash": "8f60a7b1b75c8c968671cedce8d58d1cad44f2a87b2e6a73d1a3063f9d702505",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 615,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260510000000_remove_tags_from_transactions.sql": {
+      "filePath": "supabase/migrations/20260510000000_remove_tags_from_transactions.sql",
+      "contentHash": "9c3516fdd3fff3ebcf3ec8a626edb8882f317ebf079cfb2fb4dd065e8dbc3750",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260511000000_add_to_amount_to_transactions.sql": {
+      "filePath": "supabase/migrations/20260511000000_add_to_amount_to_transactions.sql",
+      "contentHash": "3019e62d349662fb2e83aa2f82bb41c0cbb0c2e96c15d3b58024dc5fb63bf584",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260512120000_add_sell_plan_to_portfolio_holdings.sql": {
+      "filePath": "supabase/migrations/20260512120000_add_sell_plan_to_portfolio_holdings.sql",
+      "contentHash": "c9fe5aa680c29b0faa11575f031024d1eaa9173980aebc73690b2318ee18680f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260514090000_add_portfolio_group_to_portfolio_holdings.sql": {
+      "filePath": "supabase/migrations/20260514090000_add_portfolio_group_to_portfolio_holdings.sql",
+      "contentHash": "ecc15de5f717f6e37e23ac8253541b69a09d39406c21a8d0e303f7837a0bcbfb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/migrations/20260516000000_create_sync_logs.sql": {
+      "filePath": "supabase/migrations/20260516000000_create_sync_logs.sql",
+      "contentHash": "b3836c8349094af436ce1e6c1362df227a6b928411d6a1bb26efa9542f3b90bc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "test/calculator_keyboard_test.dart": {
+      "filePath": "test/calculator_keyboard_test.dart",
+      "contentHash": "c876dd86b44ed270336fd19ef51365f925b341e6dc015416235004db34a36d60",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 60,
+      "hasStructuralAnalysis": false
+    },
+    "test/credit_card_bill_service_test.dart": {
+      "filePath": "test/credit_card_bill_service_test.dart",
+      "contentHash": "63a58b40f27c5880f0735b6f5a0a53a7cb52ec97e5662017539f94cb92b1b133",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 159,
+      "hasStructuralAnalysis": false
+    },
+    "test/math_evaluator_test.dart": {
+      "filePath": "test/math_evaluator_test.dart",
+      "contentHash": "62f0f8dd28185b41ab6f3fa55de54a309135b7c347af5acabfc1e2cb2ecebbb8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "test/stock_holding_sell_plan_test.dart": {
+      "filePath": "test/stock_holding_sell_plan_test.dart",
+      "contentHash": "d34756a1db63e16dfd930c0cbd71fb6529ce3e1873035dc54be414806617e153",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": false
+    },
+    "test/transaction_form_calculator_test.dart": {
+      "filePath": "test/transaction_form_calculator_test.dart",
+      "contentHash": "1d2eaccb4ae38a1e2a0d5c832bc42edb017912b399d74e9a50952470eb721ede",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 213,
+      "hasStructuralAnalysis": false
+    },
+    "test/widget_test.dart": {
+      "filePath": "test/widget_test.dart",
+      "contentHash": "8affa0d915be8cbf7ced40563e7a0ee31a885665fda547c3943c6d38b1779d7b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "web/index.html": {
+      "filePath": "web/index.html",
+      "contentHash": "a9ccfe2327149a5fe2539d045c4a043098a48afac4dfe477bea3a17eadb5d1e0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 154,
+      "hasStructuralAnalysis": false
+    },
+    "web/manifest.json": {
+      "filePath": "web/manifest.json",
+      "contentHash": "4975d069f0198b677f7a2276326a01d7deaa72c0c0dddbb90493d1a4c36bf44a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "windows/CMakeLists.txt": {
+      "filePath": "windows/CMakeLists.txt",
+      "contentHash": "79f8de41634dedae824ed37781b81cc9e0eb3b2f2ee067be0590e701455775ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 109,
+      "hasStructuralAnalysis": false
+    },
+    "windows/flutter/CMakeLists.txt": {
+      "filePath": "windows/flutter/CMakeLists.txt",
+      "contentHash": "1fe418971b6f41bb35ceb3d64113a835f3f6f171ecaa707bf232492b57a588d6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 110,
+      "hasStructuralAnalysis": false
+    },
+    "windows/flutter/generated_plugin_registrant.cc": {
+      "filePath": "windows/flutter/generated_plugin_registrant.cc",
+      "contentHash": "34675c74a90e26292ee1c0486f2b840d41d0394d2ebe28b6f536a2c04b01d72d",
+      "functions": [
+        {
+          "name": "RegisterPlugins",
+          "params": [
+            "registry"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "generated_plugin_registrant.h",
+          "specifiers": [
+            "generated_plugin_registrant.h"
+          ]
+        },
+        {
+          "source": "app_links/app_links_plugin_c_api.h",
+          "specifiers": [
+            "app_links/app_links_plugin_c_api.h"
+          ]
+        },
+        {
+          "source": "file_selector_windows/file_selector_windows.h",
+          "specifiers": [
+            "file_selector_windows/file_selector_windows.h"
+          ]
+        },
+        {
+          "source": "flutter_timezone/flutter_timezone_plugin_c_api.h",
+          "specifiers": [
+            "flutter_timezone/flutter_timezone_plugin_c_api.h"
+          ]
+        },
+        {
+          "source": "share_plus/share_plus_windows_plugin_c_api.h",
+          "specifiers": [
+            "share_plus/share_plus_windows_plugin_c_api.h"
+          ]
+        },
+        {
+          "source": "url_launcher_windows/url_launcher_windows.h",
+          "specifiers": [
+            "url_launcher_windows/url_launcher_windows.h"
+          ]
+        }
+      ],
+      "exports": [
+        "RegisterPlugins"
+      ],
+      "totalLines": 27,
+      "hasStructuralAnalysis": true
+    },
+    "windows/flutter/generated_plugin_registrant.h": {
+      "filePath": "windows/flutter/generated_plugin_registrant.h",
+      "contentHash": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "windows/flutter/generated_plugins.cmake": {
+      "filePath": "windows/flutter/generated_plugins.cmake",
+      "contentHash": "69c1bbcf37809ac0ff21876f3fd6bbacab17d86daf919819210e427cc1b6e558",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": false
+    },
+    "windows/runner/CMakeLists.txt": {
+      "filePath": "windows/runner/CMakeLists.txt",
+      "contentHash": "34119ec122e36940235ef4bc245fcfb43b6960ed443e28af1a8d833a81209b9e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": false
+    },
+    "windows/runner/flutter_window.cpp": {
+      "filePath": "windows/runner/flutter_window.cpp",
+      "contentHash": "dd185884c0b5301d400b58f12ebb36b1c8b326531597e531b40e44a6eeb0e943",
+      "functions": [
+        {
+          "name": "FlutterWindow",
+          "params": [
+            "project"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "~FlutterWindow",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "OnCreate",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "OnDestroy",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "MessageHandler",
+          "params": [
+            "hwnd",
+            "message",
+            "wparam",
+            "lparam"
+          ],
+          "returnType": "LRESULT",
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "flutter_window.h",
+          "specifiers": [
+            "flutter_window.h"
+          ]
+        },
+        {
+          "source": "optional",
+          "specifiers": [
+            "optional"
+          ]
+        },
+        {
+          "source": "flutter/generated_plugin_registrant.h",
+          "specifiers": [
+            "flutter/generated_plugin_registrant.h"
+          ]
+        }
+      ],
+      "exports": [
+        "FlutterWindow",
+        "~FlutterWindow",
+        "OnCreate",
+        "OnDestroy",
+        "MessageHandler"
+      ],
+      "totalLines": 72,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/flutter_window.h": {
+      "filePath": "windows/runner/flutter_window.h",
+      "contentHash": "38e0fcd3a0b83895852ec295cb70d90179c0dcd40d58f065eb5232a4ecd84898",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/main.cpp": {
+      "filePath": "windows/runner/main.cpp",
+      "contentHash": "e35dfdf768c7d8de6fa99c2448b1b75279086af23ec8da15d26b60ace68054aa",
+      "functions": [
+        {
+          "name": "wWinMain",
+          "params": [
+            "instance",
+            "HINSTANCE",
+            "show_command"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "flutter/dart_project.h",
+          "specifiers": [
+            "flutter/dart_project.h"
+          ]
+        },
+        {
+          "source": "flutter/flutter_view_controller.h",
+          "specifiers": [
+            "flutter/flutter_view_controller.h"
+          ]
+        },
+        {
+          "source": "windows.h",
+          "specifiers": [
+            "windows.h"
+          ]
+        },
+        {
+          "source": "flutter_window.h",
+          "specifiers": [
+            "flutter_window.h"
+          ]
+        },
+        {
+          "source": "utils.h",
+          "specifiers": [
+            "utils.h"
+          ]
+        }
+      ],
+      "exports": [
+        "wWinMain"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/resource.h": {
+      "filePath": "windows/runner/resource.h",
+      "contentHash": "1fa98588b04561590ba1cf0521ab86a9db4a878312f21c9d5861d965ddd8d1ae",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/runner.exe.manifest": {
+      "filePath": "windows/runner/runner.exe.manifest",
+      "contentHash": "825d243e9fa1542619909c1b72d09b3ed7c1f3b225bb8367c125835e5dc3f8aa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "windows/runner/Runner.rc": {
+      "filePath": "windows/runner/Runner.rc",
+      "contentHash": "43a8c4e0c8dcc558653d36b391e3a3349dfff1e2997fb40cdc6ef7444f7830e0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 122,
+      "hasStructuralAnalysis": false
+    },
+    "windows/runner/utils.cpp": {
+      "filePath": "windows/runner/utils.cpp",
+      "contentHash": "dc2ee94d43116f959a4abd42557f71d07acc631abbffe03b11489dbeed35bedb",
+      "functions": [
+        {
+          "name": "CreateAndAttachConsole",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "GetCommandLineArguments",
+          "params": [],
+          "returnType": "std::vector<std::string>",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "Utf8FromUtf16",
+          "params": [
+            "utf16_string"
+          ],
+          "returnType": "std::string",
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "utils.h",
+          "specifiers": [
+            "utils.h"
+          ]
+        },
+        {
+          "source": "flutter_windows.h",
+          "specifiers": [
+            "flutter_windows.h"
+          ]
+        },
+        {
+          "source": "io.h",
+          "specifiers": [
+            "io.h"
+          ]
+        },
+        {
+          "source": "stdio.h",
+          "specifiers": [
+            "stdio.h"
+          ]
+        },
+        {
+          "source": "windows.h",
+          "specifiers": [
+            "windows.h"
+          ]
+        },
+        {
+          "source": "iostream",
+          "specifiers": [
+            "iostream"
+          ]
+        }
+      ],
+      "exports": [
+        "CreateAndAttachConsole",
+        "GetCommandLineArguments",
+        "Utf8FromUtf16"
+      ],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/utils.h": {
+      "filePath": "windows/runner/utils.h",
+      "contentHash": "95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/win32_window.cpp": {
+      "filePath": "windows/runner/win32_window.cpp",
+      "contentHash": "9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36",
+      "functions": [
+        {
+          "name": "Scale",
+          "params": [
+            "source",
+            "scale_factor"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "EnableFullDpiSupportIfAvailable",
+          "params": [
+            "hwnd"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "~WindowClassRegistrar",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "WindowClassRegistrar",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "UnregisterWindowClass",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "Win32Window",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "~Win32Window",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "Create",
+          "params": [
+            "title",
+            "origin",
+            "size"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "Show",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "Win32Window::WndProc",
+          "params": [
+            "window",
+            "message",
+            "wparam",
+            "lparam"
+          ],
+          "returnType": "LRESULT",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "MessageHandler",
+          "params": [
+            "hwnd",
+            "message",
+            "wparam",
+            "lparam"
+          ],
+          "returnType": "LRESULT",
+          "exported": true,
+          "lineCount": 47
+        },
+        {
+          "name": "Destroy",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "SetChildContent",
+          "params": [
+            "content"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "GetClientArea",
+          "params": [],
+          "returnType": "RECT",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "GetHandle",
+          "params": [],
+          "returnType": "HWND",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "SetQuitOnClose",
+          "params": [
+            "quit_on_close"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "OnCreate",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "OnDestroy",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "UpdateTheme",
+          "params": [
+            "window"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [
+        {
+          "name": "WindowClassRegistrar",
+          "methods": [
+            "~WindowClassRegistrar",
+            "UnregisterWindowClass",
+            "WindowClassRegistrar"
+          ],
+          "properties": [
+            "GetWindowClass",
+            "instance_",
+            "class_registered_"
+          ],
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "imports": [
+        {
+          "source": "win32_window.h",
+          "specifiers": [
+            "win32_window.h"
+          ]
+        },
+        {
+          "source": "dwmapi.h",
+          "specifiers": [
+            "dwmapi.h"
+          ]
+        },
+        {
+          "source": "flutter_windows.h",
+          "specifiers": [
+            "flutter_windows.h"
+          ]
+        },
+        {
+          "source": "resource.h",
+          "specifiers": [
+            "resource.h"
+          ]
+        }
+      ],
+      "exports": [
+        "Scale",
+        "EnableFullDpiSupportIfAvailable",
+        "~WindowClassRegistrar",
+        "UnregisterWindowClass",
+        "WindowClassRegistrar",
+        "UnregisterWindowClass",
+        "Win32Window",
+        "~Win32Window",
+        "Create",
+        "Show",
+        "Win32Window::WndProc",
+        "MessageHandler",
+        "Destroy",
+        "SetChildContent",
+        "GetClientArea",
+        "GetHandle",
+        "SetQuitOnClose",
+        "OnCreate",
+        "OnDestroy",
+        "UpdateTheme"
+      ],
+      "totalLines": 289,
+      "hasStructuralAnalysis": true
+    },
+    "windows/runner/win32_window.h": {
+      "filePath": "windows/runner/win32_window.h",
+      "contentHash": "7dd03746b19dcf3542829b2f6e8ed40a2714ce5f2cb3b0e23f0118a2fcf62d62",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 103,
+      "hasStructuralAnalysis": true
+    }
+  }
+}
