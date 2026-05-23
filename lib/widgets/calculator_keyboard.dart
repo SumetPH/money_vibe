@@ -28,7 +28,7 @@ class CalculatorKeyboard extends StatelessWidget {
     int start = selection.isValid ? selection.start : text.length;
     int end = selection.isValid ? selection.end : text.length;
 
-    if (key == 'C') {
+    if (key == 'AC') {
       controller.clear();
       return;
     }
@@ -47,6 +47,11 @@ class CalculatorKeyboard extends StatelessWidget {
           selection: TextSelection.collapsed(offset: start),
         );
       }
+      return;
+    }
+
+    if (key == '%') {
+      _handlePercent();
       return;
     }
 
@@ -87,6 +92,52 @@ class CalculatorKeyboard extends StatelessWidget {
     controller.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: start + key.length),
+    );
+  }
+
+  void _handlePercent() {
+    final text = controller.text;
+    if (text.isEmpty) return;
+
+    // Find the last number in the expression (after the last operator)
+    final operatorPattern = RegExp(r'[+\-*/]');
+    int lastOperatorIndex = -1;
+    for (int i = text.length - 1; i >= 0; i--) {
+      // Allow negative sign at the start
+      if (operatorPattern.hasMatch(text[i]) && i > 0) {
+        lastOperatorIndex = i;
+        break;
+      }
+    }
+
+    final numberPart = lastOperatorIndex >= 0
+        ? text.substring(lastOperatorIndex + 1)
+        : text;
+
+    if (numberPart.isEmpty) return;
+
+    final number = double.tryParse(numberPart);
+    if (number == null) return;
+
+    final percentValue = number / 100;
+    String formatted;
+    if (percentValue == percentValue.toInt()) {
+      formatted = percentValue.toInt().toString();
+    } else {
+      formatted = percentValue.toStringAsFixed(2);
+      if (formatted.endsWith('0')) {
+        formatted = formatted.substring(0, formatted.length - 1);
+      }
+    }
+
+    final prefix = lastOperatorIndex >= 0
+        ? text.substring(0, lastOperatorIndex + 1)
+        : '';
+
+    final newText = prefix + formatted;
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
     );
   }
 
@@ -140,7 +191,7 @@ class CalculatorKeyboard extends StatelessWidget {
               children: [
                 // Row 1
                 _buildRow(
-                  ['C', '/', '*', '⌫'],
+                  ['⌫', 'AC', '%', '/'],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -148,7 +199,7 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 2
                 _buildRow(
-                  ['7', '8', '9', '-'],
+                  ['7', '8', '9', '*'],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -156,7 +207,7 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 3
                 _buildRow(
-                  ['4', '5', '6', '+'],
+                  ['4', '5', '6', '-'],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -164,7 +215,7 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 4
                 _buildRow(
-                  ['1', '2', '3', '='],
+                  ['1', '2', '3', '+'],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -172,7 +223,7 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 5
                 _buildRow(
-                  ['0', '.', 'ตกลง'],
+                  ['=', '0', '.', 'ตกลง'],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -194,7 +245,7 @@ class CalculatorKeyboard extends StatelessWidget {
   ) {
     return Row(
       children: keys.map((key) {
-        final isOp = RegExp(r'[+\-*/C⌫=]').hasMatch(key);
+        final isOp = RegExp(r'[+\-*/AC⌫%]').hasMatch(key);
         final isDone = key == 'ตกลง';
 
         Color bg = numBg;
@@ -206,10 +257,7 @@ class CalculatorKeyboard extends StatelessWidget {
           bg = opBg;
         }
 
-        int flex = isDone ? 2 : 1;
-
         return Expanded(
-          flex: flex,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: SizedBox(
