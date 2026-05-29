@@ -1424,7 +1424,8 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                               color: secondaryTextColor,
                               size: 18,
                             ),
-                            style: TextStyle(fontSize: 13, color: textColor),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontSize: 13, color: textColor),
                             dropdownColor: isDarkMode
                                 ? AppColors.darkSurface
                                 : Colors.white,
@@ -1433,10 +1434,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                 value: f,
                                 child: Text(
                                   f.label,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: textColor,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontSize: 13,
+                                        color: textColor,
+                                      ),
                                 ),
                               );
                             }).toList(),
@@ -1771,9 +1773,6 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     DateTime cutoff;
 
     switch (filter) {
-      case _NetWorthPeriodFilter.oneMonth:
-        cutoff = DateTime(now.year, now.month - 1, now.day);
-        break;
       case _NetWorthPeriodFilter.threeMonths:
         cutoff = DateTime(now.year, now.month - 3, now.day);
         break;
@@ -1869,12 +1868,11 @@ class _NetWorthData {
 }
 
 enum _NetWorthPeriodFilter {
-  oneMonth('1 เดือนล่าสุด'),
-  threeMonths('3 เดือนล่าสุด'),
-  sixMonths('6 เดือนล่าสุด'),
-  oneYear('1 ปีล่าสุด'),
-  thisYear('ปีนี้'),
-  all('ทั้งหมด');
+  all('ทั้งหมด'),
+  threeMonths('3 เดือน'),
+  sixMonths('6 เดือน'),
+  oneYear('1 ปี'),
+  thisYear('ปีนี้');
 
   final String label;
   const _NetWorthPeriodFilter(this.label);
