@@ -1194,6 +1194,7 @@ class _NetWorthLineChart extends StatefulWidget {
 
 class _NetWorthLineChartState extends State<_NetWorthLineChart> {
   bool _includeExcluded = false;
+  _NetWorthPeriodFilter _selectedFilter = _NetWorthPeriodFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -1213,6 +1214,10 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
           accountProvider.visibleAccounts,
           accountProvider,
           includeExcluded: _includeExcluded,
+        );
+        final filteredNetWorthData = _filterNetWorthData(
+          netWorthData,
+          _selectedFilter,
         );
 
         if (netWorthData.isEmpty) {
@@ -1382,164 +1387,250 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'แนวโน้มทรัพย์สินสุทธิ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ตั้งแต่ ${_formatDate(netWorthData.first.date)} - ${_formatDate(netWorthData.last.date)}',
-                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: LineChart(
-                        LineChartData(
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            horizontalInterval: _getHorizontalInterval(
-                              netWorthData,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'แนวโน้มทรัพย์สินสุทธิ',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                filteredNetWorthData.isEmpty
+                                    ? ''
+                                    : 'ตั้งแต่ ${_formatDate(filteredNetWorthData.first.date)} - ${_formatDate(filteredNetWorthData.last.date)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<_NetWorthPeriodFilter>(
+                            value: _selectedFilter,
+                            icon: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: secondaryTextColor,
+                              size: 18,
                             ),
-                            getDrawingHorizontalLine: (value) {
-                              return FlLine(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                                strokeWidth: 1,
+                            style: TextStyle(fontSize: 13, color: textColor),
+                            dropdownColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : Colors.white,
+                            items: _NetWorthPeriodFilter.values.map((f) {
+                              return DropdownMenuItem<_NetWorthPeriodFilter>(
+                                value: f,
+                                child: Text(
+                                  f.label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: textColor,
+                                  ),
+                                ),
                               );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedFilter = value);
+                              }
                             },
                           ),
-                          titlesData: FlTitlesData(
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 32,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == meta.min || value == meta.max) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return SizedBox(
-                                    width: 32,
-                                    child: Text(
-                                      _formatCompact(value),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: secondaryTextColor,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 28,
-                                interval: _getBottomInterval(
-                                  netWorthData,
-                                ).toDouble(),
-                                getTitlesWidget: (value, meta) {
-                                  final idx = value.round();
-                                  if (value != idx.toDouble()) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  if (idx < 0 || idx >= netWorthData.length) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      _formatMonthYear(netWorthData[idx].date),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: secondaryTextColor,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  return SizedBox();
-                                },
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: netWorthData.asMap().entries.map((entry) {
-                                return FlSpot(
-                                  entry.key.toDouble(),
-                                  entry.value.netWorth,
-                                );
-                              }).toList(),
-                              isCurved: true,
-                              color: lineColor,
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: FlDotData(
-                                show: netWorthData.length <= 30,
-                                getDotPainter: (spot, percent, barData, index) {
-                                  return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: isDarkMode
-                                        ? AppColors.darkSurface
-                                        : Colors.white,
-                                    strokeWidth: 2,
-                                    strokeColor: lineColor,
-                                  );
-                                },
-                              ),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: lineColor.withValues(alpha: 0.1),
-                              ),
-                            ),
-                          ],
-                          lineTouchData: LineTouchData(
-                            enabled: true,
-                            touchTooltipData: LineTouchTooltipData(
-                              tooltipRoundedRadius: 8,
-                              getTooltipItems: (touchedSpots) {
-                                return touchedSpots.map((spot) {
-                                  final data = netWorthData[spot.x.toInt()];
-                                  return LineTooltipItem(
-                                    '${_formatDate(data.date)}\n',
-                                    TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text: formatAmount(data.netWorth),
-                                        style: TextStyle(
-                                          color: lineColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList();
-                              },
-                            ),
-                          ),
-                          maxY: _getMaxY(netWorthData),
-                          minY: _getMinY(netWorthData),
                         ),
-                      ),
+                      ],
                     ),
+                    const SizedBox(height: 16),
+                    filteredNetWorthData.isEmpty
+                        ? Expanded(
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.show_chart,
+                                    size: 48,
+                                    color: secondaryTextColor,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'ยังไม่มีข้อมูลในช่วงเวลาที่เลือก',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: secondaryTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : Expanded(
+                            child: LineChart(
+                              LineChartData(
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  horizontalInterval: _getHorizontalInterval(
+                                    filteredNetWorthData,
+                                  ),
+                                  getDrawingHorizontalLine: (value) {
+                                    return FlLine(
+                                      color: isDarkMode
+                                          ? AppColors.darkDivider
+                                          : AppColors.divider,
+                                      strokeWidth: 1,
+                                    );
+                                  },
+                                ),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 32,
+                                      getTitlesWidget: (value, meta) {
+                                        if (value == meta.min ||
+                                            value == meta.max) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return SizedBox(
+                                          width: 32,
+                                          child: Text(
+                                            _formatCompact(value),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: secondaryTextColor,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 28,
+                                      interval: _getBottomInterval(
+                                        filteredNetWorthData,
+                                      ).toDouble(),
+                                      getTitlesWidget: (value, meta) {
+                                        final idx = value.round();
+                                        if (value != idx.toDouble()) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        if (idx < 0 ||
+                                            idx >=
+                                                filteredNetWorthData.length) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: Text(
+                                            _formatMonthYear(
+                                              filteredNetWorthData[idx].date,
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: secondaryTextColor,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        return SizedBox();
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: filteredNetWorthData
+                                        .asMap()
+                                        .entries
+                                        .map((entry) {
+                                          return FlSpot(
+                                            entry.key.toDouble(),
+                                            entry.value.netWorth,
+                                          );
+                                        })
+                                        .toList(),
+                                    isCurved: true,
+                                    color: lineColor,
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: FlDotData(
+                                      show: filteredNetWorthData.length <= 30,
+                                      getDotPainter:
+                                          (spot, percent, barData, index) {
+                                            return FlDotCirclePainter(
+                                              radius: 4,
+                                              color: isDarkMode
+                                                  ? AppColors.darkSurface
+                                                  : Colors.white,
+                                              strokeWidth: 2,
+                                              strokeColor: lineColor,
+                                            );
+                                          },
+                                    ),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: lineColor.withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                ],
+                                lineTouchData: LineTouchData(
+                                  enabled: true,
+                                  touchTooltipData: LineTouchTooltipData(
+                                    tooltipRoundedRadius: 8,
+                                    getTooltipItems: (touchedSpots) {
+                                      return touchedSpots.map((spot) {
+                                        final data =
+                                            filteredNetWorthData[spot.x
+                                                .toInt()];
+                                        return LineTooltipItem(
+                                          '${_formatDate(data.date)}\n',
+                                          TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: formatAmount(data.netWorth),
+                                              style: TextStyle(
+                                                color: lineColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList();
+                                    },
+                                  ),
+                                ),
+                                maxY: _getMaxY(filteredNetWorthData),
+                                minY: _getMinY(filteredNetWorthData),
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ),
@@ -1670,6 +1761,40 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     return result;
   }
 
+  List<_NetWorthData> _filterNetWorthData(
+    List<_NetWorthData> data,
+    _NetWorthPeriodFilter filter,
+  ) {
+    if (data.isEmpty || filter == _NetWorthPeriodFilter.all) return data;
+
+    final now = DateTime.now();
+    DateTime cutoff;
+
+    switch (filter) {
+      case _NetWorthPeriodFilter.oneMonth:
+        cutoff = DateTime(now.year, now.month - 1, now.day);
+        break;
+      case _NetWorthPeriodFilter.threeMonths:
+        cutoff = DateTime(now.year, now.month - 3, now.day);
+        break;
+      case _NetWorthPeriodFilter.sixMonths:
+        cutoff = DateTime(now.year, now.month - 6, now.day);
+        break;
+      case _NetWorthPeriodFilter.oneYear:
+        cutoff = DateTime(now.year - 1, now.month, now.day);
+        break;
+      case _NetWorthPeriodFilter.thisYear:
+        cutoff = DateTime(now.year, 1, 1);
+        break;
+      case _NetWorthPeriodFilter.all:
+        return data;
+    }
+
+    return data
+        .where((d) => d.date.isAfter(cutoff) || d.date.isAtSameMomentAs(cutoff))
+        .toList();
+  }
+
   double _getMaxY(List<_NetWorthData> data) {
     if (data.isEmpty) return 100;
     final max = data.map((d) => d.netWorth).reduce((a, b) => a > b ? a : b);
@@ -1741,4 +1866,16 @@ class _NetWorthData {
   final double netWorth;
 
   _NetWorthData({required this.date, required this.netWorth});
+}
+
+enum _NetWorthPeriodFilter {
+  oneMonth('1 เดือนล่าสุด'),
+  threeMonths('3 เดือนล่าสุด'),
+  sixMonths('6 เดือนล่าสุด'),
+  oneYear('1 ปีล่าสุด'),
+  thisYear('ปีนี้'),
+  all('ทั้งหมด');
+
+  final String label;
+  const _NetWorthPeriodFilter(this.label);
 }
