@@ -7,6 +7,7 @@ import '../providers/transaction_provider.dart';
 import '../theme/app_colors.dart';
 import '../main.dart';
 import 'account_icon_widget.dart';
+import 'group_header.dart';
 
 /// วิดเจ็ตเลือกบัญชีแบบ Bottom Sheet (Deep Module)
 /// จัดการดึงข้อมูล จัดกลุ่ม เรียงลำดับ และดึงยอดเงินด้วยตัวเอง
@@ -133,35 +134,11 @@ class AccountPickerBottomSheet extends StatelessWidget {
               itemBuilder: (ctx, groupIndex) {
                 final groupName = orderedGroups[groupIndex];
                 final groupAccounts = groupedAccounts[groupName]!;
-                final headerBgColor = isDarkMode
-                    ? AppColors.darkBackground
-                    : AppColors.background;
-                final headerTextColor = isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section Header
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        color: headerBgColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Text(
-                          groupName,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: headerTextColor,
-                          ),
-                        ),
-                      ),
-                    ),
+                    GroupHeader(title: groupName, isDarkMode: isDarkMode),
                     // Account Items
                     ...groupAccounts.map((acc) {
                       final balance = accountProvider.getBalance(

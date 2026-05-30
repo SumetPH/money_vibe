@@ -972,23 +972,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                 children: [
                   for (final groupName in groupOrder)
                     if (grouped.containsKey(groupName)) ...[
-                      Container(
-                        color: isDarkMode
-                            ? AppColors.darkBackground
-                            : AppColors.background,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Text(
-                          groupName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textSecondary,
-                          ),
-                        ),
-                      ),
+                      GroupHeader(title: groupName, isDarkMode: isDarkMode),
                       for (final account in grouped[groupName]!)
                         CheckboxListTile(
                           tileColor: bgColor,

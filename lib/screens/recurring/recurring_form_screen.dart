@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/group_header.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 
@@ -1019,35 +1020,11 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 itemBuilder: (context, groupIndex) {
                   final groupName = orderedGroups[groupIndex];
                   final groupAccounts = groupedAccounts[groupName]!;
-                  final headerBgColor = isDark
-                      ? AppColors.darkBackground
-                      : AppColors.background;
-                  final headerTextColor = isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Section Header
-                      SizedBox(
-                        width: double.infinity,
-                        child: Container(
-                          color: headerBgColor,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            groupName,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: headerTextColor,
-                            ),
-                          ),
-                        ),
-                      ),
+                      GroupHeader(title: groupName, isDarkMode: isDark),
                       // Account items
                       ...groupAccounts.map((acc) {
                         final currentId = isDestination
@@ -1157,35 +1134,11 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 itemBuilder: (context, groupIndex) {
                   final groupName = orderedGroups[groupIndex];
                   final groupAccounts = groupedAccounts[groupName]!;
-                  final headerBgColor = isDark
-                      ? AppColors.darkBackground
-                      : AppColors.background;
-                  final headerTextColor = isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Section Header
-                      SizedBox(
-                        width: double.infinity,
-                        child: Container(
-                          color: headerBgColor,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            groupName,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: headerTextColor,
-                            ),
-                          ),
-                        ),
-                      ),
+                      GroupHeader(title: groupName, isDarkMode: isDark),
                       // Account items
                       ...groupAccounts.map((acc) {
                         final isSelected = _debtAccountId == acc.id;

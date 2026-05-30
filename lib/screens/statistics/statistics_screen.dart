@@ -1522,6 +1522,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                       reservedSize: 28,
                                       interval: _getBottomInterval(
                                         filteredNetWorthData,
+                                        _selectedFilter,
                                       ).toDouble(),
                                       getTitlesWidget: (value, meta) {
                                         final idx = value.round();
@@ -1774,13 +1775,13 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
 
     switch (filter) {
       case _NetWorthPeriodFilter.threeMonths:
-        cutoff = DateTime(now.year, now.month - 3, now.day);
+        cutoff = DateTime(now.year, now.month - 2, 1);
         break;
       case _NetWorthPeriodFilter.sixMonths:
-        cutoff = DateTime(now.year, now.month - 6, now.day);
+        cutoff = DateTime(now.year, now.month - 5, 1);
         break;
       case _NetWorthPeriodFilter.oneYear:
-        cutoff = DateTime(now.year - 1, now.month, now.day);
+        cutoff = DateTime(now.year, now.month - 11, 1);
         break;
       case _NetWorthPeriodFilter.thisYear:
         cutoff = DateTime(now.year, 1, 1);
@@ -1819,7 +1820,13 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     return range / 5;
   }
 
-  int _getBottomInterval(List<_NetWorthData> data) {
+  int _getBottomInterval(
+    List<_NetWorthData> data,
+    _NetWorthPeriodFilter filter,
+  ) {
+    if (filter == _NetWorthPeriodFilter.oneYear) {
+      return 6;
+    }
     final length = data.length;
     if (length <= 12) return 1;
     if (length <= 24) return 2;
