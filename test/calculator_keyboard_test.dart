@@ -30,7 +30,7 @@ void main() {
 
     // Verify buttons are rendered
     expect(find.text('7'), findsOneWidget);
-    expect(find.text('C'), findsOneWidget);
+    expect(find.text('AC'), findsOneWidget);
     expect(find.text('ตกลง'), findsOneWidget);
 
     // Tap '7', '8', '+'

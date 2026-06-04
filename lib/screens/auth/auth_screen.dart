@@ -8,6 +8,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../settings/data_management_screen.dart';
 import '../../theme/app_colors.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -415,6 +416,28 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: TextStyle(color: secondaryTextColor),
                       ),
                     ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const DataManagementScreen(),
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.settings_outlined, size: 18),
+                    label: const Text('ตั้งค่า Supabase'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: secondaryTextColor,
+                      side: BorderSide(
+                        color: isDarkMode
+                            ? AppColors.darkDivider
+                            : AppColors.divider,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -346,6 +346,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
@@ -529,128 +530,137 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                if (authProvider.isLoggedIn) ...[
+                  const SizedBox(height: 24),
 
-                // ========== SECTION: BACKUP/RESTORE ==========
-                _buildSectionTitle(
-                  'สำรองและกู้คืน',
-                  textColor,
-                  secondaryTextColor,
-                ),
-                const SizedBox(height: 8),
-
-                // CSV Export/Import
-                _buildCard(
-                  surfaceColor: surfaceColor,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.insert_drive_file,
-                            color: Colors.green,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ส่งออก/นำเข้า (CSV)',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: textColor,
-                                  ),
-                                ),
-                                Text(
-                                  'รองรับข้าม Platform (Android ↔ iOS)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: secondaryTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _exportData,
-                              icon: const Icon(Icons.upload, size: 18),
-                              label: const Text('Export'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _importData,
-                              icon: const Icon(Icons.download, size: 18),
-                              label: const Text('Import'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.teal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  // ========== SECTION: BACKUP/RESTORE ==========
+                  _buildSectionTitle(
+                    'สำรองและกู้คืน',
+                    textColor,
+                    secondaryTextColor,
                   ),
-                ),
+                  const SizedBox(height: 8),
 
-                const SizedBox(height: 24),
-
-                // ========== SECTION: CLEAR DATA ==========
-                _buildSectionTitle('ล้างข้อมูล', textColor, secondaryTextColor),
-                const SizedBox(height: 8),
-                _buildCard(
-                  surfaceColor: surfaceColor,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.expense.withAlpha(26),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
+                  // CSV Export/Import
+                  _buildCard(
+                    surfaceColor: surfaceColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Icon(Icons.warning_amber, color: AppColors.expense),
+                            Icon(
+                              Icons.insert_drive_file,
+                              color: AppColors.income,
+                              size: 28,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                'การล้างข้อมูลจะลบข้อมูลทั้งหมดอย่างถาวร และไม่สามารถกู้คืนได้',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: textColor,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ส่งออก/นำเข้า (CSV)',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    'รองรับข้าม Platform (Android ↔ iOS)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: secondaryTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _exportData,
+                                icon: const Icon(Icons.upload, size: 18),
+                                label: const Text('Export'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _importData,
+                                icon: const Icon(Icons.download, size: 18),
+                                label: const Text('Import'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.transfer,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _clearData,
-                          icon: const Icon(Icons.delete_forever, size: 18),
-                          label: const Text('ล้างข้อมูลทั้งหมด'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.expense,
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ========== SECTION: CLEAR DATA ==========
+                  _buildSectionTitle(
+                    'ล้างข้อมูล',
+                    textColor,
+                    secondaryTextColor,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCard(
+                    surfaceColor: surfaceColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.expense.withAlpha(26),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber,
+                                color: AppColors.expense,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'การล้างข้อมูลจะลบข้อมูลทั้งหมดอย่างถาวร และไม่สามารถกู้คืนได้',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: _clearData,
+                            icon: const Icon(Icons.delete_forever, size: 18),
+                            label: const Text('ล้างข้อมูลทั้งหมด'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.expense,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
 
                 const SizedBox(height: 24),
 
