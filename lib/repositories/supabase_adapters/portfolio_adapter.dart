@@ -33,6 +33,7 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
       'sell_plan_enabled': holding.sellPlanEnabled,
       'take_profit_pct': holding.takeProfitPct,
       'trailing_stop_pct': holding.trailingStopPct,
+      'stop_loss_pct': holding.stopLossPct,
       'peak_profit_pct': holding.peakProfitPct,
       'portfolio_group': holding.portfolioGroup,
     };

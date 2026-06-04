@@ -440,9 +440,13 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 
   _SellPlanStatusHelper? _buildSellPlanStatus() {
     if (!widget.holding.sellPlanEnabled ||
-        !widget.holding.canCalculateSellPlan ||
-        widget.holding.takeProfitPct <= 0 ||
-        widget.holding.trailingStopPct <= 0) {
+        !widget.holding.canCalculateSellPlan) {
+      return null;
+    }
+
+    if (widget.holding.takeProfitPct <= 0 &&
+        widget.holding.trailingStopPct <= 0 &&
+        widget.holding.stopLossPct <= 0) {
       return null;
     }
 
@@ -459,42 +463,70 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     final surfaceColor = widget.isDarkMode
         ? AppColors.darkSurface
         : AppColors.surface;
-    final peakProfitPct = widget.holding.peakProfitPct;
 
-    if (peakProfitPct == null) {
+    // 1. Check Stop Loss
+    if (widget.holding.stopLossPct > 0 &&
+        currentPnlPct <= -widget.holding.stopLossPct) {
+      final stopLossPrice =
+          widget.holding.costBasisUsd *
+          (1 - (widget.holding.stopLossPct / 100));
       return _SellPlanStatusHelper(
-        title: 'ยังไม่ถึงเป้า',
+        title: 'ขายได้แล้ว (Stop Loss)',
         message:
-            'เป้า ${_formatSignedPct(widget.holding.takeProfitPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
-        textColor: textSecondaryColor,
-        backgroundColor: surfaceColor,
-      );
-    }
-
-    final trailingStopTriggerPct = math.max(
-      widget.holding.takeProfitPct,
-      peakProfitPct - widget.holding.trailingStopPct,
-    );
-    final trailingStopPrice = _calculateStopPrice(
-      costBasisUsd: widget.holding.costBasisUsd,
-      stopProfitPct: trailingStopTriggerPct,
-    );
-    if (currentPnlPct <= trailingStopTriggerPct) {
-      return _SellPlanStatusHelper(
-        title: 'ขายได้แล้ว',
-        message:
-            'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+            'Stop Loss \$${stopLossPrice.toStringAsFixed(2)} • -${widget.holding.stopLossPct.toStringAsFixed(2)}% • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
         textColor: expenseColor,
         backgroundColor: surfaceColor,
       );
     }
 
-    final remainingPct = currentPnlPct - trailingStopTriggerPct;
+    // 2. Check Take Profit & Trailing Stop
+    if (widget.holding.takeProfitPct > 0 &&
+        widget.holding.trailingStopPct > 0) {
+      final peakProfitPct = widget.holding.peakProfitPct;
+      if (peakProfitPct != null) {
+        final trailingStopTriggerPct = math.max(
+          widget.holding.takeProfitPct,
+          peakProfitPct - widget.holding.trailingStopPct,
+        );
+        final trailingStopPrice = _calculateStopPrice(
+          costBasisUsd: widget.holding.costBasisUsd,
+          stopProfitPct: trailingStopTriggerPct,
+        );
+        if (currentPnlPct <= trailingStopTriggerPct) {
+          return _SellPlanStatusHelper(
+            title: 'ขายได้แล้ว',
+            message:
+                'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+            textColor: expenseColor,
+            backgroundColor: surfaceColor,
+          );
+        }
+
+        final remainingPct = currentPnlPct - trailingStopTriggerPct;
+        return _SellPlanStatusHelper(
+          title: 'ถึงเป้าแล้ว รอ Trailing Stop',
+          message:
+              'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • เหลืออีก ${remainingPct.toStringAsFixed(2)}%',
+          textColor: incomeColor,
+          backgroundColor: surfaceColor,
+        );
+      }
+    }
+
+    // 3. Still active but target/cut not hit yet
+    final List<String> parts = [];
+    if (widget.holding.takeProfitPct > 0) {
+      parts.add('เป้า ${_formatSignedPct(widget.holding.takeProfitPct)}');
+    }
+    if (widget.holding.stopLossPct > 0) {
+      parts.add('Cut -${widget.holding.stopLossPct.toStringAsFixed(2)}%');
+    }
+    parts.add('ตอนนี้ ${_formatSignedPct(currentPnlPct)}');
+
     return _SellPlanStatusHelper(
-      title: 'ถึงเป้าแล้ว รอ Trailing Stop',
-      message:
-          'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • เหลืออีก ${remainingPct.toStringAsFixed(2)}%',
-      textColor: incomeColor,
+      title: 'ยังไม่ถึงเป้า',
+      message: parts.join(' • '),
+      textColor: textSecondaryColor,
       backgroundColor: surfaceColor,
     );
   }
@@ -512,9 +544,13 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 
   Widget? _buildSellPlanBadgeWidget() {
     if (!widget.holding.sellPlanEnabled ||
-        !widget.holding.canCalculateSellPlan ||
-        widget.holding.takeProfitPct <= 0 ||
-        widget.holding.trailingStopPct <= 0) {
+        !widget.holding.canCalculateSellPlan) {
+      return null;
+    }
+
+    if (widget.holding.takeProfitPct <= 0 &&
+        widget.holding.trailingStopPct <= 0 &&
+        widget.holding.stopLossPct <= 0) {
       return null;
     }
 
@@ -528,36 +564,10 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         ? AppColors.darkExpense
         : AppColors.expense;
 
-    if (peakProfitPct == null) {
-      // ยังไม่ถึงเป้า - Show a tiny blue dot representing sell plan is active
-      return Container(
-        width: 15,
-        height: 15,
-        decoration: BoxDecoration(
-          color: Colors.blue.shade400,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: expenseColor.withValues(alpha: 0.3),
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final trailingStopTriggerPct = math.max(
-      widget.holding.takeProfitPct,
-      peakProfitPct - widget.holding.trailingStopPct,
-    );
-
-    if (currentPnlPct <= trailingStopTriggerPct) {
-      // ขายได้แล้ว (Sell signal!) - Show a prominent red warning badge with a white exclamation mark
+    // 1. Check Stop Loss
+    if (widget.holding.stopLossPct > 0 &&
+        currentPnlPct <= -widget.holding.stopLossPct) {
+      // ขายได้แล้ว (Stop Loss!) - Show a prominent red warning badge with a white exclamation mark
       return Container(
         width: 15,
         height: 15,
@@ -590,12 +600,85 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
       );
     }
 
-    // ถึงเป้าแล้ว รอ Trailing Stop - Show a green badge with trending_up icon
+    // 2. Check Take Profit & Trailing Stop
+    if (widget.holding.takeProfitPct > 0 &&
+        widget.holding.trailingStopPct > 0) {
+      if (peakProfitPct != null) {
+        final trailingStopTriggerPct = math.max(
+          widget.holding.takeProfitPct,
+          peakProfitPct - widget.holding.trailingStopPct,
+        );
+
+        if (currentPnlPct <= trailingStopTriggerPct) {
+          // ขายได้แล้ว (Sell signal!) - Show a prominent red warning badge with a white exclamation mark
+          return Container(
+            width: 15,
+            height: 15,
+            decoration: BoxDecoration(
+              color: expenseColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: expenseColor.withValues(alpha: 0.3),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                '!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  height: 1.0,
+                ),
+              ),
+            ),
+          );
+        }
+
+        // ถึงเป้าแล้ว รอ Trailing Stop - Show a green badge with trending_up icon
+        return Container(
+          width: 15,
+          height: 15,
+          decoration: BoxDecoration(
+            color: incomeColor,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: incomeColor.withValues(alpha: 0.3),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.trending_up_rounded,
+              color: Colors.white,
+              size: 8,
+            ),
+          ),
+        );
+      }
+    }
+
+    // ยังไม่ถึงเป้า - Show a tiny blue dot representing sell plan is active
     return Container(
       width: 15,
       height: 15,
       decoration: BoxDecoration(
-        color: incomeColor,
+        color: Colors.blue.shade400,
         shape: BoxShape.circle,
         border: Border.all(
           color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
@@ -603,14 +686,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         ),
         boxShadow: [
           BoxShadow(
-            color: incomeColor.withValues(alpha: 0.3),
+            color: expenseColor.withValues(alpha: 0.3),
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),
         ],
-      ),
-      child: const Center(
-        child: Icon(Icons.trending_up_rounded, color: Colors.white, size: 8),
       ),
     );
   }

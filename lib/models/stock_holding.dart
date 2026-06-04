@@ -11,6 +11,7 @@ class StockHolding {
   bool sellPlanEnabled;
   double takeProfitPct;
   double trailingStopPct;
+  double stopLossPct;
   double? peakProfitPct;
   String portfolioGroup;
 
@@ -27,6 +28,7 @@ class StockHolding {
     this.sellPlanEnabled = false,
     this.takeProfitPct = 0,
     this.trailingStopPct = 0,
+    this.stopLossPct = 0,
     this.peakProfitPct,
     this.portfolioGroup = '',
   });
@@ -55,6 +57,7 @@ class StockHolding {
     'sell_plan_enabled': sellPlanEnabled,
     'take_profit_pct': takeProfitPct,
     'trailing_stop_pct': trailingStopPct,
+    'stop_loss_pct': stopLossPct,
     'peak_profit_pct': peakProfitPct,
     'portfolio_group': portfolioGroup,
   };
@@ -72,6 +75,7 @@ class StockHolding {
     sellPlanEnabled: m['sell_plan_enabled'] as bool? ?? false,
     takeProfitPct: (m['take_profit_pct'] as num? ?? 0).toDouble(),
     trailingStopPct: (m['trailing_stop_pct'] as num? ?? 0).toDouble(),
+    stopLossPct: (m['stop_loss_pct'] as num? ?? 0).toDouble(),
     peakProfitPct: (m['peak_profit_pct'] as num?)?.toDouble(),
     portfolioGroup: m['portfolio_group'] as String? ?? '',
   );
@@ -87,6 +91,7 @@ class StockHolding {
     bool? sellPlanEnabled,
     double? takeProfitPct,
     double? trailingStopPct,
+    double? stopLossPct,
     Object? peakProfitPct = _noPeakProfitPct,
     String? portfolioGroup,
   }) => StockHolding(
@@ -102,6 +107,7 @@ class StockHolding {
     sellPlanEnabled: sellPlanEnabled ?? this.sellPlanEnabled,
     takeProfitPct: takeProfitPct ?? this.takeProfitPct,
     trailingStopPct: trailingStopPct ?? this.trailingStopPct,
+    stopLossPct: stopLossPct ?? this.stopLossPct,
     peakProfitPct: identical(peakProfitPct, _noPeakProfitPct)
         ? this.peakProfitPct
         : peakProfitPct as double?,

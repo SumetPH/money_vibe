@@ -45,11 +45,13 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   final _costController = TextEditingController();
   final _takeProfitController = TextEditingController();
   final _trailingStopController = TextEditingController();
+  final _stopLossController = TextEditingController();
   final _peakProfitController = TextEditingController();
   bool _isSaving = false;
   bool _sellPlanEnabled = false;
   String? _takeProfitError;
   String? _trailingStopError;
+  String? _stopLossError;
   String? _peakProfitError;
   String? _sellPlanError;
 
@@ -74,9 +76,17 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       if (holding.trailingStopPct > 0) {
         _trailingStopController.text = _formatNum(holding.trailingStopPct);
       }
+      if (holding.stopLossPct > 0) {
+        _stopLossController.text = _formatNum(holding.stopLossPct);
+      }
       if (holding.peakProfitPct != null) {
         _peakProfitController.text = _formatPct(holding.peakProfitPct!);
       }
+    } else {
+      _sellPlanEnabled = true;
+      _takeProfitController.text = '10';
+      _trailingStopController.text = '3';
+      _stopLossController.text = '3';
     }
   }
 
@@ -89,6 +99,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     _costController.dispose();
     _takeProfitController.dispose();
     _trailingStopController.dispose();
+    _stopLossController.dispose();
     _peakProfitController.dispose();
     super.dispose();
   }
@@ -122,6 +133,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     final takeProfit = double.tryParse(_takeProfitController.text.trim()) ?? 0;
     final trailingStop =
         double.tryParse(_trailingStopController.text.trim()) ?? 0;
+    final stopLoss = double.tryParse(_stopLossController.text.trim()) ?? 0;
     final peakProfitText = _peakProfitController.text.trim();
     final manualPeakProfit = peakProfitText.isEmpty
         ? null
@@ -130,6 +142,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     setState(() {
       _takeProfitError = null;
       _trailingStopError = null;
+      _stopLossError = null;
       _peakProfitError = null;
       _sellPlanError = null;
     });
@@ -146,6 +159,10 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       }
       if (trailingStop <= 0) {
         _trailingStopError = 'กรุณากรอก Trailing Stop %';
+        hasError = true;
+      }
+      if (stopLoss <= 0) {
+        _stopLossError = 'กรุณากรอก Stop Loss %';
         hasError = true;
       }
       if (peakProfitText.isNotEmpty && manualPeakProfit == null) {
@@ -187,6 +204,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       trailingStopPct: _sellPlanEnabled
           ? trailingStop
           : (widget.existing?.trailingStopPct ?? trailingStop),
+      stopLossPct: _sellPlanEnabled
+          ? stopLoss
+          : (widget.existing?.stopLossPct ?? stopLoss),
       peakProfitPct: _sellPlanEnabled
           ? peakProfitPct
           : widget.existing?.peakProfitPct,
@@ -275,6 +295,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       sellPlanEnabled: sellPlanEnabled,
       takeProfitPct: takeProfitPct,
       trailingStopPct: existing.trailingStopPct,
+      stopLossPct: existing.stopLossPct,
       peakProfitPct: existing.peakProfitPct,
     ).hasInvestmentBasisChangedFrom(existing);
     if (basisChanged || !existing.sellPlanEnabled) {
@@ -515,6 +536,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     _sellPlanEnabled = value;
                     _takeProfitError = null;
                     _trailingStopError = null;
+                    _stopLossError = null;
                     _peakProfitError = null;
                     _sellPlanError = null;
                   });
@@ -529,7 +551,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  'ตั้ง Take Profit % และ Trailing Stop %',
+                  'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss %',
                   style: TextStyle(fontSize: 13, color: labelColor),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -551,6 +573,14 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _trailingStopError,
+              ),
+              _buildDivider(isDarkMode),
+              _HoldingNumberFieldRow(
+                label: 'Stop Loss %',
+                controller: _stopLossController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _stopLossError,
               ),
               _buildDivider(isDarkMode),
               _HoldingNumberFieldRow(

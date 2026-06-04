@@ -343,6 +343,7 @@ class CsvService {
         'sell_plan_enabled',
         'take_profit_pct',
         'trailing_stop_pct',
+        'stop_loss_pct',
         'peak_profit_pct',
       ],
     ];
@@ -361,6 +362,7 @@ class CsvService {
         holding.sellPlanEnabled,
         holding.takeProfitPct,
         holding.trailingStopPct,
+        holding.stopLossPct,
         holding.peakProfitPct ?? '',
       ]);
     }
@@ -748,9 +750,14 @@ class CsvService {
           trailingStopPct: row.length > 11
               ? (double.tryParse(row[11]?.toString() ?? '0') ?? 0)
               : 0,
-          peakProfitPct: row.length > 12
-              ? double.tryParse(row[12]?.toString() ?? '')
-              : null,
+          stopLossPct: row.length > 13
+              ? (double.tryParse(row[12]?.toString() ?? '0') ?? 0)
+              : 0,
+          peakProfitPct: row.length > 13
+              ? double.tryParse(row[13]?.toString() ?? '')
+              : (row.length > 12
+                    ? double.tryParse(row[12]?.toString() ?? '')
+                    : null),
         ),
       );
     }
