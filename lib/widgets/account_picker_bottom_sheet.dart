@@ -38,7 +38,7 @@ class AccountPickerBottomSheet extends StatelessWidget {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -109,7 +109,7 @@ class AccountPickerBottomSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkDivider : Colors.grey.shade300,
+              color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

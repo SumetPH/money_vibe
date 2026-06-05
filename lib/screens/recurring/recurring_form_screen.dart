@@ -10,8 +10,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/account_icon_widget.dart';
-import '../../widgets/group_header.dart';
+import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 
@@ -592,8 +591,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   value: selectedAccount?.name ?? 'เลือกบัญชี',
                   surfaceColor: surfaceColor,
                   textSecondary: textSecondary,
-                  onTap: () =>
-                      _pickAccount(accounts, isDark, isDestination: false),
+                  onTap: () => _pickAccount(accounts, isDestination: false),
                 ),
                 Divider(height: 1, color: dividerColor),
 
@@ -610,8 +608,8 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     surfaceColor: surfaceColor,
                     textSecondary: textSecondary,
                     onTap: () => _type == TransactionType.debtTransfer
-                        ? _pickDebtAccount(accountProvider, isDark)
-                        : _pickAccount(accounts, isDark, isDestination: true),
+                        ? _pickDebtAccount()
+                        : _pickAccount(accounts, isDestination: true),
                   ),
                   Divider(height: 1, color: dividerColor),
                 ],
@@ -623,7 +621,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     value: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สิน',
                     surfaceColor: surfaceColor,
                     textSecondary: textSecondary,
-                    onTap: () => _pickDebtAccount(accountProvider, isDark),
+                    onTap: _pickDebtAccount,
                   ),
                   Divider(height: 1, color: dividerColor),
                 ],
@@ -956,228 +954,41 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     );
   }
 
-  void _pickAccount(
-    List<Account> accounts,
-    bool isDark, {
+  Future<void> _pickAccount(
+    List<Account> accounts, {
     required bool isDestination,
-  }) {
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
-    final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    // Group accounts by display group
-    final Map<String, List<Account>> groupedAccounts = {};
-    for (final account in accounts) {
-      final group = accountTypeDisplayGroup(account.type);
-      groupedAccounts.putIfAbsent(group, () => []).add(account);
-    }
-
-    // Sort each group by sortOrder
-    for (final group in groupedAccounts.keys) {
-      groupedAccounts[group]!.sort(
-        (a, b) => a.sortOrder.compareTo(b.sortOrder),
-      );
-    }
-
-    // Display order - use actual groups from groupedAccounts
-    const groupOrder = ['เงินสด / เงินฝาก', 'บัตรเครดิต', 'หนี้สิน', 'ลงทุน'];
-    final orderedGroups = groupOrder
-        .where(groupedAccounts.containsKey)
-        .toList();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, sc) => Column(
-          children: [
-            _Handle(color: handleColor),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                isDestination ? 'บัญชีปลายทาง' : 'เลือกบัญชี',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textColor,
-                ),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: orderedGroups.length,
-                itemBuilder: (context, groupIndex) {
-                  final groupName = orderedGroups[groupIndex];
-                  final groupAccounts = groupedAccounts[groupName]!;
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GroupHeader(title: groupName, isDarkMode: isDark),
-                      // Account items
-                      ...groupAccounts.map((acc) {
-                        final currentId = isDestination
-                            ? _toAccountId
-                            : _accountId;
-                        final isSelected = currentId == acc.id;
-                        return Column(
-                          children: [
-                            ListTile(
-                              tileColor: bgColor,
-                              leading: AccountIconWidget(
-                                account: acc,
-                                size: 36,
-                                isDarkMode: isDark,
-                              ),
-                              title: Text(
-                                acc.name,
-                                style: TextStyle(color: textColor),
-                              ),
-                              trailing: isSelected
-                                  ? Icon(Icons.check, color: selectedColor)
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  if (isDestination) {
-                                    _toAccountId = acc.id;
-                                  } else {
-                                    _accountId = acc.id;
-                                  }
-                                });
-                                Navigator.pop(context);
-                              },
-                            ),
-                            Divider(height: 1, color: dividerColor),
-                          ],
-                        );
-                      }),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+  }) async {
+    final selectedId = await AccountPickerBottomSheet.show(
+      context,
+      title: isDestination ? 'บัญชีปลายทาง' : 'เลือกบัญชี',
+      selectedAccountId: isDestination ? _toAccountId : _accountId,
+      accountsOverride: accounts,
     );
+
+    if (selectedId == null || !mounted) return;
+
+    setState(() {
+      if (isDestination) {
+        _toAccountId = selectedId;
+      } else {
+        _accountId = selectedId;
+      }
+    });
   }
 
-  void _pickDebtAccount(AccountProvider accountProvider, bool isDark) {
-    final debtAccounts = accountProvider.debtAccounts;
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
-    final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    // Group debt accounts by display group
-    final Map<String, List<Account>> groupedAccounts = {};
-    for (final account in debtAccounts) {
-      final group = accountTypeDisplayGroup(account.type);
-      groupedAccounts.putIfAbsent(group, () => []).add(account);
-    }
-
-    // Sort each group by sortOrder
-    for (final group in groupedAccounts.keys) {
-      groupedAccounts[group]!.sort(
-        (a, b) => a.sortOrder.compareTo(b.sortOrder),
-      );
-    }
-
-    // Display order for debt accounts (บัตรเครดิต, หนี้สิน)
-    const groupOrder = ['บัตรเครดิต', 'หนี้สิน'];
-    final orderedGroups = groupOrder
-        .where(groupedAccounts.containsKey)
-        .toList();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, sc) => Column(
-          children: [
-            _Handle(color: handleColor),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                'เลือกบัญชีหนี้สิน',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textColor,
-                ),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
-            Expanded(
-              child: ListView.builder(
-                controller: sc,
-                itemCount: orderedGroups.length,
-                itemBuilder: (context, groupIndex) {
-                  final groupName = orderedGroups[groupIndex];
-                  final groupAccounts = groupedAccounts[groupName]!;
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GroupHeader(title: groupName, isDarkMode: isDark),
-                      // Account items
-                      ...groupAccounts.map((acc) {
-                        final isSelected = _debtAccountId == acc.id;
-                        return Column(
-                          children: [
-                            ListTile(
-                              tileColor: bgColor,
-                              leading: AccountIconWidget(
-                                account: acc,
-                                size: 36,
-                                isDarkMode: isDark,
-                              ),
-                              title: Text(
-                                acc.name,
-                                style: TextStyle(color: textColor),
-                              ),
-                              trailing: isSelected
-                                  ? Icon(Icons.check, color: selectedColor)
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  _debtAccountId = acc.id;
-                                });
-                                Navigator.pop(context);
-                              },
-                            ),
-                            Divider(height: 1, color: dividerColor),
-                          ],
-                        );
-                      }),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+  Future<void> _pickDebtAccount() async {
+    final selectedId = await AccountPickerBottomSheet.show(
+      context,
+      title: 'เลือกบัญชีหนี้สิน',
+      selectedAccountId: _debtAccountId,
+      isDebtOnly: true,
     );
+
+    if (selectedId == null || !mounted) return;
+
+    setState(() {
+      _debtAccountId = selectedId;
+    });
   }
 
   void _pickCategory(List<Category> categories, bool isDark) {
