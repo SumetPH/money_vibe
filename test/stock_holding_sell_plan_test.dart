@@ -18,7 +18,7 @@ void main() {
         sellPlanEnabled: true,
         takeProfitPct: 10,
         trailingStopPct: 5,
-        stopLossPct: 3,
+        stopLossPct: 5,
         peakProfitPct: 18,
       );
     }
@@ -47,10 +47,10 @@ void main() {
     test('serializes and deserializes stop loss correctly', () {
       final holding = buildHolding();
       final map = holding.toMap();
-      expect(map['stop_loss_pct'], 3);
+      expect(map['stop_loss_pct'], 5);
 
       final fromMap = StockHolding.fromMap(map);
-      expect(fromMap.stopLossPct, 3);
+      expect(fromMap.stopLossPct, 5);
     });
   });
 }

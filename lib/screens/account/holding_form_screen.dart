@@ -85,8 +85,8 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     } else {
       _sellPlanEnabled = true;
       _takeProfitController.text = '10';
-      _trailingStopController.text = '3';
-      _stopLossController.text = '3';
+      _trailingStopController.text = '5';
+      _stopLossController.text = '5';
     }
   }
 
