@@ -1,52 +1,97 @@
 import 'package:flutter/material.dart';
 
-enum AccountType {
-  cash('กระเป๋าสตางค์/เงินสด'),
-  bankAccount('บัญชีธนาคาร'),
-  creditCard('บัตรเครดิต'),
-  debt('หนี้สิน'),
-  asset('ทรัพย์สิน'),
-  investment('ลงทุน'),
-  portfolio('พอร์ตหุ้น US');
+enum AccountGroup {
+  investment(
+    'เงินลงทุน / เงินออม',
+    accountListOrder: 0,
+    pickerOrder: 4,
+    summaryOrder: 0,
+    isAsset: true,
+  ),
+  cash(
+    'เงินสด / เงินฝาก',
+    accountListOrder: 1,
+    pickerOrder: 0,
+    summaryOrder: 1,
+    isAsset: true,
+  ),
+  creditCard(
+    'บัตรเครดิต',
+    accountListOrder: 2,
+    pickerOrder: 1,
+    summaryOrder: 3,
+    isAsset: false,
+  ),
+  debt(
+    'หนี้สิน',
+    accountListOrder: 3,
+    pickerOrder: 2,
+    summaryOrder: 4,
+    isAsset: false,
+  ),
+  asset(
+    'ทรัพย์สิน',
+    accountListOrder: 4,
+    pickerOrder: 3,
+    summaryOrder: 2,
+    isAsset: true,
+  );
 
   final String label;
-  const AccountType(this.label);
+  final int accountListOrder;
+  final int pickerOrder;
+  final int summaryOrder;
+  final bool isAsset;
+
+  const AccountGroup(
+    this.label, {
+    required this.accountListOrder,
+    required this.pickerOrder,
+    required this.summaryOrder,
+    required this.isAsset,
+  });
 }
 
-String accountTypeDisplayGroup(AccountType type) {
-  switch (type) {
-    case AccountType.cash:
-    case AccountType.bankAccount:
-      return 'เงินสด / เงินฝาก';
-    case AccountType.creditCard:
-      return 'บัตรเครดิต';
-    case AccountType.debt:
-      return 'หนี้สิน';
-    case AccountType.investment:
-    case AccountType.portfolio:
-      return 'ลงทุน';
-    case AccountType.asset:
-      return 'ทรัพย์สิน';
-  }
+enum AccountType {
+  cash('เงินสด / เงินฝาก', AccountGroup.cash, 0),
+  bankAccount('บัญชีธนาคาร', AccountGroup.cash, 1),
+  creditCard('บัตรเครดิต', AccountGroup.creditCard, 2),
+  debt('หนี้สิน', AccountGroup.debt, 3),
+  asset('ทรัพย์สิน', AccountGroup.asset, 5),
+  investment('เงินลงทุน / เงินออม', AccountGroup.investment, 4),
+  portfolio('พอร์ตหุ้น US', AccountGroup.investment, 4);
+
+  final String label;
+  final AccountGroup group;
+  final int order;
+
+  const AccountType(this.label, this.group, this.order);
 }
 
-int accountTypeOrder(AccountType type) {
-  switch (type) {
-    case AccountType.cash:
-      return 0;
-    case AccountType.bankAccount:
-      return 1;
-    case AccountType.creditCard:
-      return 2;
-    case AccountType.debt:
-      return 3;
-    case AccountType.investment:
-    case AccountType.portfolio:
-      return 4;
-    case AccountType.asset:
-      return 5;
-  }
+List<AccountGroup> _sortedAccountGroupsBy(int Function(AccountGroup) order) {
+  final groups = AccountGroup.values.toList()
+    ..sort((a, b) => order(a).compareTo(order(b)));
+  return groups;
 }
+
+List<AccountGroup> get accountGroupsForAccountList =>
+    _sortedAccountGroupsBy((group) => group.accountListOrder);
+
+List<AccountGroup> get accountGroupsForPicker =>
+    _sortedAccountGroupsBy((group) => group.pickerOrder);
+
+List<AccountGroup> get accountGroupsForDebtPicker => accountGroupsForPicker
+    .where(
+      (group) => group == AccountGroup.creditCard || group == AccountGroup.debt,
+    )
+    .toList();
+
+List<AccountGroup> get accountGroupsForSummary =>
+    _sortedAccountGroupsBy((group) => group.summaryOrder);
+
+String accountTypeDisplayGroup(AccountType type) => type.group.label;
+
+int accountTypeOrder(AccountType type) => type.order;
 
 class Account {
   final String id;

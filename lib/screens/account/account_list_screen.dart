@@ -88,22 +88,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
           final groupTotals = accountProvider.getGroupTotals(transactions);
 
           // Group accounts by display group
-          final Map<String, List<Account>> grouped = {};
-          for (final account in accounts) {
-            final group = accountTypeDisplayGroup(account.type);
-            grouped.putIfAbsent(group, () => []).add(account);
-          }
-
-          // Display order
-          const groupOrder = [
-            'ลงทุน',
-            'เงินสด / เงินฝาก',
-            'บัตรเครดิต',
-            'หนี้สิน',
-            'ทรัพย์สิน',
-          ];
-
-          // Group accounts by display group
           final Map<String, List<Account>> groupedAccounts = {};
           for (final account in accounts) {
             final group = accountTypeDisplayGroup(account.type);
@@ -135,24 +119,24 @@ class _AccountListScreenState extends State<AccountListScreen> {
                   ),
                 ),
                 // Each group has its own ReorderableListView
-                for (final groupName in groupOrder)
-                  if (groupedAccounts.containsKey(groupName) &&
-                      groupedAccounts[groupName]!.isNotEmpty)
+                for (final group in accountGroupsForAccountList)
+                  if (groupedAccounts.containsKey(group.label) &&
+                      groupedAccounts[group.label]!.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           GroupHeader(
-                            title: groupName,
+                            title: group.label,
                             isDarkMode: isDarkMode,
                             trailing: [
                               Text(
-                                '${formatAmount(groupTotals[groupName] ?? 0)} บาท',
+                                '${formatAmount(groupTotals[group.label] ?? 0)} บาท',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.getAmountColor(
-                                    groupTotals[groupName] ?? 0,
+                                    groupTotals[group.label] ?? 0,
                                     isDarkMode,
                                   ),
                                 ),
@@ -163,11 +147,11 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             buildDefaultDragHandles: isReorderMode,
-                            itemCount: groupedAccounts[groupName]!.length,
+                            itemCount: groupedAccounts[group.label]!.length,
                             onReorder: isReorderMode
                                 ? (oldIndex, newIndex) {
                                     accountProvider.reorderAccountsInGroup(
-                                      groupName,
+                                      group.label,
                                       oldIndex,
                                       newIndex,
                                     );
@@ -199,7 +183,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             },
                             itemBuilder: (context, index) {
                               final account =
-                                  groupedAccounts[groupName]![index];
+                                  groupedAccounts[group.label]![index];
                               final balance = accountProvider.getBalance(
                                 account.id,
                                 transactions,
@@ -373,14 +357,13 @@ class _AccountListScreenState extends State<AccountListScreen> {
     final transactions = txProvider.transactions;
     final groupTotals = accountProvider.getGroupTotals(transactions);
 
-    // Calculate Assets, Liabilities, Net Worth from all groups
-    double totalAssets =
-        (groupTotals['ลงทุน'] ?? 0) +
-        (groupTotals['เงินสด / เงินฝาก'] ?? 0) +
-        (groupTotals['ทรัพย์สิน'] ?? 0);
-    double totalLiabilities =
-        (groupTotals['บัตรเครดิต'] ?? 0) + (groupTotals['หนี้สิน'] ?? 0);
-    double netWorth = totalAssets + totalLiabilities;
+    final totalAssets = accountGroupsForSummary
+        .where((group) => group.isAsset)
+        .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+    final totalLiabilities = accountGroupsForSummary
+        .where((group) => !group.isAsset)
+        .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+    final netWorth = totalAssets + totalLiabilities;
 
     showModalBottomSheet(
       context: context,
@@ -472,14 +455,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 const SizedBox(height: 12),
 
                 // Group breakdown
-                ...[
-                  'ลงทุน',
-                  'เงินสด / เงินฝาก',
-                  'ทรัพย์สิน',
-                  'บัตรเครดิต',
-                  'หนี้สิน',
-                ].map((group) {
-                  final total = groupTotals[group] ?? 0;
+                ...accountGroupsForSummary.map((group) {
+                  final total = groupTotals[group.label] ?? 0;
                   if (total == 0) return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -487,7 +464,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          group,
+                          group.label,
                           style: TextStyle(color: textPrimary, fontSize: 15),
                         ),
                         Text(
@@ -892,14 +869,6 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     final allIds = widget.accounts.map((a) => a.id).toSet();
     final isAllSelected = _selected.containsAll(allIds);
 
-    // Group accounts
-    const groupOrder = [
-      'ลงทุน',
-      'เงินสด / เงินฝาก',
-      'บัตรเครดิต',
-      'หนี้สิน',
-      'ทรัพย์สิน',
-    ];
     final Map<String, List<Account>> grouped = {};
     for (final a in widget.accounts) {
       grouped.putIfAbsent(accountTypeDisplayGroup(a.type), () => []).add(a);
@@ -970,10 +939,10 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
               child: ListView(
                 controller: scrollController,
                 children: [
-                  for (final groupName in groupOrder)
-                    if (grouped.containsKey(groupName)) ...[
-                      GroupHeader(title: groupName, isDarkMode: isDarkMode),
-                      for (final account in grouped[groupName]!)
+                  for (final group in accountGroupsForAccountList)
+                    if (grouped.containsKey(group.label)) ...[
+                      GroupHeader(title: group.label, isDarkMode: isDarkMode),
+                      for (final account in grouped[group.label]!)
                         CheckboxListTile(
                           tileColor: bgColor,
                           value: _selected.contains(account.id),

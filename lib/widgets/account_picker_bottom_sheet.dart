@@ -82,20 +82,10 @@ class AccountPickerBottomSheet extends StatelessWidget {
       );
     }
 
-    // กำหนดลำดับของกลุ่ม
-    final groupOrder = isDebtOnly
-        ? const ['บัตรเครดิต', 'หนี้สิน']
-        : const [
-            'เงินสด / เงินฝาก',
-            'บัตรเครดิต',
-            'หนี้สิน',
-            'ทรัพย์สิน',
-            'ลงทุน',
-          ];
-
-    final orderedGroups = groupOrder
-        .where(groupedAccounts.containsKey)
-        .toList();
+    final orderedGroups =
+        (isDebtOnly ? accountGroupsForDebtPicker : accountGroupsForPicker)
+            .where((group) => groupedAccounts.containsKey(group.label))
+            .toList();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -132,13 +122,13 @@ class AccountPickerBottomSheet extends StatelessWidget {
               itemCount: orderedGroups.length,
               padding: EdgeInsets.zero,
               itemBuilder: (ctx, groupIndex) {
-                final groupName = orderedGroups[groupIndex];
-                final groupAccounts = groupedAccounts[groupName]!;
+                final group = orderedGroups[groupIndex];
+                final groupAccounts = groupedAccounts[group.label]!;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GroupHeader(title: groupName, isDarkMode: isDarkMode),
+                    GroupHeader(title: group.label, isDarkMode: isDarkMode),
                     // Account Items
                     ...groupAccounts.map((acc) {
                       final balance = accountProvider.getBalance(
