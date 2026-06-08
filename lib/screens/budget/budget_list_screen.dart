@@ -13,6 +13,7 @@ import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
+import '../../screens/transaction/transaction_form_screen.dart';
 import 'budget_form_screen.dart';
 
 class BudgetListScreen extends StatefulWidget {
@@ -258,6 +259,14 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ),
             ],
           ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _openAddTransactionForm(context),
+            backgroundColor: isDarkMode
+                ? AppColors.darkFabYellow
+                : AppColors.fabYellow,
+            foregroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+            child: const Icon(Icons.add),
+          ),
           body: SafeArea(
             child: budgets.isEmpty
                 ? Center(
@@ -489,13 +498,20 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       }
     }
 
-    return ListView(children: items);
+    return ListView(children: [...items, SizedBox(height: 100)]);
   }
 
   void _openForm(BuildContext context, Budget? budget) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => BudgetFormScreen(budget: budget)),
+    );
+  }
+
+  void _openAddTransactionForm(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
     );
   }
 

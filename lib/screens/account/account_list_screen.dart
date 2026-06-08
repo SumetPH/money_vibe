@@ -109,9 +109,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         iconColor: const Color(0xFFFFB300),
                         isTopLevel: true,
                         isDarkMode: isDarkMode,
-                        accounts: accountProvider.accounts
-                            .where((a) => !a.excludeFromNetWorth)
-                            .toList(),
+                        accounts: accountProvider.accounts,
                         filterIds: filterIds,
                         isReorderMode: isReorderMode,
                       ),
@@ -205,7 +203,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                       ),
                     ),
                 // Footer padding
-                const SliverToBoxAdapter(child: SizedBox(height: 112)),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
           );
