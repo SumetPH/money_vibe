@@ -45,9 +45,10 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = context.read<AuthProvider>();
+    final isLoginMode = _isLogin;
     bool success;
 
-    if (_isLogin) {
+    if (isLoginMode) {
       success = await authProvider.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -59,8 +60,8 @@ class _AuthScreenState extends State<AuthScreen> {
       );
     }
 
-    if (success && mounted) {
-      // Login/Register สำเร็จ → reload providers แล้วค่อยกลับ
+    if (success && mounted && isLoginMode) {
+      // Login สำเร็จ → reload providers แล้วค่อยกลับ
       debugPrint('[AuthScreen] Login success, reloading providers...');
 
       // โหลดข้อมูลใหม่ตาม user ที่ login
@@ -76,6 +77,19 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         context.go('/accounts');
       }
+    } else if (success && mounted) {
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      setState(() {
+        _isLogin = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else if (!success && mounted) {
       // Error จะแสดงผ่าน authProvider.error
       ScaffoldMessenger.of(context).showSnackBar(

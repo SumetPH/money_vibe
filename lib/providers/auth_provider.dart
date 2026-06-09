@@ -101,7 +101,10 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.user != null) {
-        _user = response.user;
+        if (response.session != null) {
+          await client.auth.signOut();
+        }
+        _user = null;
         notifyListeners();
         return true;
       }

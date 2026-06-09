@@ -12,6 +12,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
 import 'transaction_form_screen.dart';
 
@@ -216,12 +217,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         );
                       },
                     ),
-              bottomNavigationBar: _BottomSummaryBar(
-                totalIncome: totalIncome,
-                totalExpense: totalExpense,
+              bottomNavigationBar: BottomSummaryBar(
+                left: BottomSummaryValue(
+                  label: 'รายรับรวม',
+                  value: formatAmount(totalIncome),
+                  color: isDarkMode ? AppColors.darkIncome : AppColors.income,
+                ),
+                right: BottomSummaryValue(
+                  label: 'รายจ่ายรวม',
+                  value: '-${formatAmount(totalExpense)}',
+                  color: AppColors.expense,
+                ),
                 onAdd: () => _openForm(context, null),
                 isDarkMode: isDarkMode,
-                currency: 'บาท',
               ),
             );
           },
@@ -867,102 +875,5 @@ class _TransactionItem extends StatelessWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
-  }
-}
-
-class _BottomSummaryBar extends StatelessWidget {
-  final double totalIncome;
-  final double totalExpense;
-  final VoidCallback onAdd;
-  final bool isDarkMode;
-  final String currency;
-
-  const _BottomSummaryBar({
-    required this.totalIncome,
-    required this.totalExpense,
-    required this.onAdd,
-    required this.isDarkMode,
-    required this.currency,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final fabColor = isDarkMode ? AppColors.darkFabYellow : AppColors.fabYellow;
-
-    return Container(
-      color: headerColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'รายรับรวม',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.darkTextPrimary,
-                        ),
-                      ),
-                      Text(
-                        '${formatAmount(totalIncome)}${currency == 'บาท' || currency == 'THB' ? '' : ' $currency'}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: incomeColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // FAB
-                GestureDetector(
-                  onTap: onAdd,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: fabColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 28),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'รายจ่ายรวม',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.darkTextPrimary,
-                        ),
-                      ),
-                      Text(
-                        '-${formatAmount(totalExpense)}${currency == 'บาท' || currency == 'THB' ? '' : ' $currency'}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.expense,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

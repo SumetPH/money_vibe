@@ -9,6 +9,7 @@ import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
@@ -67,14 +68,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
             onPressed: () => _showAppMenu(context),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddTransactionForm(context),
-        backgroundColor: isDarkMode
-            ? AppColors.darkFabYellow
-            : AppColors.fabYellow,
-        foregroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
-        child: const Icon(Icons.add),
       ),
       body: Consumer2<AccountProvider, TransactionProvider>(
         builder: (context, accountProvider, txProvider, _) {
@@ -202,10 +195,39 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         ],
                       ),
                     ),
-                // Footer padding
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
+          );
+        },
+      ),
+      bottomNavigationBar: Consumer2<AccountProvider, TransactionProvider>(
+        builder: (context, accountProvider, txProvider, _) {
+          final groupTotals = accountProvider.getGroupTotals(
+            txProvider.transactions,
+          );
+          final totalAssets = accountGroupsForSummary
+              .where((group) => group.isAsset)
+              .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+          final totalLiabilities = accountGroupsForSummary
+              .where((group) => !group.isAsset)
+              .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+
+          return BottomSummaryBar(
+            left: BottomSummaryValue(
+              label: 'ทรัพย์สินรวม',
+              value: formatAmount(totalAssets),
+              color: isDarkMode ? AppColors.darkIncome : AppColors.income,
+            ),
+            right: BottomSummaryValue(
+              label: 'หนี้สินรวม',
+              value: '-${formatAmount(totalLiabilities.abs())}',
+              color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
+            ),
+            onAdd: () => _openAddTransactionForm(context),
+            isDarkMode: isDarkMode,
+            addIconColor: isDarkMode
+                ? AppColors.darkSurface
+                : AppColors.darkTextPrimary,
           );
         },
       ),

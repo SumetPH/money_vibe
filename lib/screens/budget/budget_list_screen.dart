@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
@@ -259,14 +260,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _openAddTransactionForm(context),
-            backgroundColor: isDarkMode
-                ? AppColors.darkFabYellow
-                : AppColors.fabYellow,
-            foregroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
-            child: const Icon(Icons.add),
-          ),
           body: SafeArea(
             child: budgets.isEmpty
                 ? Center(
@@ -275,49 +268,65 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       style: TextStyle(color: textSecondary),
                     ),
                   )
-                : Column(
-                    children: [
-                      // ── Month selector ──────────────────────────────────────
-                      _MonthSelector(
-                        selectedMonth: _selectedMonth,
-                        onPrevMonth: _prevMonth,
-                        onNextMonth: _nextMonth,
-                        isDarkMode: isDarkMode,
-                        surfaceColor: surfaceColor,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                      ),
-                      // ── Header summary ──────────────────────────────────────
-                      _SummaryHeader(
-                        totalBudget: totalBudget,
-                        totalSpent: totalSpent,
-                        totalRemaining: totalRemaining,
-                        progress: overallProgress,
-                        isDarkMode: isDarkMode,
-                        surfaceColor: surfaceColor,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        dividerColor: dividerColor,
-                      ),
-                      // ── Budget list ─────────────────────────────────────────
-                      Expanded(
-                        child: _buildBudgetList(
-                          context,
-                          budgets: budgets,
-                          allTx: allTx,
-                          period: period,
-                          accounts: accounts,
+                : _buildBudgetList(
+                    context,
+                    header: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _MonthSelector(
+                          selectedMonth: _selectedMonth,
+                          onPrevMonth: _prevMonth,
+                          onNextMonth: _nextMonth,
+                          isDarkMode: isDarkMode,
+                          surfaceColor: surfaceColor,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                        ),
+                        _SummaryHeader(
                           totalBudget: totalBudget,
-                          budgetProvider: budgetProvider,
+                          totalSpent: totalSpent,
+                          totalRemaining: totalRemaining,
+                          progress: overallProgress,
                           isDarkMode: isDarkMode,
                           surfaceColor: surfaceColor,
                           textPrimary: textPrimary,
                           textSecondary: textSecondary,
                           dividerColor: dividerColor,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    budgets: budgets,
+                    allTx: allTx,
+                    period: period,
+                    accounts: accounts,
+                    totalBudget: totalBudget,
+                    budgetProvider: budgetProvider,
+                    isDarkMode: isDarkMode,
+                    surfaceColor: surfaceColor,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                    dividerColor: dividerColor,
                   ),
+          ),
+          bottomNavigationBar: BottomSummaryBar(
+            left: BottomSummaryValue(
+              label: 'ใช้ไปแล้ว',
+              value: formatAmount(totalSpent),
+              color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
+            ),
+            right: BottomSummaryValue(
+              label: totalRemaining >= 0 ? 'คงเหลือ' : 'เกินงบ',
+              value:
+                  '${totalRemaining >= 0 ? '' : '-'}${formatAmount(totalRemaining.abs())}',
+              color: totalRemaining >= 0
+                  ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
+                  : (isDarkMode ? AppColors.darkExpense : AppColors.expense),
+            ),
+            onAdd: () => _openAddTransactionForm(context),
+            isDarkMode: isDarkMode,
+            addIconColor: isDarkMode
+                ? AppColors.darkSurface
+                : AppColors.surface,
           ),
         );
       },
@@ -326,6 +335,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
 
   Widget _buildBudgetList(
     BuildContext context, {
+    required Widget header,
     required List<Budget> budgets,
     required List<AppTransaction> allTx,
     required DateTimeRange period,
@@ -345,6 +355,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     // ── Reorder mode or no groups → flat ReorderableListView ────────────────
     if (_isReorderMode || !hasGroups) {
       return ReorderableListView.builder(
+        header: header,
         buildDefaultDragHandles: _isReorderMode,
         onReorder: _isReorderMode
             ? (oldIndex, newIndex) =>
@@ -498,7 +509,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       }
     }
 
-    return ListView(children: [...items, SizedBox(height: 100)]);
+    return ListView(children: [header, ...items]);
   }
 
   void _openForm(BuildContext context, Budget? budget) {
