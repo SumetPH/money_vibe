@@ -1140,6 +1140,8 @@ class _CategoryListItem extends StatelessWidget {
               children: [
                 Text(
                   data.category.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1162,22 +1164,30 @@ class _CategoryListItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                formatAmount(data.amount),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
+          SizedBox(
+            width: 96,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    formatAmount(data.amount),
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                '${percentage.toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 13, color: secondaryTextColor),
-              ),
-            ],
+                Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                ),
+              ],
+            ),
           ),
         ],
       ),
