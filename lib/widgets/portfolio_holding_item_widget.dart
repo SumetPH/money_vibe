@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/stock_holding.dart';
@@ -482,12 +481,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     // 2. Check Take Profit & Trailing Stop
     if (widget.holding.takeProfitPct > 0 &&
         widget.holding.trailingStopPct > 0) {
-      final peakProfitPct = widget.holding.peakProfitPct;
-      if (peakProfitPct != null) {
-        final trailingStopTriggerPct = math.max(
-          widget.holding.takeProfitPct,
-          peakProfitPct - widget.holding.trailingStopPct,
-        );
+      final trailingStopTriggerPct = _resolveTrailingStopTriggerPct();
+      if (trailingStopTriggerPct != null) {
         final trailingStopPrice = _calculateStopPrice(
           costBasisUsd: widget.holding.costBasisUsd,
           stopProfitPct: trailingStopTriggerPct,
@@ -535,6 +530,12 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}%';
   }
 
+  double? _resolveTrailingStopTriggerPct() {
+    final peakProfitPct = widget.holding.peakProfitPct;
+    if (peakProfitPct == null) return null;
+    return peakProfitPct - widget.holding.trailingStopPct;
+  }
+
   double _calculateStopPrice({
     required double costBasisUsd,
     required double stopProfitPct,
@@ -555,8 +556,6 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     }
 
     final currentPnlPct = widget.holding.unrealizedPnlPct;
-    final peakProfitPct = widget.holding.peakProfitPct;
-
     final incomeColor = widget.isDarkMode
         ? AppColors.darkIncome
         : AppColors.income;
@@ -603,12 +602,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     // 2. Check Take Profit & Trailing Stop
     if (widget.holding.takeProfitPct > 0 &&
         widget.holding.trailingStopPct > 0) {
-      if (peakProfitPct != null) {
-        final trailingStopTriggerPct = math.max(
-          widget.holding.takeProfitPct,
-          peakProfitPct - widget.holding.trailingStopPct,
-        );
-
+      final trailingStopTriggerPct = _resolveTrailingStopTriggerPct();
+      if (trailingStopTriggerPct != null) {
         if (currentPnlPct <= trailingStopTriggerPct) {
           // ขายได้แล้ว (Sell signal!) - Show a prominent red warning badge with a white exclamation mark
           return Container(
