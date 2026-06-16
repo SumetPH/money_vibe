@@ -226,7 +226,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'จำนวนหุ้น',
-                        value: widget.holding.shares.toStringAsFixed(4),
+                        value: formatStockHoldingShares(widget.holding.shares),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -244,7 +244,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนต่อหุ้น',
-                        value: widget.holding.costBasisUsd.toStringAsFixed(2),
+                        value: formatStockHoldingCostBasis(
+                          widget.holding.costBasisUsd,
+                        ),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),

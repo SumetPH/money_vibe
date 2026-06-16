@@ -160,5 +160,21 @@ void main() {
       expect(find.textContaining(r'Stop Loss $95.00'), findsOneWidget);
       expect(find.textContaining('ตอนนี้ -6.00%'), findsOneWidget);
     });
+
+    testWidgets('shows shares with 7 decimals and cost basis with 4 decimals', (
+      tester,
+    ) async {
+      await pumpHolding(
+        tester,
+        buildHolding(
+          shares: 1.2345678,
+          costBasisUsd: 100.1234,
+          priceUsd: 112.5,
+        ),
+      );
+
+      expect(find.text('1.2345678'), findsOneWidget);
+      expect(find.text('100.1234'), findsOneWidget);
+    });
   });
 }

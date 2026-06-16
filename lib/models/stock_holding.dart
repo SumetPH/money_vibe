@@ -1,3 +1,22 @@
+const int stockHoldingSharesDecimalPlaces = 7;
+const int stockHoldingPriceDecimalPlaces = 4;
+const int stockHoldingCostBasisDecimalPlaces = 4;
+
+String formatStockHoldingShares(double value) =>
+    value.toStringAsFixed(stockHoldingSharesDecimalPlaces);
+
+String formatStockHoldingCostBasis(double value) =>
+    value.toStringAsFixed(stockHoldingCostBasisDecimalPlaces);
+
+String formatStockHoldingEditableNumber(double value, {required int scale}) {
+  if (value == value.truncateToDouble()) {
+    return value.toInt().toString();
+  }
+
+  final fixed = value.toStringAsFixed(scale);
+  return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
 class StockHolding {
   final String id;
   final String portfolioId;

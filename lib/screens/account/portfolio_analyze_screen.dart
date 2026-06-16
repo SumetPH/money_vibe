@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:money_vibe/models/stock_holding.dart';
 import 'package:money_vibe/providers/account_provider.dart';
 import 'package:money_vibe/providers/llm_provider.dart';
 import 'package:money_vibe/providers/settings_provider.dart';
@@ -80,9 +81,9 @@ class _PortfolioAnalyzeScreenState extends State<PortfolioAnalyzeScreen> {
           (h) =>
               """
                 - ${h.ticker}
-                จำนวนหุ้น: ${h.shares}
+                จำนวนหุ้น: ${formatStockHoldingShares(h.shares)}
                 ราคาปัจจุบัน: ${h.priceUsd.toStringAsFixed(2)}
-                ต้นทุนต่อหุ้น: ${h.costBasisUsd.toStringAsFixed(2)}
+                ต้นทุนต่อหุ้น: ${formatStockHoldingCostBasis(h.costBasisUsd)}
                 ต้นทุนรวม: ${h.totalCostUsd.toStringAsFixed(2)}
                 มูลค่ารวม: ${h.valueUsd.toStringAsFixed(2)}
                 กำไร/ขาดทุน: ${h.unrealizedPnlUsd.toStringAsFixed(2)} (${h.unrealizedPnlPct.toStringAsFixed(2)}%)

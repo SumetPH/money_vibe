@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_holdings (
     portfolio_id text not null references public.accounts (id) on delete cascade,
     ticker text not null,
     name text not null default '',
-    shares numeric(15, 4) not null default 0,
+    shares numeric(18, 7) not null default 0,
     price_usd numeric(15, 4) not null default 0,
     cost_basis_usd numeric(15, 4) not null default 0,
     logo_url text not null default '',
@@ -435,7 +435,7 @@ ALTER TABLE budgets
 
 -- 4. Portfolio holdings
 ALTER TABLE portfolio_holdings
-  ALTER COLUMN shares TYPE numeric(15,4),
+  ALTER COLUMN shares TYPE numeric(18,7),
   ALTER COLUMN price_usd TYPE numeric(15,4),
   ALTER COLUMN cost_basis_usd TYPE numeric(15,4);
 
@@ -611,4 +611,3 @@ using (
   bucket_id = 'stock-logos' and
   (storage.foldername(name))[1] = (select auth.uid()::text)
 );
-

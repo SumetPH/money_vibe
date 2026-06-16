@@ -6,16 +6,22 @@ import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 
-final _twoDecimalInputFormatter = TextInputFormatter.withFunction((
-  oldValue,
-  newValue,
-) {
-  final text = newValue.text;
-  if (text.isEmpty) return newValue;
+TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
+    TextInputFormatter.withFunction((oldValue, newValue) {
+      final text = newValue.text;
+      if (text.isEmpty) return newValue;
 
-  final match = RegExp(r'^\d+(\.\d{0,2})?$').hasMatch(text);
-  return match ? newValue : oldValue;
-});
+      final match = RegExp('^\\d+(\\.\\d{0,$maxDecimals})?\$').hasMatch(text);
+      return match ? newValue : oldValue;
+    });
+
+final _twoDecimalInputFormatter = _decimalInputFormatter(2);
+final _fourDecimalInputFormatter = _decimalInputFormatter(
+  stockHoldingCostBasisDecimalPlaces,
+);
+final _sevenDecimalInputFormatter = _decimalInputFormatter(
+  stockHoldingSharesDecimalPlaces,
+);
 
 class HoldingFormScreen extends StatefulWidget {
   final String portfolioId;
@@ -64,20 +70,38 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     if (holding != null) {
       _tickerController.text = holding.ticker;
       _groupController.text = holding.portfolioGroup;
-      _sharesController.text = _formatNum(holding.shares);
-      _priceController.text = _formatNum(holding.priceUsd);
+      _sharesController.text = formatStockHoldingEditableNumber(
+        holding.shares,
+        scale: stockHoldingSharesDecimalPlaces,
+      );
+      _priceController.text = formatStockHoldingEditableNumber(
+        holding.priceUsd,
+        scale: stockHoldingPriceDecimalPlaces,
+      );
       if (holding.costBasisUsd > 0) {
-        _costController.text = _formatNum(holding.costBasisUsd);
+        _costController.text = formatStockHoldingEditableNumber(
+          holding.costBasisUsd,
+          scale: stockHoldingCostBasisDecimalPlaces,
+        );
       }
       _sellPlanEnabled = holding.sellPlanEnabled;
       if (holding.takeProfitPct > 0) {
-        _takeProfitController.text = _formatNum(holding.takeProfitPct);
+        _takeProfitController.text = formatStockHoldingEditableNumber(
+          holding.takeProfitPct,
+          scale: 2,
+        );
       }
       if (holding.trailingStopPct > 0) {
-        _trailingStopController.text = _formatNum(holding.trailingStopPct);
+        _trailingStopController.text = formatStockHoldingEditableNumber(
+          holding.trailingStopPct,
+          scale: 2,
+        );
       }
       if (holding.stopLossPct > 0) {
-        _stopLossController.text = _formatNum(holding.stopLossPct);
+        _stopLossController.text = formatStockHoldingEditableNumber(
+          holding.stopLossPct,
+          scale: 2,
+        );
       }
       if (holding.peakProfitPct != null) {
         _peakProfitController.text = _formatPct(holding.peakProfitPct!);
@@ -102,13 +126,6 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     _stopLossController.dispose();
     _peakProfitController.dispose();
     super.dispose();
-  }
-
-  String _formatNum(double value) {
-    if (value == value.truncateToDouble()) {
-      return value.toInt().toString();
-    }
-    return value.toString();
   }
 
   String _formatPct(double value) => value.toStringAsFixed(2);
@@ -509,6 +526,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               controller: _sharesController,
               hintText: '0',
               isDarkMode: isDarkMode,
+              inputFormatters: [_sevenDecimalInputFormatter],
             ),
             _buildDivider(isDarkMode),
             _HoldingNumberFieldRow(
@@ -516,6 +534,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               controller: _costController,
               hintText: '0.00',
               isDarkMode: isDarkMode,
+              inputFormatters: [_fourDecimalInputFormatter],
             ),
             _buildDivider(isDarkMode),
             _HoldingNumberFieldRow(
