@@ -4,6 +4,22 @@ import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
 import '../models/budget.dart';
 
+class BudgetCategoryConflictException implements Exception {
+  final String categoryId;
+  final String budgetId;
+  final String budgetName;
+
+  const BudgetCategoryConflictException({
+    required this.categoryId,
+    required this.budgetId,
+    required this.budgetName,
+  });
+
+  @override
+  String toString() =>
+      'BudgetCategoryConflictException(categoryId: $categoryId, budgetId: $budgetId, budgetName: $budgetName)';
+}
+
 class BudgetProvider extends ChangeNotifier {
   final _uuid = const Uuid();
   final DatabaseManager _dbManager = DatabaseManager();
@@ -14,6 +30,30 @@ class BudgetProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<Budget> get budgets => List.unmodifiable(_budgets);
 
+  Map<String, Budget> expenseCategoryBudgetMap({String? excludingBudgetId}) {
+    final categoryMap = <String, Budget>{};
+
+    for (final budget in _budgets) {
+      if (budget.type != BudgetType.expense) continue;
+      if (excludingBudgetId != null && budget.id == excludingBudgetId) continue;
+
+      for (final categoryId in budget.categoryIds) {
+        categoryMap.putIfAbsent(categoryId, () => budget);
+      }
+    }
+
+    return categoryMap;
+  }
+
+  Budget? getBudgetUsingCategory(
+    String categoryId, {
+    String? excludingBudgetId,
+  }) {
+    return expenseCategoryBudgetMap(
+      excludingBudgetId: excludingBudgetId,
+    )[categoryId];
+  }
+
   // ── Helper ────────────────────────────────────────────────────────────────
 
   DatabaseRepository get _db => _dbManager.repository;
@@ -21,6 +61,24 @@ class BudgetProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  void _validateBudgetCategoryAssignments(Budget budget) {
+    if (budget.type != BudgetType.expense) return;
+
+    final usedCategoryMap = expenseCategoryBudgetMap(
+      excludingBudgetId: budget.id,
+    );
+    for (final categoryId in budget.categoryIds) {
+      final existingBudget = usedCategoryMap[categoryId];
+      if (existingBudget != null) {
+        throw BudgetCategoryConflictException(
+          categoryId: categoryId,
+          budgetId: existingBudget.id,
+          budgetName: existingBudget.name,
+        );
+      }
+    }
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -52,6 +110,8 @@ class BudgetProvider extends ChangeNotifier {
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   Future<void> addBudget(Budget budget) async {
+    _validateBudgetCategoryAssignments(budget);
+
     final sortOrder = _budgets.isEmpty
         ? 0
         : (_budgets.map((b) => b.sortOrder).reduce((a, b) => a > b ? a : b) +
@@ -74,6 +134,8 @@ class BudgetProvider extends ChangeNotifier {
   Future<void> updateBudget(Budget budget) async {
     final idx = _budgets.indexWhere((b) => b.id == budget.id);
     if (idx == -1) return;
+
+    _validateBudgetCategoryAssignments(budget);
 
     final oldBudget = _budgets[idx];
     _budgets[idx] = budget;

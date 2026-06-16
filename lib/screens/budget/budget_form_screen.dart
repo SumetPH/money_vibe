@@ -185,6 +185,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     }
   }
 
+  String _buildBudgetConflictMessage(
+    BudgetCategoryConflictException error,
+    CategoryProvider categoryProvider,
+  ) {
+    final categoryName =
+        categoryProvider.findById(error.categoryId)?.name ?? 'หมวดหมู่นี้';
+    return '$categoryName ใช้อยู่ในงบ "${error.budgetName}" แล้ว';
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -203,6 +212,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     }
 
     final provider = context.read<BudgetProvider>();
+    final categoryProvider = context.read<CategoryProvider>();
     final groupName = _groupController.text.trim().isEmpty
         ? null
         : _groupController.text.trim();
@@ -243,12 +253,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = e is BudgetCategoryConflictException
+            ? _buildBudgetConflictMessage(e, categoryProvider)
+            : 'เกิดข้อผิดพลาดในการบันทึก: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'เกิดข้อผิดพลาดในการบันทึก: $e',
-              style: const TextStyle(color: Colors.white),
-            ),
+            content: Text(message, style: const TextStyle(color: Colors.white)),
             backgroundColor: AppColors.expense,
           ),
         );
@@ -343,8 +353,8 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<CategoryProvider, SettingsProvider>(
-      builder: (context, catProvider, sp, _) {
+    return Consumer3<CategoryProvider, BudgetProvider, SettingsProvider>(
+      builder: (context, catProvider, budgetProvider, sp, _) {
         final isDark = sp.isDarkMode;
         final bgColor = isDark
             ? AppColors.darkBackground
@@ -587,8 +597,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 // Categories (shown only for expense type)
                 if (_selectedType == BudgetType.expense) ...[
                   InkWell(
-                    onTap: () =>
-                        _pickCategories(context, expenseCategories, isDark),
+                    onTap: () => _pickCategories(
+                      context,
+                      expenseCategories,
+                      budgetProvider,
+                      isDark,
+                    ),
                     child: Container(
                       color: surfaceColor,
                       padding: const EdgeInsets.symmetric(
@@ -722,8 +736,13 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   void _pickCategories(
     BuildContext context,
     List<Category> categories,
+    BudgetProvider budgetProvider,
     bool isDark,
   ) {
+    final assignedBudgets = budgetProvider.expenseCategoryBudgetMap(
+      excludingBudgetId: widget.budget?.id,
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -779,36 +798,69 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     itemBuilder: (_, i) {
                       final cat = categories[i];
                       final isSelected = _selectedCategoryIds.contains(cat.id);
+                      final assignedBudget = assignedBudgets[cat.id];
+                      final isDisabled = assignedBudget != null && !isSelected;
+                      final itemTextColor = isDisabled
+                          ? textColor.withValues(alpha: 0.5)
+                          : textColor;
+                      final subtitleColor = isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary;
                       return ListTile(
                         leading: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: cat.color.withValues(alpha: 0.15),
+                            color: cat.color.withValues(
+                              alpha: isDisabled ? 0.08 : 0.15,
+                            ),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(cat.icon, color: cat.color, size: 18),
+                          child: Icon(
+                            cat.icon,
+                            color: isDisabled
+                                ? cat.color.withValues(alpha: 0.45)
+                                : cat.color,
+                            size: 18,
+                          ),
                         ),
                         title: Text(
                           cat.name,
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: itemTextColor),
                         ),
+                        subtitle: assignedBudget == null
+                            ? null
+                            : Text(
+                                'ใช้อยู่ในงบ: ${assignedBudget.name}',
+                                style: TextStyle(
+                                  color: isDisabled
+                                      ? subtitleColor.withValues(alpha: 0.7)
+                                      : subtitleColor,
+                                ),
+                              ),
                         trailing: Icon(
                           isSelected
                               ? Icons.check_box
                               : Icons.check_box_outline_blank,
-                          color: isSelected ? selectedColor : dividerColor,
+                          color: isSelected
+                              ? selectedColor
+                              : isDisabled
+                              ? dividerColor.withValues(alpha: 0.65)
+                              : dividerColor,
                         ),
-                        onTap: () {
-                          setModalState(() {
-                            if (isSelected) {
-                              _selectedCategoryIds.remove(cat.id);
-                            } else {
-                              _selectedCategoryIds.add(cat.id);
-                            }
-                          });
-                          setState(() {});
-                        },
+                        enabled: !isDisabled,
+                        onTap: isDisabled
+                            ? null
+                            : () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    _selectedCategoryIds.remove(cat.id);
+                                  } else {
+                                    _selectedCategoryIds.add(cat.id);
+                                  }
+                                });
+                                setState(() {});
+                              },
                       );
                     },
                   ),
