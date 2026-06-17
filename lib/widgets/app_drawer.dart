@@ -166,6 +166,21 @@ class AppDrawer extends StatelessWidget {
                           : AppColors.divider,
                     ),
                     _DrawerItem(
+                      icon: Icons.show_chart,
+                      label: 'บันทึกการเทรด',
+                      selected: currentRoute == '/trade-tracker',
+                      onTap: () => _navigate(context, '/trade-tracker'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
+                    _DrawerItem(
                       icon: Icons.settings_outlined,
                       label: 'การตั้งค่า',
                       selected: currentRoute == '/settings',

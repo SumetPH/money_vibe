@@ -93,6 +93,7 @@ void main() {
               onEdit: () {},
               onChangeLogo: () {},
               onClearLogo: null,
+              onSell: () {},
               onDelete: () {},
               isDarkMode: false,
             ),

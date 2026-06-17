@@ -6,6 +6,7 @@ import 'package:money_vibe/models/category.dart';
 import 'package:money_vibe/models/transaction.dart';
 import 'package:money_vibe/models/recurring_transaction.dart';
 import 'package:money_vibe/models/stock_holding.dart';
+import 'package:money_vibe/models/stock_trade.dart';
 import 'package:money_vibe/models/budget.dart';
 import 'package:money_vibe/providers/account_provider.dart';
 import 'package:money_vibe/providers/category_provider.dart';
@@ -61,6 +62,9 @@ class FakeDatabaseRepository implements DatabaseRepository {
     }
     if (name.contains('getPortfolioHoldings')) {
       return Future.value(<StockHolding>[]);
+    }
+    if (name.contains('getStockTrades')) {
+      return Future.value(<StockTrade>[]);
     }
     if (name.contains('getRecurringTransactions')) {
       return Future.value(<RecurringTransaction>[]);

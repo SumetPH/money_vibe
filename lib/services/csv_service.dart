@@ -11,6 +11,7 @@ import '../models/transaction.dart';
 import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
+import '../models/stock_trade.dart';
 import '../services/database_manager.dart';
 import '../utils/csv_file_io.dart';
 
@@ -44,6 +45,7 @@ class CsvService {
       'categories_$timestamp.csv': await _exportCategories(),
       'transactions_$timestamp.csv': await _exportTransactions(),
       'holdings_$timestamp.csv': await _exportHoldings(),
+      'stock_trades_$timestamp.csv': await _exportStockTrades(),
       'budgets_$timestamp.csv': await _exportBudgets(),
       'recurring_$timestamp.csv': await _exportRecurringTransactions(),
       'occurrences_$timestamp.csv': await _exportRecurringOccurrences(),
@@ -71,6 +73,7 @@ class CsvService {
     String? categoriesContent;
     String? budgetsContent;
     String? holdingsContent;
+    String? stockTradesContent;
     String? recurringContent;
     String? transactionsContent;
     String? occurrencesContent;
@@ -92,6 +95,8 @@ class CsvService {
         budgetsContent = content;
       } else if (filename.contains('holding')) {
         holdingsContent = content;
+      } else if (filename.contains('stock_trade')) {
+        stockTradesContent = content;
       } else if (filename.contains('recurring')) {
         recurringContent = content;
       } else if (filename.contains('transaction')) {
@@ -105,6 +110,7 @@ class CsvService {
     int categoriesCount = 0;
     int transactionsCount = 0;
     int holdingsCount = 0;
+    int stockTradesCount = 0;
     int budgetsCount = 0;
     int recurringTransactionsCount = 0;
     int recurringOccurrencesCount = 0;
@@ -154,7 +160,18 @@ class CsvService {
       }
     }
 
-    // 5. Recurring transactions (depends on accounts)
+    // 5. Stock trades (depends on accounts)
+    if (stockTradesContent != null) {
+      try {
+        debugPrint('CSV Service: Importing STOCK TRADES');
+        stockTradesCount = await _importStockTrades(stockTradesContent);
+      } catch (e) {
+        debugPrint('CSV Service: Error importing stock trades: $e');
+        errors.add('stock_trades: $e');
+      }
+    }
+
+    // 6. Recurring transactions (depends on accounts)
     if (recurringContent != null) {
       try {
         debugPrint('CSV Service: Importing RECURRING');
@@ -167,7 +184,7 @@ class CsvService {
       }
     }
 
-    // 6. Transactions (depends on accounts, categories)
+    // 7. Transactions (depends on accounts, categories)
     if (transactionsContent != null) {
       try {
         debugPrint('CSV Service: Importing TRANSACTIONS');
@@ -178,7 +195,7 @@ class CsvService {
       }
     }
 
-    // 7. Occurrences (depends on recurring)
+    // 8. Occurrences (depends on recurring)
     if (occurrencesContent != null) {
       try {
         debugPrint('CSV Service: Importing OCCURRENCES');
@@ -199,6 +216,7 @@ class CsvService {
       categoriesCount: categoriesCount,
       transactionsCount: transactionsCount,
       holdingsCount: holdingsCount,
+      stockTradesCount: stockTradesCount,
       budgetsCount: budgetsCount,
       recurringTransactionsCount: recurringTransactionsCount,
       recurringOccurrencesCount: recurringOccurrencesCount,
@@ -364,6 +382,48 @@ class CsvService {
         holding.trailingStopPct,
         holding.stopLossPct,
         holding.peakProfitPct ?? '',
+      ]);
+    }
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  Future<String> _exportStockTrades() async {
+    final trades = await _dbManager.repository.getStockTrades();
+
+    final rows = <List<dynamic>>[
+      [
+        'id',
+        'portfolio_id',
+        'holding_id',
+        'ticker',
+        'name',
+        'shares_sold',
+        'sell_price_usd',
+        'cash_received_usd',
+        'cost_basis_usd',
+        'realized_pnl_usd',
+        'sold_at',
+        'created_at',
+        'logo_url',
+      ],
+    ];
+
+    for (final trade in trades) {
+      rows.add([
+        trade.id,
+        trade.portfolioId,
+        trade.holdingId,
+        trade.ticker,
+        trade.name,
+        trade.sharesSold,
+        trade.sellPriceUsd,
+        trade.cashReceivedUsd,
+        trade.costBasisUsd,
+        trade.realizedPnlUsd,
+        trade.soldAt.toIso8601String(),
+        trade.createdAt.toIso8601String(),
+        trade.logoUrl,
       ]);
     }
 
@@ -770,6 +830,83 @@ class CsvService {
     return holdings.length;
   }
 
+  Future<int> _importStockTrades(String csvContent) async {
+    final lines = csvContent
+        .split(RegExp(r'\r?\n'))
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
+    if (lines.isEmpty) return 0;
+
+    final rows = lines.map((line) {
+      return const CsvToListConverter().convert(line)[0];
+    }).toList();
+
+    final existingIds = await _dbManager.repository.getExistingStockTradeIds();
+    final existingAccountIds = await _dbManager.repository
+        .getExistingAccountIds();
+    final trades = <StockTrade>[];
+
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      if (row.isEmpty) continue;
+
+      final id = row[0]?.toString() ?? _uuid.v4();
+      final portfolioId = row[1]?.toString() ?? '';
+
+      if (existingIds.contains(id)) {
+        debugPrint('CSV Import: Skipping duplicate stock trade ID: $id');
+        continue;
+      }
+
+      if (!existingAccountIds.contains(portfolioId)) {
+        debugPrint(
+          'CSV Import: Skipping stock trade $id - portfolio $portfolioId not found',
+        );
+        continue;
+      }
+
+      trades.add(
+        StockTrade(
+          id: id,
+          portfolioId: portfolioId,
+          holdingId: row.length > 2 ? row[2]?.toString() ?? '' : '',
+          ticker: row.length > 3 ? row[3]?.toString() ?? '' : '',
+          name: row.length > 4 ? row[4]?.toString() ?? '' : '',
+          logoUrl: row.length > 12 ? row[12]?.toString() ?? '' : '',
+          sharesSold: row.length > 5
+              ? (double.tryParse(row[5]?.toString() ?? '0') ?? 0)
+              : 0,
+          sellPriceUsd: row.length > 6
+              ? (double.tryParse(row[6]?.toString() ?? '0') ?? 0)
+              : 0,
+          cashReceivedUsd: row.length > 7
+              ? (double.tryParse(row[7]?.toString() ?? '0') ?? 0)
+              : 0,
+          costBasisUsd: row.length > 8
+              ? (double.tryParse(row[8]?.toString() ?? '0') ?? 0)
+              : 0,
+          realizedPnlUsd: row.length > 9
+              ? (double.tryParse(row[9]?.toString() ?? '0') ?? 0)
+              : 0,
+          soldAt: row.length > 10
+              ? (DateTime.tryParse(row[10]?.toString() ?? '') ?? DateTime.now())
+              : DateTime.now(),
+          createdAt: row.length > 11
+              ? (DateTime.tryParse(row[11]?.toString() ?? '') ?? DateTime.now())
+              : DateTime.now(),
+        ),
+      );
+    }
+
+    if (trades.isNotEmpty) {
+      debugPrint('CSV Import: Bulk inserting ${trades.length} stock trades');
+      await _dbManager.repository.bulkInsertStockTrades(trades);
+    }
+
+    return trades.length;
+  }
+
   Future<int> _importBudgets(String csvContent) async {
     final lines = csvContent
         .split(RegExp(r'\r?\n'))
@@ -999,6 +1136,7 @@ class ImportResult {
   final int categoriesCount;
   final int transactionsCount;
   final int holdingsCount;
+  final int stockTradesCount;
   final int budgetsCount;
   final int recurringTransactionsCount;
   final int recurringOccurrencesCount;
@@ -1011,6 +1149,7 @@ class ImportResult {
     required this.transactionsCount,
     required this.errors,
     this.holdingsCount = 0,
+    this.stockTradesCount = 0,
     this.budgetsCount = 0,
     this.recurringTransactionsCount = 0,
     this.recurringOccurrencesCount = 0,
@@ -1022,6 +1161,7 @@ class ImportResult {
       categoriesCount = 0,
       transactionsCount = 0,
       holdingsCount = 0,
+      stockTradesCount = 0,
       budgetsCount = 0,
       recurringTransactionsCount = 0,
       recurringOccurrencesCount = 0,
@@ -1034,6 +1174,7 @@ class ImportResult {
       categoriesCount > 0 ||
       transactionsCount > 0 ||
       holdingsCount > 0 ||
+      stockTradesCount > 0 ||
       budgetsCount > 0 ||
       recurringTransactionsCount > 0 ||
       recurringOccurrencesCount > 0;
@@ -1047,6 +1188,9 @@ class ImportResult {
     if (categoriesCount > 0) parts.add('หมวดหมู่ $categoriesCount รายการ');
     if (transactionsCount > 0) parts.add('ธุรกรรม $transactionsCount รายการ');
     if (holdingsCount > 0) parts.add('หลักทรัพย์ $holdingsCount รายการ');
+    if (stockTradesCount > 0) {
+      parts.add('ประวัติขายหุ้น $stockTradesCount รายการ');
+    }
     if (budgetsCount > 0) parts.add('งบประมาณ $budgetsCount รายการ');
     if (recurringTransactionsCount > 0) {
       parts.add('รายการประจำ $recurringTransactionsCount รายการ');

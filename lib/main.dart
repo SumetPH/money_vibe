@@ -24,6 +24,7 @@ import 'screens/recurring/recurring_list_screen.dart';
 import 'screens/recurring/recurring_detail_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/statistics/statistics_screen.dart';
+import 'screens/trade/trade_tracker_screen.dart';
 import 'screens/transaction/transaction_list_screen.dart';
 import 'services/database_manager.dart';
 import 'services/debug_bootstrap_service.dart';
@@ -228,6 +229,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GoRoute(
           path: '/statistics',
           builder: (context, state) => const StatisticsScreen(),
+        ),
+        GoRoute(
+          path: '/trade-tracker',
+          builder: (context, state) => const TradeTrackerScreen(),
         ),
       ],
       redirect: (context, state) {

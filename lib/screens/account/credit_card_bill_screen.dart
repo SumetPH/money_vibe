@@ -174,7 +174,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                 if (widget.account.statementDay != null)
                   Text(
                     'สรุปยอดวันที่ ${widget.account.statementDay}',
-                    style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
                   ),
               ],
             ),
@@ -246,215 +246,216 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
 
     return ListView.builder(
       key: const PageStorageKey('credit_card_bill_list'),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(bottom: 24),
       itemCount: bills.length,
       itemBuilder: (context, index) {
         final bill = bills[index];
+        final openBillColor = isDarkMode
+            ? AppColors.darkTransfer
+            : AppColors.transfer;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: () {
-              final billTransactionIds = [
-                ...bill.expenses.map((tx) => tx.id),
-                ...bill.payments.map((tx) => tx.id),
-              ];
+        return Column(
+          children: [
+            InkWell(
+              onTap: () {
+                final billTransactionIds = [
+                  ...bill.expenses.map((tx) => tx.id),
+                  ...bill.payments.map((tx) => tx.id),
+                ];
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TransactionListScreen(
-                    accountId: widget.account.id,
-                    transactionIds: bill.isOpen ? null : billTransactionIds,
-                    fixedDateRange: bill.isOpen
-                        ? _buildCurrentCycleDateRange(bill)
-                        : null,
-                    creditCardPaymentStartDate: bill.isOpen
-                        ? bill.paymentStartDate
-                        : null,
-                    title: bill.isOpen
-                        ? 'รอบปัจจุบัน'
-                        : 'รอบบิล ${bill.billName}',
-                  ),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: bill.isOpen
-                              ? AppColors.getAmountColor(
-                                  1,
-                                  isDarkMode,
-                                ).withValues(alpha: 0.15)
-                              : textSecondaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          bill.isOpen ? 'รอบปัจจุบัน' : bill.billName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: bill.isOpen
-                                ? AppColors.getAmountColor(1, isDarkMode)
-                                : textSecondaryColor,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      _buildStatusBadge(bill, isDarkMode),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _formatBillDateRange(bill),
-                    style: TextStyle(fontSize: 15, color: textSecondaryColor),
-                  ),
-                  if (bill.isOpen) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatStatementHint(bill),
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TransactionListScreen(
+                      accountId: widget.account.id,
+                      transactionIds: bill.isOpen ? null : billTransactionIds,
+                      fixedDateRange: bill.isOpen
+                          ? _buildCurrentCycleDateRange(bill)
+                          : null,
+                      creditCardPaymentStartDate: bill.isOpen
+                          ? bill.paymentStartDate
+                          : null,
+                      title: bill.isOpen
+                          ? 'รอบปัจจุบัน'
+                          : 'รอบบิล ${bill.billName}',
                     ),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ยอดที่ต้องชำระ',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: textSecondaryColor,
-                              ),
-                            ),
-                            Text(
-                              '${formatAmount(bill.totalAmount)} บาท',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: textPrimaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'ชำระแล้ว',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: textSecondaryColor,
-                              ),
-                            ),
-                            Text(
-                              '${formatAmount(bill.paidAmount)} บาท',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: bill.paidAmount == 0
-                                    ? textSecondaryColor
-                                    : AppColors.getAmountColor(1, isDarkMode),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
-                  if (bill.remainingAmount != 0) ...[
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: dividerColor),
-                    const SizedBox(height: 12),
+                );
+              },
+              child: Container(
+                color: surfaceColor,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          bill.remainingAmount > 0
-                              ? 'คงเหลือที่ต้องชำระ'
-                              : 'ชำระเกิน',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSecondaryColor,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bill.isOpen
+                                ? openBillColor.withValues(alpha: 0.15)
+                                : textSecondaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            bill.isOpen ? 'รอบปัจจุบัน' : bill.billName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: bill.isOpen
+                                  ? openBillColor
+                                  : textSecondaryColor,
+                            ),
                           ),
                         ),
-                        Text(
-                          '${formatAmount(bill.remainingAmount.abs())} บาท',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: bill.remainingAmount > 0
-                                ? AppColors.getAmountColor(
-                                    -1,
-                                    isDarkMode,
-                                  ) // ค้างชำระ = แดง
-                                : AppColors.getAmountColor(
-                                    1,
-                                    isDarkMode,
-                                  ), // ชำระเกิน = เขียว
-                          ),
-                        ),
+                        const Spacer(),
+                        _buildStatusBadge(bill, isDarkMode),
                       ],
                     ),
-                  ],
-                  if (bill.carriedOverAmount != 0) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _formatBillDateRange(bill),
+                      style: TextStyle(fontSize: 15, color: textSecondaryColor),
+                    ),
+                    if (bill.isOpen) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatStatementHint(bill),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: textSecondaryColor,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          bill.carriedOverAmount > 0
-                              ? 'ยอดค้างยกมาจากรอบก่อน'
-                              : 'ยอดชำระเกินยกมา',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSecondaryColor,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ยอดที่ต้องชำระ',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: textSecondaryColor,
+                                ),
+                              ),
+                              Text(
+                                '${formatAmount(bill.totalAmount)} บาท',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: textPrimaryColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          '${formatAmount(bill.carriedOverAmount.abs())} บาท',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: bill.carriedOverAmount > 0
-                                ? AppColors.getAmountColor(
-                                    -1,
-                                    isDarkMode,
-                                  ) // ค้างชำระ = แดง
-                                : AppColors.getAmountColor(
-                                    1,
-                                    isDarkMode,
-                                  ), // ชำระเกินยกมา = เขียว
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'ชำระแล้ว',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: textSecondaryColor,
+                                ),
+                              ),
+                              Text(
+                                '${formatAmount(bill.paidAmount)} บาท',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: bill.paidAmount == 0
+                                      ? textSecondaryColor
+                                      : AppColors.getAmountColor(1, isDarkMode),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
+                    if (bill.remainingAmount != 0) ...[
+                      const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            bill.remainingAmount > 0
+                                ? 'คงเหลือที่ต้องชำระ'
+                                : 'ชำระเกิน',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                          Text(
+                            '${formatAmount(bill.remainingAmount.abs())} บาท',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: bill.remainingAmount > 0
+                                  ? AppColors.getAmountColor(
+                                      -1,
+                                      isDarkMode,
+                                    ) // ค้างชำระ = แดง
+                                  : AppColors.getAmountColor(
+                                      1,
+                                      isDarkMode,
+                                    ), // ชำระเกิน = เขียว
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (bill.carriedOverAmount != 0) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            bill.carriedOverAmount > 0
+                                ? 'ยอดค้างยกมาจากรอบก่อน'
+                                : 'ยอดชำระเกินยกมา',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                          Text(
+                            '${formatAmount(bill.carriedOverAmount.abs())} บาท',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: bill.carriedOverAmount > 0
+                                  ? AppColors.getAmountColor(
+                                      -1,
+                                      isDarkMode,
+                                    ) // ค้างชำระ = แดง
+                                  : AppColors.getAmountColor(
+                                      1,
+                                      isDarkMode,
+                                    ), // ชำระเกินยกมา = เขียว
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
+            if (index != bills.length - 1)
+              Divider(height: 1, color: dividerColor),
+          ],
         );
       },
     );
@@ -479,8 +480,8 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
       text = 'ชำระบางส่วน';
     } else if (bill.isOpen) {
       // รอบปัจจุบันที่ยังไม่มีการชำระ — ยังเปิดอยู่
-      bgColor = Colors.blue.withValues(alpha: 0.15);
-      textColor = Colors.blue;
+      textColor = isDarkMode ? AppColors.darkTransfer : AppColors.transfer;
+      bgColor = textColor.withValues(alpha: 0.15);
       text = 'กำลังใช้งาน';
     } else {
       bgColor = AppColors.getAmountColor(

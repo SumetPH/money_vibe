@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/stock_holding.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../main.dart';
 
 /// วิดเจ็ตแสดงข้อมูลหุ้นถือครองแต่ละตัวในพอร์ต (Deep Module)
@@ -15,6 +16,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onChangeLogo;
   final VoidCallback? onClearLogo;
+  final VoidCallback onSell;
   final VoidCallback onDelete;
   final bool isDarkMode;
 
@@ -27,6 +29,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
     required this.onEdit,
     required this.onChangeLogo,
     required this.onClearLogo,
+    required this.onSell,
     required this.onDelete,
     required this.isDarkMode,
   });
@@ -272,7 +275,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     ),
                     decoration: BoxDecoration(
                       color: sellPlanStatus.backgroundColor,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadii.large),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,7 +331,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
       backgroundColor: bgColor,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadii.sheet),
+        ),
       ),
       builder: (_) => SafeArea(
         child: Column(
@@ -340,7 +345,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
               height: 4,
               decoration: BoxDecoration(
                 color: handleColor,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppRadii.tiny),
               ),
             ),
             const SizedBox(height: 12),
@@ -354,6 +359,18 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
               onTap: () {
                 Navigator.pop(context);
                 widget.onEdit();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.sell_outlined, color: textColor),
+              title: Text(
+                'ขาย ${widget.holding.ticker}',
+                style: TextStyle(color: textColor),
+              ),
+              tileColor: bgColor,
+              onTap: () {
+                Navigator.pop(context);
+                widget.onSell();
               },
             ),
             ListTile(
@@ -767,7 +784,7 @@ class HoldingThumbnailWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
       color: accentColor.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(AppRadii.medium),
     );
 
     Widget fallback() => Center(
@@ -791,7 +808,7 @@ class HoldingThumbnailWidget extends StatelessWidget {
       child: logoUrl.isEmpty
           ? fallback()
           : ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadii.small),
               child: CachedNetworkImage(
                 imageUrl: logoUrl,
                 fit: BoxFit.contain,

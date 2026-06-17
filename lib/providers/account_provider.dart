@@ -6,6 +6,7 @@ import '../services/database_manager.dart';
 import '../services/stock_price_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
+import '../models/stock_trade.dart';
 import '../models/transaction.dart';
 
 class AccountProvider extends ChangeNotifier {
@@ -19,6 +20,7 @@ class AccountProvider extends ChangeNotifier {
   final List<Account> _accounts = [];
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
+  final List<StockTrade> _stockTrades = [];
 
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
@@ -54,6 +56,7 @@ class AccountProvider extends ChangeNotifier {
       _accounts.addAll(accounts);
 
       final holdings = await _db.getPortfolioHoldings();
+      final stockTrades = await _db.getStockTrades();
       _holdings.clear();
       for (final holding in holdings) {
         _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
@@ -64,9 +67,13 @@ class AccountProvider extends ChangeNotifier {
           (a, b) => a.sortOrder.compareTo(b.sortOrder),
         );
       }
+      _stockTrades
+        ..clear()
+        ..addAll(stockTrades)
+        ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
 
       debugPrint(
-        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings',
+        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades',
       );
 
       // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
@@ -140,6 +147,42 @@ class AccountProvider extends ChangeNotifier {
 
   List<StockHolding> getHoldings(String portfolioId) =>
       List.unmodifiable(_holdings[portfolioId] ?? []);
+
+  List<StockTrade> get stockTrades => List.unmodifiable(_stockTrades);
+
+  List<StockTrade> getStockTradesForPortfolio(String portfolioId) =>
+      List.unmodifiable(
+        _stockTrades.where((trade) => trade.portfolioId == portfolioId),
+      );
+
+  String resolveStockLogoUrl({
+    required String portfolioId,
+    required String ticker,
+    String fallback = '',
+  }) {
+    if (fallback.trim().isNotEmpty) return fallback.trim();
+    final normalizedTicker = ticker.trim().toUpperCase();
+    if (normalizedTicker.isEmpty) return '';
+
+    final portfolioHoldings = _holdings[portfolioId] ?? const <StockHolding>[];
+    for (final holding in portfolioHoldings) {
+      if (holding.ticker.trim().toUpperCase() == normalizedTicker &&
+          holding.logoUrl.trim().isNotEmpty) {
+        return holding.logoUrl.trim();
+      }
+    }
+
+    for (final holdings in _holdings.values) {
+      for (final holding in holdings) {
+        if (holding.ticker.trim().toUpperCase() == normalizedTicker &&
+            holding.logoUrl.trim().isNotEmpty) {
+          return holding.logoUrl.trim();
+        }
+      }
+    }
+
+    return '';
+  }
 
   // ── Balance computation ───────────────────────────────────────────────────
 
@@ -457,6 +500,251 @@ class AccountProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<StockTrade> sellHolding({
+    required String portfolioId,
+    required String holdingId,
+    required double sharesSold,
+    required double sellPriceUsd,
+    required double cashReceivedUsd,
+    DateTime? soldAt,
+  }) async {
+    if (sharesSold <= 0) {
+      throw ArgumentError.value(sharesSold, 'sharesSold', 'ต้องมากกว่า 0');
+    }
+    if (sellPriceUsd < 0) {
+      throw ArgumentError.value(sellPriceUsd, 'sellPriceUsd', 'ต้องไม่ติดลบ');
+    }
+    if (cashReceivedUsd < 0) {
+      throw ArgumentError.value(
+        cashReceivedUsd,
+        'cashReceivedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+
+    final accountIndex = _accounts.indexWhere((a) => a.id == portfolioId);
+    if (accountIndex == -1) {
+      throw StateError('ไม่พบพอร์ตที่ต้องการขายหุ้น');
+    }
+
+    final holdings = _holdings[portfolioId];
+    if (holdings == null) {
+      throw StateError('ไม่พบหุ้นในพอร์ตนี้');
+    }
+
+    final holdingIndex = holdings.indexWhere((h) => h.id == holdingId);
+    if (holdingIndex == -1) {
+      throw StateError('ไม่พบหุ้นที่ต้องการขาย');
+    }
+
+    final holding = holdings[holdingIndex];
+    if (sharesSold > holding.shares + 0.0000001) {
+      throw ArgumentError.value(
+        sharesSold,
+        'sharesSold',
+        'จำนวนขายมากกว่าจำนวนที่ถือ',
+      );
+    }
+
+    final trade = StockTrade(
+      id: generateId(),
+      portfolioId: portfolioId,
+      holdingId: holding.id,
+      ticker: holding.ticker,
+      name: holding.name,
+      logoUrl: holding.logoUrl,
+      sharesSold: sharesSold,
+      sellPriceUsd: sellPriceUsd,
+      cashReceivedUsd: cashReceivedUsd,
+      costBasisUsd: holding.costBasisUsd,
+      soldAt: soldAt,
+    );
+
+    final oldAccount = _accounts[accountIndex];
+    final oldHolding = holding;
+    final oldTrades = List<StockTrade>.from(_stockTrades);
+    final remainingShares = holding.shares - sharesSold;
+    final isFullSell = remainingShares <= 0.0000001;
+    final updatedAccount = oldAccount.copyWith(
+      cashBalance: oldAccount.cashBalance + cashReceivedUsd,
+    );
+
+    _accounts[accountIndex] = updatedAccount;
+    if (isFullSell) {
+      holdings.removeAt(holdingIndex);
+    } else {
+      holdings[holdingIndex] = holding.copyWith(shares: remainingShares);
+    }
+    _stockTrades.insert(0, trade);
+    notifyListeners();
+
+    var insertedTrade = false;
+    var updatedAccountRemote = false;
+    try {
+      await _db.insertStockTrade(trade);
+      insertedTrade = true;
+      await _db.updateAccount(updatedAccount);
+      updatedAccountRemote = true;
+      if (isFullSell) {
+        await _db.deleteHolding(holding.id);
+      } else {
+        await _db.updateHolding(holdings[holdingIndex]);
+      }
+      return trade;
+    } catch (e) {
+      debugPrint('AccountProvider: Error selling holding: $e');
+      if (insertedTrade) {
+        try {
+          await _db.deleteStockTrade(trade.id);
+        } catch (cleanupError) {
+          debugPrint(
+            'AccountProvider: Error rolling back stock trade: $cleanupError',
+          );
+        }
+      }
+      if (updatedAccountRemote) {
+        try {
+          await _db.updateAccount(oldAccount);
+        } catch (cleanupError) {
+          debugPrint(
+            'AccountProvider: Error rolling back portfolio cash: $cleanupError',
+          );
+        }
+      }
+      _accounts[accountIndex] = oldAccount;
+      if (isFullSell) {
+        holdings.insert(holdingIndex, oldHolding);
+      } else {
+        holdings[holdingIndex] = oldHolding;
+      }
+      _stockTrades
+        ..clear()
+        ..addAll(oldTrades);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> addStockTrade(StockTrade trade) async {
+    final normalized = _normalizeStockTrade(trade);
+    _validateStockTrade(normalized);
+
+    _stockTrades.add(normalized);
+    _sortStockTrades();
+    notifyListeners();
+
+    try {
+      await _db.insertStockTrade(normalized);
+    } catch (e) {
+      debugPrint('AccountProvider: Error adding stock trade: $e');
+      _stockTrades.removeWhere((t) => t.id == normalized.id);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateStockTrade(StockTrade updated) async {
+    final normalized = _normalizeStockTrade(updated);
+    _validateStockTrade(normalized);
+
+    final index = _stockTrades.indexWhere((trade) => trade.id == normalized.id);
+    if (index == -1) return;
+
+    final oldTrade = _stockTrades[index];
+    _stockTrades[index] = normalized;
+    _sortStockTrades();
+    notifyListeners();
+
+    try {
+      await _db.updateStockTrade(normalized);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating stock trade: $e');
+      final rollbackIndex = _stockTrades.indexWhere(
+        (trade) => trade.id == oldTrade.id,
+      );
+      if (rollbackIndex == -1) {
+        _stockTrades.add(oldTrade);
+      } else {
+        _stockTrades[rollbackIndex] = oldTrade;
+      }
+      _sortStockTrades();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteStockTrade(String id) async {
+    final index = _stockTrades.indexWhere((trade) => trade.id == id);
+    if (index == -1) return;
+
+    final oldTrade = _stockTrades[index];
+    _stockTrades.removeAt(index);
+    notifyListeners();
+
+    try {
+      await _db.deleteStockTrade(id);
+    } catch (e) {
+      debugPrint('AccountProvider: Error deleting stock trade: $e');
+      _stockTrades.insert(index, oldTrade);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  StockTrade _normalizeStockTrade(StockTrade trade) {
+    final ticker = trade.ticker.trim().toUpperCase();
+    return trade.copyWith(
+      ticker: ticker,
+      name: trade.name.trim(),
+      logoUrl: resolveStockLogoUrl(
+        portfolioId: trade.portfolioId,
+        ticker: ticker,
+        fallback: trade.logoUrl,
+      ),
+    );
+  }
+
+  void _validateStockTrade(StockTrade trade) {
+    if (_accounts.every((account) => account.id != trade.portfolioId)) {
+      throw StateError('ไม่พบพอร์ตของรายการขาย');
+    }
+    if (trade.ticker.trim().isEmpty) {
+      throw ArgumentError.value(trade.ticker, 'ticker', 'ต้องระบุ ticker');
+    }
+    if (trade.sharesSold <= 0) {
+      throw ArgumentError.value(
+        trade.sharesSold,
+        'sharesSold',
+        'ต้องมากกว่า 0',
+      );
+    }
+    if (trade.sellPriceUsd < 0) {
+      throw ArgumentError.value(
+        trade.sellPriceUsd,
+        'sellPriceUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (trade.cashReceivedUsd < 0) {
+      throw ArgumentError.value(
+        trade.cashReceivedUsd,
+        'cashReceivedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (trade.costBasisUsd < 0) {
+      throw ArgumentError.value(
+        trade.costBasisUsd,
+        'costBasisUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+  }
+
+  void _sortStockTrades() {
+    _stockTrades.sort((a, b) => b.soldAt.compareTo(a.soldAt));
   }
 
   Future<void> reorderHoldings(

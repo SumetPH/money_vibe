@@ -72,10 +72,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               tabs: const [
-                Tab(text: 'ทรัพย์สิน', icon: Icon(Icons.show_chart)),
-                Tab(text: 'รายปี', icon: Icon(Icons.bar_chart)),
-                Tab(text: 'รายจ่าย', icon: Icon(Icons.trending_down)),
-                Tab(text: 'รายรับ', icon: Icon(Icons.trending_up)),
+                Tab(text: 'ทรัพย์สิน'),
+                Tab(text: 'รายปี'),
+                Tab(text: 'รายจ่าย'),
+                Tab(text: 'รายรับ'),
               ],
             ),
           ),
@@ -123,6 +123,12 @@ class _YearlyBarChart extends StatelessWidget {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
+        final surfaceColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
 
         final accounts = accountProvider.accounts;
         final yearlyData = _calculateYearlyData(
@@ -154,106 +160,25 @@ class _YearlyBarChart extends StatelessWidget {
         return SingleChildScrollView(
           child: Column(
             children: [
-              // Year Selector
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.chevron_left, color: textColor),
-                      onPressed: () => onYearChanged(selectedYear - 1),
-                    ),
-                    Text(
-                      '$selectedYear',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.chevron_right, color: textColor),
-                      onPressed: () => onYearChanged(selectedYear + 1),
-                    ),
-                  ],
-                ),
+              _StatsYearSelector(
+                selectedYear: selectedYear,
+                onYearChanged: onYearChanged,
+                isDarkMode: isDarkMode,
+              ),
+              _YearlySummaryPanel(
+                income: currentYearData['income'] ?? 0,
+                expense: currentYearData['expense'] ?? 0,
+                net: netWorthYear,
+                incomeColor: incomeColor,
+                expenseColor: expenseColor,
+                netColor: netWorthYearColor,
+                isDarkMode: isDarkMode,
               ),
 
-              // Summary Cards
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SummaryCard(
-                            title: 'รายรับรวม',
-                            amount: currentYearData['income'] ?? 0,
-                            color: incomeColor,
-                            isDarkMode: isDarkMode,
-                            isCenter: false,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _SummaryCard(
-                            title: 'รายจ่ายรวม',
-                            amount: currentYearData['expense'] ?? 0,
-                            color: expenseColor,
-                            isDarkMode: isDarkMode,
-                            isCenter: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _SummaryCard(
-                      title: 'คงเหลือสุทธิ',
-                      amount: netWorthYear,
-                      color: netWorthYearColor,
-                      isDarkMode: isDarkMode,
-                      isCenter: true,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Bar Chart
               Container(
                 height: 320,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                color: surfaceColor,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -265,7 +190,7 @@ class _YearlyBarChart extends StatelessWidget {
                         color: textColor,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         _LegendItem(color: incomeColor, label: 'รายรับ'),
@@ -282,13 +207,26 @@ class _YearlyBarChart extends StatelessWidget {
                         isDarkMode,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: dividerColor),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // Monthly breakdown list
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'รายเดือน',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
               _buildMonthlyList(
                 monthlyData,
                 incomeColor,
@@ -483,27 +421,16 @@ class _YearlyBarChart extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: surfaceColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
               children: [
                 Expanded(
@@ -560,7 +487,7 @@ class _YearlyBarChart extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 10,
+                    vertical: 12,
                   ),
                   child: Row(
                     children: [
@@ -717,61 +644,185 @@ class _MonthlyData {
   });
 }
 
-class _SummaryCard extends StatelessWidget {
-  final String title;
-  final double amount;
-  final Color color;
+class _StatsYearSelector extends StatelessWidget {
+  final int selectedYear;
+  final ValueChanged<int> onYearChanged;
   final bool isDarkMode;
-  final bool isCenter;
 
-  const _SummaryCard({
-    required this.title,
-    required this.amount,
-    required this.color,
+  const _StatsYearSelector({
+    required this.selectedYear,
+    required this.onYearChanged,
     required this.isDarkMode,
-    required this.isCenter,
   });
 
   @override
   Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      color: surfaceColor,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.chevron_left, color: secondaryColor),
+                onPressed: () => onYearChanged(selectedYear - 1),
+              ),
+              Expanded(
+                child: Text(
+                  '$selectedYear',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.chevron_right, color: secondaryColor),
+                onPressed: () => onYearChanged(selectedYear + 1),
+              ),
+            ],
           ),
+          Divider(height: 1, color: dividerColor),
         ],
       ),
+    );
+  }
+}
+
+class _YearlySummaryPanel extends StatelessWidget {
+  final double income;
+  final double expense;
+  final double net;
+  final Color incomeColor;
+  final Color expenseColor;
+  final Color netColor;
+  final bool isDarkMode;
+
+  const _YearlySummaryPanel({
+    required this.income,
+    required this.expense,
+    required this.net,
+    required this.incomeColor,
+    required this.expenseColor,
+    required this.netColor,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       child: Column(
-        crossAxisAlignment: isCenter
-            ? CrossAxisAlignment.center
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            'คงเหลือสุทธิ',
             style: TextStyle(
-              fontSize: 14,
-              color: isDarkMode
-                  ? AppColors.darkTextSecondary
-                  : AppColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: secondaryColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            formatAmount(amount),
+            '${net >= 0 ? '+' : ''}${formatAmount(net)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: netColor,
             ),
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatSummaryMetric(
+                  label: 'รายรับ',
+                  value: formatAmount(income),
+                  color: incomeColor,
+                ),
+              ),
+              Expanded(
+                child: _StatSummaryMetric(
+                  label: 'รายจ่าย',
+                  value: formatAmount(expense),
+                  color: expenseColor,
+                  alignEnd: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: dividerColor),
         ],
       ),
+    );
+  }
+}
+
+class _StatSummaryMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool alignEnd;
+
+  const _StatSummaryMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryColor = DefaultTextStyle.of(
+      context,
+    ).style.color?.withValues(alpha: 0.62);
+
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 11, color: secondaryColor),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -830,6 +881,15 @@ class _CategoryPieChart extends StatelessWidget {
             final textColor = isDarkMode
                 ? AppColors.darkTextPrimary
                 : AppColors.textPrimary;
+            final secondaryColor = isDarkMode
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary;
+            final surfaceColor = isDarkMode
+                ? AppColors.darkSurface
+                : AppColors.surface;
+            final dividerColor = isDarkMode
+                ? AppColors.darkDivider
+                : AppColors.divider;
 
             final categoryData = _calculateCategoryData(
               txProvider.transactions,
@@ -864,61 +924,41 @@ class _CategoryPieChart extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Total Card
                   Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                    color: surfaceColor,
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
                           style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode
-                                ? AppColors.darkTextSecondary
-                                : AppColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: secondaryColor,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           formatAmount(total),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
                             color: color,
                           ),
                         ),
+                        const SizedBox(height: 14),
+                        Divider(height: 1, color: dividerColor),
                       ],
                     ),
                   ),
 
-                  // Pie Chart
                   Container(
                     height: 220,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                    color: surfaceColor,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                     child: PieChart(
                       PieChartData(
                         sectionsSpace: 2,
@@ -982,33 +1022,23 @@ class _CategoryPieChart extends StatelessWidget {
                     ),
                   ),
 
-                  // Category List
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      'แยกตามหมวดหมู่',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
                     ),
+                  ),
+                  Container(
+                    color: surfaceColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'แยกตามหมวดหมู่',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -1254,25 +1284,14 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             : 0;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Summary Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1283,9 +1302,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                     const SizedBox(height: 8),
                     Text(
                       formatAmount(currentNetWorth),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
                         color: currentNetWorth >= 0
                             ? (isDarkMode
                                   ? AppColors.darkIncome
@@ -1359,41 +1380,43 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Toggle: include excluded accounts
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'รวมบัญชีที่ซ่อนจาก Net Worth',
-                    style: TextStyle(fontSize: 13, color: secondaryTextColor),
-                  ),
-                  Switch(
-                    value: _includeExcluded,
-                    onChanged: (v) => setState(() => _includeExcluded = v),
-                    activeThumbColor: lineColor,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              // Line Chart
-              Container(
-                height: 300,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                    const SizedBox(height: 14),
+                    Divider(
+                      height: 1,
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
                     ),
                   ],
                 ),
+              ),
+              Container(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'รวมบัญชีที่ซ่อนจาก Net Worth',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _includeExcluded,
+                      onChanged: (v) => setState(() => _includeExcluded = v),
+                      activeThumbColor: lineColor,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 300,
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

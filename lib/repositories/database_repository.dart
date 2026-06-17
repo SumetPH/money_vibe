@@ -5,6 +5,7 @@ import '../models/transaction.dart';
 import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
+import '../models/stock_trade.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -50,6 +51,16 @@ abstract class PortfolioRepositoryInterface {
   Future<void> deleteHoldingsByPortfolio(String portfolioId);
   Future<Set<String>> getExistingHoldingIds();
   Future<void> bulkInsertHoldings(List<StockHolding> holdings);
+}
+
+/// Interface สำหรับจัดการประวัติการขายหุ้น (Stock Trade)
+abstract class StockTradeRepositoryInterface {
+  Future<List<StockTrade>> getStockTrades();
+  Future<void> insertStockTrade(StockTrade trade);
+  Future<void> updateStockTrade(StockTrade trade);
+  Future<void> deleteStockTrade(String id);
+  Future<Set<String>> getExistingStockTradeIds();
+  Future<void> bulkInsertStockTrades(List<StockTrade> trades);
 }
 
 /// Interface สำหรับจัดการข้อมูลงบประมาณ (Budget)
@@ -106,6 +117,7 @@ abstract class DatabaseRepository
         CategoryRepositoryInterface,
         TransactionRepositoryInterface,
         PortfolioRepositoryInterface,
+        StockTradeRepositoryInterface,
         BudgetRepositoryInterface,
         RecurringRepositoryInterface,
         SyncRepositoryInterface {
