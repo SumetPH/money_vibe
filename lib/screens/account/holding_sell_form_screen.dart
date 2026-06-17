@@ -250,7 +250,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                             widget.holding.ticker,
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -267,7 +267,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                     ),
                     Text(
                       'ถือ ${formatStockHoldingShares(widget.holding.shares)} หุ้น',
-                      style: TextStyle(color: secondaryColor, fontSize: 13),
+                      style: TextStyle(color: secondaryColor, fontSize: 16),
                     ),
                   ],
                 ),
@@ -339,7 +339,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(
-                label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
+                label: 'ค่าธรรมเนียมอื่นๆ \n(SEC/TAF)',
                 controller: _exchangeFeeController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -348,7 +348,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
               const SizedBox(height: 12),
               _SellNumberFieldRow(
-                label: 'ยอดที่จะได้รับคืน (Net USD)',
+                label: 'ยอดที่จะได้รับคืน \n(Net USD)',
                 controller: _cashReceivedController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,

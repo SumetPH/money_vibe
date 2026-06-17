@@ -18,6 +18,7 @@ import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
 import 'holding_form_screen.dart';
 import 'holding_sell_form_screen.dart';
+import '../trade/broker_report_list_screen.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -757,6 +758,26 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         MaterialPageRoute(
                           builder: (_) => PortfolioAnalyzeScreen(
                             accountId: widget.account.id,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(Icons.edit_document, color: textColor),
+                    title: Text(
+                      'ปรับยอดจาก Broker',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BrokerReportListScreen(
+                            portfolioId: widget.account.id,
                           ),
                         ),
                       );

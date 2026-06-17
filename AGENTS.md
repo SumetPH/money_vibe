@@ -92,7 +92,6 @@ Money Vibe คือแอปจัดการการเงินส่วน
 
 1. **Analyze**: รัน `flutter analyze` และต้องไม่มี error/warning
 2. **Format**: รัน `dart format .` เพื่อจัดฟอร์แมตโค้ด
-3. **Test**: รัน `flutter test` หากมีการแก้ไข logic สำคัญ
 
 ### 5.2 การเพิ่มฟีเจอร์ใหม่
 
@@ -108,3 +107,9 @@ Money Vibe คือแอปจัดการการเงินส่วน
 - **No Hacks**: ห้ามใช้ `as dynamic` หรือข้ามระบบ Type Safety ของ Dart
 - **Security**: ห้าม Hard-code API Key หรือข้อมูลส่วนตัวลงในโค้ด (ให้ใช้ `lib/services/settings_provider.dart` หรือเครื่องมือจัดการ config แทน)
 - **Supabase Only**: เลิกใช้ SQLite แล้ว ไม่ต้อง implement หรืออ้างถึงโค้ดส่วนที่เกี่ยวกับ SQLite เดิม
+
+## Testing
+
+- ไม่ต้องเขียน test สำหรับงานในโปรเจกต์นี้
+- หากมี test เดิมอยู่และไม่ได้ถูกขอให้แก้โดยตรง ไม่ต้อง maintain หรือเพิ่ม coverage
+- ก่อนส่งงานให้รันเฉพาะ `dart format .` และ `flutter analyze`

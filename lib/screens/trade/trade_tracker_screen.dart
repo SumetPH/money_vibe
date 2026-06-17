@@ -5,14 +5,17 @@ import 'package:provider/provider.dart';
 import '../../main.dart';
 import '../../models/account.dart';
 import '../../models/stock_trade.dart';
+import '../../models/tax_remittance.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/transaction_provider.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
 import 'stock_trade_form_screen.dart';
+import 'tax_remittance_form_screen.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -34,7 +37,8 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_handleTabChanged);
     _priceService = _buildPriceService();
   }
 
@@ -46,8 +50,14 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _handleTabChanged() {
+    if (!mounted || _tabController.indexIsChanging) return;
+    setState(() {});
   }
 
   @override
@@ -76,16 +86,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                 ),
               ),
         title: const Text('บันทึกการเทรด'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: () => _showFilterSheet(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _openTradeForm(context, null),
-          ),
-        ],
+        actions: _buildAppBarActions(context),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -94,14 +95,30 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           tabs: const [
             Tab(text: 'สรุป'),
             Tab(text: 'รายปี'),
+            Tab(text: 'โอนกลับไทย'),
           ],
         ),
       ),
       body: Consumer<AccountProvider>(
         builder: (context, accountProvider, _) {
+          final transactions = context
+              .watch<TransactionProvider>()
+              .transactions;
           final trades = _filteredTrades(accountProvider.stockTrades);
           final summary = _TradeSummary.fromTrades(trades);
           final tradeMonthSections = _groupTradesByMonth(trades);
+          final principalQuotaRemainingUsd = accountProvider.accounts
+              .where((account) => account.isPortfolio)
+              .fold(
+                0.0,
+                (sum, portfolio) =>
+                    sum +
+                    accountProvider.getRemainingPrincipalPool(
+                      portfolio.id,
+                      transactions,
+                      targetYear: _selectedYear,
+                    ),
+              );
 
           return SafeArea(
             child: TabBarView(
@@ -154,12 +171,57 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   onYearChanged: (year) => setState(() => _selectedYear = year),
                   isDarkMode: isDarkMode,
                 ),
+                _TaxRemittanceTab(
+                  trades: accountProvider.stockTrades,
+                  remittances: accountProvider.taxRemittances,
+                  selectedYear: _selectedYear,
+                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                  portfolioNameOf: (remittance) =>
+                      accountProvider.findById(remittance.portfolioId)?.name ??
+                      'พอร์ตหุ้น',
+                  onAdd: () => _openRemittanceForm(context, null),
+                  onEdit: (remittance) =>
+                      _openRemittanceForm(context, remittance),
+                  onDelete: (remittance) =>
+                      _confirmDeleteRemittance(context, remittance),
+                  isDarkMode: isDarkMode,
+                ),
               ],
             ),
           );
         },
       ),
     );
+  }
+
+  List<Widget> _buildAppBarActions(BuildContext context) {
+    switch (_tabController.index) {
+      case 0:
+        return [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'ตัวกรอง',
+            onPressed: () => _showFilterSheet(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'เพิ่ม Trade',
+            onPressed: () => _openTradeForm(context, null),
+          ),
+        ];
+      case 1:
+        return [];
+      case 2:
+        return [
+          IconButton(
+            icon: const Icon(Icons.account_balance),
+            tooltip: 'บันทึกโอนกลับไทย',
+            onPressed: () => _openRemittanceForm(context, null),
+          ),
+        ];
+    }
+    return const [];
   }
 
   List<StockTrade> _filteredTrades(List<StockTrade> trades) {
@@ -214,6 +276,50 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               await provider.addStockTrade(savedTrade);
             } else {
               await provider.updateStockTrade(savedTrade);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openRemittanceForm(
+    BuildContext context,
+    TaxRemittance? remittance,
+  ) async {
+    final provider = context.read<AccountProvider>();
+    final portfolios = provider.accounts
+        .where((account) => account.type == AccountType.portfolio)
+        .toList();
+
+    if (portfolios.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ต้องมีพอร์ตหุ้นก่อนบันทึกโอนกลับไทย')),
+      );
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TaxRemittanceFormScreen(
+          portfolios: portfolios,
+          existing: remittance,
+          generateId: provider.generateId,
+          onSave: (savedRemittance) async {
+            final transactions = context
+                .read<TransactionProvider>()
+                .transactions;
+            if (remittance == null) {
+              await provider.addTaxRemittance(
+                savedRemittance,
+                transactions: transactions,
+              );
+            } else {
+              await provider.updateTaxRemittance(
+                savedRemittance,
+                transactions: transactions,
+              );
             }
           },
         ),
@@ -374,6 +480,47 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
       context,
     ).showSnackBar(SnackBar(content: Text('ลบ Trade ${trade.ticker} แล้ว')));
   }
+
+  Future<void> _confirmDeleteRemittance(
+    BuildContext context,
+    TaxRemittance remittance,
+  ) async {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+        title: Text('ลบรายการโอนกลับไทย', style: TextStyle(color: textColor)),
+        content: Text(
+          'ต้องการลบรายการโอนกลับ ${formatAmount(remittance.amountUsd)} USD ใช่ไหม?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: expenseColor),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    await context.read<AccountProvider>().deleteTaxRemittance(remittance.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('ลบรายการโอนกลับไทยแล้ว')));
+  }
 }
 
 class _YearlyTradeTab extends StatelessWidget {
@@ -458,6 +605,551 @@ class _YearlyTradeTab extends StatelessWidget {
       final summary = _TradeSummary.fromTrades(monthTrades);
       return _MonthlyTradeSummary(month: month, summary: summary);
     });
+  }
+}
+
+class _TaxRemittanceTab extends StatelessWidget {
+  final List<StockTrade> trades;
+  final List<TaxRemittance> remittances;
+  final int selectedYear;
+  final double principalQuotaRemainingUsd;
+  final ValueChanged<int> onYearChanged;
+  final String Function(TaxRemittance remittance) portfolioNameOf;
+  final VoidCallback onAdd;
+  final ValueChanged<TaxRemittance> onEdit;
+  final ValueChanged<TaxRemittance> onDelete;
+  final bool isDarkMode;
+
+  const _TaxRemittanceTab({
+    required this.trades,
+    required this.remittances,
+    required this.selectedYear,
+    required this.principalQuotaRemainingUsd,
+    required this.onYearChanged,
+    required this.portfolioNameOf,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final yearTrades = trades
+        .where((trade) => trade.soldAt.year == selectedYear)
+        .toList();
+    final yearRemittances = remittances
+        .where((remittance) => remittance.remittedAt.year == selectedYear)
+        .toList();
+    final tradeSummary = _TradeSummary.fromTrades(yearTrades);
+    final remittanceSummary = _TaxRemittanceSummary.fromRemittances(
+      yearRemittances,
+    );
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: _YearSelector(
+            selectedYear: selectedYear,
+            onYearChanged: onYearChanged,
+            isDarkMode: isDarkMode,
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: _TaxRemittanceSummaryPanel(
+            tradeSummary: tradeSummary,
+            remittanceSummary: remittanceSummary,
+            isDarkMode: isDarkMode,
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: _TaxRemittanceAllocationSummarySection(
+            remittanceSummary: remittanceSummary,
+            principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+            isDarkMode: isDarkMode,
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              'รายการโอนกลับไทย',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        if (yearRemittances.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _EmptyTradeState(
+              isDarkMode: isDarkMode,
+              textColor: secondaryColor,
+              icon: Icons.account_balance,
+              message: 'ยังไม่มีรายการโอนกลับไทยในปีนี้',
+              description:
+                  'บันทึกเงินที่โอนกลับไทยและ allocation เพื่อใช้ประมาณภาษี',
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate((listCtx, index) {
+              final remittance = yearRemittances[index];
+              return _TaxRemittanceListItem(
+                remittance: remittance,
+                portfolioName: portfolioNameOf(remittance),
+                isDarkMode: isDarkMode,
+                onEdit: () => onEdit(remittance),
+                onDelete: () => onDelete(remittance),
+                onLongPress: () => _showRemittanceActionsSheet(
+                  listCtx,
+                  remittance,
+                  portfolioNameOf(remittance),
+                ),
+              );
+            }, childCount: yearRemittances.length),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
+  }
+
+  void _showRemittanceActionsSheet(
+    BuildContext context,
+    TaxRemittance remittance,
+    String portfolioName,
+  ) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: surfaceColor,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadii.sheet),
+        ),
+      ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: dividerColor,
+                      borderRadius: BorderRadius.circular(AppRadii.tiny),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${formatAmount(remittance.amountUsd)} USD',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  '$portfolioName • ${_formatRemittanceDate(remittance.remittedAt)}',
+                  style: TextStyle(color: secondaryColor, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: dividerColor),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(sheetCtx);
+                    onEdit(remittance);
+                  },
+                ),
+                Divider(height: 1, color: dividerColor),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.delete_outline, color: dangerColor),
+                  title: Text('ลบรายการ', style: TextStyle(color: dangerColor)),
+                  onTap: () {
+                    Navigator.pop(sheetCtx);
+                    onDelete(remittance);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static String _formatRemittanceDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
+  }
+}
+
+class _TaxRemittanceSummary {
+  final double remittedUsd;
+  final double remittedThb;
+  final double principalAllocatedUsd;
+  final double taxableUsd;
+  final double taxableThb;
+  final int remittanceCount;
+
+  const _TaxRemittanceSummary({
+    required this.remittedUsd,
+    required this.remittedThb,
+    required this.principalAllocatedUsd,
+    required this.taxableUsd,
+    required this.taxableThb,
+    required this.remittanceCount,
+  });
+
+  factory _TaxRemittanceSummary.fromRemittances(
+    List<TaxRemittance> remittances,
+  ) {
+    return _TaxRemittanceSummary(
+      remittedUsd: remittances.fold(0.0, (sum, item) => sum + item.amountUsd),
+      remittedThb: remittances.fold(0.0, (sum, item) => sum + item.thbAmount),
+      principalAllocatedUsd: remittances
+          .expand((item) => item.allocations)
+          .where(
+            (allocation) =>
+                allocation.bucketType == TaxRemittanceBucketType.principal,
+          )
+          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd),
+      taxableUsd: remittances.fold(0.0, (sum, item) => sum + item.taxableUsd),
+      taxableThb: remittances.fold(0.0, (sum, item) => sum + item.taxableThb),
+      remittanceCount: remittances.length,
+    );
+  }
+}
+
+class _TaxRemittanceSummaryPanel extends StatelessWidget {
+  final _TradeSummary tradeSummary;
+  final _TaxRemittanceSummary remittanceSummary;
+  final bool isDarkMode;
+
+  const _TaxRemittanceSummaryPanel({
+    required this.tradeSummary,
+    required this.remittanceSummary,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final taxableColor = AppColors.getAmountColor(
+      remittanceSummary.taxableUsd,
+      isDarkMode,
+    );
+
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Taxable จากเงินโอนกลับ',
+                style: TextStyle(
+                  color: secondaryColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${remittanceSummary.remittanceCount} รายการ',
+                style: TextStyle(color: secondaryColor, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${formatAmount(remittanceSummary.taxableUsd)} USD',
+                    style: TextStyle(
+                      color: taxableColor,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${formatAmount(remittanceSummary.taxableThb)} THB',
+                    style: TextStyle(color: secondaryColor, fontSize: 13),
+                  ),
+                ],
+              ),
+              _SummaryMetric(
+                label: 'Realized P/L ปีนี้',
+                value:
+                    '${tradeSummary.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(tradeSummary.realizedPnlUsd)} USD',
+                color: AppColors.getAmountColor(
+                  tradeSummary.realizedPnlUsd,
+                  isDarkMode,
+                ),
+                alignEnd: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
+  final _TaxRemittanceSummary remittanceSummary;
+  final double principalQuotaRemainingUsd;
+  final bool isDarkMode;
+
+  const _TaxRemittanceAllocationSummarySection({
+    required this.remittanceSummary,
+    required this.principalQuotaRemainingUsd,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(height: 1, color: dividerColor),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text(
+                'โควต้าเงินต้นปีที่เลือก',
+                style: TextStyle(
+                  color: secondaryColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${remittanceSummary.remittanceCount} รายการ',
+                style: TextStyle(color: secondaryColor, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'โอนกลับรวม',
+                  value: '${formatAmount(remittanceSummary.remittedUsd)} USD',
+                  color: textColor,
+                ),
+              ),
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'เงินต้นใช้แล้ว',
+                  value:
+                      '${formatAmount(remittanceSummary.principalAllocatedUsd)} USD',
+                  color: textColor,
+                  alignEnd: true,
+                ),
+              ),
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'โควต้าคงเหลือ',
+                  value: '${formatAmount(principalQuotaRemainingUsd)} USD',
+                  color: textColor,
+                  alignEnd: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'คำนวณจากเงินต้นสะสมถึงปีที่เลือก หักเงินต้นที่โอนกลับแล้ว',
+            style: TextStyle(color: secondaryColor, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaxRemittanceListItem extends StatelessWidget {
+  final TaxRemittance remittance;
+  final String portfolioName;
+  final bool isDarkMode;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onLongPress;
+
+  const _TaxRemittanceListItem({
+    required this.remittance,
+    required this.portfolioName,
+    required this.isDarkMode,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return Material(
+      color: surfaceColor,
+      child: InkWell(
+        onTap: onEdit,
+        onLongPress: onLongPress,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${formatAmount(remittance.amountUsd)} USD',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${formatAmount(remittance.taxableUsd)} taxable',
+                        style: TextStyle(
+                          color: AppColors.getAmountColor(
+                            remittance.taxableUsd,
+                            isDarkMode,
+                          ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '$portfolioName • ${_formatRemittanceDate(remittance.remittedAt)} • ${formatAmount(remittance.thbAmount)} THB',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: secondaryColor, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (remittance.allocations.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Column(
+                  children: remittance.allocations.map((allocation) {
+                    final yearText =
+                        allocation.bucketType ==
+                                TaxRemittanceBucketType.principal ||
+                            allocation.taxYear == null
+                        ? ''
+                        : ' ${allocation.taxYear}';
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${taxRemittanceBucketLabel(allocation.bucketType)}$yearText',
+                              style: TextStyle(
+                                color: secondaryColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${formatAmount(allocation.amountUsd)} USD',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            Divider(height: 1, color: dividerColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatRemittanceDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
   }
 }
 
@@ -1026,8 +1718,17 @@ class _SummaryMetric extends StatelessWidget {
 class _EmptyTradeState extends StatelessWidget {
   final bool isDarkMode;
   final Color textColor;
+  final IconData icon;
+  final String message;
+  final String description;
 
-  const _EmptyTradeState({required this.isDarkMode, required this.textColor});
+  const _EmptyTradeState({
+    required this.isDarkMode,
+    required this.textColor,
+    this.icon = Icons.show_chart,
+    this.message = 'ยังไม่มีประวัติการขาย',
+    this.description = 'เมื่อขายหุ้น รายการจะแสดงที่นี่พร้อมกำไร/ขาดทุน',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1047,14 +1748,14 @@ class _EmptyTradeState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
               child: Icon(
-                Icons.show_chart,
+                icon,
                 color: textColor.withValues(alpha: 0.9),
                 size: 30,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              'ยังไม่มีประวัติการขาย',
+              message,
               style: TextStyle(
                 color: textColor,
                 fontSize: 16,
@@ -1063,7 +1764,7 @@ class _EmptyTradeState extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'เมื่อขายหุ้น รายการจะแสดงที่นี่พร้อมกำไร/ขาดทุน',
+              description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: textColor.withValues(alpha: 0.75),
@@ -1505,15 +2206,31 @@ class _TradeListItem extends StatelessWidget {
                       if (trade.pnlSource == PnlSource.broker) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? AppColors.darkTransfer.withValues(alpha: 0.2) : AppColors.transfer.withValues(alpha: 0.1),
+                            color: isDarkMode
+                                ? AppColors.darkTransfer.withValues(alpha: 0.2)
+                                : AppColors.transfer.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(AppRadii.tiny),
-                            border: Border.all(color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, width: 0.5),
+                            border: Border.all(
+                              color: isDarkMode
+                                  ? AppColors.darkTransfer
+                                  : AppColors.transfer,
+                              width: 0.5,
+                            ),
                           ),
                           child: Text(
                             'Broker',
-                            style: TextStyle(fontSize: 9, color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: isDarkMode
+                                  ? AppColors.darkTransfer
+                                  : AppColors.transfer,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -1667,15 +2384,37 @@ class _TradeListItem extends StatelessWidget {
                               if (trade.pnlSource == PnlSource.broker) ...[
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: isDarkMode ? AppColors.darkTransfer.withValues(alpha: 0.2) : AppColors.transfer.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(AppRadii.tiny),
-                                    border: Border.all(color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, width: 0.5),
+                                    color: isDarkMode
+                                        ? AppColors.darkTransfer.withValues(
+                                            alpha: 0.2,
+                                          )
+                                        : AppColors.transfer.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.tiny,
+                                    ),
+                                    border: Border.all(
+                                      color: isDarkMode
+                                          ? AppColors.darkTransfer
+                                          : AppColors.transfer,
+                                      width: 0.5,
+                                    ),
                                   ),
                                   child: Text(
                                     'Broker P/L',
-                                    style: TextStyle(fontSize: 10, color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDarkMode
+                                          ? AppColors.darkTransfer
+                                          : AppColors.transfer,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1727,9 +2466,14 @@ class _TradeListItem extends StatelessWidget {
                   value: '${formatAmount(trade.cashReceivedUsd)} USD',
                   isDarkMode: isDarkMode,
                 ),
-                if (trade.grossProceedsUsd != null || (trade.brokerFeeUsd != null && trade.brokerFeeUsd! > 0)) ...[
+                if (trade.grossProceedsUsd != null ||
+                    (trade.brokerFeeUsd != null &&
+                        trade.brokerFeeUsd! > 0)) ...[
                   const SizedBox(height: 10),
-                  Divider(height: 1, color: dividerColor.withValues(alpha: 0.5)),
+                  Divider(
+                    height: 1,
+                    color: dividerColor.withValues(alpha: 0.5),
+                  ),
                   const SizedBox(height: 10),
                   if (trade.grossProceedsUsd != null)
                     _TradeDetailRow(

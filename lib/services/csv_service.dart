@@ -924,16 +924,20 @@ class CsvService {
               ? double.tryParse(row[16]?.toString() ?? '')
               : null,
           costMethod: row.length > 17 && row[17]?.toString().isNotEmpty == true
-              ? CostMethod.values.asNameMap()[row[17]?.toString()] ?? CostMethod.average
+              ? CostMethod.values.asNameMap()[row[17]?.toString()] ??
+                    CostMethod.average
               : CostMethod.average,
           pnlSource: row.length > 18 && row[18]?.toString().isNotEmpty == true
-              ? PnlSource.values.asNameMap()[row[18]?.toString()] ?? PnlSource.estimated
+              ? PnlSource.values.asNameMap()[row[18]?.toString()] ??
+                    PnlSource.estimated
               : PnlSource.estimated,
           settledAt: row.length > 19
               ? DateTime.tryParse(row[19]?.toString() ?? '')
               : null,
           brokerOrderRef: row.length > 20
-              ? (row[20]?.toString().isEmpty == true ? null : row[20]?.toString())
+              ? (row[20]?.toString().isEmpty == true
+                    ? null
+                    : row[20]?.toString())
               : null,
         ),
       );

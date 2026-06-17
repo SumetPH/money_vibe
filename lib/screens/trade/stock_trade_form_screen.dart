@@ -52,10 +52,16 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   final _logoUrlController = TextEditingController();
   final _realizedPnlController = TextEditingController();
 
+  final _grossProceedsController = TextEditingController();
+  final _brokerFeeController = TextEditingController();
+  final _exchangeFeeController = TextEditingController();
+  final _taxFeeController = TextEditingController();
+
   String? _portfolioId;
   DateTime _soldAt = DateTime.now();
   bool _isSaving = false;
   bool _useBrokerPnl = false;
+  bool _showAdvancedDetails = false;
 
   String? _portfolioError;
   String? _tickerError;
@@ -64,6 +70,11 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   String? _cashReceivedError;
   String? _costBasisError;
   String? _realizedPnlError;
+
+  String? _grossProceedsError;
+  String? _brokerFeeError;
+  String? _exchangeFeeError;
+  String? _taxFeeError;
 
   bool get _isEditing => widget.existing != null;
 
@@ -87,6 +98,29 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
           trade.pnlSource == PnlSource.broker ||
           trade.pnlSource == PnlSource.manual;
       _realizedPnlController.text = _formatEditable(trade.realizedPnlUsd, 4);
+      if (trade.grossProceedsUsd != null) {
+        _grossProceedsController.text = _formatEditable(
+          trade.grossProceedsUsd!,
+          4,
+        );
+      }
+      if (trade.brokerFeeUsd != null) {
+        _brokerFeeController.text = _formatEditable(trade.brokerFeeUsd!, 4);
+      }
+      if (trade.exchangeFeeUsd != null) {
+        _exchangeFeeController.text = _formatEditable(trade.exchangeFeeUsd!, 4);
+      }
+      if (trade.taxFeeUsd != null) {
+        _taxFeeController.text = _formatEditable(trade.taxFeeUsd!, 4);
+      }
+      _showAdvancedDetails =
+          trade.name.trim().isNotEmpty ||
+          trade.logoUrl.trim().isNotEmpty ||
+          trade.grossProceedsUsd != null ||
+          trade.brokerFeeUsd != null ||
+          trade.exchangeFeeUsd != null ||
+          trade.taxFeeUsd != null ||
+          _useBrokerPnl;
     }
   }
 
@@ -100,6 +134,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     _costBasisController.dispose();
     _logoUrlController.dispose();
     _realizedPnlController.dispose();
+    _grossProceedsController.dispose();
+    _brokerFeeController.dispose();
+    _exchangeFeeController.dispose();
+    _taxFeeController.dispose();
     super.dispose();
   }
 
@@ -144,6 +182,19 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     final realizedPnl = double.tryParse(_realizedPnlController.text.trim());
     final ticker = _tickerController.text.trim().toUpperCase();
 
+    final grossProceeds = _grossProceedsController.text.trim().isNotEmpty
+        ? double.tryParse(_grossProceedsController.text.trim())
+        : null;
+    final brokerFee = _brokerFeeController.text.trim().isNotEmpty
+        ? double.tryParse(_brokerFeeController.text.trim())
+        : null;
+    final exchangeFee = _exchangeFeeController.text.trim().isNotEmpty
+        ? double.tryParse(_exchangeFeeController.text.trim())
+        : null;
+    final taxFee = _taxFeeController.text.trim().isNotEmpty
+        ? double.tryParse(_taxFeeController.text.trim())
+        : null;
+
     setState(() {
       _portfolioError = null;
       _tickerError = null;
@@ -152,6 +203,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       _cashReceivedError = null;
       _costBasisError = null;
       _realizedPnlError = null;
+      _grossProceedsError = null;
+      _brokerFeeError = null;
+      _exchangeFeeError = null;
+      _taxFeeError = null;
     });
 
     var hasError = false;
@@ -181,6 +236,22 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     }
     if (_useBrokerPnl && realizedPnl == null) {
       _realizedPnlError = 'ต้องระบุตัวเลข (ติดลบได้)';
+      hasError = true;
+    }
+    if (grossProceeds != null && grossProceeds < 0) {
+      _grossProceedsError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+    if (brokerFee != null && brokerFee < 0) {
+      _brokerFeeError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+    if (exchangeFee != null && exchangeFee < 0) {
+      _exchangeFeeError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+    if (taxFee != null && taxFee < 0) {
+      _taxFeeError = 'ต้องไม่ติดลบ';
       hasError = true;
     }
 
@@ -214,10 +285,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       realizedPnlUsd: _useBrokerPnl ? realizedPnl : null,
       pnlSource: _useBrokerPnl ? PnlSource.broker : PnlSource.estimated,
       costMethod: existing?.costMethod ?? CostMethod.average,
-      grossProceedsUsd: existing?.grossProceedsUsd,
-      brokerFeeUsd: existing?.brokerFeeUsd,
-      exchangeFeeUsd: existing?.exchangeFeeUsd,
-      taxFeeUsd: existing?.taxFeeUsd,
+      grossProceedsUsd: grossProceeds,
+      brokerFeeUsd: brokerFee,
+      exchangeFeeUsd: exchangeFee,
+      taxFeeUsd: taxFee,
       settledAt: existing?.settledAt,
       brokerOrderRef: existing?.brokerOrderRef,
       soldAt: _soldAt,
@@ -346,13 +417,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _TradeTextFieldRow(
-              label: 'ชื่อหุ้น',
-              controller: _nameController,
-              hintText: 'Optional',
-              isDarkMode: isDarkMode,
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
               label: 'จำนวนขาย',
               controller: _sharesController,
               hintText: '0',
@@ -388,43 +452,99 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               inputFormatters: [_decimalInputFormatter(4)],
             ),
             _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'Logo URL',
-              controller: _logoUrlController,
-              hintText: 'Optional',
+            _AdvancedDetailsSection(
               isDarkMode: isDarkMode,
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              child: SwitchListTile(
-                title: Text(
-                  'ยึด P/L จาก Broker',
-                  style: TextStyle(color: textColor, fontSize: 15),
+              textColor: textColor,
+              secondaryColor: secondaryColor,
+              isExpanded: _showAdvancedDetails,
+              onToggle: () {
+                setState(() {
+                  _showAdvancedDetails = !_showAdvancedDetails;
+                });
+              },
+              children: [
+                _TradeTextFieldRow(
+                  label: 'ชื่อหุ้น',
+                  controller: _nameController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
                 ),
-                subtitle: Text(
-                  'หากเปิด จะไม่คำนวณ P/L จาก Average Cost',
-                  style: TextStyle(color: secondaryColor, fontSize: 13),
+                _buildDivider(isDarkMode),
+                _TradeTextFieldRow(
+                  label: 'มูลค่าขายรวม (Gross)',
+                  controller: _grossProceedsController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
+                  errorText: _grossProceedsError,
+                  inputFormatters: [_decimalInputFormatter(4)],
                 ),
-                value: _useBrokerPnl,
-                onChanged: (val) {
-                  setState(() => _useBrokerPnl = val);
-                },
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
+                _buildDivider(isDarkMode),
+                _TradeTextFieldRow(
+                  label: 'ค่าธรรมเนียม Broker',
+                  controller: _brokerFeeController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
+                  errorText: _brokerFeeError,
+                  inputFormatters: [_decimalInputFormatter(4)],
+                ),
+                _buildDivider(isDarkMode),
+                _TradeTextFieldRow(
+                  label: 'SEC / Exchange Fee',
+                  controller: _exchangeFeeController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
+                  errorText: _exchangeFeeError,
+                  inputFormatters: [_decimalInputFormatter(4)],
+                ),
+                _buildDivider(isDarkMode),
+                _TradeTextFieldRow(
+                  label: 'Tax / VAT',
+                  controller: _taxFeeController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
+                  errorText: _taxFeeError,
+                  inputFormatters: [_decimalInputFormatter(4)],
+                ),
+                _buildDivider(isDarkMode),
+                _TradeTextFieldRow(
+                  label: 'Logo URL',
+                  controller: _logoUrlController,
+                  hintText: 'Optional',
+                  isDarkMode: isDarkMode,
+                  keyboardType: TextInputType.url,
+                ),
+                _buildDivider(isDarkMode),
+                Container(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  child: SwitchListTile(
+                    title: Text(
+                      'ยึด P/L จาก Broker',
+                      style: TextStyle(color: textColor, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'หากเปิด จะไม่คำนวณ P/L จาก Average Cost',
+                      style: TextStyle(color: secondaryColor, fontSize: 13),
+                    ),
+                    value: _useBrokerPnl,
+                    onChanged: (val) {
+                      setState(() => _useBrokerPnl = val);
+                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+                if (_useBrokerPnl) ...[
+                  _buildDivider(isDarkMode),
+                  _TradeTextFieldRow(
+                    label: 'Realized P/L (USD)',
+                    controller: _realizedPnlController,
+                    hintText: '0.00',
+                    isDarkMode: isDarkMode,
+                    errorText: _realizedPnlError,
+                    inputFormatters: [_decimalInputFormatter(4)],
+                  ),
+                ],
+              ],
             ),
-            if (_useBrokerPnl) ...[
-              _buildDivider(isDarkMode),
-              _TradeTextFieldRow(
-                label: 'Realized P/L (USD)',
-                controller: _realizedPnlController,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                errorText: _realizedPnlError,
-                inputFormatters: [_decimalInputFormatter(4)],
-              ),
-            ],
             const SizedBox(height: 12),
             ListTile(
               tileColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
@@ -543,6 +663,57 @@ Future<String?> _showPortfolioPickerSheet({
       );
     },
   );
+}
+
+class _AdvancedDetailsSection extends StatelessWidget {
+  final bool isDarkMode;
+  final Color textColor;
+  final Color secondaryColor;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final List<Widget> children;
+
+  const _AdvancedDetailsSection({
+    required this.isDarkMode,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+          child: ListTile(
+            title: Text(
+              'รายละเอียดเพิ่มเติม',
+              style: TextStyle(color: textColor, fontSize: 15),
+            ),
+            subtitle: Text(
+              'ค่าธรรมเนียม ภาษี และข้อมูลจาก statement',
+              style: TextStyle(color: secondaryColor, fontSize: 13),
+            ),
+            trailing: Icon(
+              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              color: secondaryColor,
+            ),
+            onTap: onToggle,
+          ),
+        ),
+        if (isExpanded) ...[
+          Divider(
+            height: 1,
+            color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+          ),
+          ...children,
+        ],
+      ],
+    );
+  }
 }
 
 class _TradeTextFieldRow extends StatelessWidget {

@@ -6,6 +6,8 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
+import '../models/tax_remittance.dart';
+import '../models/portfolio_annual_report.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -63,6 +65,22 @@ abstract class StockTradeRepositoryInterface {
   Future<void> bulkInsertStockTrades(List<StockTrade> trades);
 }
 
+/// Interface สำหรับจัดการบันทึกการโอนเงินลงทุนกลับไทย
+abstract class TaxRemittanceRepositoryInterface {
+  Future<List<TaxRemittance>> getTaxRemittances();
+  Future<void> insertTaxRemittance(TaxRemittance remittance);
+  Future<void> updateTaxRemittance(TaxRemittance remittance);
+  Future<void> deleteTaxRemittance(String id);
+}
+
+/// Interface สำหรับจัดการข้อมูลรายงานพอร์ตประจำปี (Broker Statement)
+abstract class PortfolioAnnualReportRepositoryInterface {
+  Future<List<PortfolioAnnualReport>> getPortfolioAnnualReports();
+  Future<void> insertPortfolioAnnualReport(PortfolioAnnualReport report);
+  Future<void> updatePortfolioAnnualReport(PortfolioAnnualReport report);
+  Future<void> deletePortfolioAnnualReport(String id);
+}
+
 /// Interface สำหรับจัดการข้อมูลงบประมาณ (Budget)
 abstract class BudgetRepositoryInterface {
   Future<List<Budget>> getBudgets();
@@ -118,8 +136,10 @@ abstract class DatabaseRepository
         TransactionRepositoryInterface,
         PortfolioRepositoryInterface,
         StockTradeRepositoryInterface,
+        TaxRemittanceRepositoryInterface,
         BudgetRepositoryInterface,
         RecurringRepositoryInterface,
+        PortfolioAnnualReportRepositoryInterface,
         SyncRepositoryInterface {
   /// ชื่อของ repository (สำหรับ debug)
   String get name;

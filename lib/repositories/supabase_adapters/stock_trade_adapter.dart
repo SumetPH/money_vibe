@@ -32,14 +32,18 @@ class SupabaseStockTradeAdapter implements StockTradeRepositoryInterface {
       'cash_received_usd': trade.cashReceivedUsd,
       'cost_basis_usd': trade.costBasisUsd,
       'realized_pnl_usd': trade.realizedPnlUsd,
-      if (trade.grossProceedsUsd != null) 'gross_proceeds_usd': trade.grossProceedsUsd,
+      if (trade.grossProceedsUsd != null)
+        'gross_proceeds_usd': trade.grossProceedsUsd,
       if (trade.brokerFeeUsd != null) 'broker_fee_usd': trade.brokerFeeUsd,
-      if (trade.exchangeFeeUsd != null) 'exchange_fee_usd': trade.exchangeFeeUsd,
+      if (trade.exchangeFeeUsd != null)
+        'exchange_fee_usd': trade.exchangeFeeUsd,
       if (trade.taxFeeUsd != null) 'tax_fee_usd': trade.taxFeeUsd,
       'cost_method': trade.costMethod.name,
       'pnl_source': trade.pnlSource.name,
-      if (trade.settledAt != null) 'settled_at': trade.settledAt!.toIso8601String(),
-      if (trade.brokerOrderRef != null) 'broker_order_ref': trade.brokerOrderRef,
+      if (trade.settledAt != null)
+        'settled_at': trade.settledAt!.toIso8601String(),
+      if (trade.brokerOrderRef != null)
+        'broker_order_ref': trade.brokerOrderRef,
       'sold_at': trade.soldAt.toIso8601String(),
       'created_at': trade.createdAt.toIso8601String(),
     };
