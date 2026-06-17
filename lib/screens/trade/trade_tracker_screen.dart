@@ -912,7 +912,7 @@ class _SummaryPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Realized P/L',
+                'Realized P/L (Est. / Broker)',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -1488,15 +1488,36 @@ class _TradeListItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    trade.ticker,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          trade.ticker,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (trade.pnlSource == PnlSource.broker) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? AppColors.darkTransfer.withValues(alpha: 0.2) : AppColors.transfer.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(AppRadii.tiny),
+                            border: Border.all(color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, width: 0.5),
+                          ),
+                          child: Text(
+                            'Broker',
+                            style: TextStyle(fontSize: 9, color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -1631,13 +1652,34 @@ class _TradeListItem extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            trade.ticker,
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  trade.ticker,
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              if (trade.pnlSource == PnlSource.broker) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode ? AppColors.darkTransfer.withValues(alpha: 0.2) : AppColors.transfer.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(AppRadii.tiny),
+                                    border: Border.all(color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, width: 0.5),
+                                  ),
+                                  child: Text(
+                                    'Broker P/L',
+                                    style: TextStyle(fontSize: 10, color: isDarkMode ? AppColors.darkTransfer : AppColors.transfer, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -1681,10 +1723,39 @@ class _TradeListItem extends StatelessWidget {
                   isDarkMode: isDarkMode,
                 ),
                 _TradeDetailRow(
-                  label: 'เงินสดรับ',
+                  label: 'เงินสดรับสุทธิ (Net)',
                   value: '${formatAmount(trade.cashReceivedUsd)} USD',
                   isDarkMode: isDarkMode,
                 ),
+                if (trade.grossProceedsUsd != null || (trade.brokerFeeUsd != null && trade.brokerFeeUsd! > 0)) ...[
+                  const SizedBox(height: 10),
+                  Divider(height: 1, color: dividerColor.withValues(alpha: 0.5)),
+                  const SizedBox(height: 10),
+                  if (trade.grossProceedsUsd != null)
+                    _TradeDetailRow(
+                      label: 'มูลค่าขายรวม (Gross)',
+                      value: '${formatAmount(trade.grossProceedsUsd!)} USD',
+                      isDarkMode: isDarkMode,
+                    ),
+                  if (trade.brokerFeeUsd != null && trade.brokerFeeUsd! > 0)
+                    _TradeDetailRow(
+                      label: 'ค่าธรรมเนียม Broker',
+                      value: '${formatAmount(trade.brokerFeeUsd!)} USD',
+                      isDarkMode: isDarkMode,
+                    ),
+                  if (trade.exchangeFeeUsd != null && trade.exchangeFeeUsd! > 0)
+                    _TradeDetailRow(
+                      label: 'SEC / Exchange Fee',
+                      value: '${formatAmount(trade.exchangeFeeUsd!)} USD',
+                      isDarkMode: isDarkMode,
+                    ),
+                  if (trade.taxFeeUsd != null && trade.taxFeeUsd! > 0)
+                    _TradeDetailRow(
+                      label: 'Tax / VAT',
+                      value: '${formatAmount(trade.taxFeeUsd!)} USD',
+                      isDarkMode: isDarkMode,
+                    ),
+                ],
                 const SizedBox(height: 10),
                 Divider(height: 1, color: dividerColor),
                 const SizedBox(height: 10),

@@ -16,9 +16,9 @@ typedef FetchStockProfileCallback =
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
       final text = newValue.text;
-      if (text.isEmpty) return newValue;
+      if (text.isEmpty || text == '-') return newValue;
 
-      final match = RegExp('^\\d+(\\.\\d{0,$maxDecimals})?\$').hasMatch(text);
+      final match = RegExp('^-?\\d+(\\.\\d{0,$maxDecimals})?\$').hasMatch(text);
       return match ? newValue : oldValue;
     });
 
@@ -50,16 +50,20 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   final _cashReceivedController = TextEditingController();
   final _costBasisController = TextEditingController();
   final _logoUrlController = TextEditingController();
+  final _realizedPnlController = TextEditingController();
 
   String? _portfolioId;
   DateTime _soldAt = DateTime.now();
   bool _isSaving = false;
+  bool _useBrokerPnl = false;
+
   String? _portfolioError;
   String? _tickerError;
   String? _sharesError;
   String? _sellPriceError;
   String? _cashReceivedError;
   String? _costBasisError;
+  String? _realizedPnlError;
 
   bool get _isEditing => widget.existing != null;
 
@@ -79,6 +83,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       _costBasisController.text = _formatEditable(trade.costBasisUsd, 4);
       _logoUrlController.text = trade.logoUrl;
       _soldAt = trade.soldAt;
+      _useBrokerPnl =
+          trade.pnlSource == PnlSource.broker ||
+          trade.pnlSource == PnlSource.manual;
+      _realizedPnlController.text = _formatEditable(trade.realizedPnlUsd, 4);
     }
   }
 
@@ -91,6 +99,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     _cashReceivedController.dispose();
     _costBasisController.dispose();
     _logoUrlController.dispose();
+    _realizedPnlController.dispose();
     super.dispose();
   }
 
@@ -132,6 +141,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     final sellPrice = double.tryParse(_sellPriceController.text.trim());
     final cashReceived = double.tryParse(_cashReceivedController.text.trim());
     final costBasis = double.tryParse(_costBasisController.text.trim());
+    final realizedPnl = double.tryParse(_realizedPnlController.text.trim());
     final ticker = _tickerController.text.trim().toUpperCase();
 
     setState(() {
@@ -141,6 +151,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       _sellPriceError = null;
       _cashReceivedError = null;
       _costBasisError = null;
+      _realizedPnlError = null;
     });
 
     var hasError = false;
@@ -166,6 +177,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     }
     if (costBasis == null || costBasis < 0) {
       _costBasisError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+    if (_useBrokerPnl && realizedPnl == null) {
+      _realizedPnlError = 'ต้องระบุตัวเลข (ติดลบได้)';
       hasError = true;
     }
 
@@ -196,6 +211,15 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       sellPriceUsd: sellPrice!,
       cashReceivedUsd: cashReceived!,
       costBasisUsd: costBasis!,
+      realizedPnlUsd: _useBrokerPnl ? realizedPnl : null,
+      pnlSource: _useBrokerPnl ? PnlSource.broker : PnlSource.estimated,
+      costMethod: existing?.costMethod ?? CostMethod.average,
+      grossProceedsUsd: existing?.grossProceedsUsd,
+      brokerFeeUsd: existing?.brokerFeeUsd,
+      exchangeFeeUsd: existing?.exchangeFeeUsd,
+      taxFeeUsd: existing?.taxFeeUsd,
+      settledAt: existing?.settledAt,
+      brokerOrderRef: existing?.brokerOrderRef,
       soldAt: _soldAt,
       createdAt: existing?.createdAt ?? DateTime.now(),
     );
@@ -371,6 +395,36 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               isDarkMode: isDarkMode,
               keyboardType: TextInputType.url,
             ),
+            const SizedBox(height: 12),
+            Container(
+              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+              child: SwitchListTile(
+                title: Text(
+                  'ยึด P/L จาก Broker',
+                  style: TextStyle(color: textColor, fontSize: 15),
+                ),
+                subtitle: Text(
+                  'หากเปิด จะไม่คำนวณ P/L จาก Average Cost',
+                  style: TextStyle(color: secondaryColor, fontSize: 13),
+                ),
+                value: _useBrokerPnl,
+                onChanged: (val) {
+                  setState(() => _useBrokerPnl = val);
+                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+            if (_useBrokerPnl) ...[
+              _buildDivider(isDarkMode),
+              _TradeTextFieldRow(
+                label: 'Realized P/L (USD)',
+                controller: _realizedPnlController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _realizedPnlError,
+                inputFormatters: [_decimalInputFormatter(4)],
+              ),
+            ],
             const SizedBox(height: 12),
             ListTile(
               tileColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,

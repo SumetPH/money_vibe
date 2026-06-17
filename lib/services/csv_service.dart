@@ -402,10 +402,18 @@ class CsvService {
         'sell_price_usd',
         'cash_received_usd',
         'cost_basis_usd',
-        'realized_pnl_usd',
+        'realized_pnl_usd_est_or_broker',
         'sold_at',
         'created_at',
         'logo_url',
+        'gross_proceeds_usd',
+        'broker_fee_usd',
+        'exchange_fee_usd',
+        'tax_fee_usd',
+        'cost_method',
+        'pnl_source',
+        'settled_at',
+        'broker_order_ref',
       ],
     ];
 
@@ -424,6 +432,14 @@ class CsvService {
         trade.soldAt.toIso8601String(),
         trade.createdAt.toIso8601String(),
         trade.logoUrl,
+        trade.grossProceedsUsd ?? '',
+        trade.brokerFeeUsd ?? '',
+        trade.exchangeFeeUsd ?? '',
+        trade.taxFeeUsd ?? '',
+        trade.costMethod.name,
+        trade.pnlSource.name,
+        trade.settledAt?.toIso8601String() ?? '',
+        trade.brokerOrderRef ?? '',
       ]);
     }
 
@@ -895,6 +911,30 @@ class CsvService {
           createdAt: row.length > 11
               ? (DateTime.tryParse(row[11]?.toString() ?? '') ?? DateTime.now())
               : DateTime.now(),
+          grossProceedsUsd: row.length > 13
+              ? double.tryParse(row[13]?.toString() ?? '')
+              : null,
+          brokerFeeUsd: row.length > 14
+              ? double.tryParse(row[14]?.toString() ?? '')
+              : null,
+          exchangeFeeUsd: row.length > 15
+              ? double.tryParse(row[15]?.toString() ?? '')
+              : null,
+          taxFeeUsd: row.length > 16
+              ? double.tryParse(row[16]?.toString() ?? '')
+              : null,
+          costMethod: row.length > 17 && row[17]?.toString().isNotEmpty == true
+              ? CostMethod.values.asNameMap()[row[17]?.toString()] ?? CostMethod.average
+              : CostMethod.average,
+          pnlSource: row.length > 18 && row[18]?.toString().isNotEmpty == true
+              ? PnlSource.values.asNameMap()[row[18]?.toString()] ?? PnlSource.estimated
+              : PnlSource.estimated,
+          settledAt: row.length > 19
+              ? DateTime.tryParse(row[19]?.toString() ?? '')
+              : null,
+          brokerOrderRef: row.length > 20
+              ? (row[20]?.toString().isEmpty == true ? null : row[20]?.toString())
+              : null,
         ),
       );
     }

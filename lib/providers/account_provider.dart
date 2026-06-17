@@ -508,6 +508,10 @@ class AccountProvider extends ChangeNotifier {
     required double sharesSold,
     required double sellPriceUsd,
     required double cashReceivedUsd,
+    double? grossProceedsUsd,
+    double? brokerFeeUsd,
+    double? exchangeFeeUsd,
+    double? taxFeeUsd,
     DateTime? soldAt,
   }) async {
     if (sharesSold <= 0) {
@@ -559,6 +563,12 @@ class AccountProvider extends ChangeNotifier {
       sellPriceUsd: sellPriceUsd,
       cashReceivedUsd: cashReceivedUsd,
       costBasisUsd: holding.costBasisUsd,
+      grossProceedsUsd: grossProceedsUsd,
+      brokerFeeUsd: brokerFeeUsd,
+      taxFeeUsd: taxFeeUsd,
+      exchangeFeeUsd: exchangeFeeUsd,
+      costMethod: CostMethod.average,
+      pnlSource: PnlSource.estimated,
       soldAt: soldAt,
     );
 

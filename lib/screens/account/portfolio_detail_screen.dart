@@ -546,6 +546,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                 required sharesSold,
                 required sellPriceUsd,
                 required cashReceivedUsd,
+                grossProceedsUsd,
+                brokerFeeUsd,
+                exchangeFeeUsd,
+                taxFeeUsd,
               }) async {
                 await provider.sellHolding(
                   portfolioId: portfolioId,
@@ -553,6 +557,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                   sharesSold: sharesSold,
                   sellPriceUsd: sellPriceUsd,
                   cashReceivedUsd: cashReceivedUsd,
+                  grossProceedsUsd: grossProceedsUsd,
+                  brokerFeeUsd: brokerFeeUsd,
+                  exchangeFeeUsd: exchangeFeeUsd,
+                  taxFeeUsd: taxFeeUsd,
                 );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

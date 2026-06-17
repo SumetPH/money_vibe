@@ -11,6 +11,10 @@ typedef SellHoldingCallback =
       required double sharesSold,
       required double sellPriceUsd,
       required double cashReceivedUsd,
+      double? grossProceedsUsd,
+      double? brokerFeeUsd,
+      double? exchangeFeeUsd,
+      double? taxFeeUsd,
     });
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
@@ -39,9 +43,16 @@ class HoldingSellFormScreen extends StatefulWidget {
 class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
   final _sharesController = TextEditingController();
   final _sellPriceController = TextEditingController();
+  final _grossProceedsController = TextEditingController();
+  final _brokerFeeController = TextEditingController();
+  final _taxFeeController = TextEditingController();
+  final _exchangeFeeController = TextEditingController();
   final _cashReceivedController = TextEditingController();
+
+  bool _grossEdited = false;
   bool _cashEdited = false;
   bool _isSaving = false;
+
   String? _sharesError;
   String? _sellPriceError;
   String? _cashReceivedError;
@@ -57,38 +68,88 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       widget.holding.priceUsd,
       scale: stockHoldingPriceDecimalPlaces,
     );
-    _setDefaultCashReceived();
-    _sharesController.addListener(_syncDefaultCashReceived);
-    _sellPriceController.addListener(_syncDefaultCashReceived);
+    _syncGrossProceeds();
+
+    _sharesController.addListener(_onSharesOrPriceChanged);
+    _sellPriceController.addListener(_onSharesOrPriceChanged);
+    _grossProceedsController.addListener(_onGrossChanged);
+    _brokerFeeController.addListener(_syncCashReceived);
+    _taxFeeController.addListener(_syncCashReceived);
+    _exchangeFeeController.addListener(_syncCashReceived);
+
+    _syncCashReceived(notify: false);
   }
 
   @override
   void dispose() {
     _sharesController.dispose();
     _sellPriceController.dispose();
+    _grossProceedsController.dispose();
+    _brokerFeeController.dispose();
+    _taxFeeController.dispose();
+    _exchangeFeeController.dispose();
     _cashReceivedController.dispose();
     super.dispose();
   }
 
-  void _syncDefaultCashReceived() {
-    if (_cashEdited) return;
-    _setDefaultCashReceived();
+  void _onSharesOrPriceChanged() {
+    if (!_grossEdited) {
+      _syncGrossProceeds();
+    }
   }
 
-  void _setDefaultCashReceived() {
+  void _onGrossChanged() {
+    if (!_cashEdited) {
+      _syncCashReceived();
+    }
+    setState(() {});
+  }
+
+  void _syncGrossProceeds() {
     final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
     final price = double.tryParse(_sellPriceController.text.trim()) ?? 0;
     final value = shares * price;
-    _cashReceivedController.text = formatStockHoldingEditableNumber(
-      value,
-      scale: 4,
-    );
+    if (value > 0) {
+      final newText = formatStockHoldingEditableNumber(value, scale: 2);
+      if (_grossProceedsController.text != newText) {
+        _grossProceedsController.text = newText;
+      }
+    } else {
+      if (_grossProceedsController.text != '') {
+        _grossProceedsController.text = '';
+      }
+    }
+  }
+
+  void _syncCashReceived({bool notify = true}) {
+    if (_cashEdited) return;
+    final gross = double.tryParse(_grossProceedsController.text.trim()) ?? 0;
+    final broker = double.tryParse(_brokerFeeController.text.trim()) ?? 0;
+    final tax = double.tryParse(_taxFeeController.text.trim()) ?? 0;
+    final exchange = double.tryParse(_exchangeFeeController.text.trim()) ?? 0;
+    final value = gross - broker - tax - exchange;
+
+    if (value > 0) {
+      final newText = formatStockHoldingEditableNumber(value, scale: 2);
+      if (_cashReceivedController.text != newText) {
+        _cashReceivedController.text = newText;
+      }
+    } else {
+      if (_cashReceivedController.text != '') {
+        _cashReceivedController.text = '';
+      }
+    }
+    if (notify) setState(() {});
   }
 
   Future<void> _submit() async {
     final shares = double.tryParse(_sharesController.text.trim());
     final sellPrice = double.tryParse(_sellPriceController.text.trim());
     final cashReceived = double.tryParse(_cashReceivedController.text.trim());
+    final grossProceeds = double.tryParse(_grossProceedsController.text.trim());
+    final brokerFee = double.tryParse(_brokerFeeController.text.trim());
+    final taxFee = double.tryParse(_taxFeeController.text.trim());
+    final exchangeFee = double.tryParse(_exchangeFeeController.text.trim());
 
     setState(() {
       _sharesError = null;
@@ -116,7 +177,6 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     }
 
     if (hasError) {
-      setState(() {});
       return;
     }
 
@@ -126,6 +186,10 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
         sharesSold: shares!,
         sellPriceUsd: sellPrice!,
         cashReceivedUsd: cashReceived!,
+        grossProceedsUsd: grossProceeds,
+        brokerFeeUsd: brokerFee,
+        taxFeeUsd: taxFee,
+        exchangeFeeUsd: exchangeFee,
       );
       if (mounted) Navigator.pop(context);
     } finally {
@@ -168,79 +232,143 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       ),
       body: AbsorbPointer(
         absorbing: _isSaving,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.only(top: 12, bottom: 24),
-          children: [
-            Container(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.holding.ticker,
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (widget.holding.name.isNotEmpty)
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            widget.holding.name,
+                            widget.holding.ticker,
                             style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 13,
+                              color: textColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                      ],
+                          if (widget.holding.name.isNotEmpty)
+                            Text(
+                              widget.holding.name,
+                              style: TextStyle(
+                                color: secondaryColor,
+                                fontSize: 13,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(
-                    'ถือ ${formatStockHoldingShares(widget.holding.shares)} หุ้น',
-                    style: TextStyle(color: secondaryColor, fontSize: 13),
-                  ),
+                    Text(
+                      'ถือ ${formatStockHoldingShares(widget.holding.shares)} หุ้น',
+                      style: TextStyle(color: secondaryColor, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _SellNumberFieldRow(
+                label: 'จำนวนที่ขาย',
+                controller: _sharesController,
+                hintText: '0',
+                isDarkMode: isDarkMode,
+                errorText: _sharesError,
+                inputFormatters: [
+                  _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-            _SellNumberFieldRow(
-              label: 'จำนวนที่ขาย',
-              controller: _sharesController,
-              hintText: '0',
-              isDarkMode: isDarkMode,
-              errorText: _sharesError,
-              inputFormatters: [
-                _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
-              ],
-            ),
-            _buildDivider(isDarkMode),
-            _SellNumberFieldRow(
-              label: 'ราคาขาย (USD)',
-              controller: _sellPriceController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _sellPriceError,
-              inputFormatters: [
-                _decimalInputFormatter(stockHoldingPriceDecimalPlaces),
-              ],
-            ),
-            _buildDivider(isDarkMode),
-            _SellNumberFieldRow(
-              label: 'เงินสดรับเข้า (USD)',
-              controller: _cashReceivedController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _cashReceivedError,
-              inputFormatters: [_decimalInputFormatter(4)],
-              onChanged: (_) => _cashEdited = true,
-            ),
-            const SizedBox(height: 12),
-            _SellSummary(holding: widget.holding, isDarkMode: isDarkMode),
-          ],
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'ราคาขาย (USD)',
+                controller: _sellPriceController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _sellPriceError,
+                inputFormatters: [
+                  _decimalInputFormatter(stockHoldingPriceDecimalPlaces),
+                ],
+              ),
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'มูลค่าหุ้น (Gross USD)',
+                controller: _grossProceedsController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                inputFormatters: [_decimalInputFormatter(4)],
+                onChanged: (_) {
+                  _grossEdited = true;
+                  _syncCashReceived();
+                },
+              ),
+
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'ค่าธรรมเนียม',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              _SellNumberFieldRow(
+                label: 'ค่าคอมมิชชัน (USD)',
+                controller: _brokerFeeController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                inputFormatters: [_decimalInputFormatter(4)],
+              ),
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'ภาษี (VAT USD)',
+                controller: _taxFeeController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                inputFormatters: [_decimalInputFormatter(4)],
+              ),
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
+                controller: _exchangeFeeController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                inputFormatters: [_decimalInputFormatter(4)],
+              ),
+
+              const SizedBox(height: 12),
+              _SellNumberFieldRow(
+                label: 'ยอดที่จะได้รับคืน (Net USD)',
+                controller: _cashReceivedController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _cashReceivedError,
+                inputFormatters: [_decimalInputFormatter(4)],
+                onChanged: (_) {
+                  _cashEdited = true;
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 12),
+              _SellSummary(
+                holding: widget.holding,
+                isDarkMode: isDarkMode,
+                sharesSold: double.tryParse(_sharesController.text.trim()) ?? 0,
+                cashReceivedUsd:
+                    double.tryParse(_cashReceivedController.text.trim()) ?? 0,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -331,20 +459,46 @@ class _SellNumberFieldRow extends StatelessWidget {
 class _SellSummary extends StatelessWidget {
   final StockHolding holding;
   final bool isDarkMode;
+  final double sharesSold;
+  final double cashReceivedUsd;
 
-  const _SellSummary({required this.holding, required this.isDarkMode});
+  const _SellSummary({
+    required this.holding,
+    required this.isDarkMode,
+    required this.sharesSold,
+    required this.cashReceivedUsd,
+  });
 
   @override
   Widget build(BuildContext context) {
     final textColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
+
+    final estimatedCost = holding.costBasisUsd * sharesSold;
+    final estimatedPnl = cashReceivedUsd - estimatedCost;
+    final isProfit = estimatedPnl >= 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        'กำไร/ขาดทุนจะคำนวณจากราคาทุน ${formatStockHoldingCostBasis(holding.costBasisUsd)} USD',
-        style: TextStyle(color: textColor, fontSize: 12),
-        textAlign: TextAlign.right,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            'ราคาทุนเฉลี่ย: ${formatStockHoldingCostBasis(holding.costBasisUsd)} USD/หุ้น',
+            style: TextStyle(color: textColor, fontSize: 13),
+          ),
+          const SizedBox(height: 4),
+          if (sharesSold > 0)
+            Text(
+              'กำไร/ขาดทุนโดยประมาณ: ${isProfit ? '+' : ''}${formatStockHoldingCostBasis(estimatedPnl)} USD',
+              style: TextStyle(
+                color: isProfit ? AppColors.income : AppColors.expense,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
       ),
     );
   }

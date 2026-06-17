@@ -158,27 +158,40 @@ void main() {
   }
 
   group('AccountProvider.sellHolding', () {
-    test('partially sells a holding, adds cash, and records trade', () async {
-      final (provider, fakeDb) = await initProvider();
+    test(
+      'partially sells a holding, adds cash, and records trade with fees',
+      () async {
+        final (provider, fakeDb) = await initProvider();
 
-      final trade = await provider.sellHolding(
-        portfolioId: 'portfolio-1',
-        holdingId: 'holding-1',
-        sharesSold: 2.5,
-        sellPriceUsd: 130,
-        cashReceivedUsd: 320,
-        soldAt: DateTime(2026, 6, 17),
-      );
+        final trade = await provider.sellHolding(
+          portfolioId: 'portfolio-1',
+          holdingId: 'holding-1',
+          sharesSold: 2.5,
+          sellPriceUsd: 130,
+          cashReceivedUsd: 310, // 325 gross - 15 fees
+          grossProceedsUsd: 325,
+          brokerFeeUsd: 10,
+          taxFeeUsd: 2,
+          exchangeFeeUsd: 3,
+          soldAt: DateTime(2026, 6, 17),
+        );
 
-      expect(provider.getHoldings('portfolio-1').single.shares, 7.5);
-      expect(provider.findById('portfolio-1')!.cashBalance, 420);
-      expect(provider.stockTrades.single, trade);
-      expect(trade.logoUrl, 'https://example.com/aapl.png');
-      expect(trade.realizedPnlUsd, 75);
-      expect(fakeDb.holdings.single.shares, 7.5);
-      expect(fakeDb.accounts.single.cashBalance, 420);
-      expect(fakeDb.trades.single.realizedPnlUsd, 75);
-    });
+        expect(provider.getHoldings('portfolio-1').single.shares, 7.5);
+        expect(provider.findById('portfolio-1')!.cashBalance, 410);
+        expect(provider.stockTrades.single, trade);
+        expect(trade.logoUrl, 'https://example.com/aapl.png');
+        expect(trade.realizedPnlUsd, 60); // 310 - (100 * 2.5) = 60
+        expect(trade.grossProceedsUsd, 325);
+        expect(trade.brokerFeeUsd, 10);
+        expect(trade.taxFeeUsd, 2);
+        expect(trade.exchangeFeeUsd, 3);
+        expect(trade.costMethod, CostMethod.average);
+        expect(trade.pnlSource, PnlSource.estimated);
+        expect(fakeDb.holdings.single.shares, 7.5);
+        expect(fakeDb.accounts.single.cashBalance, 410);
+        expect(fakeDb.trades.single.realizedPnlUsd, 60);
+      },
+    );
 
     test('fully sells a holding and removes it from portfolio', () async {
       final (provider, fakeDb) = await initProvider(shares: 3);
@@ -193,7 +206,7 @@ void main() {
 
       expect(provider.getHoldings('portfolio-1'), isEmpty);
       expect(provider.findById('portfolio-1')!.cashBalance, 365);
-      expect(provider.stockTrades.single.realizedPnlUsd, -30);
+      expect(provider.stockTrades.single.realizedPnlUsd, -35);
       expect(fakeDb.holdings, isEmpty);
     });
 
@@ -291,8 +304,8 @@ void main() {
         );
 
         expect(provider.findById('portfolio-1')!.cashBalance, 100);
-        expect(provider.stockTrades.single.realizedPnlUsd, -10);
-        expect(fakeDb.trades.single.realizedPnlUsd, -10);
+        expect(provider.stockTrades.single.realizedPnlUsd, 48);
+        expect(fakeDb.trades.single.realizedPnlUsd, 48);
 
         await provider.deleteStockTrade('manual-1');
 
@@ -301,5 +314,28 @@ void main() {
         expect(fakeDb.trades, isEmpty);
       },
     );
+
+    test('preserves broker reported P/L when normalizing trades', () async {
+      final (provider, fakeDb) = await initProvider();
+
+      await provider.addStockTrade(
+        StockTrade(
+          id: 'broker-1',
+          portfolioId: 'portfolio-1',
+          holdingId: '',
+          ticker: 'aapl',
+          sharesSold: 1,
+          sellPriceUsd: 150,
+          cashReceivedUsd: 148,
+          costBasisUsd: 100,
+          realizedPnlUsd: -12.34,
+          pnlSource: PnlSource.broker,
+        ),
+      );
+
+      expect(provider.stockTrades.single.realizedPnlUsd, -12.34);
+      expect(provider.stockTrades.single.pnlSource, PnlSource.broker);
+      expect(fakeDb.trades.single.realizedPnlUsd, -12.34);
+    });
   });
 }
