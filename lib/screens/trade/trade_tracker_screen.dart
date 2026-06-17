@@ -1,3 +1,4 @@
+import 'package:csv/csv.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import '../../providers/transaction_provider.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
 import 'stock_trade_form_screen.dart';
@@ -211,7 +213,18 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           ),
         ];
       case 1:
-        return [];
+        return [
+          Builder(
+            builder: (buttonContext) => IconButton(
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: 'Export ข้อมูลภาษี',
+              onPressed: () => _exportYearlyTaxData(
+                context,
+                sharePositionOrigin: _shareOriginOf(buttonContext),
+              ),
+            ),
+          ),
+        ];
       case 2:
         return [
           IconButton(
@@ -222,6 +235,57 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
         ];
     }
     return const [];
+  }
+
+  Rect? _shareOriginOf(BuildContext context) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
+  Future<void> _exportYearlyTaxData(
+    BuildContext context, {
+    Rect? sharePositionOrigin,
+  }) async {
+    final provider = context.read<AccountProvider>();
+    final year = _selectedYear;
+    final yearTrades =
+        provider.stockTrades
+            .where((trade) => trade.soldAt.year == year)
+            .toList()
+          ..sort((a, b) => a.soldAt.compareTo(b.soldAt));
+    final yearRemittances =
+        provider.taxRemittances
+            .where((remittance) => remittance.remittedAt.year == year)
+            .toList()
+          ..sort((a, b) => a.remittedAt.compareTo(b.remittedAt));
+
+    if (yearTrades.isEmpty && yearRemittances.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ไม่มีข้อมูลสำหรับ export ปี $year')),
+      );
+      return;
+    }
+
+    try {
+      final files = _buildYearlyTaxExportFiles(
+        year: year,
+        trades: yearTrades,
+        remittances: yearRemittances,
+        portfolioNameOf: (portfolioId) =>
+            provider.findById(portfolioId)?.name ?? 'พอร์ตหุ้น',
+      );
+      await saveCsvFiles(files, sharePositionOrigin: sharePositionOrigin);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export ข้อมูลภาษีปี $year แล้ว')));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export ไม่สำเร็จ: $error')));
+    }
   }
 
   List<StockTrade> _filteredTrades(List<StockTrade> trades) {
@@ -812,6 +876,204 @@ class _TaxRemittanceTab extends StatelessWidget {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     return '$day/$month/${date.year}';
+  }
+}
+
+Map<String, String> _buildYearlyTaxExportFiles({
+  required int year,
+  required List<StockTrade> trades,
+  required List<TaxRemittance> remittances,
+  required String Function(String portfolioId) portfolioNameOf,
+}) {
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+  return {
+    'tax_summary_${year}_$timestamp.csv': _buildTaxSummaryCsv(
+      year: year,
+      trades: trades,
+      remittances: remittances,
+    ),
+    'tax_stock_trades_${year}_$timestamp.csv': _buildTaxStockTradesCsv(
+      trades: trades,
+      portfolioNameOf: portfolioNameOf,
+    ),
+    'tax_remittances_${year}_$timestamp.csv': _buildTaxRemittancesCsv(
+      remittances: remittances,
+      portfolioNameOf: portfolioNameOf,
+    ),
+  };
+}
+
+String _buildTaxSummaryCsv({
+  required int year,
+  required List<StockTrade> trades,
+  required List<TaxRemittance> remittances,
+}) {
+  final tradeSummary = _TradeSummary.fromTrades(trades);
+  final remittanceSummary = _TaxRemittanceSummary.fromRemittances(remittances);
+  final totalGrossProceeds = trades.fold(
+    0.0,
+    (sum, trade) => sum + (trade.grossProceedsUsd ?? trade.proceedsUsd),
+  );
+  final totalCost = trades.fold(
+    0.0,
+    (sum, trade) => sum + (trade.costBasisUsd * trade.sharesSold),
+  );
+  final totalFees = trades.fold(0.0, (sum, trade) => sum + trade.totalFeesUsd);
+
+  final rows = <List<dynamic>>[
+    ['หัวข้อ', 'ค่า', 'สกุลเงิน/หน่วย'],
+    ['ปีภาษี', year, ''],
+    ['จำนวนรายการขายหุ้น', tradeSummary.tradeCount, 'รายการ'],
+    ['ยอดขายรับเงินสดรวม', tradeSummary.cashReceivedUsd, 'USD'],
+    ['Gross proceeds รวม', totalGrossProceeds, 'USD'],
+    ['ต้นทุนรวม', totalCost, 'USD'],
+    ['ค่าธรรมเนียมและภาษีจากรายการขายรวม', totalFees, 'USD'],
+    ['กำไรรวม', tradeSummary.profitUsd, 'USD'],
+    ['ขาดทุนรวม', tradeSummary.lossUsd, 'USD'],
+    ['กำไร/ขาดทุนสุทธิ', tradeSummary.realizedPnlUsd, 'USD'],
+    ['จำนวนรายการโอนกลับไทย', remittanceSummary.remittanceCount, 'รายการ'],
+    ['ยอดโอนกลับรวม', remittanceSummary.remittedUsd, 'USD'],
+    ['ยอดโอนกลับรวม', remittanceSummary.remittedThb, 'THB'],
+    [
+      'เงินต้นที่ allocate แล้ว',
+      remittanceSummary.principalAllocatedUsd,
+      'USD',
+    ],
+    ['เงินได้ที่ allocate แล้ว', remittanceSummary.taxableUsd, 'USD'],
+    ['เงินได้ที่ allocate แล้ว', remittanceSummary.taxableThb, 'THB'],
+  ];
+
+  return const ListToCsvConverter().convert(rows);
+}
+
+String _buildTaxStockTradesCsv({
+  required List<StockTrade> trades,
+  required String Function(String portfolioId) portfolioNameOf,
+}) {
+  final rows = <List<dynamic>>[
+    [
+      'วันที่ขาย',
+      'วันที่ settle',
+      'พอร์ต',
+      'Ticker',
+      'ชื่อ',
+      'จำนวนหุ้น',
+      'ราคาขายต่อหุ้น USD',
+      'Gross proceeds USD',
+      'เงินสดรับ USD',
+      'ต้นทุนต่อหุ้น USD',
+      'ต้นทุนรวม USD',
+      'ค่าธรรมเนียม broker USD',
+      'ค่าธรรมเนียม exchange USD',
+      'Tax/VAT USD',
+      'ค่าธรรมเนียมรวม USD',
+      'กำไร/ขาดทุน USD',
+      'วิธีต้นทุน',
+      'แหล่งกำไรขาดทุน',
+      'เลขอ้างอิง broker',
+    ],
+  ];
+
+  for (final trade in trades) {
+    rows.add([
+      _formatCsvDate(trade.soldAt),
+      trade.settledAt == null ? '' : _formatCsvDate(trade.settledAt!),
+      portfolioNameOf(trade.portfolioId),
+      trade.ticker,
+      trade.name,
+      trade.sharesSold,
+      trade.sellPriceUsd,
+      trade.grossProceedsUsd ?? trade.proceedsUsd,
+      trade.cashReceivedUsd,
+      trade.costBasisUsd,
+      trade.costBasisUsd * trade.sharesSold,
+      trade.brokerFeeUsd ?? 0,
+      trade.exchangeFeeUsd ?? 0,
+      trade.taxFeeUsd ?? 0,
+      trade.totalFeesUsd,
+      trade.realizedPnlUsd,
+      _costMethodLabel(trade.costMethod),
+      _pnlSourceLabel(trade.pnlSource),
+      trade.brokerOrderRef ?? '',
+    ]);
+  }
+
+  return const ListToCsvConverter().convert(rows);
+}
+
+String _buildTaxRemittancesCsv({
+  required List<TaxRemittance> remittances,
+  required String Function(String portfolioId) portfolioNameOf,
+}) {
+  final rows = <List<dynamic>>[
+    [
+      'วันที่โอนกลับ',
+      'พอร์ต',
+      'ยอดโอน USD',
+      'อัตราแลกเปลี่ยน',
+      'ยอดโอน THB',
+      'เงินต้น USD',
+      'เงินได้ USD',
+      'เงินได้ THB',
+      'Allocation',
+      'หมายเหตุ',
+    ],
+  ];
+
+  for (final remittance in remittances) {
+    rows.add([
+      _formatCsvDate(remittance.remittedAt),
+      portfolioNameOf(remittance.portfolioId),
+      remittance.amountUsd,
+      remittance.fxRate,
+      remittance.thbAmount,
+      remittance.allocations
+          .where(
+            (allocation) =>
+                allocation.bucketType == TaxRemittanceBucketType.principal,
+          )
+          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd),
+      remittance.taxableUsd,
+      remittance.taxableThb,
+      remittance.allocations.map(_formatAllocationForCsv).join(' | '),
+      remittance.note,
+    ]);
+  }
+
+  return const ListToCsvConverter().convert(rows);
+}
+
+String _formatAllocationForCsv(TaxRemittanceAllocation allocation) {
+  final taxYear = allocation.taxYear == null ? '' : ' ${allocation.taxYear}';
+  return '${taxRemittanceBucketLabel(allocation.bucketType)}$taxYear: ${allocation.amountUsd} USD';
+}
+
+String _formatCsvDate(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
+}
+
+String _costMethodLabel(CostMethod method) {
+  switch (method) {
+    case CostMethod.average:
+      return 'Average';
+    case CostMethod.fifo:
+      return 'FIFO';
+    case CostMethod.specific:
+      return 'Specific';
+  }
+}
+
+String _pnlSourceLabel(PnlSource source) {
+  switch (source) {
+    case PnlSource.estimated:
+      return 'Estimated';
+    case PnlSource.manual:
+      return 'Manual';
+    case PnlSource.broker:
+      return 'Broker';
   }
 }
 
