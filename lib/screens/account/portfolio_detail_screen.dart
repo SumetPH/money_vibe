@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:money_vibe/screens/account/portfolio_analyze_screen.dart';
 import 'package:provider/provider.dart';
@@ -221,6 +222,94 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           0,
           (sum, holding) => sum + holding.valueUsd,
         );
+        final tabContent = DefaultTabController(
+          length: 2,
+          child: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      // Summary card
+                      _SummaryCard(
+                        account: acc,
+                        totalValue: totalValue,
+                        holdings: holdings,
+                        onRateTap: () =>
+                            _editExchangeRate(context, provider, acc),
+                        isDarkMode: isDarkMode,
+                      ),
+
+                      // Cash balance row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Divider(
+                          color: isDarkMode
+                              ? AppColors.darkDivider
+                              : AppColors.divider,
+                        ),
+                      ),
+                      _CashRow(
+                        cashBalance: acc.cashBalance,
+                        exchangeRate: acc.exchangeRate,
+                        onTap: () => _editCashBalance(context, provider, acc),
+                        isDarkMode: isDarkMode,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TabBarDelegate(
+                    TabBar(
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicatorColor: isDarkMode
+                          ? AppColors.darkIncome
+                          : AppColors.income,
+                      labelColor: isDarkMode
+                          ? AppColors.darkIncome
+                          : AppColors.income,
+                      unselectedLabelColor: isDarkMode
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                      tabs: const [
+                        Tab(text: 'พอร์ต'),
+                        Tab(text: 'หุ้นทั้งหมด'),
+                      ],
+                    ),
+                    // isDarkMode ? AppColors.darkHeader : AppColors.header,
+                    isDarkMode
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.background,
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              children: [
+                // Tab พอร์ต
+                _buildPortfolioTab(
+                  context,
+                  provider,
+                  acc,
+                  holdings,
+                  totalHoldingsValueUsd,
+                  isDarkMode,
+                ),
+                // Tab หุ้นทั้งหมด
+                _buildAllStocksTab(
+                  context,
+                  provider,
+                  acc,
+                  holdings,
+                  totalHoldingsValueUsd,
+                  isDarkMode,
+                ),
+              ],
+            ),
+          ),
+        );
 
         return Scaffold(
           backgroundColor: isDarkMode
@@ -255,95 +344,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             ],
           ),
           body: SafeArea(
-            child: DefaultTabController(
-              length: 2,
-              child: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          // Summary card
-                          _SummaryCard(
-                            account: acc,
-                            totalValue: totalValue,
-                            holdings: holdings,
-                            onRateTap: () =>
-                                _editExchangeRate(context, provider, acc),
-                            isDarkMode: isDarkMode,
-                          ),
-
-                          // Cash balance row
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Divider(
-                              color: isDarkMode
-                                  ? AppColors.darkDivider
-                                  : AppColors.divider,
-                            ),
-                          ),
-                          _CashRow(
-                            cashBalance: acc.cashBalance,
-                            exchangeRate: acc.exchangeRate,
-                            onTap: () =>
-                                _editCashBalance(context, provider, acc),
-                            isDarkMode: isDarkMode,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _TabBarDelegate(
-                        TabBar(
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicatorColor: isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income,
-                          labelColor: isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income,
-                          unselectedLabelColor: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
-                          tabs: const [
-                            Tab(text: 'พอร์ต'),
-                            Tab(text: 'หุ้นทั้งหมด'),
-                          ],
-                        ),
-                        // isDarkMode ? AppColors.darkHeader : AppColors.header,
-                        isDarkMode
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.background,
-                      ),
-                    ),
-                  ];
-                },
-                body: TabBarView(
-                  children: [
-                    // Tab พอร์ต
-                    _buildPortfolioTab(
-                      context,
-                      provider,
-                      acc,
-                      holdings,
-                      totalHoldingsValueUsd,
-                      isDarkMode,
-                    ),
-                    // Tab หุ้นทั้งหมด
-                    _buildAllStocksTab(
-                      context,
-                      provider,
-                      acc,
-                      holdings,
-                      totalHoldingsValueUsd,
-                      isDarkMode,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: kIsWeb ? SelectionArea(child: tabContent) : tabContent,
           ),
         );
       },
