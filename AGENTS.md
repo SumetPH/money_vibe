@@ -5,6 +5,7 @@
 ## Coding Standards
 
 - ถ้ามีการปรับ database ให้เขียน migration ใน /supabase
+- ถ้ามีการสร้างหรือแก้ไข migration ใน `supabase/migrations` ต้องอัปเดต `supabase/init_schema.sql` ให้รวม migration ล่าสุดด้วยเสมอ เพื่อให้ไฟล์ init schema ใช้ bootstrap database ใหม่ได้ครบถ้วน
 
 ## 1. เป้าหมายและบริบท (Context)
 
@@ -34,6 +35,20 @@ Money Vibe คือแอปจัดการการเงินส่วน
   - ดึงสถานะจาก `SettingsProvider`
   - ใช้ `context.isDarkMode` (ถ้ามี extension) หรือ `Provider.of<SettingsProvider>(context).isDarkMode`
   - หากเป็น Private Widget ภายในไฟล์เดียวกัน ให้ส่ง `isDarkMode` ผ่าน constructor แทนการเรียก Provider ซ้ำ
+
+#### 3.1.1 Visual Language ของ Money Vibe
+
+- **List-first, Surface-first**: หน้าจอในแอปควรให้ความรู้สึกเป็น financial utility ที่อ่านง่าย ใช้ `surface` แบบแบนและแบ่งข้อมูลด้วย `Divider`/section มากกว่าการ์ดลอยหลายชั้น
+- **หลีกเลี่ยง Card-heavy Dashboard**: ห้ามสร้าง UI ที่เต็มไปด้วย card มีเงา (`boxShadow`) หรือ radius ใหญ่สำหรับข้อมูลปกติ เช่น summary, table, list item, chart section ให้ใช้ full-width surface section แทน
+- **ใช้ Card เฉพาะเมื่อจำเป็น**: ใช้ card ได้กับ modal, bottom sheet content, repeated item ที่ต้องแยกบริบทชัดเจน หรือ tool/panel ที่ต้อง framed จริง ๆ เท่านั้น
+- **List Item Pattern**: รายการธุรกรรม หุ้น รอบบิล และข้อมูลซ้ำ ๆ ควรเป็น row/list บน `AppColors.surface` หรือ `AppColors.darkSurface` คั่นด้วย `AppColors.divider`/`AppColors.darkDivider`
+- **Summary Section Pattern**: summary ด้านบนของหน้าให้เป็น section แบนเต็มความกว้าง มี label เล็ก, ตัวเลขหลัก, metric รอง และ divider ล่าง หลีกเลี่ยง summary card หลายใบถ้าไม่ได้จำเป็นต่อการเปรียบเทียบ
+- **Tab Pattern**: `TabBar` ควรใช้ text-only เป็นค่าเริ่มต้น หลีกเลี่ยง icon ใน tab เว้นแต่มีเหตุผลด้านความเข้าใจที่ชัดเจน
+- **Selection Pattern**: เมื่อต้องเลือกค่าจากรายการ เช่น พอร์ต บัญชี หมวดหมู่ หรือ filter ให้พยายามใช้ `showModalBottomSheet` เป็นตัวเลือกหลักแทน `DropdownButtonFormField`/dropdown โดยแสดงเป็น row/list บน surface พร้อม check mark ของค่าที่เลือกอยู่ และรองรับ dark mode; ใช้ dropdown เฉพาะกรณีที่เหมาะกับ control สั้น ๆ มากจริง ๆ หรือมี pattern เดิมในบริบทนั้นชัดเจน
+- **สีเพื่อสื่อความหมายเท่านั้น**: ใช้สี income/expense/transfer กับตัวเลข สถานะ หรือ badge ที่สื่อความหมายโดยตรง ไม่ควรย้อมพื้นหลังของ logo/icon tile ตามกำไรขาดทุนจนทำให้หน้าดู noisy
+- **Token เท่านั้น**: ใช้สีจาก `AppColors` และ radius จาก `AppRadii` เสมอ หลีกเลี่ยง `Colors.*` ใน UI ใหม่ ยกเว้นสีของ AppBar foreground ที่ธีมกำหนดไว้หรือกรณีจำเป็นจริง
+- **Bottom Sheet และ Dialog**: bottom sheet ควรกระชับ ใช้ handle, surface background, divider และ action row/list ที่ไม่สูงเกินจำเป็น ต้องรองรับ dark mode
+- **ความสอดคล้องก่อนความหวือหวา**: หากไม่แน่ใจ ให้เทียบกับ pattern ปัจจุบันใน `TransactionListScreen`, `PortfolioHoldingItemWidget`, `TradeTrackerScreen`, `StatisticsScreen`, `PortfolioDetailScreen`, และ `CreditCardBillScreen`
 
 ### 3.2 การจัดการวันที่และเวลา (DateTime)
 
@@ -78,7 +93,6 @@ Money Vibe คือแอปจัดการการเงินส่วน
 
 1. **Analyze**: รัน `flutter analyze` และต้องไม่มี error/warning
 2. **Format**: รัน `dart format .` เพื่อจัดฟอร์แมตโค้ด
-3. **Test**: รัน `flutter test` หากมีการแก้ไข logic สำคัญ
 
 ### 5.2 การเพิ่มฟีเจอร์ใหม่
 
@@ -94,3 +108,9 @@ Money Vibe คือแอปจัดการการเงินส่วน
 - **No Hacks**: ห้ามใช้ `as dynamic` หรือข้ามระบบ Type Safety ของ Dart
 - **Security**: ห้าม Hard-code API Key หรือข้อมูลส่วนตัวลงในโค้ด (ให้ใช้ `lib/services/settings_provider.dart` หรือเครื่องมือจัดการ config แทน)
 - **Supabase Only**: เลิกใช้ SQLite แล้ว ไม่ต้อง implement หรืออ้างถึงโค้ดส่วนที่เกี่ยวกับ SQLite เดิม
+
+## Testing
+
+- ไม่ต้องเขียน test สำหรับงานในโปรเจกต์นี้
+- หากมี test เดิมอยู่และไม่ได้ถูกขอให้แก้โดยตรง ไม่ต้อง maintain หรือเพิ่ม coverage
+- ก่อนส่งงานให้รันเฉพาะ `dart format .` และ `flutter analyze`

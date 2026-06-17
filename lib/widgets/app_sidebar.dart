@@ -56,6 +56,11 @@ class AppSidebar extends StatelessWidget {
       route: '/statistics',
     ),
     SidebarItemData(
+      icon: Icons.show_chart,
+      label: 'บันทึกการเทรด',
+      route: '/trade-tracker',
+    ),
+    SidebarItemData(
       icon: Icons.settings_outlined,
       label: 'การตั้งค่า',
       route: '/settings',

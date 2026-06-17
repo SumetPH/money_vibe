@@ -6,7 +6,10 @@ import '../services/database_manager.dart';
 import '../services/stock_price_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
+import '../models/stock_trade.dart';
+import '../models/tax_remittance.dart';
 import '../models/transaction.dart';
+import '../models/portfolio_annual_report.dart';
 
 class AccountProvider extends ChangeNotifier {
   final _uuid = const Uuid();
@@ -19,6 +22,9 @@ class AccountProvider extends ChangeNotifier {
   final List<Account> _accounts = [];
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
+  final List<StockTrade> _stockTrades = [];
+  final List<TaxRemittance> _taxRemittances = [];
+  final List<PortfolioAnnualReport> _portfolioAnnualReports = [];
 
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
@@ -54,6 +60,9 @@ class AccountProvider extends ChangeNotifier {
       _accounts.addAll(accounts);
 
       final holdings = await _db.getPortfolioHoldings();
+      final stockTrades = await _db.getStockTrades();
+      final taxRemittances = await _db.getTaxRemittances();
+      final annualReports = await _db.getPortfolioAnnualReports();
       _holdings.clear();
       for (final holding in holdings) {
         _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
@@ -64,9 +73,21 @@ class AccountProvider extends ChangeNotifier {
           (a, b) => a.sortOrder.compareTo(b.sortOrder),
         );
       }
+      _stockTrades
+        ..clear()
+        ..addAll(stockTrades)
+        ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
+      _taxRemittances
+        ..clear()
+        ..addAll(taxRemittances)
+        ..sort((a, b) => b.remittedAt.compareTo(a.remittedAt));
+      _portfolioAnnualReports
+        ..clear()
+        ..addAll(annualReports)
+        ..sort((a, b) => b.year.compareTo(a.year));
 
       debugPrint(
-        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings',
+        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${taxRemittances.length} tax remittances',
       );
 
       // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
@@ -140,6 +161,154 @@ class AccountProvider extends ChangeNotifier {
 
   List<StockHolding> getHoldings(String portfolioId) =>
       List.unmodifiable(_holdings[portfolioId] ?? []);
+
+  List<StockTrade> get stockTrades => List.unmodifiable(_stockTrades);
+
+  List<TaxRemittance> get taxRemittances => List.unmodifiable(_taxRemittances);
+
+  List<StockTrade> getStockTradesForPortfolio(String portfolioId) =>
+      List.unmodifiable(
+        _stockTrades.where((trade) => trade.portfolioId == portfolioId),
+      );
+
+  List<TaxRemittance> getTaxRemittancesForPortfolio(String portfolioId) =>
+      List.unmodifiable(
+        _taxRemittances.where(
+          (remittance) => remittance.portfolioId == portfolioId,
+        ),
+      );
+
+  List<PortfolioAnnualReport> get portfolioAnnualReports =>
+      List.unmodifiable(_portfolioAnnualReports);
+
+  List<PortfolioAnnualReport> getPortfolioAnnualReportsForPortfolio(
+    String portfolioId,
+  ) => List.unmodifiable(
+    _portfolioAnnualReports.where((r) => r.portfolioId == portfolioId),
+  );
+
+  Future<void> addPortfolioAnnualReport(PortfolioAnnualReport report) async {
+    _validatePortfolioAnnualReport(report);
+
+    await _db.insertPortfolioAnnualReport(report);
+    _portfolioAnnualReports.add(report);
+    _portfolioAnnualReports.sort((a, b) => b.year.compareTo(a.year));
+    notifyListeners();
+  }
+
+  Future<void> updatePortfolioAnnualReport(PortfolioAnnualReport report) async {
+    _validatePortfolioAnnualReport(report);
+
+    await _db.updatePortfolioAnnualReport(report);
+    final idx = _portfolioAnnualReports.indexWhere((r) => r.id == report.id);
+    if (idx != -1) {
+      _portfolioAnnualReports[idx] = report;
+      _portfolioAnnualReports.sort((a, b) => b.year.compareTo(a.year));
+      notifyListeners();
+    }
+  }
+
+  Future<void> deletePortfolioAnnualReport(String id) async {
+    await _db.deletePortfolioAnnualReport(id);
+    _portfolioAnnualReports.removeWhere((r) => r.id == id);
+    notifyListeners();
+  }
+
+  double getRemainingPrincipalPool(
+    String portfolioId,
+    List<AppTransaction> transactions, {
+    String? excludeRemittanceId,
+    int? targetYear,
+  }) {
+    final portfolio = findById(portfolioId);
+    if (portfolio == null) return 0.0;
+
+    // Hybrid Logic: Calculate Total Inflows (Deposits) to the portfolio
+    // 1. Get annual reports for this portfolio
+    final annualReports = getPortfolioAnnualReportsForPortfolio(portfolioId)
+        .where((report) => targetYear == null || report.year <= targetYear)
+        .toList();
+    final reportedYears = annualReports.map((r) => r.year).toSet();
+
+    double totalInflows = portfolio.initialBalance;
+
+    // 2. Add inflows from annual reports
+    for (final report in annualReports) {
+      totalInflows += report.inflowUsd;
+    }
+
+    // 3. Add inflows from transactions ONLY for years NOT in reportedYears
+    for (final tx in transactions) {
+      if (targetYear != null && tx.dateTime.year > targetYear) continue;
+      if (reportedYears.contains(tx.dateTime.year)) continue;
+
+      if (tx.toAccountId == portfolioId && tx.type.usesDestinationAccount) {
+        if (tx.toAmount != null && tx.toAmount! > 0) {
+          totalInflows += tx.toAmount!;
+        } else {
+          final sourceAcc = findById(tx.accountId);
+          if (sourceAcc != null && sourceAcc.currency != portfolio.currency) {
+            // Fallback: convert using current exchange rate if missing
+            final rate = portfolio.exchangeRate > 0
+                ? portfolio.exchangeRate
+                : 35.0;
+            totalInflows += tx.amount / rate;
+          } else {
+            totalInflows += tx.amount;
+          }
+        }
+      } else if (tx.accountId == portfolioId &&
+          tx.type == TransactionType.increaseBalance) {
+        totalInflows += tx.amount;
+      }
+    }
+
+    // 2. Calculate Total Principal Repatriated in the past
+    double totalPrincipalRepatriated = 0.0;
+    for (final rem in _taxRemittances) {
+      if (rem.portfolioId == portfolioId &&
+          rem.id != excludeRemittanceId &&
+          (targetYear == null || rem.remittedAt.year <= targetYear)) {
+        for (final alloc in rem.allocations) {
+          if (alloc.bucketType == TaxRemittanceBucketType.principal) {
+            totalPrincipalRepatriated += alloc.amountUsd;
+          }
+        }
+      }
+    }
+
+    double remaining = totalInflows - totalPrincipalRepatriated;
+    return remaining < 0 ? 0.0 : remaining;
+  }
+
+  String resolveStockLogoUrl({
+    required String portfolioId,
+    required String ticker,
+    String fallback = '',
+  }) {
+    if (fallback.trim().isNotEmpty) return fallback.trim();
+    final normalizedTicker = ticker.trim().toUpperCase();
+    if (normalizedTicker.isEmpty) return '';
+
+    final portfolioHoldings = _holdings[portfolioId] ?? const <StockHolding>[];
+    for (final holding in portfolioHoldings) {
+      if (holding.ticker.trim().toUpperCase() == normalizedTicker &&
+          holding.logoUrl.trim().isNotEmpty) {
+        return holding.logoUrl.trim();
+      }
+    }
+
+    for (final holdings in _holdings.values) {
+      for (final holding in holdings) {
+        if (holding.ticker.trim().toUpperCase() == normalizedTicker &&
+            holding.logoUrl.trim().isNotEmpty) {
+          return holding.logoUrl.trim();
+        }
+      }
+    }
+
+    return '';
+  }
 
   // ── Balance computation ───────────────────────────────────────────────────
 
@@ -457,6 +626,412 @@ class AccountProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<StockTrade> sellHolding({
+    required String portfolioId,
+    required String holdingId,
+    required double sharesSold,
+    required double sellPriceUsd,
+    required double cashReceivedUsd,
+    double? grossProceedsUsd,
+    double? brokerFeeUsd,
+    double? exchangeFeeUsd,
+    double? taxFeeUsd,
+    DateTime? soldAt,
+  }) async {
+    if (sharesSold <= 0) {
+      throw ArgumentError.value(sharesSold, 'sharesSold', 'ต้องมากกว่า 0');
+    }
+    if (sellPriceUsd < 0) {
+      throw ArgumentError.value(sellPriceUsd, 'sellPriceUsd', 'ต้องไม่ติดลบ');
+    }
+    if (cashReceivedUsd < 0) {
+      throw ArgumentError.value(
+        cashReceivedUsd,
+        'cashReceivedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+
+    final accountIndex = _accounts.indexWhere((a) => a.id == portfolioId);
+    if (accountIndex == -1) {
+      throw StateError('ไม่พบพอร์ตที่ต้องการขายหุ้น');
+    }
+
+    final holdings = _holdings[portfolioId];
+    if (holdings == null) {
+      throw StateError('ไม่พบหุ้นในพอร์ตนี้');
+    }
+
+    final holdingIndex = holdings.indexWhere((h) => h.id == holdingId);
+    if (holdingIndex == -1) {
+      throw StateError('ไม่พบหุ้นที่ต้องการขาย');
+    }
+
+    final holding = holdings[holdingIndex];
+    if (sharesSold > holding.shares + 0.0000001) {
+      throw ArgumentError.value(
+        sharesSold,
+        'sharesSold',
+        'จำนวนขายมากกว่าจำนวนที่ถือ',
+      );
+    }
+
+    final trade = StockTrade(
+      id: generateId(),
+      portfolioId: portfolioId,
+      holdingId: holding.id,
+      ticker: holding.ticker,
+      name: holding.name,
+      logoUrl: holding.logoUrl,
+      sharesSold: sharesSold,
+      sellPriceUsd: sellPriceUsd,
+      cashReceivedUsd: cashReceivedUsd,
+      costBasisUsd: holding.costBasisUsd,
+      grossProceedsUsd: grossProceedsUsd,
+      brokerFeeUsd: brokerFeeUsd,
+      taxFeeUsd: taxFeeUsd,
+      exchangeFeeUsd: exchangeFeeUsd,
+      costMethod: CostMethod.average,
+      pnlSource: PnlSource.estimated,
+      soldAt: soldAt,
+    );
+
+    final oldAccount = _accounts[accountIndex];
+    final oldHolding = holding;
+    final oldTrades = List<StockTrade>.from(_stockTrades);
+    final remainingShares = holding.shares - sharesSold;
+    final isFullSell = remainingShares <= 0.0000001;
+    final updatedAccount = oldAccount.copyWith(
+      cashBalance: oldAccount.cashBalance + cashReceivedUsd,
+    );
+
+    _accounts[accountIndex] = updatedAccount;
+    if (isFullSell) {
+      holdings.removeAt(holdingIndex);
+    } else {
+      holdings[holdingIndex] = holding.copyWith(shares: remainingShares);
+    }
+    _stockTrades.insert(0, trade);
+    notifyListeners();
+
+    var insertedTrade = false;
+    var updatedAccountRemote = false;
+    try {
+      await _db.insertStockTrade(trade);
+      insertedTrade = true;
+      await _db.updateAccount(updatedAccount);
+      updatedAccountRemote = true;
+      if (isFullSell) {
+        await _db.deleteHolding(holding.id);
+      } else {
+        await _db.updateHolding(holdings[holdingIndex]);
+      }
+      return trade;
+    } catch (e) {
+      debugPrint('AccountProvider: Error selling holding: $e');
+      if (insertedTrade) {
+        try {
+          await _db.deleteStockTrade(trade.id);
+        } catch (cleanupError) {
+          debugPrint(
+            'AccountProvider: Error rolling back stock trade: $cleanupError',
+          );
+        }
+      }
+      if (updatedAccountRemote) {
+        try {
+          await _db.updateAccount(oldAccount);
+        } catch (cleanupError) {
+          debugPrint(
+            'AccountProvider: Error rolling back portfolio cash: $cleanupError',
+          );
+        }
+      }
+      _accounts[accountIndex] = oldAccount;
+      if (isFullSell) {
+        holdings.insert(holdingIndex, oldHolding);
+      } else {
+        holdings[holdingIndex] = oldHolding;
+      }
+      _stockTrades
+        ..clear()
+        ..addAll(oldTrades);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> addStockTrade(StockTrade trade) async {
+    final normalized = _normalizeStockTrade(trade);
+    _validateStockTrade(normalized);
+
+    _stockTrades.add(normalized);
+    _sortStockTrades();
+    notifyListeners();
+
+    try {
+      await _db.insertStockTrade(normalized);
+    } catch (e) {
+      debugPrint('AccountProvider: Error adding stock trade: $e');
+      _stockTrades.removeWhere((t) => t.id == normalized.id);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateStockTrade(StockTrade updated) async {
+    final normalized = _normalizeStockTrade(updated);
+    _validateStockTrade(normalized);
+
+    final index = _stockTrades.indexWhere((trade) => trade.id == normalized.id);
+    if (index == -1) return;
+
+    final oldTrade = _stockTrades[index];
+    _stockTrades[index] = normalized;
+    _sortStockTrades();
+    notifyListeners();
+
+    try {
+      await _db.updateStockTrade(normalized);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating stock trade: $e');
+      final rollbackIndex = _stockTrades.indexWhere(
+        (trade) => trade.id == oldTrade.id,
+      );
+      if (rollbackIndex == -1) {
+        _stockTrades.add(oldTrade);
+      } else {
+        _stockTrades[rollbackIndex] = oldTrade;
+      }
+      _sortStockTrades();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteStockTrade(String id) async {
+    final index = _stockTrades.indexWhere((trade) => trade.id == id);
+    if (index == -1) return;
+
+    final oldTrade = _stockTrades[index];
+    _stockTrades.removeAt(index);
+    notifyListeners();
+
+    try {
+      await _db.deleteStockTrade(id);
+    } catch (e) {
+      debugPrint('AccountProvider: Error deleting stock trade: $e');
+      _stockTrades.insert(index, oldTrade);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> addTaxRemittance(
+    TaxRemittance remittance, {
+    List<AppTransaction>? transactions,
+  }) async {
+    _validateTaxRemittance(remittance, transactions: transactions);
+
+    _taxRemittances.add(remittance);
+    _sortTaxRemittances();
+    notifyListeners();
+
+    try {
+      await _db.insertTaxRemittance(remittance);
+    } catch (e) {
+      debugPrint('AccountProvider: Error adding tax remittance: $e');
+      _taxRemittances.removeWhere((item) => item.id == remittance.id);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateTaxRemittance(
+    TaxRemittance updated, {
+    List<AppTransaction>? transactions,
+  }) async {
+    _validateTaxRemittance(updated, transactions: transactions);
+
+    final index = _taxRemittances.indexWhere((item) => item.id == updated.id);
+    if (index == -1) return;
+
+    final oldRemittance = _taxRemittances[index];
+    _taxRemittances[index] = updated;
+    _sortTaxRemittances();
+    notifyListeners();
+
+    try {
+      await _db.updateTaxRemittance(updated);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating tax remittance: $e');
+      final rollbackIndex = _taxRemittances.indexWhere(
+        (item) => item.id == oldRemittance.id,
+      );
+      if (rollbackIndex == -1) {
+        _taxRemittances.add(oldRemittance);
+      } else {
+        _taxRemittances[rollbackIndex] = oldRemittance;
+      }
+      _sortTaxRemittances();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTaxRemittance(String id) async {
+    final index = _taxRemittances.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final oldRemittance = _taxRemittances[index];
+    _taxRemittances.removeAt(index);
+    notifyListeners();
+
+    try {
+      await _db.deleteTaxRemittance(id);
+    } catch (e) {
+      debugPrint('AccountProvider: Error deleting tax remittance: $e');
+      _taxRemittances.insert(index, oldRemittance);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  StockTrade _normalizeStockTrade(StockTrade trade) {
+    final ticker = trade.ticker.trim().toUpperCase();
+    return trade.copyWith(
+      ticker: ticker,
+      name: trade.name.trim(),
+      logoUrl: resolveStockLogoUrl(
+        portfolioId: trade.portfolioId,
+        ticker: ticker,
+        fallback: trade.logoUrl,
+      ),
+    );
+  }
+
+  void _validateStockTrade(StockTrade trade) {
+    if (_accounts.every((account) => account.id != trade.portfolioId)) {
+      throw StateError('ไม่พบพอร์ตของรายการขาย');
+    }
+    if (trade.ticker.trim().isEmpty) {
+      throw ArgumentError.value(trade.ticker, 'ticker', 'ต้องระบุ ticker');
+    }
+    if (trade.sharesSold <= 0) {
+      throw ArgumentError.value(
+        trade.sharesSold,
+        'sharesSold',
+        'ต้องมากกว่า 0',
+      );
+    }
+    if (trade.sellPriceUsd < 0) {
+      throw ArgumentError.value(
+        trade.sellPriceUsd,
+        'sellPriceUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (trade.cashReceivedUsd < 0) {
+      throw ArgumentError.value(
+        trade.cashReceivedUsd,
+        'cashReceivedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (trade.costBasisUsd < 0) {
+      throw ArgumentError.value(
+        trade.costBasisUsd,
+        'costBasisUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+  }
+
+  void _validatePortfolioAnnualReport(PortfolioAnnualReport report) {
+    if (_accounts.every((account) => account.id != report.portfolioId)) {
+      throw StateError('ไม่พบพอร์ตของรายงาน Broker');
+    }
+    if (report.year < 1900 || report.year > 2100) {
+      throw ArgumentError.value(report.year, 'year', 'ปีไม่ถูกต้อง');
+    }
+    if (report.inflowUsd < 0) {
+      throw ArgumentError.value(report.inflowUsd, 'inflowUsd', 'ต้องไม่ติดลบ');
+    }
+  }
+
+  int _resolvePrincipalPoolTargetYear(TaxRemittance remittance) {
+    for (final allocation in remittance.allocations) {
+      if (allocation.taxYear != null) {
+        return allocation.taxYear!;
+      }
+    }
+    return remittance.remittedAt.year;
+  }
+
+  void _validateTaxRemittance(
+    TaxRemittance remittance, {
+    List<AppTransaction>? transactions,
+  }) {
+    if (_accounts.every((account) => account.id != remittance.portfolioId)) {
+      throw StateError('ไม่พบพอร์ตของรายการโอนกลับไทย');
+    }
+    if (remittance.amountUsd <= 0) {
+      throw ArgumentError.value(
+        remittance.amountUsd,
+        'amountUsd',
+        'ต้องมากกว่า 0',
+      );
+    }
+    if (remittance.fxRate <= 0) {
+      throw ArgumentError.value(remittance.fxRate, 'fxRate', 'ต้องมากกว่า 0');
+    }
+    for (final allocation in remittance.allocations) {
+      if (allocation.amountUsd < 0) {
+        throw ArgumentError.value(
+          allocation.amountUsd,
+          'allocation.amountUsd',
+          'ต้องไม่ติดลบ',
+        );
+      }
+    }
+    if (remittance.allocatedUsd > remittance.amountUsd + 0.0001) {
+      throw ArgumentError.value(
+        remittance.allocatedUsd,
+        'allocatedUsd',
+        'ยอด allocation มากกว่ายอดโอนกลับไทย',
+      );
+    }
+    if (transactions != null) {
+      final principalUsd = remittance.allocations
+          .where(
+            (allocation) =>
+                allocation.bucketType == TaxRemittanceBucketType.principal,
+          )
+          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd);
+      final remainingPrincipalPool = getRemainingPrincipalPool(
+        remittance.portfolioId,
+        transactions,
+        excludeRemittanceId: remittance.id,
+        targetYear: _resolvePrincipalPoolTargetYear(remittance),
+      );
+      if (principalUsd > remainingPrincipalPool + 0.0001) {
+        throw ArgumentError.value(
+          principalUsd,
+          'principalUsd',
+          'ยอดเงินต้นมากกว่าโควตาเงินต้นคงเหลือ',
+        );
+      }
+    }
+  }
+
+  void _sortStockTrades() {
+    _stockTrades.sort((a, b) => b.soldAt.compareTo(a.soldAt));
+  }
+
+  void _sortTaxRemittances() {
+    _taxRemittances.sort((a, b) => b.remittedAt.compareTo(a.remittedAt));
   }
 
   Future<void> reorderHoldings(

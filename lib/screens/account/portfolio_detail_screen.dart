@@ -17,6 +17,8 @@ import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
 import 'holding_form_screen.dart';
+import 'holding_sell_form_screen.dart';
+import '../trade/broker_report_list_screen.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -255,10 +257,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         onTap: () => _editCashBalance(context, provider, acc),
                         isDarkMode: isDarkMode,
                       ),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
+                SliverToBoxAdapter(child: const SizedBox(height: 16)),
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _TabBarDelegate(
@@ -278,10 +280,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                         Tab(text: 'หุ้นทั้งหมด'),
                       ],
                     ),
-                    // isDarkMode ? AppColors.darkHeader : AppColors.header,
-                    isDarkMode
-                        ? AppColors.darkSurfaceVariant
-                        : AppColors.background,
+                    isDarkMode ? AppColors.darkSurface : AppColors.surface,
                   ),
                 ),
               ];
@@ -532,6 +531,51 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     );
   }
 
+  Future<void> _openHoldingSellForm(
+    BuildContext context,
+    AccountProvider provider,
+    String portfolioId,
+    StockHolding holding,
+  ) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HoldingSellFormScreen(
+          holding: holding,
+          onSell:
+              ({
+                required sharesSold,
+                required sellPriceUsd,
+                required cashReceivedUsd,
+                grossProceedsUsd,
+                brokerFeeUsd,
+                exchangeFeeUsd,
+                taxFeeUsd,
+              }) async {
+                await provider.sellHolding(
+                  portfolioId: portfolioId,
+                  holdingId: holding.id,
+                  sharesSold: sharesSold,
+                  sellPriceUsd: sellPriceUsd,
+                  cashReceivedUsd: cashReceivedUsd,
+                  grossProceedsUsd: grossProceedsUsd,
+                  brokerFeeUsd: brokerFeeUsd,
+                  exchangeFeeUsd: exchangeFeeUsd,
+                  taxFeeUsd: taxFeeUsd,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('บันทึกการขาย ${holding.ticker} แล้ว'),
+                    ),
+                  );
+                }
+              },
+        ),
+      ),
+    );
+  }
+
   Future<StockHolding> _enrichHoldingWithProfile(
     StockHolding holding, {
     StockHolding? existing,
@@ -632,6 +676,21 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     }
   }
 
+  List<String> _currentPortfolioGroupKeys(List<StockHolding> holdings) {
+    final groupSet = <String>{};
+    for (final h in holdings) {
+      final groupName = h.portfolioGroup.trim().isEmpty
+          ? 'ทั่วไป'
+          : h.portfolioGroup.trim();
+      groupSet.add(groupName);
+    }
+
+    return [
+      ..._groupOrder.where(groupSet.contains),
+      ...groupSet.where((groupName) => !_groupOrder.contains(groupName)),
+    ];
+  }
+
   void _showMenuSheet(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
@@ -701,6 +760,49 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                             accountId: widget.account.id,
                           ),
                         ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(Icons.edit_document, color: textColor),
+                    title: Text(
+                      'ปรับยอดจาก Broker',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BrokerReportListScreen(
+                            portfolioId: widget.account.id,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(
+                      Icons.account_tree_outlined,
+                      color: textColor,
+                    ),
+                    title: Text(
+                      'จัดลำดับกลุ่ม',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      final holdings = context
+                          .read<AccountProvider>()
+                          .getHoldings(widget.account.id);
+                      Navigator.pop(context);
+                      _showGroupReorderDialog(
+                        this.context,
+                        _currentPortfolioGroupKeys(holdings),
+                        isDarkMode,
                       );
                     },
                   ),
@@ -786,37 +888,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     return ListView(
       padding: const EdgeInsets.only(bottom: 80),
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4.5),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.reorder, size: 16),
-                label: const Text(
-                  'จัดลำดับกลุ่ม',
-                  style: TextStyle(fontSize: 13),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: isDarkMode
-                      ? AppColors.darkIncome
-                      : AppColors.income,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 0,
-                    vertical: 0,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: () => _showGroupReorderDialog(
-                  context,
-                  sortedGroupKeys,
-                  isDarkMode,
-                ),
-              ),
-            ],
-          ),
-        ),
         for (final groupName in sortedGroupKeys) ...[
           _buildGroupSection(
             context,
@@ -827,7 +898,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
             isDarkMode,
             provider,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
         ],
       ],
     );
@@ -877,28 +948,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
         : AppColors.textSecondary;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    // final headerBgColor = isDarkMode
-    //     ? AppColors.darkSurface.withValues(alpha: 0.6)
-    //     : Colors.grey.shade100;
     final headerBgColor = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.background;
+        ? AppColors.darkSectionHeader
+        : AppColors.sectionHeader;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
+      color: surfaceColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1070,6 +1126,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     onClearLogo: h.logoUrl.isNotEmpty
                         ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
                         : null,
+                    onSell: () =>
+                        _openHoldingSellForm(context, provider, acc.id, h),
                     onDelete: () => provider.deleteHolding(h.id, acc.id),
                     isDarkMode: isDarkMode,
                   ),
@@ -1191,19 +1249,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(left: 0, right: 0, top: 28),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
+      color: surfaceColor,
       child: ListView(
         padding: const EdgeInsets.only(bottom: 80),
         children: [
@@ -1256,6 +1302,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     onClearLogo: h.logoUrl.isNotEmpty
                         ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
                         : null,
+                    onSell: () =>
+                        _openHoldingSellForm(context, provider, acc.id, h),
                     onDelete: () => provider.deleteHolding(h.id, acc.id),
                     isDarkMode: isDarkMode,
                   ),
@@ -1565,6 +1613,7 @@ class _CashRow extends StatelessWidget {
     final textSecondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
 
     return InkWell(
       onTap: onTap,
@@ -1577,14 +1626,10 @@ class _CashRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.15),
+                color: incomeColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.attach_money,
-                color: Colors.green,
-                size: 20,
-              ),
+              child: Icon(Icons.attach_money, color: incomeColor, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
