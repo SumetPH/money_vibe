@@ -2413,7 +2413,7 @@ class _TradeListItem extends StatelessWidget {
         : AppColors.header;
 
     return InkWell(
-      onTap: () => _showActionSheet(context),
+      onTap: onEdit,
       onLongPress: () => _showActionSheet(context),
       child: Container(
         color: surfaceColor,
@@ -2566,6 +2566,7 @@ class _TradeListItem extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: surfaceColor,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
@@ -2575,229 +2576,222 @@ class _TradeListItem extends StatelessWidget {
       ),
       builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: dividerColor,
-                      borderRadius: BorderRadius.circular(AppRadii.tiny),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 36,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: thumbnailColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadii.medium),
-                      ),
-                      padding: trade.logoUrl.isEmpty
-                          ? EdgeInsets.zero
-                          : const EdgeInsets.all(6),
-                      child: trade.logoUrl.isEmpty
-                          ? _TickerFallback(
-                              ticker: trade.ticker,
-                              color: thumbnailColor,
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.small,
-                              ),
-                              child: CachedNetworkImage(
-                                imageUrl: trade.logoUrl,
-                                fit: BoxFit.contain,
-                                placeholder: (_, _) => _TickerFallback(
-                                  ticker: trade.ticker,
-                                  color: thumbnailColor,
-                                ),
-                                errorWidget: (_, _, _) => _TickerFallback(
-                                  ticker: trade.ticker,
-                                  color: thumbnailColor,
-                                ),
-                                fadeInDuration: Duration.zero,
-                                fadeOutDuration: Duration.zero,
-                              ),
-                            ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  trade.ticker,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              if (trade.pnlSource == PnlSource.broker) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode
-                                        ? AppColors.darkTransfer.withValues(
-                                            alpha: 0.2,
-                                          )
-                                        : AppColors.transfer.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.tiny,
-                                    ),
-                                    border: Border.all(
-                                      color: isDarkMode
-                                          ? AppColors.darkTransfer
-                                          : AppColors.transfer,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Broker P/L',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isDarkMode
-                                          ? AppColors.darkTransfer
-                                          : AppColors.transfer,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$portfolioName • ${_formatDate(trade.soldAt)}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                        color: dividerColor,
+                        borderRadius: BorderRadius.circular(AppRadii.tiny),
                       ),
                     ),
-                    Text(
-                      '${trade.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(trade.realizedPnlUsd)}',
-                      style: TextStyle(
-                        color: pnlColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Divider(height: 1, color: dividerColor),
-                const SizedBox(height: 12),
-                _TradeDetailRow(
-                  label: 'จำนวน',
-                  value: _formatShares(trade.sharesSold),
-                  isDarkMode: isDarkMode,
-                ),
-                _TradeDetailRow(
-                  label: 'ราคาขาย',
-                  value: '${trade.sellPriceUsd.toStringAsFixed(4)} USD',
-                  isDarkMode: isDarkMode,
-                ),
-                _TradeDetailRow(
-                  label: 'ราคาทุน',
-                  value: '${trade.costBasisUsd.toStringAsFixed(4)} USD',
-                  isDarkMode: isDarkMode,
-                ),
-                _TradeDetailRow(
-                  label: 'เงินสดรับสุทธิ (Net)',
-                  value: '${formatAmount(trade.cashReceivedUsd)} USD',
-                  isDarkMode: isDarkMode,
-                ),
-                if (trade.grossProceedsUsd != null ||
-                    (trade.brokerFeeUsd != null &&
-                        trade.brokerFeeUsd! > 0)) ...[
-                  const SizedBox(height: 10),
-                  Divider(
-                    height: 1,
-                    color: dividerColor.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: 10),
-                  if (trade.grossProceedsUsd != null)
-                    _TradeDetailRow(
-                      label: 'มูลค่าขายรวม (Gross)',
-                      value: '${formatAmount(trade.grossProceedsUsd!)} USD',
-                      isDarkMode: isDarkMode,
-                    ),
-                  if (trade.brokerFeeUsd != null && trade.brokerFeeUsd! > 0)
-                    _TradeDetailRow(
-                      label: 'ค่าธรรมเนียม Broker',
-                      value: '${formatAmount(trade.brokerFeeUsd!)} USD',
-                      isDarkMode: isDarkMode,
-                    ),
-                  if (trade.exchangeFeeUsd != null && trade.exchangeFeeUsd! > 0)
-                    _TradeDetailRow(
-                      label: 'SEC / Exchange Fee',
-                      value: '${formatAmount(trade.exchangeFeeUsd!)} USD',
-                      isDarkMode: isDarkMode,
-                    ),
-                  if (trade.taxFeeUsd != null && trade.taxFeeUsd! > 0)
-                    _TradeDetailRow(
-                      label: 'Tax / VAT',
-                      value: '${formatAmount(trade.taxFeeUsd!)} USD',
-                      isDarkMode: isDarkMode,
-                    ),
-                ],
-                const SizedBox(height: 10),
-                Divider(height: 1, color: dividerColor),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          onEdit();
-                        },
-                        icon: Icon(Icons.edit_outlined, color: textColor),
-                        label: Text(
-                          'แก้ไข',
-                          style: TextStyle(color: textColor),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: thumbnailColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        padding: trade.logoUrl.isEmpty
+                            ? EdgeInsets.zero
+                            : const EdgeInsets.all(6),
+                        child: trade.logoUrl.isEmpty
+                            ? _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.small,
+                                ),
+                                child: CachedNetworkImage(
+                                  imageUrl: trade.logoUrl,
+                                  fit: BoxFit.contain,
+                                  placeholder: (_, _) => _TickerFallback(
+                                    ticker: trade.ticker,
+                                    color: thumbnailColor,
+                                  ),
+                                  errorWidget: (_, _, _) => _TickerFallback(
+                                    ticker: trade.ticker,
+                                    color: thumbnailColor,
+                                  ),
+                                  fadeInDuration: Duration.zero,
+                                  fadeOutDuration: Duration.zero,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    trade.ticker,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                if (trade.pnlSource == PnlSource.broker) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? AppColors.darkTransfer.withValues(
+                                              alpha: 0.2,
+                                            )
+                                          : AppColors.transfer.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.tiny,
+                                      ),
+                                      border: Border.all(
+                                        color: isDarkMode
+                                            ? AppColors.darkTransfer
+                                            : AppColors.transfer,
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Broker P/L',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isDarkMode
+                                            ? AppColors.darkTransfer
+                                            : AppColors.transfer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '$portfolioName • ${_formatDate(trade.soldAt)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: secondaryColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          onDelete();
-                        },
-                        icon: Icon(Icons.delete_outline, color: dangerColor),
-                        label: Text('ลบ', style: TextStyle(color: dangerColor)),
+                      Text(
+                        '${trade.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(trade.realizedPnlUsd)}',
+                        style: TextStyle(
+                          color: pnlColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Divider(height: 1, color: dividerColor),
+                  const SizedBox(height: 12),
+                  _TradeDetailRow(
+                    label: 'จำนวน',
+                    value: _formatShares(trade.sharesSold),
+                    isDarkMode: isDarkMode,
+                  ),
+                  _TradeDetailRow(
+                    label: 'ราคาขาย',
+                    value: '${trade.sellPriceUsd.toStringAsFixed(4)} USD',
+                    isDarkMode: isDarkMode,
+                  ),
+                  _TradeDetailRow(
+                    label: 'ราคาทุน',
+                    value: '${trade.costBasisUsd.toStringAsFixed(4)} USD',
+                    isDarkMode: isDarkMode,
+                  ),
+                  _TradeDetailRow(
+                    label: 'เงินสดรับสุทธิ (Net)',
+                    value: '${formatAmount(trade.cashReceivedUsd)} USD',
+                    isDarkMode: isDarkMode,
+                  ),
+                  if (trade.grossProceedsUsd != null ||
+                      (trade.brokerFeeUsd != null &&
+                          trade.brokerFeeUsd! > 0)) ...[
+                    const SizedBox(height: 10),
+                    Divider(
+                      height: 1,
+                      color: dividerColor.withValues(alpha: 0.5),
                     ),
+                    const SizedBox(height: 10),
+                    if (trade.grossProceedsUsd != null)
+                      _TradeDetailRow(
+                        label: 'มูลค่าขายรวม (Gross)',
+                        value: '${formatAmount(trade.grossProceedsUsd!)} USD',
+                        isDarkMode: isDarkMode,
+                      ),
+                    if (trade.brokerFeeUsd != null && trade.brokerFeeUsd! > 0)
+                      _TradeDetailRow(
+                        label: 'ค่าธรรมเนียม Broker',
+                        value: '${formatAmount(trade.brokerFeeUsd!)} USD',
+                        isDarkMode: isDarkMode,
+                      ),
+                    if (trade.exchangeFeeUsd != null &&
+                        trade.exchangeFeeUsd! > 0)
+                      _TradeDetailRow(
+                        label: 'SEC / Exchange Fee',
+                        value: '${formatAmount(trade.exchangeFeeUsd!)} USD',
+                        isDarkMode: isDarkMode,
+                      ),
+                    if (trade.taxFeeUsd != null && trade.taxFeeUsd! > 0)
+                      _TradeDetailRow(
+                        label: 'Tax / VAT',
+                        value: '${formatAmount(trade.taxFeeUsd!)} USD',
+                        isDarkMode: isDarkMode,
+                      ),
                   ],
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.edit_outlined, color: textColor),
+                    title: Text('แก้ไข', style: TextStyle(color: textColor)),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      onEdit();
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.delete_outline, color: dangerColor),
+                    title: Text('ลบ', style: TextStyle(color: dangerColor)),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      onDelete();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         );
