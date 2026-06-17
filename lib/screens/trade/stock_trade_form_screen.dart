@@ -436,6 +436,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               hintText: 'AAPL',
               isDarkMode: isDarkMode,
               errorText: _tickerError,
+              keyboardType: TextInputType.text,
               textCapitalization: TextCapitalization.characters,
             ),
             _buildDivider(isDarkMode),
@@ -445,7 +446,22 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               hintText: '0',
               isDarkMode: isDarkMode,
               errorText: _sharesError,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [_decimalInputFormatter(7)],
+            ),
+            _buildDivider(isDarkMode),
+            _TradeTextFieldRow(
+              label: 'ราคาทุน (USD)',
+              controller: _costBasisController,
+              hintText: '0.00',
+              isDarkMode: isDarkMode,
+              errorText: _costBasisError,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [_decimalInputFormatter(4)],
             ),
             _buildDivider(isDarkMode),
             _TradeTextFieldRow(
@@ -454,6 +470,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               hintText: '0.00',
               isDarkMode: isDarkMode,
               errorText: _sellPriceError,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [_decimalInputFormatter(4)],
             ),
             _buildDivider(isDarkMode),
@@ -463,17 +482,12 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
               hintText: '0.00',
               isDarkMode: isDarkMode,
               errorText: _cashReceivedError,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [_decimalInputFormatter(4)],
             ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'ราคาทุน (USD)',
-              controller: _costBasisController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _costBasisError,
-              inputFormatters: [_decimalInputFormatter(4)],
-            ),
+
             _buildDivider(isDarkMode),
             _AdvancedDetailsSection(
               isDarkMode: isDarkMode,
@@ -499,6 +513,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   hintText: 'Optional',
                   isDarkMode: isDarkMode,
                   errorText: _grossProceedsError,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [_decimalInputFormatter(4)],
                 ),
                 _buildDivider(isDarkMode),
@@ -508,6 +525,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   hintText: 'Optional',
                   isDarkMode: isDarkMode,
                   errorText: _brokerFeeError,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [_decimalInputFormatter(4)],
                 ),
                 _buildDivider(isDarkMode),
@@ -517,6 +537,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   hintText: 'Optional',
                   isDarkMode: isDarkMode,
                   errorText: _exchangeFeeError,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [_decimalInputFormatter(4)],
                 ),
                 _buildDivider(isDarkMode),
@@ -526,6 +549,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   hintText: 'Optional',
                   isDarkMode: isDarkMode,
                   errorText: _taxFeeError,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [_decimalInputFormatter(4)],
                 ),
                 _buildDivider(isDarkMode),
@@ -555,6 +581,10 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                     hintText: '0.00',
                     isDarkMode: isDarkMode,
                     errorText: _realizedPnlError,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
                     inputFormatters: [_decimalInputFormatter(4)],
                   ),
                 ],
@@ -739,12 +769,14 @@ class _TradeTextFieldRow extends StatelessWidget {
   final String? errorText;
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
+  final TextInputType keyboardType;
 
   const _TradeTextFieldRow({
     required this.label,
     required this.controller,
     required this.hintText,
     required this.isDarkMode,
+    this.keyboardType = TextInputType.text,
     this.errorText,
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
@@ -779,9 +811,7 @@ class _TradeTextFieldRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               textAlign: TextAlign.right,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: keyboardType,
               textCapitalization: textCapitalization,
               inputFormatters: inputFormatters,
               decoration: InputDecoration(

@@ -883,7 +883,7 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Taxable จากเงินโอนกลับ',
+                'เงินได้/กำไรที่โอนกลับ',
                 style: TextStyle(
                   color: secondaryColor,
                   fontSize: 13,
@@ -921,16 +921,20 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
                 ],
               ),
               _SummaryMetric(
-                label: 'Realized P/L ปีนี้',
-                value:
-                    '${tradeSummary.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(tradeSummary.realizedPnlUsd)} USD',
+                label: 'กำไรรวมก่อนหักขาดทุน',
+                value: '${formatAmount(tradeSummary.profitUsd)} USD',
                 color: AppColors.getAmountColor(
-                  tradeSummary.realizedPnlUsd,
+                  tradeSummary.profitUsd,
                   isDarkMode,
                 ),
                 alignEnd: true,
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'ประมาณการจาก allocation ที่ไม่ใช่เงินต้น \nขาดทุนไม่ได้ถูกนำมาหักจากกำไร',
+            style: TextStyle(color: secondaryColor, fontSize: 12),
           ),
         ],
       ),
@@ -1078,7 +1082,7 @@ class _TaxRemittanceListItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${formatAmount(remittance.taxableUsd)} taxable',
+                        '${formatAmount(remittance.taxableUsd)} เงินได้',
                         style: TextStyle(
                           color: AppColors.getAmountColor(
                             remittance.taxableUsd,
@@ -1634,7 +1638,7 @@ class _SummaryPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _SummaryMetric(
-                  label: 'เงินสดรับ',
+                  label: 'เงินสดรับจากการขาย',
                   value: '${formatAmount(summary.cashReceivedUsd)} USD',
                   color: textColor,
                 ),
@@ -1642,7 +1646,7 @@ class _SummaryPanel extends StatelessWidget {
               Expanded(
                 child: _SummaryMetric(
                   label: 'กำไร',
-                  value: formatAmount(summary.profitUsd),
+                  value: '${formatAmount(summary.profitUsd)} USD',
                   color: profitColor,
                   alignEnd: true,
                 ),
@@ -1650,7 +1654,7 @@ class _SummaryPanel extends StatelessWidget {
               Expanded(
                 child: _SummaryMetric(
                   label: 'ขาดทุน',
-                  value: formatAmount(summary.lossUsd.abs()),
+                  value: '${formatAmount(summary.lossUsd.abs())} USD',
                   color: lossColor,
                   alignEnd: true,
                 ),

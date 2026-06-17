@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../main.dart';
 import '../../models/account.dart';
 import '../../models/tax_remittance.dart';
 import '../../providers/settings_provider.dart';
@@ -427,7 +428,7 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
                 Expanded(
                   child: _SectionLabel(
                     text:
-                        'Allocation (โควตาเงินต้นคงเหลือ: \$${_formatAmount(remainingPrincipalPool)} USD)',
+                        'Allocation (โควตาเงินต้นคงเหลือ: ${formatAmount(remainingPrincipalPool)} USD)',
                     isDarkMode: isDarkMode,
                   ),
                 ),
@@ -452,7 +453,7 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _RemittanceNumberFieldRow(
-              label: 'เงินได้/กำไร (USD)',
+              label: 'เงินได้/กำไรที่อาจต้องเสียภาษี (USD)',
               controller: _taxableController,
               hintText: '0.00',
               isDarkMode: isDarkMode,
@@ -484,7 +485,7 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
               },
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Text(
                 'ใช้ระบุว่ากำไรหรือเงินได้ส่วนนี้เกิดในปีไหน แม้จะโอนกลับไทยคนละปี',
                 style: TextStyle(color: secondaryColor, fontSize: 12),
@@ -492,7 +493,7 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
             ),
             if (_allocationError != null)
               _ErrorText(text: _allocationError!, isDarkMode: isDarkMode),
-            const SizedBox(height: 12),
+            // const SizedBox(height: 12),
             _RemittanceTextFieldRow(
               label: 'Note',
               controller: _noteController,
@@ -502,7 +503,7 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Text(
-                'ประมาณการ taxable: ${_formatAmount(taxable)} USD / ${_formatAmount(taxable * fxRate)} THB\nยอดโอนรวม: ${_formatAmount(amountUsd)} USD / ${_formatAmount(amountUsd * fxRate)} THB',
+                'เงินได้ที่อาจต้องเสียภาษี: ${formatAmount(taxable)} USD / ${formatAmount(taxable * fxRate)} THB\nยอดโอนรวม: ${formatAmount(amountUsd)} USD / ${formatAmount(amountUsd * fxRate)} THB',
                 textAlign: TextAlign.right,
                 style: TextStyle(color: secondaryColor, fontSize: 12),
               ),
@@ -530,8 +531,6 @@ class _TaxRemittanceFormScreenState extends State<TaxRemittanceFormScreen> {
     }
     return value.toStringAsFixed(scale).replaceFirst(RegExp(r'\.?0+$'), '');
   }
-
-  String _formatAmount(double value) => value.toStringAsFixed(2);
 }
 
 class _SectionLabel extends StatelessWidget {
