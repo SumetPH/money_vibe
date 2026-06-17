@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/stock_trade.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -49,13 +50,13 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   final _sellPriceController = TextEditingController();
   final _cashReceivedController = TextEditingController();
   final _costBasisController = TextEditingController();
-  final _logoUrlController = TextEditingController();
   final _realizedPnlController = TextEditingController();
 
   final _grossProceedsController = TextEditingController();
   final _brokerFeeController = TextEditingController();
   final _exchangeFeeController = TextEditingController();
   final _taxFeeController = TextEditingController();
+  final StockLogoStorageService _logoStorageService = StockLogoStorageService();
 
   String? _portfolioId;
   DateTime _soldAt = DateTime.now();
@@ -92,7 +93,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       _sellPriceController.text = _formatEditable(trade.sellPriceUsd, 4);
       _cashReceivedController.text = _formatEditable(trade.cashReceivedUsd, 4);
       _costBasisController.text = _formatEditable(trade.costBasisUsd, 4);
-      _logoUrlController.text = trade.logoUrl;
       _soldAt = trade.soldAt;
       _useBrokerPnl =
           trade.pnlSource == PnlSource.broker ||
@@ -115,7 +115,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       }
       _showAdvancedDetails =
           trade.name.trim().isNotEmpty ||
-          trade.logoUrl.trim().isNotEmpty ||
           trade.grossProceedsUsd != null ||
           trade.brokerFeeUsd != null ||
           trade.exchangeFeeUsd != null ||
@@ -132,7 +131,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     _sellPriceController.dispose();
     _cashReceivedController.dispose();
     _costBasisController.dispose();
-    _logoUrlController.dispose();
     _realizedPnlController.dispose();
     _grossProceedsController.dispose();
     _brokerFeeController.dispose();
@@ -261,12 +259,18 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     }
 
     setState(() => _isSaving = true);
-    final profile = _logoUrlController.text.trim().isEmpty
-        ? await widget.fetchProfile?.call(ticker)
-        : null;
+    final existing = widget.existing;
+    final hasSameTicker =
+        existing != null && existing.ticker.trim().toUpperCase() == ticker;
+    final currentLogoUrl = hasSameTicker ? existing.logoUrl.trim() : '';
+    final profile = await widget.fetchProfile?.call(ticker);
+    final resolvedLogoUrl = await _resolveLogoUrl(
+      ticker: ticker,
+      sourceUrl: profile?.logoUrl ?? '',
+      currentLogoUrl: currentLogoUrl,
+    );
     if (!mounted) return;
 
-    final existing = widget.existing;
     final trade = StockTrade(
       id: existing?.id ?? widget.generateId(),
       portfolioId: _portfolioId!,
@@ -275,9 +279,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       name: _nameController.text.trim().isNotEmpty
           ? _nameController.text.trim()
           : (profile?.name ?? ''),
-      logoUrl: _logoUrlController.text.trim().isNotEmpty
-          ? _logoUrlController.text.trim()
-          : (profile?.logoUrl ?? ''),
+      logoUrl: resolvedLogoUrl,
       sharesSold: shares!,
       sellPriceUsd: sellPrice!,
       cashReceivedUsd: cashReceived!,
@@ -301,6 +303,27 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<String> _resolveLogoUrl({
+    required String ticker,
+    required String sourceUrl,
+    required String currentLogoUrl,
+  }) async {
+    if (sourceUrl.isEmpty) return currentLogoUrl;
+    if (_logoStorageService.isStoredLogoUrl(currentLogoUrl)) {
+      return currentLogoUrl;
+    }
+
+    final mirroredLogoUrl = await _logoStorageService.mirrorLogo(
+      ticker: ticker,
+      sourceUrl: sourceUrl,
+    );
+    if (mirroredLogoUrl != null && mirroredLogoUrl.isNotEmpty) {
+      return mirroredLogoUrl;
+    }
+
+    return currentLogoUrl.isNotEmpty ? currentLogoUrl : sourceUrl;
   }
 
   @override
@@ -504,14 +527,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   isDarkMode: isDarkMode,
                   errorText: _taxFeeError,
                   inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _buildDivider(isDarkMode),
-                _TradeTextFieldRow(
-                  label: 'Logo URL',
-                  controller: _logoUrlController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                  keyboardType: TextInputType.url,
                 ),
                 _buildDivider(isDarkMode),
                 Container(
@@ -723,7 +738,6 @@ class _TradeTextFieldRow extends StatelessWidget {
   final bool isDarkMode;
   final String? errorText;
   final List<TextInputFormatter>? inputFormatters;
-  final TextInputType? keyboardType;
   final TextCapitalization textCapitalization;
 
   const _TradeTextFieldRow({
@@ -733,7 +747,6 @@ class _TradeTextFieldRow extends StatelessWidget {
     required this.isDarkMode,
     this.errorText,
     this.inputFormatters,
-    this.keyboardType,
     this.textCapitalization = TextCapitalization.none,
   });
 
@@ -766,9 +779,9 @@ class _TradeTextFieldRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               textAlign: TextAlign.right,
-              keyboardType:
-                  keyboardType ??
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textCapitalization: textCapitalization,
               inputFormatters: inputFormatters,
               decoration: InputDecoration(
