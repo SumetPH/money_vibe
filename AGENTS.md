@@ -5,6 +5,7 @@
 ## Coding Standards
 
 - ถ้ามีการปรับ database ให้เขียน migration ใน /supabase
+- ถ้ามีการสร้างหรือแก้ไข migration ใน `supabase/migrations` ต้องอัปเดต `supabase/init_schema.sql` ให้รวม migration ล่าสุดด้วยเสมอ เพื่อให้ไฟล์ init schema ใช้ bootstrap database ใหม่ได้ครบถ้วน
 
 ## 1. เป้าหมายและบริบท (Context)
 
