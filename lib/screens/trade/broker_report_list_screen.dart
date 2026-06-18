@@ -76,6 +76,7 @@ class BrokerReportListScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'เงินทุน ${currencyFormat.format(report.inflowUsd)} USD'
+                      ' • โอนกลับ ${currencyFormat.format(report.remittedUsd)} USD'
                       ' • ปันผลสุทธิ ${currencyFormat.format(report.dividendNetUsd)} USD'
                       ' • ภาษี ${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
                       maxLines: 2,

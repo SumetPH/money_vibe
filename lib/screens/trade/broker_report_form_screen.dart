@@ -38,6 +38,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
   late final TextEditingController _dividendGrossController;
   late final TextEditingController _dividendTaxWithheldController;
   late final TextEditingController _dividendNetController;
+  late final TextEditingController _remittedUsdController;
+  late final TextEditingController _remittedThbController;
   late final TextEditingController _noteController;
 
   bool _isSaving = false;
@@ -67,6 +69,16 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
           ? _formatEditable(r.dividendNetUsd)
           : '',
     );
+    _remittedUsdController = TextEditingController(
+      text: r != null && r.remittedUsd > 0
+          ? _formatEditable(r.remittedUsd)
+          : '',
+    );
+    _remittedThbController = TextEditingController(
+      text: r != null && r.remittedThb > 0
+          ? _formatEditable(r.remittedThb)
+          : '',
+    );
     _noteController = TextEditingController(text: r?.note ?? '');
   }
 
@@ -77,6 +89,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     _dividendGrossController.dispose();
     _dividendTaxWithheldController.dispose();
     _dividendNetController.dispose();
+    _remittedUsdController.dispose();
+    _remittedThbController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -96,6 +110,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     final dividendGross = _parseAmount(_dividendGrossController);
     final dividendTaxWithheld = _parseAmount(_dividendTaxWithheldController);
     final dividendNet = _parseAmount(_dividendNetController);
+    final remittedUsd = _parseAmount(_remittedUsdController);
+    final remittedThb = _parseAmount(_remittedThbController);
 
     setState(() => _isSaving = true);
 
@@ -110,6 +126,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         dividendGrossUsd: dividendGross,
         dividendTaxWithheldUsd: dividendTaxWithheld,
         dividendNetUsd: dividendNet,
+        remittedUsd: remittedUsd,
+        remittedThb: remittedThb,
         note: _noteController.text.trim(),
         createdAt: widget.existingReport?.createdAt,
       );
@@ -391,6 +409,38 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _dividendNetController,
                 label: 'ปันผลสุทธิ (Net Dividend USD)',
                 icon: Icons.account_balance_wallet_outlined,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Text(
+                  'เงินโอนกลับไทยจากรายงานประจำปี',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _buildMoneyField(
+                controller: _remittedUsdController,
+                label: 'ยอดโอนกลับไทยรวม (USD)',
+                icon: Icons.account_balance_outlined,
+                iconColor: expenseColor,
+                amountColor: expenseColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+              _buildMoneyField(
+                controller: _remittedThbController,
+                label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
+                icon: Icons.payments_outlined,
                 iconColor: incomeColor,
                 amountColor: incomeColor,
                 surfaceColor: surfaceColor,

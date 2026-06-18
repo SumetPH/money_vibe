@@ -6,6 +6,8 @@ class PortfolioAnnualReport {
   final double dividendGrossUsd;
   final double dividendTaxWithheldUsd;
   final double dividendNetUsd;
+  final double remittedUsd;
+  final double remittedThb;
   final String note;
   final DateTime createdAt;
 
@@ -17,6 +19,8 @@ class PortfolioAnnualReport {
     this.dividendGrossUsd = 0,
     this.dividendTaxWithheldUsd = 0,
     this.dividendNetUsd = 0,
+    this.remittedUsd = 0,
+    this.remittedThb = 0,
     this.note = '',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -29,6 +33,8 @@ class PortfolioAnnualReport {
     'dividend_gross_usd': dividendGrossUsd,
     'dividend_tax_withheld_usd': dividendTaxWithheldUsd,
     'dividend_net_usd': dividendNetUsd,
+    'remitted_usd': remittedUsd,
+    'remitted_thb': remittedThb,
     'note': note,
     'created_at': createdAt.toIso8601String(),
   };
@@ -43,6 +49,8 @@ class PortfolioAnnualReport {
       dividendTaxWithheldUsd:
           (m['dividend_tax_withheld_usd'] as num?)?.toDouble() ?? 0,
       dividendNetUsd: (m['dividend_net_usd'] as num?)?.toDouble() ?? 0,
+      remittedUsd: (m['remitted_usd'] as num?)?.toDouble() ?? 0,
+      remittedThb: (m['remitted_thb'] as num?)?.toDouble() ?? 0,
       note: m['note'] as String? ?? '',
       createdAt: m['created_at'] != null
           ? DateTime.parse(m['created_at'] as String)
@@ -58,6 +66,8 @@ class PortfolioAnnualReport {
     double? dividendGrossUsd,
     double? dividendTaxWithheldUsd,
     double? dividendNetUsd,
+    double? remittedUsd,
+    double? remittedThb,
     String? note,
     DateTime? createdAt,
   }) {
@@ -70,6 +80,8 @@ class PortfolioAnnualReport {
       dividendTaxWithheldUsd:
           dividendTaxWithheldUsd ?? this.dividendTaxWithheldUsd,
       dividendNetUsd: dividendNetUsd ?? this.dividendNetUsd,
+      remittedUsd: remittedUsd ?? this.remittedUsd,
+      remittedThb: remittedThb ?? this.remittedThb,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );

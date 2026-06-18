@@ -7,7 +7,6 @@ import '../../main.dart';
 import '../../models/account.dart';
 import '../../models/portfolio_annual_report.dart';
 import '../../models/stock_trade.dart';
-import '../../models/tax_remittance.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -18,7 +17,6 @@ import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
 import 'stock_trade_form_screen.dart';
-import 'tax_remittance_form_screen.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -98,7 +96,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           tabs: const [
             Tab(text: 'สรุป'),
             Tab(text: 'รายปี'),
-            Tab(text: 'โอนกลับไทย'),
+            Tab(text: 'ภาษีไทย'),
           ],
         ),
       ),
@@ -110,7 +108,25 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           final trades = _filteredTrades(accountProvider.stockTrades);
           final summary = _TradeSummary.fromTrades(trades);
           final tradeMonthSections = _groupTradesByMonth(trades);
-          final principalQuotaRemainingUsd = accountProvider.accounts
+          final portfolioAccounts = accountProvider.accounts
+              .where((account) => account.isPortfolio)
+              .toList();
+          final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
+            sum,
+            portfolio,
+          ) {
+            final previousPrincipal = accountProvider.getRemainingPrincipalPool(
+              portfolio.id,
+              transactions,
+              targetYear: _selectedYear - 1,
+            );
+            final currentYearInflow = accountProvider
+                .getPortfolioAnnualReportsForPortfolio(portfolio.id)
+                .where((report) => report.year == _selectedYear)
+                .fold(0.0, (reportSum, report) => reportSum + report.inflowUsd);
+            return sum + previousPrincipal + currentYearInflow;
+          });
+          final principalQuotaRemainingUsd = portfolioAccounts
               .where((account) => account.isPortfolio)
               .fold(
                 0.0,
@@ -174,21 +190,13 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   onYearChanged: (year) => setState(() => _selectedYear = year),
                   isDarkMode: isDarkMode,
                 ),
-                _TaxRemittanceTab(
+                _AnnualTaxTab(
                   trades: accountProvider.stockTrades,
                   annualReports: accountProvider.portfolioAnnualReports,
-                  remittances: accountProvider.taxRemittances,
                   selectedYear: _selectedYear,
+                  principalAvailableForYearUsd: principalAvailableForYearUsd,
                   principalQuotaRemainingUsd: principalQuotaRemainingUsd,
                   onYearChanged: (year) => setState(() => _selectedYear = year),
-                  portfolioNameOf: (remittance) =>
-                      accountProvider.findById(remittance.portfolioId)?.name ??
-                      'พอร์ตหุ้น',
-                  onAdd: () => _openRemittanceForm(context, null),
-                  onEdit: (remittance) =>
-                      _openRemittanceForm(context, remittance),
-                  onDelete: (remittance) =>
-                      _confirmDeleteRemittance(context, remittance),
                   isDarkMode: isDarkMode,
                 ),
               ],
@@ -228,13 +236,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           ),
         ];
       case 2:
-        return [
-          IconButton(
-            icon: const Icon(Icons.account_balance),
-            tooltip: 'บันทึกโอนกลับไทย',
-            onPressed: () => _openRemittanceForm(context, null),
-          ),
-        ];
+        return const [];
     }
     return const [];
   }
@@ -256,20 +258,32 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
             .where((trade) => trade.soldAt.year == year)
             .toList()
           ..sort((a, b) => a.soldAt.compareTo(b.soldAt));
-    final yearRemittances =
-        provider.taxRemittances
-            .where((remittance) => remittance.remittedAt.year == year)
-            .toList()
-          ..sort((a, b) => a.remittedAt.compareTo(b.remittedAt));
     final yearAnnualReports =
         provider.portfolioAnnualReports
             .where((report) => report.year == year)
             .toList()
           ..sort((a, b) => a.portfolioId.compareTo(b.portfolioId));
+    final transactions = context.read<TransactionProvider>().transactions;
+    final portfolioAccounts = provider.accounts
+        .where((account) => account.isPortfolio)
+        .toList();
+    final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
+      sum,
+      portfolio,
+    ) {
+      final previousPrincipal = provider.getRemainingPrincipalPool(
+        portfolio.id,
+        transactions,
+        targetYear: year - 1,
+      );
+      final currentYearInflow = provider
+          .getPortfolioAnnualReportsForPortfolio(portfolio.id)
+          .where((report) => report.year == year)
+          .fold(0.0, (reportSum, report) => reportSum + report.inflowUsd);
+      return sum + previousPrincipal + currentYearInflow;
+    });
 
-    if (yearTrades.isEmpty &&
-        yearRemittances.isEmpty &&
-        yearAnnualReports.isEmpty) {
+    if (yearTrades.isEmpty && yearAnnualReports.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ไม่มีข้อมูลสำหรับ export ปี $year')),
       );
@@ -280,8 +294,8 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
       final files = _buildYearlyTaxExportFiles(
         year: year,
         trades: yearTrades,
-        remittances: yearRemittances,
         annualReports: yearAnnualReports,
+        principalAvailableForYearUsd: principalAvailableForYearUsd,
         portfolioNameOf: (portfolioId) =>
             provider.findById(portfolioId)?.name ?? 'พอร์ตหุ้น',
       );
@@ -350,50 +364,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               await provider.addStockTrade(savedTrade);
             } else {
               await provider.updateStockTrade(savedTrade);
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openRemittanceForm(
-    BuildContext context,
-    TaxRemittance? remittance,
-  ) async {
-    final provider = context.read<AccountProvider>();
-    final portfolios = provider.accounts
-        .where((account) => account.type == AccountType.portfolio)
-        .toList();
-
-    if (portfolios.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ต้องมีพอร์ตหุ้นก่อนบันทึกโอนกลับไทย')),
-      );
-      return;
-    }
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TaxRemittanceFormScreen(
-          portfolios: portfolios,
-          existing: remittance,
-          generateId: provider.generateId,
-          onSave: (savedRemittance) async {
-            final transactions = context
-                .read<TransactionProvider>()
-                .transactions;
-            if (remittance == null) {
-              await provider.addTaxRemittance(
-                savedRemittance,
-                transactions: transactions,
-              );
-            } else {
-              await provider.updateTaxRemittance(
-                savedRemittance,
-                transactions: transactions,
-              );
             }
           },
         ),
@@ -554,47 +524,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
       context,
     ).showSnackBar(SnackBar(content: Text('ลบ Trade ${trade.ticker} แล้ว')));
   }
-
-  Future<void> _confirmDeleteRemittance(
-    BuildContext context,
-    TaxRemittance remittance,
-  ) async {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        title: Text('ลบรายการโอนกลับไทย', style: TextStyle(color: textColor)),
-        content: Text(
-          'ต้องการลบรายการโอนกลับ ${formatAmount(remittance.amountUsd)} USD ใช่ไหม?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: expenseColor),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-    await context.read<AccountProvider>().deleteTaxRemittance(remittance.id);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('ลบรายการโอนกลับไทยแล้ว')));
-  }
 }
 
 class _YearlyTradeTab extends StatelessWidget {
@@ -682,46 +611,32 @@ class _YearlyTradeTab extends StatelessWidget {
   }
 }
 
-class _TaxRemittanceTab extends StatelessWidget {
+class _AnnualTaxTab extends StatelessWidget {
   final List<StockTrade> trades;
   final List<PortfolioAnnualReport> annualReports;
-  final List<TaxRemittance> remittances;
   final int selectedYear;
+  final double principalAvailableForYearUsd;
   final double principalQuotaRemainingUsd;
   final ValueChanged<int> onYearChanged;
-  final String Function(TaxRemittance remittance) portfolioNameOf;
-  final VoidCallback onAdd;
-  final ValueChanged<TaxRemittance> onEdit;
-  final ValueChanged<TaxRemittance> onDelete;
   final bool isDarkMode;
 
-  const _TaxRemittanceTab({
+  const _AnnualTaxTab({
     required this.trades,
     required this.annualReports,
-    required this.remittances,
     required this.selectedYear,
+    required this.principalAvailableForYearUsd,
     required this.principalQuotaRemainingUsd,
     required this.onYearChanged,
-    required this.portfolioNameOf,
-    required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
     required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final yearTrades = trades
         .where((trade) => trade.soldAt.year == selectedYear)
-        .toList();
-    final yearRemittances = remittances
-        .where((remittance) => remittance.remittedAt.year == selectedYear)
         .toList();
     final yearAnnualReports = annualReports
         .where((report) => report.year == selectedYear)
@@ -730,8 +645,9 @@ class _TaxRemittanceTab extends StatelessWidget {
     final annualReportSummary = _PortfolioAnnualReportSummary.fromReports(
       yearAnnualReports,
     );
-    final remittanceSummary = _TaxRemittanceSummary.fromRemittances(
-      yearRemittances,
+    final annualTaxSummary = _AnnualTaxSummary.fromReports(
+      reports: yearAnnualReports,
+      principalAvailableForYearUsd: principalAvailableForYearUsd,
     );
 
     return CustomScrollView(
@@ -744,165 +660,53 @@ class _TaxRemittanceTab extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: _TaxRemittanceSummaryPanel(
+          child: _AnnualTaxSummaryPanel(
             tradeSummary: tradeSummary,
             annualReportSummary: annualReportSummary,
-            remittanceSummary: remittanceSummary,
+            annualTaxSummary: annualTaxSummary,
             isDarkMode: isDarkMode,
           ),
         ),
         SliverToBoxAdapter(
-          child: _TaxRemittanceAllocationSummarySection(
-            remittanceSummary: remittanceSummary,
+          child: _AnnualPrincipalSummarySection(
+            annualTaxSummary: annualTaxSummary,
             principalQuotaRemainingUsd: principalQuotaRemainingUsd,
             isDarkMode: isDarkMode,
           ),
         ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text(
-              'รายการโอนกลับไทย',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-        if (yearRemittances.isEmpty)
+        if (yearAnnualReports.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
             child: _EmptyTradeState(
               isDarkMode: isDarkMode,
               textColor: secondaryColor,
-              icon: Icons.account_balance,
-              message: 'ยังไม่มีรายการโอนกลับไทยในปีนี้',
+              icon: Icons.receipt_long_outlined,
+              message: 'ยังไม่มีรายงาน Broker ปีนี้',
               description:
-                  'บันทึกเงินที่โอนกลับไทยและ allocation เพื่อใช้ประมาณภาษี',
+                  'กรอกยอดเงินทุน ปันผล และยอดโอนกลับไทยในรายงานประจำปีของพอร์ต',
             ),
           )
         else
           SliverList(
-            delegate: SliverChildBuilderDelegate((listCtx, index) {
-              final remittance = yearRemittances[index];
-              return _TaxRemittanceListItem(
-                remittance: remittance,
-                portfolioName: portfolioNameOf(remittance),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final report = yearAnnualReports[index];
+              return _AnnualReportTaxListItem(
+                report: report,
                 isDarkMode: isDarkMode,
-                onEdit: () => onEdit(remittance),
-                onDelete: () => onDelete(remittance),
-                onLongPress: () => _showRemittanceActionsSheet(
-                  listCtx,
-                  remittance,
-                  portfolioNameOf(remittance),
-                ),
               );
-            }, childCount: yearRemittances.length),
+            }, childCount: yearAnnualReports.length),
           ),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
     );
-  }
-
-  void _showRemittanceActionsSheet(
-    BuildContext context,
-    TaxRemittance remittance,
-    String portfolioName,
-  ) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: surfaceColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
-      builder: (sheetCtx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: dividerColor,
-                      borderRadius: BorderRadius.circular(AppRadii.tiny),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '${formatAmount(remittance.amountUsd)} USD',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  '$portfolioName • ${_formatRemittanceDate(remittance.remittedAt)}',
-                  style: TextStyle(color: secondaryColor, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.edit_outlined, color: textColor),
-                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
-                  onTap: () {
-                    Navigator.pop(sheetCtx);
-                    onEdit(remittance);
-                  },
-                ),
-                Divider(height: 1, color: dividerColor),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.delete_outline, color: dangerColor),
-                  title: Text('ลบรายการ', style: TextStyle(color: dangerColor)),
-                  onTap: () {
-                    Navigator.pop(sheetCtx);
-                    onDelete(remittance);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  static String _formatRemittanceDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
   }
 }
 
 Map<String, String> _buildYearlyTaxExportFiles({
   required int year,
   required List<StockTrade> trades,
-  required List<TaxRemittance> remittances,
   required List<PortfolioAnnualReport> annualReports,
+  required double principalAvailableForYearUsd,
   required String Function(String portfolioId) portfolioNameOf,
 }) {
   final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -911,15 +715,11 @@ Map<String, String> _buildYearlyTaxExportFiles({
     'tax_summary_${year}_$timestamp.csv': _buildTaxSummaryCsv(
       year: year,
       trades: trades,
-      remittances: remittances,
       annualReports: annualReports,
+      principalAvailableForYearUsd: principalAvailableForYearUsd,
     ),
     'tax_stock_trades_${year}_$timestamp.csv': _buildTaxStockTradesCsv(
       trades: trades,
-      portfolioNameOf: portfolioNameOf,
-    ),
-    'tax_remittances_${year}_$timestamp.csv': _buildTaxRemittancesCsv(
-      remittances: remittances,
       portfolioNameOf: portfolioNameOf,
     ),
     'tax_broker_reports_${year}_$timestamp.csv': _buildTaxBrokerReportsCsv(
@@ -932,14 +732,17 @@ Map<String, String> _buildYearlyTaxExportFiles({
 String _buildTaxSummaryCsv({
   required int year,
   required List<StockTrade> trades,
-  required List<TaxRemittance> remittances,
   required List<PortfolioAnnualReport> annualReports,
+  required double principalAvailableForYearUsd,
 }) {
   final tradeSummary = _TradeSummary.fromTrades(trades);
   final annualReportSummary = _PortfolioAnnualReportSummary.fromReports(
     annualReports,
   );
-  final remittanceSummary = _TaxRemittanceSummary.fromRemittances(remittances);
+  final annualTaxSummary = _AnnualTaxSummary.fromReports(
+    reports: annualReports,
+    principalAvailableForYearUsd: principalAvailableForYearUsd,
+  );
   final totalGrossProceeds = trades.fold(
     0.0,
     (sum, trade) => sum + (trade.grossProceedsUsd ?? trade.proceedsUsd),
@@ -949,11 +752,6 @@ String _buildTaxSummaryCsv({
     (sum, trade) => sum + (trade.costBasisUsd * trade.sharesSold),
   );
   final totalFees = trades.fold(0.0, (sum, trade) => sum + trade.totalFeesUsd);
-  final incomePoolSummary = _TaxIncomePoolSummary.fromSummaries(
-    tradeSummary: tradeSummary,
-    annualReportSummary: annualReportSummary,
-    remittanceSummary: remittanceSummary,
-  );
 
   final rows = <List<dynamic>>[
     ['หัวข้อ', 'ค่า', 'สกุลเงิน/หน่วย'],
@@ -975,23 +773,13 @@ String _buildTaxSummaryCsv({
       'USD',
     ],
     ['ปันผลสุทธิ', annualReportSummary.dividendNetUsd, 'USD'],
-    ['Income pool รวม', incomePoolSummary.availableIncomeUsd, 'USD'],
-    [
-      'เงินได้ที่ cover ด้วย income pool',
-      incomePoolSummary.coveredTaxableUsd,
-      'USD',
-    ],
-    ['เงินได้เกิน income pool', incomePoolSummary.uncoveredTaxableUsd, 'USD'],
-    ['จำนวนรายการโอนกลับไทย', remittanceSummary.remittanceCount, 'รายการ'],
-    ['ยอดโอนกลับรวม', remittanceSummary.remittedUsd, 'USD'],
-    ['ยอดโอนกลับรวม', remittanceSummary.remittedThb, 'THB'],
-    [
-      'เงินต้นที่ allocate แล้ว',
-      remittanceSummary.principalAllocatedUsd,
-      'USD',
-    ],
-    ['เงินได้ที่ allocate แล้ว', remittanceSummary.taxableUsd, 'USD'],
-    ['เงินได้ที่ allocate แล้ว', remittanceSummary.taxableThb, 'THB'],
+    ['จำนวนรายงานที่มียอดโอนกลับไทย', annualTaxSummary.reportCount, 'รายการ'],
+    ['ยอดโอนกลับรวม', annualTaxSummary.remittedUsd, 'USD'],
+    ['ยอดโอนกลับรวม', annualTaxSummary.remittedThb, 'THB'],
+    ['เงินต้นที่ใช้ได้', principalAvailableForYearUsd, 'USD'],
+    ['เงินต้นที่ใช้แล้ว', annualTaxSummary.principalUsedUsd, 'USD'],
+    ['เงินได้ที่นำกลับไทย', annualTaxSummary.taxableUsd, 'USD'],
+    ['เงินได้ที่นำกลับไทย', annualTaxSummary.taxableThb, 'THB'],
   ];
 
   return const ListToCsvConverter().convert(rows);
@@ -1009,6 +797,8 @@ String _buildTaxBrokerReportsCsv({
       'ปันผลรวม USD',
       'ภาษีปันผลหัก ณ ที่จ่าย USD',
       'ปันผลสุทธิ USD',
+      'ยอดโอนกลับไทย USD',
+      'ยอดเงินบาทที่ได้รับ THB',
       'หมายเหตุ',
     ],
   ];
@@ -1021,6 +811,8 @@ String _buildTaxBrokerReportsCsv({
       report.dividendGrossUsd,
       report.dividendTaxWithheldUsd,
       report.dividendNetUsd,
+      report.remittedUsd,
+      report.remittedThb,
       report.note,
     ]);
   }
@@ -1083,53 +875,6 @@ String _buildTaxStockTradesCsv({
   return const ListToCsvConverter().convert(rows);
 }
 
-String _buildTaxRemittancesCsv({
-  required List<TaxRemittance> remittances,
-  required String Function(String portfolioId) portfolioNameOf,
-}) {
-  final rows = <List<dynamic>>[
-    [
-      'วันที่โอนกลับ',
-      'พอร์ต',
-      'ยอดโอน USD',
-      'อัตราแลกเปลี่ยน',
-      'ยอดโอน THB',
-      'เงินต้น USD',
-      'เงินได้ USD',
-      'เงินได้ THB',
-      'Allocation',
-      'หมายเหตุ',
-    ],
-  ];
-
-  for (final remittance in remittances) {
-    rows.add([
-      _formatCsvDate(remittance.remittedAt),
-      portfolioNameOf(remittance.portfolioId),
-      remittance.amountUsd,
-      remittance.fxRate,
-      remittance.thbAmount,
-      remittance.allocations
-          .where(
-            (allocation) =>
-                allocation.bucketType == TaxRemittanceBucketType.principal,
-          )
-          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd),
-      remittance.taxableUsd,
-      remittance.taxableThb,
-      remittance.allocations.map(_formatAllocationForCsv).join(' | '),
-      remittance.note,
-    ]);
-  }
-
-  return const ListToCsvConverter().convert(rows);
-}
-
-String _formatAllocationForCsv(TaxRemittanceAllocation allocation) {
-  final taxYear = allocation.taxYear == null ? '' : ' ${allocation.taxYear}';
-  return '${taxRemittanceBucketLabel(allocation.bucketType)}$taxYear: ${allocation.amountUsd} USD';
-}
-
 String _formatCsvDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
@@ -1158,39 +903,50 @@ String _pnlSourceLabel(PnlSource source) {
   }
 }
 
-class _TaxRemittanceSummary {
+class _AnnualTaxSummary {
   final double remittedUsd;
   final double remittedThb;
-  final double principalAllocatedUsd;
+  final double principalUsedUsd;
   final double taxableUsd;
   final double taxableThb;
-  final int remittanceCount;
+  final int reportCount;
 
-  const _TaxRemittanceSummary({
+  const _AnnualTaxSummary({
     required this.remittedUsd,
     required this.remittedThb,
-    required this.principalAllocatedUsd,
+    required this.principalUsedUsd,
     required this.taxableUsd,
     required this.taxableThb,
-    required this.remittanceCount,
+    required this.reportCount,
   });
 
-  factory _TaxRemittanceSummary.fromRemittances(
-    List<TaxRemittance> remittances,
-  ) {
-    return _TaxRemittanceSummary(
-      remittedUsd: remittances.fold(0.0, (sum, item) => sum + item.amountUsd),
-      remittedThb: remittances.fold(0.0, (sum, item) => sum + item.thbAmount),
-      principalAllocatedUsd: remittances
-          .expand((item) => item.allocations)
-          .where(
-            (allocation) =>
-                allocation.bucketType == TaxRemittanceBucketType.principal,
-          )
-          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd),
-      taxableUsd: remittances.fold(0.0, (sum, item) => sum + item.taxableUsd),
-      taxableThb: remittances.fold(0.0, (sum, item) => sum + item.taxableThb),
-      remittanceCount: remittances.length,
+  factory _AnnualTaxSummary.fromReports({
+    required List<PortfolioAnnualReport> reports,
+    required double principalAvailableForYearUsd,
+  }) {
+    final remittedUsd = reports.fold(
+      0.0,
+      (sum, item) => sum + item.remittedUsd,
+    );
+    final remittedThb = reports.fold(
+      0.0,
+      (sum, item) => sum + item.remittedThb,
+    );
+    final principalUsedUsd = remittedUsd <= principalAvailableForYearUsd
+        ? remittedUsd
+        : principalAvailableForYearUsd;
+    final taxableUsd = remittedUsd > principalAvailableForYearUsd
+        ? remittedUsd - principalAvailableForYearUsd
+        : 0.0;
+    final effectiveFxRate = remittedUsd > 0 ? remittedThb / remittedUsd : 0.0;
+
+    return _AnnualTaxSummary(
+      remittedUsd: remittedUsd,
+      remittedThb: remittedThb,
+      principalUsedUsd: principalUsedUsd,
+      taxableUsd: taxableUsd,
+      taxableThb: taxableUsd * effectiveFxRate,
+      reportCount: reports.where((report) => report.remittedUsd > 0).length,
     );
   }
 }
@@ -1200,6 +956,8 @@ class _PortfolioAnnualReportSummary {
   final double dividendGrossUsd;
   final double dividendTaxWithheldUsd;
   final double dividendNetUsd;
+  final double remittedUsd;
+  final double remittedThb;
   final int reportCount;
 
   const _PortfolioAnnualReportSummary({
@@ -1207,6 +965,8 @@ class _PortfolioAnnualReportSummary {
     required this.dividendGrossUsd,
     required this.dividendTaxWithheldUsd,
     required this.dividendNetUsd,
+    required this.remittedUsd,
+    required this.remittedThb,
     required this.reportCount,
   });
 
@@ -1227,62 +987,23 @@ class _PortfolioAnnualReportSummary {
         0.0,
         (sum, item) => sum + item.dividendNetUsd,
       ),
+      remittedUsd: reports.fold(0.0, (sum, item) => sum + item.remittedUsd),
+      remittedThb: reports.fold(0.0, (sum, item) => sum + item.remittedThb),
       reportCount: reports.length,
     );
   }
 }
 
-class _TaxIncomePoolSummary {
-  final double stockGainUsd;
-  final double dividendNetUsd;
-  final double availableIncomeUsd;
-  final double coveredTaxableUsd;
-  final double uncoveredTaxableUsd;
-
-  const _TaxIncomePoolSummary({
-    required this.stockGainUsd,
-    required this.dividendNetUsd,
-    required this.availableIncomeUsd,
-    required this.coveredTaxableUsd,
-    required this.uncoveredTaxableUsd,
-  });
-
-  factory _TaxIncomePoolSummary.fromSummaries({
-    required _TradeSummary tradeSummary,
-    required _PortfolioAnnualReportSummary annualReportSummary,
-    required _TaxRemittanceSummary remittanceSummary,
-  }) {
-    final stockGainUsd = tradeSummary.profitUsd;
-    final dividendNetUsd = annualReportSummary.dividendNetUsd;
-    final availableIncomeUsd = stockGainUsd + dividendNetUsd;
-    final taxableUsd = remittanceSummary.taxableUsd;
-    final coveredTaxableUsd = taxableUsd <= availableIncomeUsd
-        ? taxableUsd
-        : availableIncomeUsd;
-    final uncoveredTaxableUsd = taxableUsd > availableIncomeUsd
-        ? taxableUsd - availableIncomeUsd
-        : 0.0;
-
-    return _TaxIncomePoolSummary(
-      stockGainUsd: stockGainUsd,
-      dividendNetUsd: dividendNetUsd,
-      availableIncomeUsd: availableIncomeUsd,
-      coveredTaxableUsd: coveredTaxableUsd,
-      uncoveredTaxableUsd: uncoveredTaxableUsd,
-    );
-  }
-}
-
-class _TaxRemittanceSummaryPanel extends StatelessWidget {
+class _AnnualTaxSummaryPanel extends StatelessWidget {
   final _TradeSummary tradeSummary;
   final _PortfolioAnnualReportSummary annualReportSummary;
-  final _TaxRemittanceSummary remittanceSummary;
+  final _AnnualTaxSummary annualTaxSummary;
   final bool isDarkMode;
 
-  const _TaxRemittanceSummaryPanel({
+  const _AnnualTaxSummaryPanel({
     required this.tradeSummary,
     required this.annualReportSummary,
-    required this.remittanceSummary,
+    required this.annualTaxSummary,
     required this.isDarkMode,
   });
 
@@ -1293,17 +1014,9 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final taxableColor = AppColors.getAmountColor(
-      remittanceSummary.taxableUsd,
+      annualTaxSummary.taxableUsd,
       isDarkMode,
     );
-    final incomePoolSummary = _TaxIncomePoolSummary.fromSummaries(
-      tradeSummary: tradeSummary,
-      annualReportSummary: annualReportSummary,
-      remittanceSummary: remittanceSummary,
-    );
-    final uncoveredColor = incomePoolSummary.uncoveredTaxableUsd > 0
-        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
-        : secondaryColor;
 
     return Container(
       color: surfaceColor,
@@ -1314,7 +1027,7 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                'เงินได้/กำไรที่โอนกลับ',
+                'ยอดเกินทุนที่ต้องดูภาษี',
                 style: TextStyle(
                   color: secondaryColor,
                   fontSize: 13,
@@ -1323,7 +1036,7 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${remittanceSummary.remittanceCount} รายการ',
+                '${annualTaxSummary.reportCount} รายงาน',
                 style: TextStyle(color: secondaryColor, fontSize: 12),
               ),
             ],
@@ -1337,7 +1050,7 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${formatAmount(remittanceSummary.taxableUsd)} USD',
+                    '${formatAmount(annualTaxSummary.taxableUsd)} USD',
                     style: TextStyle(
                       color: taxableColor,
                       fontSize: 24,
@@ -1346,19 +1059,15 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${formatAmount(remittanceSummary.taxableThb)} THB',
+                    '${formatAmount(annualTaxSummary.taxableThb)} THB',
                     style: TextStyle(color: secondaryColor, fontSize: 13),
                   ),
                 ],
               ),
               _SummaryMetric(
-                label: 'Income pool',
-                value:
-                    '${formatAmount(incomePoolSummary.availableIncomeUsd)} USD',
-                color: AppColors.getAmountColor(
-                  incomePoolSummary.availableIncomeUsd,
-                  isDarkMode,
-                ),
+                label: 'โอนกลับรวม',
+                value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
+                color: secondaryColor,
                 alignEnd: true,
               ),
             ],
@@ -1369,20 +1078,20 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
               Expanded(
                 child: _SummaryMetric(
                   label: 'กำไรขายหุ้น',
-                  value: '${formatAmount(incomePoolSummary.stockGainUsd)} USD',
+                  value: '${formatAmount(tradeSummary.profitUsd)} USD',
                   color: AppColors.getAmountColor(
-                    incomePoolSummary.stockGainUsd,
+                    tradeSummary.profitUsd,
                     isDarkMode,
                   ),
                 ),
               ),
               Expanded(
                 child: _SummaryMetric(
-                  label: 'ปันผลสุทธิ',
+                  label: 'ปันผลรวม',
                   value:
-                      '${formatAmount(incomePoolSummary.dividendNetUsd)} USD',
+                      '${formatAmount(annualReportSummary.dividendGrossUsd)} USD',
                   color: AppColors.getAmountColor(
-                    incomePoolSummary.dividendNetUsd,
+                    annualReportSummary.dividendGrossUsd,
                     isDarkMode,
                   ),
                   alignEnd: true,
@@ -1403,10 +1112,10 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
               ),
               Expanded(
                 child: _SummaryMetric(
-                  label: 'เกิน income pool',
+                  label: 'ปันผลสุทธิ',
                   value:
-                      '${formatAmount(incomePoolSummary.uncoveredTaxableUsd)} USD',
-                  color: uncoveredColor,
+                      '${formatAmount(annualReportSummary.dividendNetUsd)} USD',
+                  color: secondaryColor,
                   alignEnd: true,
                 ),
               ),
@@ -1414,7 +1123,7 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Income pool = กำไรขายหุ้นรวม + ปันผลสุทธิ ใช้ตรวจว่าเงินได้ที่นำกลับไทยมีแหล่งที่มาครอบคลุมหรือไม่',
+            'ถ้ายอดโอนกลับเกินเงินต้น ยอดเกินทุนคือเงินได้ที่นำกลับไทยและเป็นตัวเลขหลักที่ต้องเอาไปดูภาษี',
             style: TextStyle(color: secondaryColor, fontSize: 12),
           ),
         ],
@@ -1423,13 +1132,13 @@ class _TaxRemittanceSummaryPanel extends StatelessWidget {
   }
 }
 
-class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
-  final _TaxRemittanceSummary remittanceSummary;
+class _AnnualPrincipalSummarySection extends StatelessWidget {
+  final _AnnualTaxSummary annualTaxSummary;
   final double principalQuotaRemainingUsd;
   final bool isDarkMode;
 
-  const _TaxRemittanceAllocationSummarySection({
-    required this.remittanceSummary,
+  const _AnnualPrincipalSummarySection({
+    required this.annualTaxSummary,
     required this.principalQuotaRemainingUsd,
     required this.isDarkMode,
   });
@@ -1465,7 +1174,7 @@ class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${remittanceSummary.remittanceCount} รายการ',
+                '${annualTaxSummary.reportCount} รายงาน',
                 style: TextStyle(color: secondaryColor, fontSize: 12),
               ),
             ],
@@ -1476,7 +1185,7 @@ class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
               Expanded(
                 child: _SummaryMetric(
                   label: 'โอนกลับรวม',
-                  value: '${formatAmount(remittanceSummary.remittedUsd)} USD',
+                  value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
                   color: textColor,
                 ),
               ),
@@ -1484,7 +1193,7 @@ class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
                 child: _SummaryMetric(
                   label: 'เงินต้นใช้แล้ว',
                   value:
-                      '${formatAmount(remittanceSummary.principalAllocatedUsd)} USD',
+                      '${formatAmount(annualTaxSummary.principalUsedUsd)} USD',
                   color: textColor,
                   alignEnd: true,
                 ),
@@ -1510,21 +1219,13 @@ class _TaxRemittanceAllocationSummarySection extends StatelessWidget {
   }
 }
 
-class _TaxRemittanceListItem extends StatelessWidget {
-  final TaxRemittance remittance;
-  final String portfolioName;
+class _AnnualReportTaxListItem extends StatelessWidget {
+  final PortfolioAnnualReport report;
   final bool isDarkMode;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onLongPress;
 
-  const _TaxRemittanceListItem({
-    required this.remittance,
-    required this.portfolioName,
+  const _AnnualReportTaxListItem({
+    required this.report,
     required this.isDarkMode,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onLongPress,
   });
 
   @override
@@ -1538,103 +1239,99 @@ class _TaxRemittanceListItem extends StatelessWidget {
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    return Material(
+    return Container(
       color: surfaceColor,
-      child: InkWell(
-        onTap: onEdit,
-        onLongPress: onLongPress,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${formatAmount(remittance.amountUsd)} USD',
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${formatAmount(remittance.taxableUsd)} เงินได้',
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${formatAmount(report.remittedUsd)} USD',
                         style: TextStyle(
-                          color: AppColors.getAmountColor(
-                            remittance.taxableUsd,
-                            isDarkMode,
-                          ),
-                          fontSize: 13,
+                          color: textColor,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '$portfolioName • ${_formatRemittanceDate(remittance.remittedAt)} • ${formatAmount(remittance.thbAmount)} THB',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: secondaryColor, fontSize: 12),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (remittance.allocations.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Column(
-                  children: remittance.allocations.map((allocation) {
-                    final yearText =
-                        allocation.bucketType ==
-                                TaxRemittanceBucketType.principal ||
-                            allocation.taxYear == null
-                        ? ''
-                        : ' ${allocation.taxYear}';
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${taxRemittanceBucketLabel(allocation.bucketType)}$yearText',
-                              style: TextStyle(
-                                color: secondaryColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${formatAmount(allocation.amountUsd)} USD',
-                            style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      '${formatAmount(report.remittedThb)} THB',
+                      style: TextStyle(
+                        color: secondaryColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
-              ),
-            Divider(height: 1, color: dividerColor),
-          ],
-        ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CompactTaxMetric(
+                        label: 'เงินทุน',
+                        value: '${formatAmount(report.inflowUsd)} USD',
+                        color: secondaryColor,
+                      ),
+                    ),
+                    Expanded(
+                      child: _CompactTaxMetric(
+                        label: 'ปันผลรวม',
+                        value: '${formatAmount(report.dividendGrossUsd)} USD',
+                        color: secondaryColor,
+                        alignEnd: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: dividerColor),
+        ],
       ),
     );
   }
+}
 
-  static String _formatRemittanceDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
+class _CompactTaxMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool alignEnd;
+
+  const _CompactTaxMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: color, fontSize: 11)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 }
 

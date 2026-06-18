@@ -263,20 +263,24 @@ class AccountProvider extends ChangeNotifier {
       }
     }
 
-    // 2. Calculate Total Principal Repatriated in the past
-    double totalPrincipalRepatriated = 0.0;
+    // 2. Calculate Total Remitted. Annual broker reports are the primary
+    // source; legacy itemized remittances are only used for years without one.
+    double totalRemitted = annualReports.fold(
+      0.0,
+      (sum, report) => sum + report.remittedUsd,
+    );
     for (final rem in _taxRemittances) {
       if (rem.portfolioId == portfolioId &&
           rem.id != excludeRemittanceId &&
-          (targetYear == null || rem.remittedAt.year <= targetYear)) {
-        for (final alloc in rem.allocations) {
-          if (alloc.bucketType == TaxRemittanceBucketType.principal) {
-            totalPrincipalRepatriated += alloc.amountUsd;
-          }
-        }
+          (targetYear == null || rem.remittedAt.year <= targetYear) &&
+          !reportedYears.contains(rem.remittedAt.year)) {
+        totalRemitted += rem.amountUsd;
       }
     }
 
+    final totalPrincipalRepatriated = totalRemitted > totalInflows
+        ? totalInflows
+        : totalRemitted;
     double remaining = totalInflows - totalPrincipalRepatriated;
     return remaining < 0 ? 0.0 : remaining;
   }
@@ -977,6 +981,20 @@ class AccountProvider extends ChangeNotifier {
       throw ArgumentError.value(
         report.dividendNetUsd,
         'dividendNetUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (report.remittedUsd < 0) {
+      throw ArgumentError.value(
+        report.remittedUsd,
+        'remittedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (report.remittedThb < 0) {
+      throw ArgumentError.value(
+        report.remittedThb,
+        'remittedThb',
         'ต้องไม่ติดลบ',
       );
     }
