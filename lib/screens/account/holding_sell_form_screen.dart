@@ -223,7 +223,10 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               ),
             )
           else
