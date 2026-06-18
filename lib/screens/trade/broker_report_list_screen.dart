@@ -27,6 +27,12 @@ class BrokerReportListScreen extends StatelessWidget {
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final transferColor = isDarkMode
+        ? AppColors.darkTransfer
+        : AppColors.transfer;
+    final debtRepayColor = isDarkMode
+        ? AppColors.darkDebtRepay
+        : AppColors.debtRepay;
 
     final accountProvider = context.watch<AccountProvider>();
     final portfolio = accountProvider.findById(portfolioId);
@@ -46,7 +52,21 @@ class BrokerReportListScreen extends StatelessWidget {
         backgroundColor: headerColor,
         foregroundColor: textColor,
         elevation: 0,
-        title: const Text('รายงานประจำปี (Broker)'),
+        title: const Text('รายงานประจำปี Broker'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      BrokerReportFormScreen(portfolioId: portfolioId),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: reports.isEmpty
           ? Center(
@@ -81,63 +101,132 @@ class BrokerReportListScreen extends StatelessWidget {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'ปี ${report.year}',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'เงินทุน ${currencyFormat.format(report.inflowUsd)} USD'
-                                  ' / ${currencyFormat.format(report.inflowThb)} THB'
-                                  '\n • โอนกลับ ${currencyFormat.format(report.remittedUsd)} USD'
-                                  '\n • ปันผลสุทธิ ${currencyFormat.format(report.dividendNetUsd)} USD'
-                                  '\n • ภาษี ${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
-                                  maxLines: 4,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: secondaryTextColor),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                          Row(
                             children: [
+                              Text(
+                                'ปี ${report.year}',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                "เงินทุน USD",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              Spacer(),
                               Text(
                                 '${currencyFormat.format(report.inflowUsd)} USD',
                                 style: TextStyle(
                                   color: incomeColor,
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 15,
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                "เงินทุน THB",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              Spacer(),
                               Text(
                                 '${currencyFormat.format(report.inflowThb)} THB',
                                 style: TextStyle(
-                                  color: secondaryTextColor,
-                                  fontSize: 11,
+                                  color: incomeColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
                               Text(
-                                'เงินทุน',
+                                "โอนกลับ USD",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              Spacer(),
+                              Text(
+                                '${currencyFormat.format(report.remittedUsd)} USD',
                                 style: TextStyle(
-                                  color: secondaryTextColor,
-                                  fontSize: 11,
+                                  color: transferColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                "โอนกลับ THB",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              Spacer(),
+                              Text(
+                                '${currencyFormat.format(report.remittedThb)} THB',
+                                style: TextStyle(
+                                  color: transferColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text("ปันผลรวม", style: TextStyle(fontSize: 13)),
+                              Spacer(),
+                              Text(
+                                '${currencyFormat.format(report.dividendGrossUsd)} USD',
+                                style: TextStyle(
+                                  color: debtRepayColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text("ภาษีปันผล", style: TextStyle(fontSize: 13)),
+                              Spacer(),
+                              Text(
+                                '${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
+                                style: TextStyle(
+                                  color: debtRepayColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                "ปันผลสุทธิ",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              Spacer(),
+                              Text(
+                                '${currencyFormat.format(report.dividendNetUsd)} USD',
+                                style: TextStyle(
+                                  color: debtRepayColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -149,19 +238,6 @@ class BrokerReportListScreen extends StatelessWidget {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: incomeColor,
-        foregroundColor: AppColors.darkTextPrimary,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BrokerReportFormScreen(portfolioId: portfolioId),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

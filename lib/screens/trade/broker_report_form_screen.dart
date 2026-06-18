@@ -293,7 +293,12 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         : AppColors.textSecondary;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final transferColor = isDarkMode
+        ? AppColors.darkTransfer
+        : AppColors.transfer;
+    final debtRepayColor = isDarkMode
+        ? AppColors.darkDebtRepay
+        : AppColors.debtRepay;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -423,8 +428,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _remittedUsdController,
                 label: 'ยอดโอนกลับไทยรวม (USD)',
                 icon: Icons.account_balance_outlined,
-                iconColor: expenseColor,
-                amountColor: expenseColor,
+                iconColor: transferColor,
+                amountColor: transferColor,
                 surfaceColor: surfaceColor,
                 secondaryColor: secondaryColor,
               ),
@@ -433,8 +438,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _remittedThbController,
                 label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
                 icon: Icons.payments_outlined,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
+                iconColor: transferColor,
+                amountColor: transferColor,
                 surfaceColor: surfaceColor,
                 secondaryColor: secondaryColor,
               ),
@@ -455,8 +460,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _dividendGrossController,
                 label: 'ปันผลรวม (Gross Dividend USD)',
                 icon: Icons.savings_outlined,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
+                iconColor: debtRepayColor,
+                amountColor: debtRepayColor,
                 surfaceColor: surfaceColor,
                 secondaryColor: secondaryColor,
               ),
@@ -465,8 +470,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _dividendTaxWithheldController,
                 label: 'ภาษีปันผลหัก ณ ที่จ่าย (USD)',
                 icon: Icons.receipt_long_outlined,
-                iconColor: expenseColor,
-                amountColor: expenseColor,
+                iconColor: debtRepayColor,
+                amountColor: debtRepayColor,
                 surfaceColor: surfaceColor,
                 secondaryColor: secondaryColor,
               ),
@@ -475,8 +480,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 controller: _dividendNetController,
                 label: 'ปันผลสุทธิ (Net Dividend USD)',
                 icon: Icons.account_balance_wallet_outlined,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
+                iconColor: debtRepayColor,
+                amountColor: debtRepayColor,
                 surfaceColor: surfaceColor,
                 secondaryColor: secondaryColor,
               ),

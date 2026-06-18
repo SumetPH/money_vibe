@@ -224,6 +224,8 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           ),
         ];
       case 1:
+        return [];
+      case 2:
         return [
           Builder(
             builder: (buttonContext) => IconButton(
@@ -235,9 +237,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               ),
             ),
           ),
-        ];
-      case 2:
-        return [
           IconButton(
             icon: const Icon(Icons.edit_document),
             tooltip: 'รายงาน Broker',

@@ -776,7 +776,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   ListTile(
                     leading: Icon(Icons.edit_document, color: textColor),
                     title: Text(
-                      'ปรับยอดจาก Broker',
+                      'ปรับรายงานประจำปี',
                       style: TextStyle(color: textColor),
                     ),
                     tileColor: bgColor,
