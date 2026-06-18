@@ -9,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/account_icon_storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../widgets/app_bar_action_button.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
 
@@ -403,21 +404,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   onPressed: _isLoading ? null : _delete,
                   tooltip: 'ลบบัญชี',
                 ),
-              _isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 16),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              AppBarActionButton(
+                icon: const Icon(Icons.check),
+                tooltip: 'บันทึก',
+                isLoading: _isLoading,
+                onPressed: _save,
+              ),
             ],
           ),
           body: AbsorbPointer(

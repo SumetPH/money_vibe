@@ -9,6 +9,7 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_bar_action_button.dart';
 
 typedef SaveStockTradeCallback = Future<void> Function(StockTrade trade);
 typedef FetchStockProfileCallback =
@@ -353,20 +354,12 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
         title: Text(_isEditing ? 'แก้ไข Trade' : 'เพิ่ม Trade'),
         backgroundColor: headerColor,
         actions: [
-          if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-            )
-          else
-            IconButton(icon: const Icon(Icons.check), onPressed: _submit),
+          AppBarActionButton(
+            icon: const Icon(Icons.check),
+            onPressed: _submit,
+            tooltip: 'บันทึก',
+            isLoading: _isSaving,
+          ),
         ],
       ),
       body: AbsorbPointer(

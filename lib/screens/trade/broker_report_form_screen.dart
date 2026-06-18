@@ -6,6 +6,7 @@ import '../../models/portfolio_annual_report.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_action_button.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -311,18 +312,11 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
               icon: const Icon(Icons.delete_outline),
               onPressed: _isSaving ? null : _delete,
             ),
-          IconButton(
-            icon: _isSaving
-                ? SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.check),
-            onPressed: _isSaving ? null : _save,
+          AppBarActionButton(
+            icon: const Icon(Icons.check),
+            tooltip: 'บันทึก',
+            isLoading: _isSaving,
+            onPressed: _save,
           ),
         ],
       ),

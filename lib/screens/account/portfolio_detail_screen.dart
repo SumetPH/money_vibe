@@ -13,6 +13,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
@@ -29,9 +30,11 @@ class PortfolioDetailScreen extends StatefulWidget {
   State<PortfolioDetailScreen> createState() => _PortfolioDetailScreenState();
 }
 
-class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
+class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
+    with SingleTickerProviderStateMixin {
   late StockPriceService _priceService;
   late StockLogoStorageService _logoStorageService;
+  late final AnimationController _refreshIconController;
   bool _isRefreshing = false;
   bool _isReorderMode = false;
   Map<String, String> _groupSortTypes =
@@ -44,7 +47,17 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     _loadGroupOrder();
     _priceService = _buildPriceService();
     _logoStorageService = StockLogoStorageService();
+    _refreshIconController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
+  }
+
+  @override
+  void dispose() {
+    _refreshIconController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadGroupOrder() async {
@@ -111,6 +124,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
     final holdings = provider.getHoldings(acc.id);
     if (holdings.isEmpty) return;
 
+    _refreshIconController.repeat();
     setState(() => _isRefreshing = true);
     try {
       final tickers = holdings.map((h) => h.ticker).toList();
@@ -181,6 +195,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
         ).showSnackBar(SnackBar(content: Text('โหลดราคาไม่ได้: $e')));
       }
     } finally {
+      _refreshIconController
+        ..stop()
+        ..reset();
       if (mounted) setState(() => _isRefreshing = false);
     }
   }
@@ -317,24 +334,16 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           appBar: AppBar(
             title: Text(acc.name),
             actions: [
-              if (_isRefreshing)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'อัพเดทราคาหุ้น',
-                  onPressed: _refreshPrices,
+              AppBarActionButton(
+                tooltip: 'อัพเดทราคาหุ้น',
+                onPressed: _refreshPrices,
+                isLoading: _isRefreshing,
+                loadingIcon: RotationTransition(
+                  turns: _refreshIconController,
+                  child: const Icon(Icons.refresh),
                 ),
+                icon: const Icon(Icons.refresh),
+              ),
 
               IconButton(
                 icon: const Icon(Icons.more_vert),

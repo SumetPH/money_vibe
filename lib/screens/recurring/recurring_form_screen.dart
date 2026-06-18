@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
+import '../../widgets/app_bar_action_button.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 
@@ -497,21 +498,12 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   icon: const Icon(Icons.delete_outline),
                   onPressed: _isLoading ? null : _delete,
                 ),
-              _isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 16),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              AppBarActionButton(
+                icon: const Icon(Icons.check),
+                tooltip: 'บันทึก',
+                isLoading: _isLoading,
+                onPressed: _save,
+              ),
             ],
           ),
           body: AbsorbPointer(

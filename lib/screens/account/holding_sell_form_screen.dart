@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_action_button.dart';
 
 typedef SellHoldingCallback =
     Future<void> Function({
@@ -217,20 +218,12 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
         title: Text('ขาย ${widget.holding.ticker}'),
         backgroundColor: headerColor,
         actions: [
-          if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-            )
-          else
-            IconButton(icon: const Icon(Icons.check), onPressed: _submit),
+          AppBarActionButton(
+            icon: const Icon(Icons.check),
+            onPressed: _submit,
+            tooltip: 'บันทึก',
+            isLoading: _isSaving,
+          ),
         ],
       ),
       body: AbsorbPointer(

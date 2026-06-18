@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_action_button.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -406,25 +407,12 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               onPressed: _isSaving ? null : _delete,
               tooltip: 'ลบหุ้น',
             ),
-          _isSaving
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 16),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: _isSaving ? null : _save,
-                  tooltip: 'บันทึก',
-                ),
+          AppBarActionButton(
+            icon: const Icon(Icons.check),
+            onPressed: _save,
+            tooltip: 'บันทึก',
+            isLoading: _isSaving,
+          ),
         ],
       ),
       body: AbsorbPointer(

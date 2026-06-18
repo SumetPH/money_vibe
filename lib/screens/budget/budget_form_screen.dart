@@ -7,6 +7,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
+import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/calculator_keyboard.dart';
 
 class BudgetFormScreen extends StatefulWidget {
@@ -401,21 +402,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   icon: const Icon(Icons.delete_outline),
                   onPressed: _isLoading ? null : _delete,
                 ),
-              _isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 16),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  : IconButton(icon: const Icon(Icons.check), onPressed: _save),
+              AppBarActionButton(
+                icon: const Icon(Icons.check),
+                tooltip: 'บันทึก',
+                isLoading: _isLoading,
+                onPressed: _save,
+              ),
             ],
           ),
           body: AbsorbPointer(
