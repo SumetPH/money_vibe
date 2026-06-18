@@ -72,17 +72,38 @@ class BrokerReportListScreen extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-                  subtitle: Text(
-                    'รวมเงินขาออกไทย',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Text(
-                    '${currencyFormat.format(report.inflowUsd)} USD',
-                    style: TextStyle(
-                      color: incomeColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'เงินทุน ${currencyFormat.format(report.inflowUsd)} USD'
+                      ' • ปันผลสุทธิ ${currencyFormat.format(report.dividendNetUsd)} USD'
+                      ' • ภาษี ${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: secondaryTextColor),
                     ),
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${currencyFormat.format(report.inflowUsd)} USD',
+                        style: TextStyle(
+                          color: incomeColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'เงินทุน',
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                   onTap: () {
                     Navigator.push(

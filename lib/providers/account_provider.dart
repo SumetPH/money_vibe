@@ -959,6 +959,27 @@ class AccountProvider extends ChangeNotifier {
     if (report.inflowUsd < 0) {
       throw ArgumentError.value(report.inflowUsd, 'inflowUsd', 'ต้องไม่ติดลบ');
     }
+    if (report.dividendGrossUsd < 0) {
+      throw ArgumentError.value(
+        report.dividendGrossUsd,
+        'dividendGrossUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (report.dividendTaxWithheldUsd < 0) {
+      throw ArgumentError.value(
+        report.dividendTaxWithheldUsd,
+        'dividendTaxWithheldUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (report.dividendNetUsd < 0) {
+      throw ArgumentError.value(
+        report.dividendNetUsd,
+        'dividendNetUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
   }
 
   int _resolvePrincipalPoolTargetYear(TaxRemittance remittance) {

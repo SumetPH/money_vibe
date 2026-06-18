@@ -3,6 +3,9 @@ class PortfolioAnnualReport {
   final String portfolioId;
   final int year;
   final double inflowUsd;
+  final double dividendGrossUsd;
+  final double dividendTaxWithheldUsd;
+  final double dividendNetUsd;
   final String note;
   final DateTime createdAt;
 
@@ -11,6 +14,9 @@ class PortfolioAnnualReport {
     required this.portfolioId,
     required this.year,
     required this.inflowUsd,
+    this.dividendGrossUsd = 0,
+    this.dividendTaxWithheldUsd = 0,
+    this.dividendNetUsd = 0,
     this.note = '',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -20,6 +26,9 @@ class PortfolioAnnualReport {
     'portfolio_id': portfolioId,
     'year': year,
     'inflow_usd': inflowUsd,
+    'dividend_gross_usd': dividendGrossUsd,
+    'dividend_tax_withheld_usd': dividendTaxWithheldUsd,
+    'dividend_net_usd': dividendNetUsd,
     'note': note,
     'created_at': createdAt.toIso8601String(),
   };
@@ -30,6 +39,10 @@ class PortfolioAnnualReport {
       portfolioId: m['portfolio_id'] as String,
       year: (m['year'] as num).toInt(),
       inflowUsd: (m['inflow_usd'] as num).toDouble(),
+      dividendGrossUsd: (m['dividend_gross_usd'] as num?)?.toDouble() ?? 0,
+      dividendTaxWithheldUsd:
+          (m['dividend_tax_withheld_usd'] as num?)?.toDouble() ?? 0,
+      dividendNetUsd: (m['dividend_net_usd'] as num?)?.toDouble() ?? 0,
       note: m['note'] as String? ?? '',
       createdAt: m['created_at'] != null
           ? DateTime.parse(m['created_at'] as String)
@@ -42,6 +55,9 @@ class PortfolioAnnualReport {
     String? portfolioId,
     int? year,
     double? inflowUsd,
+    double? dividendGrossUsd,
+    double? dividendTaxWithheldUsd,
+    double? dividendNetUsd,
     String? note,
     DateTime? createdAt,
   }) {
@@ -50,6 +66,10 @@ class PortfolioAnnualReport {
       portfolioId: portfolioId ?? this.portfolioId,
       year: year ?? this.year,
       inflowUsd: inflowUsd ?? this.inflowUsd,
+      dividendGrossUsd: dividendGrossUsd ?? this.dividendGrossUsd,
+      dividendTaxWithheldUsd:
+          dividendTaxWithheldUsd ?? this.dividendTaxWithheldUsd,
+      dividendNetUsd: dividendNetUsd ?? this.dividendNetUsd,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );

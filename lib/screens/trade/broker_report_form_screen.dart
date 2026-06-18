@@ -7,6 +7,15 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 
+TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
+    TextInputFormatter.withFunction((oldValue, newValue) {
+      final text = newValue.text;
+      if (text.isEmpty) return newValue;
+
+      final match = RegExp('^\\d+(\\.\\d{0,$maxDecimals})?\$').hasMatch(text);
+      return match ? newValue : oldValue;
+    });
+
 class BrokerReportFormScreen extends StatefulWidget {
   final String portfolioId;
   final PortfolioAnnualReport? existingReport;
@@ -26,6 +35,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
 
   late final TextEditingController _yearController;
   late final TextEditingController _inflowController;
+  late final TextEditingController _dividendGrossController;
+  late final TextEditingController _dividendTaxWithheldController;
+  late final TextEditingController _dividendNetController;
   late final TextEditingController _noteController;
 
   bool _isSaving = false;
@@ -38,7 +50,22 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
       text: r?.year.toString() ?? DateTime.now().year.toString(),
     );
     _inflowController = TextEditingController(
-      text: r != null ? r.inflowUsd.toStringAsFixed(2) : '',
+      text: r != null ? _formatEditable(r.inflowUsd) : '',
+    );
+    _dividendGrossController = TextEditingController(
+      text: r != null && r.dividendGrossUsd > 0
+          ? _formatEditable(r.dividendGrossUsd)
+          : '',
+    );
+    _dividendTaxWithheldController = TextEditingController(
+      text: r != null && r.dividendTaxWithheldUsd > 0
+          ? _formatEditable(r.dividendTaxWithheldUsd)
+          : '',
+    );
+    _dividendNetController = TextEditingController(
+      text: r != null && r.dividendNetUsd > 0
+          ? _formatEditable(r.dividendNetUsd)
+          : '',
     );
     _noteController = TextEditingController(text: r?.note ?? '');
   }
@@ -47,6 +74,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
   void dispose() {
     _yearController.dispose();
     _inflowController.dispose();
+    _dividendGrossController.dispose();
+    _dividendTaxWithheldController.dispose();
+    _dividendNetController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -63,6 +93,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     }
 
     final inflow = double.tryParse(_inflowController.text.trim()) ?? 0.0;
+    final dividendGross = _parseAmount(_dividendGrossController);
+    final dividendTaxWithheld = _parseAmount(_dividendTaxWithheldController);
+    final dividendNet = _parseAmount(_dividendNetController);
 
     setState(() => _isSaving = true);
 
@@ -74,6 +107,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         portfolioId: widget.portfolioId,
         year: year,
         inflowUsd: inflow,
+        dividendGrossUsd: dividendGross,
+        dividendTaxWithheldUsd: dividendTaxWithheld,
+        dividendNetUsd: dividendNet,
         note: _noteController.text.trim(),
         createdAt: widget.existingReport?.createdAt,
       );
@@ -150,6 +186,71 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     height: 1,
     color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
   );
+
+  double _parseAmount(TextEditingController controller) =>
+      double.tryParse(controller.text.trim()) ?? 0.0;
+
+  String _formatEditable(double value) {
+    if (value == value.truncateToDouble()) return value.toInt().toString();
+    return value.toStringAsFixed(4).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  Widget _buildMoneyField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required Color iconColor,
+    required Color amountColor,
+    required Color surfaceColor,
+    required Color secondaryColor,
+    bool isRequired = false,
+  }) {
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              style: TextStyle(
+                color: amountColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                labelText: label,
+                labelStyle: TextStyle(color: secondaryColor),
+                hintText: '0.00',
+                hintStyle: TextStyle(color: secondaryColor),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [_decimalInputFormatter(4)],
+              validator: (val) {
+                if (isRequired && (val == null || val.isEmpty)) {
+                  return 'กรุณาระบุยอด';
+                }
+                if (val == null || val.isEmpty) return null;
+                final amount = double.tryParse(val);
+                if (amount == null) return 'ตัวเลขไม่ถูกต้อง';
+                if (amount < 0) return 'ต้องไม่ติดลบ';
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -243,53 +344,57 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
               ),
               _buildDivider(isDarkMode),
 
-              // ยอดโอนเข้าสะสม
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.download, size: 18, color: incomeColor),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _inflowController,
-                        style: TextStyle(
-                          color: incomeColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'ยอดโอนเข้าสะสม (Total Inflow USD)',
-                          labelStyle: TextStyle(color: secondaryColor),
-                          hintText: '0.00',
-                          hintStyle: TextStyle(color: secondaryColor),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return 'กรุณาระบุยอดโอนเข้า';
-                          }
-                          final amount = double.tryParse(val);
-                          if (amount == null) {
-                            return 'ตัวเลขไม่ถูกต้อง';
-                          }
-                          if (amount < 0) return 'ต้องไม่ติดลบ';
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+              _buildMoneyField(
+                controller: _inflowController,
+                label: 'เงินทุนเติมเข้า Broker (USD)',
+                icon: Icons.download,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+                isRequired: true,
+              ),
+              _buildDivider(isDarkMode),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Text(
+                  'เงินปันผลจากรายงานประจำปี',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+              ),
+              _buildMoneyField(
+                controller: _dividendGrossController,
+                label: 'ปันผลรวม (Gross Dividend USD)',
+                icon: Icons.savings_outlined,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+              _buildMoneyField(
+                controller: _dividendTaxWithheldController,
+                label: 'ภาษีปันผลหัก ณ ที่จ่าย (USD)',
+                icon: Icons.receipt_long_outlined,
+                iconColor: expenseColor,
+                amountColor: expenseColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+              _buildMoneyField(
+                controller: _dividendNetController,
+                label: 'ปันผลสุทธิ (Net Dividend USD)',
+                icon: Icons.account_balance_wallet_outlined,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
               ),
               _buildDivider(isDarkMode),
 
