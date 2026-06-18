@@ -9,7 +9,6 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
-import '../models/tax_remittance.dart';
 import '../models/portfolio_annual_report.dart';
 import 'supabase_adapters/account_adapter.dart';
 import 'supabase_adapters/budget_adapter.dart';
@@ -17,7 +16,6 @@ import 'supabase_adapters/category_adapter.dart';
 import 'supabase_adapters/portfolio_adapter.dart';
 import 'supabase_adapters/recurring_adapter.dart';
 import 'supabase_adapters/stock_trade_adapter.dart';
-import 'supabase_adapters/tax_remittance_adapter.dart';
 import 'supabase_adapters/transaction_adapter.dart';
 import 'supabase_adapters/portfolio_annual_report_adapter.dart';
 
@@ -50,7 +48,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   late final _transactionAdapter = SupabaseTransactionAdapter(this);
   late final _portfolioAdapter = SupabasePortfolioAdapter(this);
   late final _stockTradeAdapter = SupabaseStockTradeAdapter(this);
-  late final _taxRemittanceAdapter = SupabaseTaxRemittanceAdapter(this);
   late final _budgetAdapter = SupabaseBudgetAdapter(this);
   late final _recurringAdapter = SupabaseRecurringAdapter(this);
   late final _portfolioAnnualReportAdapter =
@@ -285,24 +282,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> deleteStockTrade(String id) =>
       _stockTradeAdapter.deleteStockTrade(id);
 
-  // ── Tax Remittances (Delegated to Adapter) ────────────────────────────────
-
-  @override
-  Future<List<TaxRemittance>> getTaxRemittances() =>
-      _taxRemittanceAdapter.getTaxRemittances();
-
-  @override
-  Future<void> insertTaxRemittance(TaxRemittance remittance) =>
-      _taxRemittanceAdapter.insertTaxRemittance(remittance);
-
-  @override
-  Future<void> updateTaxRemittance(TaxRemittance remittance) =>
-      _taxRemittanceAdapter.updateTaxRemittance(remittance);
-
-  @override
-  Future<void> deleteTaxRemittance(String id) =>
-      _taxRemittanceAdapter.deleteTaxRemittance(id);
-
   // ── Portfolio Annual Reports (Delegated to Adapter) ───────────────────────
 
   @override
@@ -471,20 +450,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${stockTrades.length} stock trades');
-
-    final remittanceAllocations = await client
-        .from('tax_remittance_allocations')
-        .delete()
-        .eq('user_id', currentUserId!)
-        .select();
-    log('Deleted ${remittanceAllocations.length} tax remittance allocations');
-
-    final remittances = await client
-        .from('tax_remittances')
-        .delete()
-        .eq('user_id', currentUserId!)
-        .select();
-    log('Deleted ${remittances.length} tax remittances');
 
     final budgets = await client
         .from('budgets')

@@ -6,7 +6,6 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
-import '../models/tax_remittance.dart';
 import '../models/portfolio_annual_report.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
@@ -63,14 +62,6 @@ abstract class StockTradeRepositoryInterface {
   Future<void> deleteStockTrade(String id);
   Future<Set<String>> getExistingStockTradeIds();
   Future<void> bulkInsertStockTrades(List<StockTrade> trades);
-}
-
-/// Interface สำหรับจัดการบันทึกการโอนเงินลงทุนกลับไทย
-abstract class TaxRemittanceRepositoryInterface {
-  Future<List<TaxRemittance>> getTaxRemittances();
-  Future<void> insertTaxRemittance(TaxRemittance remittance);
-  Future<void> updateTaxRemittance(TaxRemittance remittance);
-  Future<void> deleteTaxRemittance(String id);
 }
 
 /// Interface สำหรับจัดการข้อมูลรายงานพอร์ตประจำปี (Broker Statement)
@@ -136,7 +127,6 @@ abstract class DatabaseRepository
         TransactionRepositoryInterface,
         PortfolioRepositoryInterface,
         StockTradeRepositoryInterface,
-        TaxRemittanceRepositoryInterface,
         BudgetRepositoryInterface,
         RecurringRepositoryInterface,
         PortfolioAnnualReportRepositoryInterface,

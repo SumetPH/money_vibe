@@ -7,7 +7,6 @@ import '../services/stock_price_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
-import '../models/tax_remittance.dart';
 import '../models/transaction.dart';
 import '../models/portfolio_annual_report.dart';
 
@@ -23,7 +22,6 @@ class AccountProvider extends ChangeNotifier {
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
   final List<StockTrade> _stockTrades = [];
-  final List<TaxRemittance> _taxRemittances = [];
   final List<PortfolioAnnualReport> _portfolioAnnualReports = [];
 
   bool _showHiddenAccounts = false;
@@ -61,7 +59,6 @@ class AccountProvider extends ChangeNotifier {
 
       final holdings = await _db.getPortfolioHoldings();
       final stockTrades = await _db.getStockTrades();
-      final taxRemittances = await _db.getTaxRemittances();
       final annualReports = await _db.getPortfolioAnnualReports();
       _holdings.clear();
       for (final holding in holdings) {
@@ -77,17 +74,13 @@ class AccountProvider extends ChangeNotifier {
         ..clear()
         ..addAll(stockTrades)
         ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
-      _taxRemittances
-        ..clear()
-        ..addAll(taxRemittances)
-        ..sort((a, b) => b.remittedAt.compareTo(a.remittedAt));
       _portfolioAnnualReports
         ..clear()
         ..addAll(annualReports)
         ..sort((a, b) => b.year.compareTo(a.year));
 
       debugPrint(
-        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${taxRemittances.length} tax remittances',
+        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${annualReports.length} annual reports',
       );
 
       // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
@@ -164,18 +157,9 @@ class AccountProvider extends ChangeNotifier {
 
   List<StockTrade> get stockTrades => List.unmodifiable(_stockTrades);
 
-  List<TaxRemittance> get taxRemittances => List.unmodifiable(_taxRemittances);
-
   List<StockTrade> getStockTradesForPortfolio(String portfolioId) =>
       List.unmodifiable(
         _stockTrades.where((trade) => trade.portfolioId == portfolioId),
-      );
-
-  List<TaxRemittance> getTaxRemittancesForPortfolio(String portfolioId) =>
-      List.unmodifiable(
-        _taxRemittances.where(
-          (remittance) => remittance.portfolioId == portfolioId,
-        ),
       );
 
   List<PortfolioAnnualReport> get portfolioAnnualReports =>
@@ -217,7 +201,6 @@ class AccountProvider extends ChangeNotifier {
   double getRemainingPrincipalPool(
     String portfolioId,
     List<AppTransaction> transactions, {
-    String? excludeRemittanceId,
     int? targetYear,
   }) {
     final portfolio = findById(portfolioId);
@@ -263,20 +246,11 @@ class AccountProvider extends ChangeNotifier {
       }
     }
 
-    // 2. Calculate Total Remitted. Annual broker reports are the primary
-    // source; legacy itemized remittances are only used for years without one.
-    double totalRemitted = annualReports.fold(
+    // 2. Calculate Total Remitted from annual broker reports.
+    final totalRemitted = annualReports.fold(
       0.0,
       (sum, report) => sum + report.remittedUsd,
     );
-    for (final rem in _taxRemittances) {
-      if (rem.portfolioId == portfolioId &&
-          rem.id != excludeRemittanceId &&
-          (targetYear == null || rem.remittedAt.year <= targetYear) &&
-          !reportedYears.contains(rem.remittedAt.year)) {
-        totalRemitted += rem.amountUsd;
-      }
-    }
 
     final totalPrincipalRepatriated = totalRemitted > totalInflows
         ? totalInflows
@@ -833,76 +807,6 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addTaxRemittance(
-    TaxRemittance remittance, {
-    List<AppTransaction>? transactions,
-  }) async {
-    _validateTaxRemittance(remittance, transactions: transactions);
-
-    _taxRemittances.add(remittance);
-    _sortTaxRemittances();
-    notifyListeners();
-
-    try {
-      await _db.insertTaxRemittance(remittance);
-    } catch (e) {
-      debugPrint('AccountProvider: Error adding tax remittance: $e');
-      _taxRemittances.removeWhere((item) => item.id == remittance.id);
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> updateTaxRemittance(
-    TaxRemittance updated, {
-    List<AppTransaction>? transactions,
-  }) async {
-    _validateTaxRemittance(updated, transactions: transactions);
-
-    final index = _taxRemittances.indexWhere((item) => item.id == updated.id);
-    if (index == -1) return;
-
-    final oldRemittance = _taxRemittances[index];
-    _taxRemittances[index] = updated;
-    _sortTaxRemittances();
-    notifyListeners();
-
-    try {
-      await _db.updateTaxRemittance(updated);
-    } catch (e) {
-      debugPrint('AccountProvider: Error updating tax remittance: $e');
-      final rollbackIndex = _taxRemittances.indexWhere(
-        (item) => item.id == oldRemittance.id,
-      );
-      if (rollbackIndex == -1) {
-        _taxRemittances.add(oldRemittance);
-      } else {
-        _taxRemittances[rollbackIndex] = oldRemittance;
-      }
-      _sortTaxRemittances();
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> deleteTaxRemittance(String id) async {
-    final index = _taxRemittances.indexWhere((item) => item.id == id);
-    if (index == -1) return;
-
-    final oldRemittance = _taxRemittances[index];
-    _taxRemittances.removeAt(index);
-    notifyListeners();
-
-    try {
-      await _db.deleteTaxRemittance(id);
-    } catch (e) {
-      debugPrint('AccountProvider: Error deleting tax remittance: $e');
-      _taxRemittances.insert(index, oldRemittance);
-      notifyListeners();
-      rethrow;
-    }
-  }
-
   StockTrade _normalizeStockTrade(StockTrade trade) {
     final ticker = trade.ticker.trim().toUpperCase();
     return trade.copyWith(
@@ -1000,77 +904,8 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
-  int _resolvePrincipalPoolTargetYear(TaxRemittance remittance) {
-    for (final allocation in remittance.allocations) {
-      if (allocation.taxYear != null) {
-        return allocation.taxYear!;
-      }
-    }
-    return remittance.remittedAt.year;
-  }
-
-  void _validateTaxRemittance(
-    TaxRemittance remittance, {
-    List<AppTransaction>? transactions,
-  }) {
-    if (_accounts.every((account) => account.id != remittance.portfolioId)) {
-      throw StateError('ไม่พบพอร์ตของรายการโอนกลับไทย');
-    }
-    if (remittance.amountUsd <= 0) {
-      throw ArgumentError.value(
-        remittance.amountUsd,
-        'amountUsd',
-        'ต้องมากกว่า 0',
-      );
-    }
-    if (remittance.fxRate <= 0) {
-      throw ArgumentError.value(remittance.fxRate, 'fxRate', 'ต้องมากกว่า 0');
-    }
-    for (final allocation in remittance.allocations) {
-      if (allocation.amountUsd < 0) {
-        throw ArgumentError.value(
-          allocation.amountUsd,
-          'allocation.amountUsd',
-          'ต้องไม่ติดลบ',
-        );
-      }
-    }
-    if (remittance.allocatedUsd > remittance.amountUsd + 0.0001) {
-      throw ArgumentError.value(
-        remittance.allocatedUsd,
-        'allocatedUsd',
-        'ยอด allocation มากกว่ายอดโอนกลับไทย',
-      );
-    }
-    if (transactions != null) {
-      final principalUsd = remittance.allocations
-          .where(
-            (allocation) =>
-                allocation.bucketType == TaxRemittanceBucketType.principal,
-          )
-          .fold(0.0, (sum, allocation) => sum + allocation.amountUsd);
-      final remainingPrincipalPool = getRemainingPrincipalPool(
-        remittance.portfolioId,
-        transactions,
-        excludeRemittanceId: remittance.id,
-        targetYear: _resolvePrincipalPoolTargetYear(remittance),
-      );
-      if (principalUsd > remainingPrincipalPool + 0.0001) {
-        throw ArgumentError.value(
-          principalUsd,
-          'principalUsd',
-          'ยอดเงินต้นมากกว่าโควตาเงินต้นคงเหลือ',
-        );
-      }
-    }
-  }
-
   void _sortStockTrades() {
     _stockTrades.sort((a, b) => b.soldAt.compareTo(a.soldAt));
-  }
-
-  void _sortTaxRemittances() {
-    _taxRemittances.sort((a, b) => b.remittedAt.compareTo(a.remittedAt));
   }
 
   Future<void> reorderHoldings(
