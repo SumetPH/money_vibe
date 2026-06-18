@@ -1,32 +1,27 @@
 #!/bin/bash
-# Build script for release
+# Build script for iPA
+
+echo "📦 Building for IPA..."
+
+flutter build ipa --release --no-tree-shake-icons --export-options-plist=ios/ExportOptions-development.plist
+
+destination_dir="/Users/sumetph/Documents/Money Vibe/ipa"
+random_suffix=$RANDOM
+destination_file="${destination_dir}/Money Vibe-${random_suffix}.ipa"
+
+find "$destination_dir" -maxdepth 1 -type f -name "*.ipa" -delete
+cp "./build/ios/ipa/Money Vibe.ipa" "$destination_file"
+
+flutter clean
+flutter pub get
+
+echo "✅ IPA built!"
+
+# ---------------------------------------------------------------------
 
 set -e
 
 BUILD_MARKER=$(date +%s)
-
-# --------------------------------------------------------------------------
-
-# android release
-APK_PATH="./build/app/outputs/flutter-apk/app-release.apk"
-
-echo "📦 Building Android APK (Release)..."
-
-flutter build apk --release --no-tree-shake-icons --dart-define=APP_BUILD_MARKER="${BUILD_MARKER}"
-
-echo "📍 APK Location: ${APK_PATH}"
-
-VERSION="v1.0.$(date +%Y%m%d%H%M)" # สร้างเลขเวอร์ชันจากวันที่และเวลา
-RELEASE_NOTES="อัปเดตเมื่อ $(date '+%Y-%m-%d %H:%M:%S')"
-REPO="SumetPH/money-vibe-build"
-
-echo "กำลังอัปโหลด APK ไปที่ GitHub Release..."
-gh release create $VERSION "$APK_PATH" \
-    --title "Release $VERSION" \
-    --notes "$RELEASE_NOTES" \
-    --repo $REPO
-
-# --------------------------------------------------------------------------
 
 # web release
 echo "📦 Building for Web..."
@@ -41,18 +36,8 @@ git add .
 git commit -m "deploy web build"
 git push origin main
 
-# --------------------------------------------------------------------------
-
-# ios release
-read -r -p "🤔 Build iOS? Press Enter to continue or Ctrl+C to cancel..."
-
-echo "📦 Building for iOS..."
-echo "🔢 Using build marker: ${BUILD_MARKER}"
-cd /Users/sumetph/Development/money/money_vibe/
-flutter run --release --no-tree-shake-icons --dart-define=APP_BUILD_MARKER="${BUILD_MARKER}" -d 00008130-000A503A012B803A
+cd /Users/sumetph/Development/money/money_vibe
 flutter clean
 flutter pub get
-
-# --------------------------------------------------------------------------
 
 echo "✅ Build complete!"
