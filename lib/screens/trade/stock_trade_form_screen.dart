@@ -681,12 +681,14 @@ Future<String?> _showPortfolioPickerSheet({
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'เลือกพอร์ต',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              Center(
+                child: Text(
+                  'เลือกพอร์ต',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
