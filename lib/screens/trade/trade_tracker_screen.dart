@@ -16,6 +16,7 @@ import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
+import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
 
 enum _TradePnlFilter { all, profit, loss }
@@ -236,9 +237,50 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           ),
         ];
       case 2:
-        return const [];
+        return [
+          IconButton(
+            icon: const Icon(Icons.edit_document),
+            tooltip: 'รายงาน Broker',
+            onPressed: () => _openBrokerReportPicker(context),
+          ),
+        ];
     }
     return const [];
+  }
+
+  Future<void> _openBrokerReportPicker(BuildContext context) async {
+    final provider = context.read<AccountProvider>();
+    final portfolios = provider.accounts
+        .where((account) => account.isPortfolio)
+        .toList();
+
+    if (portfolios.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ต้องมีพอร์ตหุ้นก่อนดูรายงาน Broker')),
+      );
+      return;
+    }
+
+    final selectedPortfolio = await _showPortfolioPickerSheet(
+      context: context,
+      portfolios: portfolios,
+      selectedPortfolioId: _portfolioId,
+      isDarkMode: context.read<SettingsProvider>().isDarkMode,
+      includeAllOption: false,
+    );
+
+    if (!context.mounted ||
+        selectedPortfolio is! String ||
+        selectedPortfolio.isEmpty) {
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BrokerReportListScreen(portfolioId: selectedPortfolio),
+      ),
+    );
   }
 
   Rect? _shareOriginOf(BuildContext context) {
@@ -766,6 +808,7 @@ String _buildTaxSummaryCsv({
     ['กำไร/ขาดทุนสุทธิ', tradeSummary.realizedPnlUsd, 'USD'],
     ['จำนวนรายงาน Broker', annualReportSummary.reportCount, 'รายการ'],
     ['เงินทุนเติมเข้า Broker', annualReportSummary.inflowUsd, 'USD'],
+    ['เงินทุนเติมเข้า Broker', annualReportSummary.inflowThb, 'THB'],
     ['ปันผลรวม', annualReportSummary.dividendGrossUsd, 'USD'],
     [
       'ภาษีปันผลหัก ณ ที่จ่าย',
@@ -794,6 +837,7 @@ String _buildTaxBrokerReportsCsv({
       'ปี',
       'พอร์ต',
       'เงินทุนเติมเข้า Broker USD',
+      'ยอดเงินบาทที่เติมเข้า Broker THB',
       'ปันผลรวม USD',
       'ภาษีปันผลหัก ณ ที่จ่าย USD',
       'ปันผลสุทธิ USD',
@@ -808,6 +852,7 @@ String _buildTaxBrokerReportsCsv({
       report.year,
       portfolioNameOf(report.portfolioId),
       report.inflowUsd,
+      report.inflowThb,
       report.dividendGrossUsd,
       report.dividendTaxWithheldUsd,
       report.dividendNetUsd,
@@ -953,6 +998,7 @@ class _AnnualTaxSummary {
 
 class _PortfolioAnnualReportSummary {
   final double inflowUsd;
+  final double inflowThb;
   final double dividendGrossUsd;
   final double dividendTaxWithheldUsd;
   final double dividendNetUsd;
@@ -962,6 +1008,7 @@ class _PortfolioAnnualReportSummary {
 
   const _PortfolioAnnualReportSummary({
     required this.inflowUsd,
+    required this.inflowThb,
     required this.dividendGrossUsd,
     required this.dividendTaxWithheldUsd,
     required this.dividendNetUsd,
@@ -975,6 +1022,7 @@ class _PortfolioAnnualReportSummary {
   ) {
     return _PortfolioAnnualReportSummary(
       inflowUsd: reports.fold(0.0, (sum, item) => sum + item.inflowUsd),
+      inflowThb: reports.fold(0.0, (sum, item) => sum + item.inflowThb),
       dividendGrossUsd: reports.fold(
         0.0,
         (sum, item) => sum + item.dividendGrossUsd,
@@ -1276,7 +1324,8 @@ class _AnnualReportTaxListItem extends StatelessWidget {
                     Expanded(
                       child: _CompactTaxMetric(
                         label: 'เงินทุน',
-                        value: '${formatAmount(report.inflowUsd)} USD',
+                        value:
+                            '${formatAmount(report.inflowUsd)} USD / ${formatAmount(report.inflowThb)} THB',
                         color: secondaryColor,
                       ),
                     ),

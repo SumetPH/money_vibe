@@ -867,6 +867,9 @@ class AccountProvider extends ChangeNotifier {
     if (report.inflowUsd < 0) {
       throw ArgumentError.value(report.inflowUsd, 'inflowUsd', 'ต้องไม่ติดลบ');
     }
+    if (report.inflowThb < 0) {
+      throw ArgumentError.value(report.inflowThb, 'inflowThb', 'ต้องไม่ติดลบ');
+    }
     if (report.dividendGrossUsd < 0) {
       throw ArgumentError.value(
         report.dividendGrossUsd,

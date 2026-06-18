@@ -62,61 +62,90 @@ class BrokerReportListScreen extends StatelessWidget {
                   Divider(height: 1, color: dividerColor),
               itemBuilder: (context, index) {
                 final report = reports[index];
-                return ListTile(
-                  tileColor: surfaceColor,
-                  title: Text(
-                    'ปี ${report.year}',
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                return Material(
+                  color: surfaceColor,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BrokerReportFormScreen(
+                            portfolioId: portfolioId,
+                            existingReport: report,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'ปี ${report.year}',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'เงินทุน ${currencyFormat.format(report.inflowUsd)} USD'
+                                  ' / ${currencyFormat.format(report.inflowThb)} THB'
+                                  '\n • โอนกลับ ${currencyFormat.format(report.remittedUsd)} USD'
+                                  '\n • ปันผลสุทธิ ${currencyFormat.format(report.dividendNetUsd)} USD'
+                                  '\n • ภาษี ${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: secondaryTextColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${currencyFormat.format(report.inflowUsd)} USD',
+                                style: TextStyle(
+                                  color: incomeColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${currencyFormat.format(report.inflowThb)} THB',
+                                style: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'เงินทุน',
+                                style: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'เงินทุน ${currencyFormat.format(report.inflowUsd)} USD'
-                      ' • โอนกลับ ${currencyFormat.format(report.remittedUsd)} USD'
-                      ' • ปันผลสุทธิ ${currencyFormat.format(report.dividendNetUsd)} USD'
-                      ' • ภาษี ${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${currencyFormat.format(report.inflowUsd)} USD',
-                        style: TextStyle(
-                          color: incomeColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'เงินทุน',
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BrokerReportFormScreen(
-                          portfolioId: portfolioId,
-                          existingReport: report,
-                        ),
-                      ),
-                    );
-                  },
                 );
               },
             ),

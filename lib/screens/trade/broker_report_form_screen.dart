@@ -35,6 +35,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
 
   late final TextEditingController _yearController;
   late final TextEditingController _inflowController;
+  late final TextEditingController _inflowThbController;
   late final TextEditingController _dividendGrossController;
   late final TextEditingController _dividendTaxWithheldController;
   late final TextEditingController _dividendNetController;
@@ -53,6 +54,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     );
     _inflowController = TextEditingController(
       text: r != null ? _formatEditable(r.inflowUsd) : '',
+    );
+    _inflowThbController = TextEditingController(
+      text: r != null && r.inflowThb > 0 ? _formatEditable(r.inflowThb) : '',
     );
     _dividendGrossController = TextEditingController(
       text: r != null && r.dividendGrossUsd > 0
@@ -86,6 +90,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
   void dispose() {
     _yearController.dispose();
     _inflowController.dispose();
+    _inflowThbController.dispose();
     _dividendGrossController.dispose();
     _dividendTaxWithheldController.dispose();
     _dividendNetController.dispose();
@@ -107,6 +112,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     }
 
     final inflow = double.tryParse(_inflowController.text.trim()) ?? 0.0;
+    final inflowThb = _parseAmount(_inflowThbController);
     final dividendGross = _parseAmount(_dividendGrossController);
     final dividendTaxWithheld = _parseAmount(_dividendTaxWithheldController);
     final dividendNet = _parseAmount(_dividendNetController);
@@ -123,6 +129,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         portfolioId: widget.portfolioId,
         year: year,
         inflowUsd: inflow,
+        inflowThb: inflowThb,
         dividendGrossUsd: dividendGross,
         dividendTaxWithheldUsd: dividendTaxWithheld,
         dividendNetUsd: dividendNet,
@@ -302,9 +309,21 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
           if (widget.existingReport != null)
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              color: expenseColor,
               onPressed: _isSaving ? null : _delete,
             ),
+          IconButton(
+            icon: _isSaving
+                ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.check),
+            onPressed: _isSaving ? null : _save,
+          ),
         ],
       ),
       body: AbsorbPointer(
@@ -362,6 +381,17 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
               ),
               _buildDivider(isDarkMode),
 
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(
+                  'เงินทุนเติมเข้า Broker จากรายงานประจำปี',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               _buildMoneyField(
                 controller: _inflowController,
                 label: 'เงินทุนเติมเข้า Broker (USD)',
@@ -373,9 +403,51 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 isRequired: true,
               ),
               _buildDivider(isDarkMode),
+              _buildMoneyField(
+                controller: _inflowThbController,
+                label: 'ยอดเงินบาทที่เติมเข้า Broker (THB)',
+                icon: Icons.currency_exchange_outlined,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
 
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(
+                  'เงินโอนกลับไทยจากรายงานประจำปี',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _buildMoneyField(
+                controller: _remittedUsdController,
+                label: 'ยอดโอนกลับไทยรวม (USD)',
+                icon: Icons.account_balance_outlined,
+                iconColor: expenseColor,
+                amountColor: expenseColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+              _buildMoneyField(
+                controller: _remittedThbController,
+                label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
+                icon: Icons.payments_outlined,
+                iconColor: incomeColor,
+                amountColor: incomeColor,
+                surfaceColor: surfaceColor,
+                secondaryColor: secondaryColor,
+              ),
+              _buildDivider(isDarkMode),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Text(
                   'เงินปันผลจากรายงานประจำปี',
                   style: TextStyle(
@@ -416,37 +488,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
               ),
               _buildDivider(isDarkMode),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: Text(
-                  'เงินโอนกลับไทยจากรายงานประจำปี',
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              _buildMoneyField(
-                controller: _remittedUsdController,
-                label: 'ยอดโอนกลับไทยรวม (USD)',
-                icon: Icons.account_balance_outlined,
-                iconColor: expenseColor,
-                amountColor: expenseColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-              _buildMoneyField(
-                controller: _remittedThbController,
-                label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
-                icon: Icons.payments_outlined,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
+              const SizedBox(height: 24),
 
               // Note
               Container(
@@ -476,35 +518,6 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Save Button — flat, full-width, borderless row
-              InkWell(
-                onTap: _isSaving ? null : _save,
-                child: Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  alignment: Alignment.center,
-                  child: _isSaving
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: incomeColor,
-                          ),
-                        )
-                      : Text(
-                          'บันทึกข้อมูล',
-                          style: TextStyle(
-                            color: incomeColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
             ],
