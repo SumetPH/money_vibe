@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/stock_holding.dart';
@@ -799,6 +800,10 @@ class HoldingThumbnailWidget extends StatelessWidget {
       ),
     );
 
+    final isLocal = logoUrl.isNotEmpty &&
+        !logoUrl.startsWith('http://') &&
+        !logoUrl.startsWith('https://');
+
     final logoContainer = Container(
       width: 42,
       height: 42,
@@ -809,14 +814,20 @@ class HoldingThumbnailWidget extends StatelessWidget {
           ? fallback()
           : ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.small),
-              child: CachedNetworkImage(
-                imageUrl: logoUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => fallback(),
-                errorWidget: (context, url, error) => fallback(),
-                fadeInDuration: Duration.zero,
-                fadeOutDuration: Duration.zero,
-              ),
+              child: isLocal
+                  ? Image.file(
+                      File(logoUrl),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => fallback(),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: logoUrl,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => fallback(),
+                      errorWidget: (context, url, error) => fallback(),
+                      fadeInDuration: Duration.zero,
+                      fadeOutDuration: Duration.zero,
+                    ),
             ),
     );
 

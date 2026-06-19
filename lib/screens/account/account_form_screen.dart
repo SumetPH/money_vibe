@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
@@ -723,34 +724,53 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       AccountIconStorageService().isStoredIconUrl(_selectedIconUrl);
 
   Widget _buildCustomIconPreview() {
+    final isLocal = !_selectedIconUrl.startsWith('http://') &&
+        !_selectedIconUrl.startsWith('https://');
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: CachedNetworkImage(
-        imageUrl: _selectedIconUrl,
-        width: 44,
-        height: 44,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(_selectedIcon, color: _selectedColor, size: 26),
-        ),
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
-      ),
+      child: isLocal
+          ? Image.file(
+              File(_selectedIconUrl),
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(_selectedIcon, color: _selectedColor, size: 26),
+              ),
+            )
+          : CachedNetworkImage(
+              imageUrl: _selectedIconUrl,
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(_selectedIcon, color: _selectedColor, size: 26),
+              ),
+              fadeInDuration: Duration.zero,
+              fadeOutDuration: Duration.zero,
+            ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/settings_provider.dart';
 import 'exchange_rate_service.dart';
@@ -20,7 +19,6 @@ class StockPriceService {
   final bool _useYahooExtendedHoursPrice;
   final ExchangeRateSource _exchangeRateSource;
 
-  late final supabase = Supabase.instance.client;
   late final _exchangeRateService = ExchangeRateService(
     source: _exchangeRateSource,
   );
@@ -64,17 +62,20 @@ class StockPriceService {
 
   Future<double?> _fetchYahooPrice(String ticker) async {
     try {
-      final res = await supabase.functions.invoke(
-        'yfinance',
-        body: {
-          "symbol": ticker,
-          "interval": "1m",
-          "range": "1d",
-          "includePrePost": _useYahooExtendedHoursPrice,
-        },
+      final uri = Uri.parse(
+        'https://query1.finance.yahoo.com/v8/finance/chart/$ticker?interval=1m&range=1d&includePrePost=$_useYahooExtendedHoursPrice',
       );
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        },
+      ).timeout(const Duration(seconds: 10));
 
-      final data = res.data;
+      if (response.statusCode != 200) return null;
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       final result =
           (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;

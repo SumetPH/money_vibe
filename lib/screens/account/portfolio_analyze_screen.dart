@@ -6,7 +6,8 @@ import 'package:money_vibe/providers/llm_provider.dart';
 import 'package:money_vibe/providers/settings_provider.dart';
 import 'package:money_vibe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class PortfolioAnalyzeScreen extends StatefulWidget {
   final String accountId;
@@ -18,7 +19,6 @@ class PortfolioAnalyzeScreen extends StatefulWidget {
 }
 
 class _PortfolioAnalyzeScreenState extends State<PortfolioAnalyzeScreen> {
-  late final supabase = Supabase.instance.client;
 
   String _holdingsData = '';
   bool _isStarted = false;
@@ -133,23 +133,50 @@ class _PortfolioAnalyzeScreenState extends State<PortfolioAnalyzeScreen> {
     try {
       _scrollToBottom();
 
-      final res = await supabase.functions.invoke(
-        'llm-portfolio-analyze',
-        body: {
-          'apiKey': llmApiKey,
-          'baseUrl': llmBaseUrl,
-          'model': llmModel,
-          'holdingsData': _holdingsData,
-          'messages': context
+      String url = llmBaseUrl.trim();
+      if (!url.endsWith('/chat/completions')) {
+        if (url.endsWith('/')) {
+          url = '${url}chat/completions';
+        } else {
+          url = '$url/chat/completions';
+        }
+      }
+
+      final body = {
+        'model': llmModel,
+        'messages': [
+          {
+            'role': 'system',
+            'content': 'ข้อมูล Portfolio ของผู้ใช้: \n$_holdingsData\n\nการตอบข้อมูลที่เป็นตารางให้ใช้ bullet points แทนการใช้ table เพื่อให้แสดงผลได้ดีใน mobile'
+          },
+          ...context
               .read<LlmProvider>()
               .messages
-              .map((m) => {'role': m.role, 'content': m.content})
-              .toList(),
+              .map((m) => {'role': m.role, 'content': m.content}),
+        ],
+      };
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Bearer $llmApiKey',
         },
-      );
-      final data = res.data;
-      final content =
-          (data['reply']['content'] as String?) ?? 'ไม่พบผลการวิเคราะห์';
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        throw Exception('LLM API ตอบกลับด้วยสถานะ ${response.statusCode}: ${response.body}');
+      }
+
+      final responseData = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final choices = responseData['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        throw Exception('ไม่พบผลการวิเคราะห์ (choices ว่าง)');
+      }
+      final firstChoice = choices.first as Map<String, dynamic>;
+      final reply = firstChoice['message'] as Map<String, dynamic>?;
+      final content = (reply?['content'] as String?) ?? 'ไม่พบผลการวิเคราะห์';
 
       setState(() {
         context.read<LlmProvider>().limitMessages(10);

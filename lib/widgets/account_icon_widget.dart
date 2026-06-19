@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/account.dart';
@@ -21,6 +22,9 @@ class AccountIconWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (account.iconUrl.isNotEmpty) {
+      final isLocal = !account.iconUrl.startsWith('http://') &&
+          !account.iconUrl.startsWith('https://');
+
       return Container(
         width: size,
         height: size,
@@ -29,16 +33,25 @@ class AccountIconWidget extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: account.iconUrl,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => _buildLoadingIndicator(),
-            errorWidget: (context, url, error) => _buildIconFallback(),
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-          ),
+          child: isLocal
+              ? Image.file(
+                  File(account.iconUrl),
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildIconFallback(),
+                )
+              : CachedNetworkImage(
+                  imageUrl: account.iconUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => _buildLoadingIndicator(),
+                  errorWidget: (context, url, error) => _buildIconFallback(),
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                ),
         ),
       );
     }

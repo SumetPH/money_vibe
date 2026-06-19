@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -2390,20 +2391,29 @@ class _TradeListItem extends StatelessWidget {
                   ? _TickerFallback(ticker: trade.ticker, color: thumbnailColor)
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadii.small),
-                      child: CachedNetworkImage(
-                        imageUrl: trade.logoUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (_, _) => _TickerFallback(
-                          ticker: trade.ticker,
-                          color: thumbnailColor,
-                        ),
-                        errorWidget: (_, _, _) => _TickerFallback(
-                          ticker: trade.ticker,
-                          color: thumbnailColor,
-                        ),
-                        fadeInDuration: Duration.zero,
-                        fadeOutDuration: Duration.zero,
-                      ),
+                      child: (!trade.logoUrl.startsWith('http://') && !trade.logoUrl.startsWith('https://'))
+                          ? Image.file(
+                              File(trade.logoUrl),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: trade.logoUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (_, _) => _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              ),
+                              errorWidget: (_, _, _) => _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              ),
+                              fadeInDuration: Duration.zero,
+                              fadeOutDuration: Duration.zero,
+                            ),
                     ),
             ),
             const SizedBox(width: 12),
@@ -2572,20 +2582,29 @@ class _TradeListItem extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(
                                   AppRadii.small,
                                 ),
-                                child: CachedNetworkImage(
-                                  imageUrl: trade.logoUrl,
-                                  fit: BoxFit.contain,
-                                  placeholder: (_, _) => _TickerFallback(
-                                    ticker: trade.ticker,
-                                    color: thumbnailColor,
-                                  ),
-                                  errorWidget: (_, _, _) => _TickerFallback(
-                                    ticker: trade.ticker,
-                                    color: thumbnailColor,
-                                  ),
-                                  fadeInDuration: Duration.zero,
-                                  fadeOutDuration: Duration.zero,
-                                ),
+                                child: (!trade.logoUrl.startsWith('http://') && !trade.logoUrl.startsWith('https://'))
+                                    ? Image.file(
+                                        File(trade.logoUrl),
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, _, _) => _TickerFallback(
+                                          ticker: trade.ticker,
+                                          color: thumbnailColor,
+                                        ),
+                                      )
+                                    : CachedNetworkImage(
+                                        imageUrl: trade.logoUrl,
+                                        fit: BoxFit.contain,
+                                        placeholder: (_, _) => _TickerFallback(
+                                          ticker: trade.ticker,
+                                          color: thumbnailColor,
+                                        ),
+                                        errorWidget: (_, _, _) => _TickerFallback(
+                                          ticker: trade.ticker,
+                                          color: thumbnailColor,
+                                        ),
+                                        fadeInDuration: Duration.zero,
+                                        fadeOutDuration: Duration.zero,
+                                      ),
                               ),
                       ),
                       const SizedBox(width: 12),

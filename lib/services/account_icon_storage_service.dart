@@ -1,19 +1,17 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class AccountIconStorageService {
-  static const String bucketName = 'account-icons';
+  static const String directoryName = 'account_icons';
 
-  final SupabaseClient _client;
-
-  AccountIconStorageService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
-
-  bool get isAuthenticated => _client.auth.currentUser != null;
+  bool get isAuthenticated => true;
 
   bool isStoredIconUrl(String url) {
     if (url.isEmpty) return false;
-    return url.contains('/storage/v1/object/public/$bucketName/');
+    // ในโหมดออฟไลน์ รูปภาพที่บันทึกในเครื่องจะไม่ขึ้นต้นด้วย http
+    return !url.startsWith('http://') && !url.startsWith('https://');
   }
 
   Future<String?> uploadAccountIcon({
@@ -22,26 +20,23 @@ class AccountIconStorageService {
     required String extension,
     required String contentType,
   }) async {
-    if (!isAuthenticated || bytes.isEmpty) return null;
-
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return null;
+    if (bytes.isEmpty) return null;
 
     final sanitizedExtension = _normalizeExtension(extension);
-    final path =
-        '$userId/${accountId}_${DateTime.now().millisecondsSinceEpoch}.$sanitizedExtension';
+    final filename = '${accountId}_${DateTime.now().millisecondsSinceEpoch}.$sanitizedExtension';
 
     try {
-      await _client.storage
-          .from(bucketName)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(contentType: contentType),
-          );
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final targetDir = Directory(p.join(documentsDirectory.path, directoryName));
+      if (!await targetDir.exists()) {
+        await targetDir.create(recursive: true);
+      }
 
-      final publicUrl = _client.storage.from(bucketName).getPublicUrl(path);
-      return publicUrl;
+      final file = File(p.join(targetDir.path, filename));
+      await file.writeAsBytes(bytes);
+      
+      // คืนค่าเป็น absolute local path บนเครื่อง
+      return file.path;
     } catch (e) {
       debugPrint('AccountIconStorageService: upload failed for $accountId: $e');
       return null;
@@ -49,19 +44,16 @@ class AccountIconStorageService {
   }
 
   Future<bool> deleteAccountIcon(String url) async {
-    if (!isAuthenticated || url.isEmpty) return false;
+    if (url.isEmpty) return false;
     if (!isStoredIconUrl(url)) return false;
 
     try {
-      // Extract path from URL
-      // URL format: .../storage/v1/object/public/account-icons/{path}
-      final prefix = '/storage/v1/object/public/$bucketName/';
-      final startIndex = url.indexOf(prefix);
-      if (startIndex == -1) return false;
-
-      final path = url.substring(startIndex + prefix.length);
-      await _client.storage.from(bucketName).remove([path]);
-      return true;
+      final file = File(url);
+      if (await file.exists()) {
+        await file.delete();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('AccountIconStorageService: delete failed: $e');
       return false;

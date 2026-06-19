@@ -1,20 +1,17 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class StockLogoStorageService {
-  static const String bucketName = 'stock-logos';
-  static const String _functionName = 'mirror-stock-logo';
+  static const String directoryName = 'stock_logos';
 
-  final SupabaseClient _client;
-
-  StockLogoStorageService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
-
-  bool get isAuthenticated => _client.auth.currentUser != null;
+  bool get isAuthenticated => true;
 
   bool isStoredLogoUrl(String url) {
     if (url.isEmpty) return false;
-    return url.contains('/storage/v1/object/public/$bucketName/');
+    return !url.startsWith('http://') && !url.startsWith('https://');
   }
 
   Future<String?> uploadLogoBytes({
@@ -23,27 +20,26 @@ class StockLogoStorageService {
     required String extension,
     required String contentType,
   }) async {
-    if (!isAuthenticated || bytes.isEmpty) return null;
+    if (bytes.isEmpty) return null;
 
-    final userId = _client.auth.currentUser?.id;
     final normalizedTicker = _normalizeTicker(ticker);
-    if (userId == null || normalizedTicker == null) return null;
+    if (normalizedTicker == null) return null;
 
     final sanitizedExtension = _normalizeExtension(extension);
-    final path =
-        '$userId/${normalizedTicker}_${DateTime.now().millisecondsSinceEpoch}.$sanitizedExtension';
+    final filename = '${normalizedTicker}_${DateTime.now().millisecondsSinceEpoch}.$sanitizedExtension';
 
     try {
-      await _client.storage
-          .from(bucketName)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(contentType: contentType),
-          );
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final targetDir = Directory(p.join(documentsDirectory.path, directoryName));
+      if (!await targetDir.exists()) {
+        await targetDir.create(recursive: true);
+      }
 
-      final publicUrl = _client.storage.from(bucketName).getPublicUrl(path);
-      return publicUrl;
+      final file = File(p.join(targetDir.path, filename));
+      await file.writeAsBytes(bytes);
+      
+      // คืนค่าเป็น absolute local path บนเครื่อง
+      return file.path;
     } catch (e) {
       debugPrint('StockLogoStorageService: upload failed for $ticker: $e');
       return null;
@@ -54,26 +50,48 @@ class StockLogoStorageService {
     required String ticker,
     required String sourceUrl,
   }) async {
-    if (!isAuthenticated || sourceUrl.isEmpty) return null;
+    if (sourceUrl.isEmpty) return null;
 
     try {
-      final response = await _client.functions.invoke(
-        _functionName,
-        body: {'ticker': ticker, 'sourceUrl': sourceUrl},
-      );
-
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        final publicUrl = data['publicUrl'] as String?;
-        if (publicUrl != null && publicUrl.isNotEmpty) {
-          return publicUrl;
-        }
+      final uri = Uri.parse(sourceUrl);
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        debugPrint('StockLogoStorageService: mirror fetch failed (${response.statusCode}) for $ticker');
+        return null;
       }
+
+      final contentType = response.headers['content-type'] ?? 'image/png';
+      final extension = _getExtensionFromContentType(contentType, sourceUrl);
+      
+      return await uploadLogoBytes(
+        ticker: ticker,
+        bytes: response.bodyBytes,
+        extension: extension,
+        contentType: contentType,
+      );
     } catch (e) {
       debugPrint('StockLogoStorageService: mirror failed for $ticker: $e');
     }
 
     return null;
+  }
+
+  String _getExtensionFromContentType(String contentType, String sourceUrl) {
+    if (contentType.contains('svg')) return 'svg';
+    if (contentType.contains('webp')) return 'webp';
+    if (contentType.contains('jpeg') || contentType.contains('jpg')) return 'jpg';
+    if (contentType.contains('png')) return 'png';
+
+    try {
+      final pathname = Uri.parse(sourceUrl).path.toLowerCase();
+      final segments = pathname.split('.');
+      final fromPath = segments.length > 1 ? segments.last : null;
+      if (fromPath != null && ['png', 'jpg', 'jpeg', 'webp', 'svg'].contains(fromPath)) {
+        return fromPath == 'jpeg' ? 'jpg' : fromPath;
+      }
+    } catch (_) {}
+
+    return 'png';
   }
 
   String? _normalizeTicker(String ticker) {
