@@ -1081,11 +1081,6 @@ class _AnnualTaxSummaryPanel extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${annualTaxSummary.reportCount} รายงาน',
-                style: TextStyle(color: secondaryColor, fontSize: 12),
-              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1218,11 +1213,6 @@ class _AnnualPrincipalSummarySection extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '${annualTaxSummary.reportCount} รายงาน',
-                style: TextStyle(color: secondaryColor, fontSize: 12),
               ),
             ],
           ),
