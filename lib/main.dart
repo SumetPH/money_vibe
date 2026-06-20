@@ -169,6 +169,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final DatabaseManager _databaseManager;
   late final _AppRouterRefreshNotifier _routerRefreshNotifier;
   late final GoRouter _router;
+  late final VoidCallback _routeInformationListener;
   String? _pendingRecurringDetailId;
 
   @override
@@ -259,6 +260,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return null;
       },
     );
+    _routeInformationListener = () {
+      if (mounted) {
+        setState(() {});
+      }
+    };
+    _router.routeInformationProvider.addListener(_routeInformationListener);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       RecurringNotificationService.instance.setOnNotificationTap(
@@ -342,29 +349,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                           children: [
                             SizedBox(
                               width: 260,
-                              child: Overlay(
-                                initialEntries: [
-                                  OverlayEntry(
-                                    builder: (context) {
-                                      return ListenableBuilder(
-                                        listenable:
-                                            _router.routeInformationProvider,
-                                        builder: (context, _) {
-                                          final activePath = _router
-                                              .routeInformationProvider
-                                              .value
-                                              .uri
-                                              .path;
-                                          return AppSidebar(
-                                            currentRoute: activePath,
-                                            onNavigate: (route) =>
-                                                _router.go(route),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ],
+                              child: AppSidebar(
+                                currentRoute: currentPath,
+                                onNavigate: (route) => _router.go(route),
                               ),
                             ),
                             Expanded(
@@ -423,6 +410,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     RecurringNotificationService.instance.clearOnNotificationTap();
+    _router.routeInformationProvider.removeListener(_routeInformationListener);
     _routerRefreshNotifier.dispose();
     _router.dispose();
     WidgetsBinding.instance.removeObserver(this);
