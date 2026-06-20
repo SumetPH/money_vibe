@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/math_evaluator.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/calculator_keyboard.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -23,6 +25,7 @@ final _fourDecimalInputFormatter = _decimalInputFormatter(
 final _sevenDecimalInputFormatter = _decimalInputFormatter(
   stockHoldingSharesDecimalPlaces,
 );
+const double _calculatorKeyboardBottomPadding = 336;
 
 class HoldingFormScreen extends StatefulWidget {
   final String portfolioId;
@@ -45,6 +48,7 @@ class HoldingFormScreen extends StatefulWidget {
 }
 
 class _HoldingFormScreenState extends State<HoldingFormScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _tickerController = TextEditingController();
   final _groupController = TextEditingController();
   final _sharesController = TextEditingController();
@@ -54,6 +58,16 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   final _trailingStopController = TextEditingController();
   final _stopLossController = TextEditingController();
   final _peakProfitController = TextEditingController();
+  final _sharesFocusNode = FocusNode();
+  final _priceFocusNode = FocusNode();
+  final _costFocusNode = FocusNode();
+  final _takeProfitFocusNode = FocusNode();
+  final _trailingStopFocusNode = FocusNode();
+  final _stopLossFocusNode = FocusNode();
+  final _peakProfitFocusNode = FocusNode();
+  PersistentBottomSheetController? _keyboardController;
+  TextEditingController? _activeKeyboardController;
+  bool _isCalculatorKeyboardVisible = false;
   bool _isSaving = false;
   bool _sellPlanEnabled = false;
   String? _takeProfitError;
@@ -67,6 +81,14 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   @override
   void initState() {
     super.initState();
+    _sharesFocusNode.addListener(_onNumberFocusChange);
+    _priceFocusNode.addListener(_onNumberFocusChange);
+    _costFocusNode.addListener(_onNumberFocusChange);
+    _takeProfitFocusNode.addListener(_onNumberFocusChange);
+    _trailingStopFocusNode.addListener(_onNumberFocusChange);
+    _stopLossFocusNode.addListener(_onNumberFocusChange);
+    _peakProfitFocusNode.addListener(_onNumberFocusChange);
+
     final holding = widget.existing;
     if (holding != null) {
       _tickerController.text = holding.ticker;
@@ -117,6 +139,21 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 
   @override
   void dispose() {
+    _sharesFocusNode.removeListener(_onNumberFocusChange);
+    _priceFocusNode.removeListener(_onNumberFocusChange);
+    _costFocusNode.removeListener(_onNumberFocusChange);
+    _takeProfitFocusNode.removeListener(_onNumberFocusChange);
+    _trailingStopFocusNode.removeListener(_onNumberFocusChange);
+    _stopLossFocusNode.removeListener(_onNumberFocusChange);
+    _peakProfitFocusNode.removeListener(_onNumberFocusChange);
+    _closeKeyboard(updateState: false);
+    _sharesFocusNode.dispose();
+    _priceFocusNode.dispose();
+    _costFocusNode.dispose();
+    _takeProfitFocusNode.dispose();
+    _trailingStopFocusNode.dispose();
+    _stopLossFocusNode.dispose();
+    _peakProfitFocusNode.dispose();
     _tickerController.dispose();
     _groupController.dispose();
     _sharesController.dispose();
@@ -129,12 +166,124 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     super.dispose();
   }
 
+  void _onNumberFocusChange() {
+    if (!mounted) return;
+
+    final focusedField = _focusedNumberField();
+    if (focusedField == null) {
+      _closeKeyboard();
+      return;
+    }
+
+    _showKeyboard(focusedField.controller, focusedField.decimalPlaces);
+  }
+
+  ({TextEditingController controller, int decimalPlaces})?
+  _focusedNumberField() {
+    if (_sharesFocusNode.hasFocus) {
+      return (
+        controller: _sharesController,
+        decimalPlaces: stockHoldingSharesDecimalPlaces,
+      );
+    }
+    if (_costFocusNode.hasFocus) {
+      return (
+        controller: _costController,
+        decimalPlaces: stockHoldingCostBasisDecimalPlaces,
+      );
+    }
+    if (_priceFocusNode.hasFocus) {
+      return (
+        controller: _priceController,
+        decimalPlaces: stockHoldingPriceDecimalPlaces,
+      );
+    }
+    if (_takeProfitFocusNode.hasFocus) {
+      return (controller: _takeProfitController, decimalPlaces: 2);
+    }
+    if (_trailingStopFocusNode.hasFocus) {
+      return (controller: _trailingStopController, decimalPlaces: 2);
+    }
+    if (_stopLossFocusNode.hasFocus) {
+      return (controller: _stopLossController, decimalPlaces: 2);
+    }
+    if (_peakProfitFocusNode.hasFocus) {
+      return (controller: _peakProfitController, decimalPlaces: 2);
+    }
+    return null;
+  }
+
+  void _showKeyboard(TextEditingController controller, int decimalPlaces) {
+    if (_keyboardController != null) {
+      if (_activeKeyboardController == controller) {
+        return;
+      }
+      _closeKeyboard();
+    }
+
+    _activeKeyboardController = controller;
+    _setCalculatorKeyboardVisible(true);
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final actionColor = isDarkMode
+        ? AppColors.darkTransfer
+        : AppColors.transfer;
+
+    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
+      (context) {
+        return CalculatorKeyboard(
+          controller: controller,
+          actionButtonColor: actionColor,
+          resultDecimalPlaces: decimalPlaces,
+          onDone: _unfocusNumberFields,
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    );
+
+    _keyboardController?.closed.then((_) {
+      if (_activeKeyboardController == controller) {
+        _keyboardController = null;
+        _activeKeyboardController = null;
+        _setCalculatorKeyboardVisible(false);
+        _unfocusNumberFields();
+      }
+    });
+  }
+
+  void _closeKeyboard({bool updateState = true}) {
+    if (_keyboardController != null) {
+      _keyboardController?.close();
+      _keyboardController = null;
+      _activeKeyboardController = null;
+    }
+    if (updateState) {
+      _setCalculatorKeyboardVisible(false);
+    }
+  }
+
+  void _setCalculatorKeyboardVisible(bool visible) {
+    if (!mounted || _isCalculatorKeyboardVisible == visible) return;
+    setState(() => _isCalculatorKeyboardVisible = visible);
+  }
+
+  void _unfocusNumberFields() {
+    _sharesFocusNode.unfocus();
+    _priceFocusNode.unfocus();
+    _costFocusNode.unfocus();
+    _takeProfitFocusNode.unfocus();
+    _trailingStopFocusNode.unfocus();
+    _stopLossFocusNode.unfocus();
+    _peakProfitFocusNode.unfocus();
+  }
+
   String _formatPct(double value) => value.toStringAsFixed(2);
 
   double _roundPct(double value) => double.parse(value.toStringAsFixed(2));
 
   Future<void> _save() async {
     if (_isSaving) return;
+    _commitNumberFields();
 
     final ticker = _tickerController.text.trim().toUpperCase();
     if (ticker.isEmpty) {
@@ -254,6 +403,47 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  void _commitNumberFields() {
+    _commitNumberField(
+      _sharesController,
+      decimalPlaces: stockHoldingSharesDecimalPlaces,
+    );
+    _commitNumberField(
+      _costController,
+      decimalPlaces: stockHoldingCostBasisDecimalPlaces,
+    );
+    _commitNumberField(
+      _priceController,
+      decimalPlaces: stockHoldingPriceDecimalPlaces,
+    );
+    _commitNumberField(_takeProfitController, decimalPlaces: 2);
+    _commitNumberField(_trailingStopController, decimalPlaces: 2);
+    _commitNumberField(_stopLossController, decimalPlaces: 2);
+    _commitNumberField(_peakProfitController, decimalPlaces: 2);
+  }
+
+  void _commitNumberField(
+    TextEditingController controller, {
+    required int decimalPlaces,
+  }) {
+    final expression = controller.text.trim();
+    if (expression.isEmpty || !RegExp(r'[+\-*/]').hasMatch(expression)) {
+      return;
+    }
+
+    final result = MathEvaluator.evaluate(expression);
+    if (result == null) return;
+
+    final formatted = formatStockHoldingEditableNumber(
+      result,
+      scale: decimalPlaces,
+    );
+    controller.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
 
   double _calculatePnlPct({
@@ -394,10 +584,16 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      key: _scaffoldKey,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          onPressed: _isSaving
+              ? null
+              : () {
+                  _closeKeyboard();
+                  Navigator.pop(context);
+                },
         ),
         title: Text(_isEditing ? 'แก้ไขหุ้น' : 'เพิ่มหุ้น'),
         actions: [
@@ -418,6 +614,11 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       body: AbsorbPointer(
         absorbing: _isSaving,
         child: ListView(
+          padding: EdgeInsets.only(
+            bottom: _isCalculatorKeyboardVisible
+                ? _calculatorKeyboardBottomPadding
+                : 0,
+          ),
           children: [
             Container(
               color:
@@ -512,6 +713,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
             _HoldingNumberFieldRow(
               label: 'จำนวนหุ้น',
               controller: _sharesController,
+              focusNode: _sharesFocusNode,
               hintText: '0',
               isDarkMode: isDarkMode,
               inputFormatters: [_sevenDecimalInputFormatter],
@@ -520,6 +722,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
             _HoldingNumberFieldRow(
               label: 'ราคาทุน (USD)',
               controller: _costController,
+              focusNode: _costFocusNode,
               hintText: '0.00',
               isDarkMode: isDarkMode,
               inputFormatters: [_fourDecimalInputFormatter],
@@ -528,6 +731,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
             _HoldingNumberFieldRow(
               label: 'ราคาปัจจุบัน (USD)',
               controller: _priceController,
+              focusNode: _priceFocusNode,
               hintText: '0.00',
               isDarkMode: isDarkMode,
             ),
@@ -569,6 +773,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               _HoldingNumberFieldRow(
                 label: 'Take Profit %',
                 controller: _takeProfitController,
+                focusNode: _takeProfitFocusNode,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _takeProfitError,
@@ -577,6 +782,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               _HoldingNumberFieldRow(
                 label: 'Trailing Stop %',
                 controller: _trailingStopController,
+                focusNode: _trailingStopFocusNode,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _trailingStopError,
@@ -585,6 +791,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               _HoldingNumberFieldRow(
                 label: 'Stop Loss %',
                 controller: _stopLossController,
+                focusNode: _stopLossFocusNode,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _stopLossError,
@@ -593,6 +800,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               _HoldingNumberFieldRow(
                 label: 'กำไรสูงสุด %',
                 controller: _peakProfitController,
+                focusNode: _peakProfitFocusNode,
                 hintText: 'ปล่อยว่างให้ระบบคำนวณ',
                 isDarkMode: isDarkMode,
                 errorText: _peakProfitError,
@@ -635,6 +843,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 class _HoldingNumberFieldRow extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final FocusNode focusNode;
   final String hintText;
   final bool isDarkMode;
   final String? errorText;
@@ -643,6 +852,7 @@ class _HoldingNumberFieldRow extends StatelessWidget {
   const _HoldingNumberFieldRow({
     required this.label,
     required this.controller,
+    required this.focusNode,
     required this.hintText,
     required this.isDarkMode,
     this.errorText,
@@ -678,6 +888,9 @@ class _HoldingNumberFieldRow extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
+                  readOnly: true,
+                  showCursor: true,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),

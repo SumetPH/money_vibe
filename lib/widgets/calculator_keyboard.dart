@@ -2,19 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../providers/settings_provider.dart';
 import '../utils/math_evaluator.dart';
+
+class _CalculatorKey {
+  final String label;
+  final String value;
+  final int flex;
+
+  const _CalculatorKey(this.label, {String? value, this.flex = 1})
+    : value = value ?? label;
+}
 
 class CalculatorKeyboard extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onDone;
   final Color actionButtonColor;
+  final int resultDecimalPlaces;
 
   const CalculatorKeyboard({
     super.key,
     required this.controller,
     required this.onDone,
     required this.actionButtonColor,
+    this.resultDecimalPlaces = 2,
   });
 
   void _handleKeyPress(String key) {
@@ -120,15 +132,7 @@ class CalculatorKeyboard extends StatelessWidget {
     if (number == null) return;
 
     final percentValue = number / 100;
-    String formatted;
-    if (percentValue == percentValue.toInt()) {
-      formatted = percentValue.toInt().toString();
-    } else {
-      formatted = percentValue.toStringAsFixed(2);
-      if (formatted.endsWith('0')) {
-        formatted = formatted.substring(0, formatted.length - 1);
-      }
-    }
+    final formatted = _formatResult(percentValue);
 
     final prefix = lastOperatorIndex >= 0
         ? text.substring(0, lastOperatorIndex + 1)
@@ -147,22 +151,22 @@ class CalculatorKeyboard extends StatelessWidget {
 
     final result = MathEvaluator.evaluate(expression);
     if (result != null) {
-      // Format result: Remove unnecessary decimal places (e.g. 150.0 -> 150)
-      String formatted;
-      if (result == result.toInt()) {
-        formatted = result.toInt().toString();
-      } else {
-        formatted = result.toStringAsFixed(2);
-        // Strip trailing zero if possible
-        if (formatted.endsWith('0')) {
-          formatted = formatted.substring(0, formatted.length - 1);
-        }
-      }
+      final formatted = _formatResult(result);
       controller.value = TextEditingValue(
         text: formatted,
         selection: TextSelection.collapsed(offset: formatted.length),
       );
     }
+  }
+
+  String _formatResult(double value) {
+    if (value == value.toInt()) {
+      return value.toInt().toString();
+    }
+
+    return value
+        .toStringAsFixed(resultDecimalPlaces)
+        .replaceFirst(RegExp(r'\.?0+$'), '');
   }
 
   @override
@@ -191,7 +195,12 @@ class CalculatorKeyboard extends StatelessWidget {
               children: [
                 // Row 1
                 _buildRow(
-                  ['⌫', 'AC', '%', '/'],
+                  const [
+                    _CalculatorKey('AC'),
+                    _CalculatorKey('%'),
+                    _CalculatorKey('÷', value: '/'),
+                    _CalculatorKey('⌫'),
+                  ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -199,7 +208,12 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 2
                 _buildRow(
-                  ['7', '8', '9', '*'],
+                  const [
+                    _CalculatorKey('7'),
+                    _CalculatorKey('8'),
+                    _CalculatorKey('9'),
+                    _CalculatorKey('×', value: '*'),
+                  ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -207,7 +221,12 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 3
                 _buildRow(
-                  ['4', '5', '6', '-'],
+                  const [
+                    _CalculatorKey('4'),
+                    _CalculatorKey('5'),
+                    _CalculatorKey('6'),
+                    _CalculatorKey('-'),
+                  ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -215,7 +234,12 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 4
                 _buildRow(
-                  ['1', '2', '3', '+'],
+                  const [
+                    _CalculatorKey('1'),
+                    _CalculatorKey('2'),
+                    _CalculatorKey('3'),
+                    _CalculatorKey('+'),
+                  ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -223,7 +247,11 @@ class CalculatorKeyboard extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Row 5
                 _buildRow(
-                  ['=', '0', '.', 'ตกลง'],
+                  const [
+                    _CalculatorKey('0', flex: 2),
+                    _CalculatorKey('.'),
+                    _CalculatorKey('ตกลง'),
+                  ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
@@ -238,15 +266,15 @@ class CalculatorKeyboard extends StatelessWidget {
   }
 
   Widget _buildRow(
-    List<String> keys,
+    List<_CalculatorKey> keys,
     Color textColor,
     Color numBg,
     Color opBg,
   ) {
     return Row(
       children: keys.map((key) {
-        final isOp = RegExp(r'[+\-*/AC⌫%]').hasMatch(key);
-        final isDone = key == 'ตกลง';
+        final isOp = {'+', '-', '*', '/', 'AC', '⌫', '%'}.contains(key.value);
+        final isDone = key.value == 'ตกลง';
 
         Color bg = numBg;
         Color txtColor = textColor;
@@ -258,6 +286,7 @@ class CalculatorKeyboard extends StatelessWidget {
         }
 
         return Expanded(
+          flex: key.flex,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: SizedBox(
@@ -270,14 +299,14 @@ class CalculatorKeyboard extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
                   ),
                 ),
-                onPressed: () => _handleKeyPress(key),
-                child: key == '⌫'
+                onPressed: () => _handleKeyPress(key.value),
+                child: key.value == '⌫'
                     ? Icon(Icons.backspace_outlined, color: textColor, size: 20)
                     : Text(
-                        key,
+                        key.label,
                         style: TextStyle(
                           fontSize: isDone ? 16 : 18,
                           fontWeight: isDone
