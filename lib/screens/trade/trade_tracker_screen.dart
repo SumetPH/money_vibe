@@ -1074,7 +1074,7 @@ class _AnnualTaxSummaryPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                'ยอดเกินทุนที่ต้องดูภาษี',
+                'ยอดโอนกลับส่วนเกินเงินต้น',
                 style: TextStyle(
                   color: secondaryColor,
                   fontSize: 13,
@@ -1092,7 +1092,7 @@ class _AnnualTaxSummaryPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${formatAmount(annualTaxSummary.taxableUsd)} USD',
+                    '${formatAmount(annualTaxSummary.taxableThb)} THB',
                     style: TextStyle(
                       color: taxableColor,
                       fontSize: 24,
@@ -1101,7 +1101,7 @@ class _AnnualTaxSummaryPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${formatAmount(annualTaxSummary.taxableThb)} THB',
+                    '${formatAmount(annualTaxSummary.taxableUsd)} USD',
                     style: TextStyle(color: secondaryColor, fontSize: 13),
                   ),
                 ],
@@ -1314,7 +1314,7 @@ class _AnnualReportTaxListItem extends StatelessWidget {
                       child: _CompactTaxMetric(
                         label: 'เงินทุน',
                         value:
-                            '${formatAmount(report.inflowUsd)} USD / ${formatAmount(report.inflowThb)} THB',
+                            '${formatAmount(report.inflowUsd)} USD \n${formatAmount(report.inflowThb)} THB',
                         color: secondaryColor,
                       ),
                     ),
