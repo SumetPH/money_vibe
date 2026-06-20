@@ -534,10 +534,17 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           onDelete: existing == null
               ? null
               : () => provider.deleteHolding(existing.id, portfolioId),
+          fetchCurrentPrice: _fetchCurrentHoldingPrice,
           generateId: provider.generateId,
         ),
       ),
     );
+  }
+
+  Future<double?> _fetchCurrentHoldingPrice(String ticker) async {
+    _priceService = _buildPriceService();
+    final prices = await _priceService.fetchPrices([ticker]);
+    return prices[ticker];
   }
 
   Future<void> _openHoldingSellForm(

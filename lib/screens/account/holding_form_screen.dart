@@ -31,6 +31,7 @@ class HoldingFormScreen extends StatefulWidget {
   final String portfolioId;
   final StockHolding? existing;
   final Future<void> Function(StockHolding holding) onSave;
+  final Future<double?> Function(String ticker)? fetchCurrentPrice;
   final Future<void> Function()? onDelete;
   final String Function() generateId;
 
@@ -40,6 +41,7 @@ class HoldingFormScreen extends StatefulWidget {
     required this.existing,
     required this.onSave,
     required this.generateId,
+    this.fetchCurrentPrice,
     this.onDelete,
   });
 
@@ -70,6 +72,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   bool _isCalculatorKeyboardVisible = false;
   bool _isSaving = false;
   bool _sellPlanEnabled = false;
+  bool _manualPeakProfitEnabled = false;
   String? _takeProfitError;
   String? _trailingStopError;
   String? _stopLossError;
@@ -295,7 +298,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 
     final group = _groupController.text.trim();
     final shares = double.tryParse(_sharesController.text.trim()) ?? 0;
-    final price = double.tryParse(_priceController.text.trim()) ?? 0;
+    var price = double.tryParse(_priceController.text.trim()) ?? 0;
     final cost = double.tryParse(_costController.text.trim()) ?? 0;
     final takeProfit = double.tryParse(_takeProfitController.text.trim()) ?? 0;
     final trailingStop =
@@ -305,6 +308,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     final manualPeakProfit = peakProfitText.isEmpty
         ? null
         : double.tryParse(peakProfitText);
+    final effectiveManualPeakProfit = _manualPeakProfitEnabled
+        ? manualPeakProfit
+        : null;
 
     setState(() {
       _takeProfitError = null;
@@ -332,10 +338,14 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         _stopLossError = 'กรุณากรอก Stop Loss %';
         hasError = true;
       }
-      if (peakProfitText.isNotEmpty && manualPeakProfit == null) {
+      if (_manualPeakProfitEnabled && peakProfitText.isEmpty) {
+        _peakProfitError = 'กรุณากรอกกำไรสูงสุด %';
+        hasError = true;
+      } else if (_manualPeakProfitEnabled && manualPeakProfit == null) {
         _peakProfitError = 'กรุณากรอกกำไรสูงสุด % ให้ถูกต้อง';
         hasError = true;
-      } else if (manualPeakProfit != null && manualPeakProfit < takeProfit) {
+      } else if (effectiveManualPeakProfit != null &&
+          effectiveManualPeakProfit < takeProfit) {
         _peakProfitError = 'กำไรสูงสุด % ต้องมากกว่าหรือเท่ากับ Take Profit %';
         hasError = true;
       }
@@ -345,43 +355,52 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       }
     }
 
-    final peakProfitPct = _resolvePeakProfitPct(
-      shares: shares,
-      priceUsd: price,
-      costBasisUsd: cost,
-      sellPlanEnabled: _sellPlanEnabled,
-      takeProfitPct: takeProfit,
-      manualPeakProfitPct: manualPeakProfit,
-    );
-
-    final holding = StockHolding(
-      id: widget.existing?.id ?? widget.generateId(),
-      portfolioId: widget.portfolioId,
-      ticker: ticker,
-      name: widget.existing?.name ?? '',
-      shares: shares,
-      priceUsd: price,
-      costBasisUsd: cost,
-      logoUrl: widget.existing?.logoUrl ?? '',
-      sortOrder: widget.existing?.sortOrder ?? 0,
-      sellPlanEnabled: _sellPlanEnabled,
-      takeProfitPct: _sellPlanEnabled
-          ? takeProfit
-          : (widget.existing?.takeProfitPct ?? takeProfit),
-      trailingStopPct: _sellPlanEnabled
-          ? trailingStop
-          : (widget.existing?.trailingStopPct ?? trailingStop),
-      stopLossPct: _sellPlanEnabled
-          ? stopLoss
-          : (widget.existing?.stopLossPct ?? stopLoss),
-      peakProfitPct: _sellPlanEnabled
-          ? peakProfitPct
-          : widget.existing?.peakProfitPct,
-      portfolioGroup: group,
-    );
-
     setState(() => _isSaving = true);
     try {
+      final currentPrice = await _fetchCurrentPrice(ticker);
+      if (currentPrice != null) {
+        price = currentPrice;
+        _priceController.text = formatStockHoldingEditableNumber(
+          currentPrice,
+          scale: stockHoldingPriceDecimalPlaces,
+        );
+      }
+
+      final peakProfitPct = _resolvePeakProfitPct(
+        shares: shares,
+        priceUsd: price,
+        costBasisUsd: cost,
+        sellPlanEnabled: _sellPlanEnabled,
+        takeProfitPct: takeProfit,
+        manualPeakProfitPct: effectiveManualPeakProfit,
+      );
+
+      final holding = StockHolding(
+        id: widget.existing?.id ?? widget.generateId(),
+        portfolioId: widget.portfolioId,
+        ticker: ticker,
+        name: widget.existing?.name ?? '',
+        shares: shares,
+        priceUsd: price,
+        costBasisUsd: cost,
+        logoUrl: widget.existing?.logoUrl ?? '',
+        sortOrder: widget.existing?.sortOrder ?? 0,
+        sellPlanEnabled: _sellPlanEnabled,
+        takeProfitPct: _sellPlanEnabled
+            ? takeProfit
+            : (widget.existing?.takeProfitPct ?? takeProfit),
+        trailingStopPct: _sellPlanEnabled
+            ? trailingStop
+            : (widget.existing?.trailingStopPct ?? trailingStop),
+        stopLossPct: _sellPlanEnabled
+            ? stopLoss
+            : (widget.existing?.stopLossPct ?? stopLoss),
+        peakProfitPct: _sellPlanEnabled
+            ? peakProfitPct
+            : widget.existing?.peakProfitPct,
+        portfolioGroup: group,
+      );
+
       await widget.onSave(holding);
       if (mounted) {
         Navigator.pop(context, true);
@@ -403,6 +422,15 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Future<double?> _fetchCurrentPrice(String ticker) async {
+    final fetchCurrentPrice = widget.fetchCurrentPrice;
+    if (fetchCurrentPrice == null) return null;
+
+    final price = await fetchCurrentPrice(ticker);
+    if (price == null || price <= 0) return null;
+    return price;
   }
 
   void _commitNumberFields() {
@@ -479,12 +507,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       priceUsd: priceUsd,
       costBasisUsd: costBasisUsd,
     );
-    if (currentPnlPct < takeProfitPct) {
-      return null;
-    }
 
     if (existing == null) {
-      return _roundPct(currentPnlPct);
+      return currentPnlPct >= takeProfitPct ? _roundPct(currentPnlPct) : null;
     }
 
     // Buying more or selling part of a position changes the investment basis,
@@ -507,10 +532,13 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       peakProfitPct: existing.peakProfitPct,
     ).hasInvestmentBasisChangedFrom(existing);
     if (basisChanged || !existing.sellPlanEnabled) {
-      return _roundPct(currentPnlPct);
+      return currentPnlPct >= takeProfitPct ? _roundPct(currentPnlPct) : null;
     }
 
     final previousPeak = existing.peakProfitPct;
+    if (previousPeak == null && currentPnlPct < takeProfitPct) {
+      return null;
+    }
     if (previousPeak == null || currentPnlPct > previousPeak) {
       return _roundPct(currentPnlPct);
     }
@@ -797,15 +825,49 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                 errorText: _stopLossError,
               ),
               _buildDivider(isDarkMode),
-              _HoldingNumberFieldRow(
-                label: 'กำไรสูงสุด %',
-                controller: _peakProfitController,
-                focusNode: _peakProfitFocusNode,
-                hintText: 'ปล่อยว่างให้ระบบคำนวณ',
-                isDarkMode: isDarkMode,
-                errorText: _peakProfitError,
-                inputFormatters: [_twoDecimalInputFormatter],
+              Container(
+                color:
+                    theme.cardTheme.color ??
+                    (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+                child: SwitchListTile(
+                  value: _manualPeakProfitEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _manualPeakProfitEnabled = value;
+                      _peakProfitError = null;
+                    });
+                    if (!value) {
+                      _peakProfitFocusNode.unfocus();
+                    }
+                  },
+                  title: Text(
+                    'กำหนดกำไรสูงสุดเอง',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _peakProfitStatusText(),
+                    style: TextStyle(fontSize: 13, color: labelColor),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
               ),
+              if (_manualPeakProfitEnabled) ...[
+                _buildDivider(isDarkMode),
+                _HoldingNumberFieldRow(
+                  label: 'กำไรสูงสุด %',
+                  controller: _peakProfitController,
+                  focusNode: _peakProfitFocusNode,
+                  hintText: '0.00',
+                  isDarkMode: isDarkMode,
+                  errorText: _peakProfitError,
+                  inputFormatters: [_twoDecimalInputFormatter],
+                ),
+              ],
               if (_sellPlanError != null)
                 Container(
                   width: double.infinity,
@@ -830,6 +892,18 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         ),
       ),
     );
+  }
+
+  String _peakProfitStatusText() {
+    if (_manualPeakProfitEnabled) {
+      return 'ใช้ค่าที่กรอกเอง';
+    }
+
+    final value = widget.existing?.peakProfitPct;
+    if (value == null) {
+      return 'อัตโนมัติ';
+    }
+    return 'อัตโนมัติ • ปัจจุบัน ${_formatPct(value)}%';
   }
 
   Widget _buildDivider(bool isDarkMode) {
