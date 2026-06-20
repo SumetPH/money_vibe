@@ -19,3 +19,4 @@
 \ir migrations/20260617160000_add_stock_trade_tax_fields.sql
 \ir migrations/20260617183610_create_portfolio_annual_reports.sql
 \ir migrations/20260618120000_add_dividend_fields_to_portfolio_annual_reports.sql
+\ir migrations/20260620090000_harden_security_linter_warnings.sql
