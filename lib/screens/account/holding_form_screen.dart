@@ -265,6 +265,19 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     }
   }
 
+  Future<void> _closeKeyboardBeforeRoutePop() async {
+    final keyboardController = _keyboardController;
+    _keyboardController = null;
+    _activeKeyboardController = null;
+    _unfocusNumberFields();
+    _setCalculatorKeyboardVisible(false);
+
+    if (keyboardController == null) return;
+
+    keyboardController.close();
+    await keyboardController.closed;
+  }
+
   void _setCalculatorKeyboardVisible(bool visible) {
     if (!mounted || _isCalculatorKeyboardVisible == visible) return;
     setState(() => _isCalculatorKeyboardVisible = visible);
@@ -402,6 +415,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       );
 
       await widget.onSave(holding);
+      if (mounted) {
+        await _closeKeyboardBeforeRoutePop();
+      }
       if (mounted) {
         Navigator.pop(context, true);
       }
