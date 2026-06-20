@@ -125,6 +125,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
   }
 
   void _createTransaction(BuildContext context, DateTime dueDate, bool isDark) {
+    final now = DateTime.now();
     final templateTx = AppTransaction(
       id: '', // will be replaced
       type: _recurring.transactionType,
@@ -132,13 +133,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
       accountId: _recurring.accountId,
       categoryId: _recurring.categoryId,
       toAccountId: _recurring.toAccountId,
-      dateTime: DateTime(
-        dueDate.year,
-        dueDate.month,
-        dueDate.day,
-        DateTime.now().hour,
-        DateTime.now().minute,
-      ),
+      dateTime: now,
       note: _recurring.note,
     );
 
