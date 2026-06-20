@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/account_provider.dart';
@@ -21,57 +20,10 @@ class DataManagementScreen extends StatefulWidget {
 }
 
 class _DataManagementScreenState extends State<DataManagementScreen> {
-  final _urlController = TextEditingController();
-  final _keyController = TextEditingController();
   bool _isTestingConnection = false;
   String? _connectionStatus;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCurrentConfig();
-  }
-
-  void _loadCurrentConfig() {
-    final dbManager = DatabaseManager();
-    _urlController.text = dbManager.supabaseUrl ?? '';
-    _keyController.text = dbManager.supabaseAnonKey ?? '';
-  }
-
-  @override
-  void dispose() {
-    _urlController.dispose();
-    _keyController.dispose();
-    super.dispose();
-  }
-
-  String _normalizeSupabaseUrl(String url) {
-    var normalized = url.trim();
-    if (normalized.isEmpty) return normalized;
-    if (!normalized.startsWith('http://') &&
-        !normalized.startsWith('https://')) {
-      normalized = 'https://$normalized';
-    }
-    if (normalized.endsWith('/')) {
-      normalized = normalized.substring(0, normalized.length - 1);
-    }
-    return normalized;
-  }
-
   Future<void> _testConnection() async {
-    final url = _normalizeSupabaseUrl(_urlController.text);
-    final key = _keyController.text.trim();
-
-    if (url.isEmpty || key.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณากรอก URL และ API Key ก่อนทดสอบ'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isTestingConnection = true;
       _connectionStatus = null;
@@ -82,10 +34,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     String? errorMessage;
 
     try {
-      success = await dbManager.testSupabaseConnectionWithCredentials(
-        url: url,
-        anonKey: key,
-      );
+      success = await dbManager.testSupabaseConnection();
     } catch (e) {
       errorMessage = e.toString();
       success = false;
@@ -107,82 +56,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           backgroundColor: success ? AppColors.income : AppColors.expense,
         ),
       );
-    }
-  }
-
-  Future<void> _saveSupabaseConfig() async {
-    final url = _normalizeSupabaseUrl(_urlController.text);
-    final key = _keyController.text.trim();
-
-    if (url.isEmpty || key.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณากรอก URL และ API Key'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final dbManager = DatabaseManager();
-    final success = await dbManager.configureSupabase(url: url, anonKey: key);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'บันทึกการตั้งค่าเรียบร้อย' : 'ไม่สามารถบันทึกได้',
-          ),
-          backgroundColor: success ? AppColors.income : AppColors.expense,
-        ),
-      );
-    }
-  }
-
-  Future<void> _clearSupabaseConfig() async {
-    // Read providers before any await
-    final authProvider = context.read<AuthProvider>();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ยืนยันการลบ'),
-        content: const Text(
-          'ต้องการลบการตั้งค่า Supabase ใช่หรือไม่?\n'
-          'แอพจะไม่สามารถใช้งานได้จนกว่าจะตั้งค่าใหม่',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('ลบ', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    // Sign out first
-    await authProvider.signOut();
-
-    // Clear Supabase config
-    final dbManager = DatabaseManager();
-    await dbManager.clearSupabaseConfig();
-
-    _urlController.clear();
-    _keyController.clear();
-
-    scaffoldMessenger.showSnackBar(
-      const SnackBar(content: Text('ลบการตั้งค่าเรียบร้อย')),
-    );
-
-    if (mounted) {
-      context.go('/setup');
     }
   }
 
@@ -370,17 +243,14 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       ),
       body: Consumer<DatabaseManager>(
         builder: (context, dbManager, _) {
+          final showBuildDetails = dbManager.config?.isProduction == false;
+
           return SafeArea(
             top: false,
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ========== SECTION: SUPABASE CONFIG ==========
-                _buildSectionTitle(
-                  'ตั้งค่า Supabase',
-                  textColor,
-                  secondaryTextColor,
-                ),
+                _buildSectionTitle('ฐานข้อมูล', textColor, secondaryTextColor),
                 const SizedBox(height: 8),
                 _buildCard(
                   surfaceColor: surfaceColor,
@@ -425,84 +295,92 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _urlController,
-                        decoration: InputDecoration(
-                          labelText: 'Supabase URL',
-                          hintText: 'https://your-project.supabase.co',
-                          labelStyle: TextStyle(color: secondaryTextColor),
-                          hintStyle: TextStyle(
-                            color: secondaryTextColor.withAlpha(128),
+                      if (showBuildDetails) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? AppColors.darkBackground
+                                : AppColors.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: dividerColor),
                           ),
-                          border: const OutlineInputBorder(),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: dividerColor),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AppColors.header),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildConfigRow(
+                                label: 'Environment',
+                                value: dbManager.config?.environmentName ?? '-',
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                              ),
+                              Divider(color: dividerColor, height: 20),
+                              _buildConfigRow(
+                                label: 'Project',
+                                value:
+                                    dbManager.config?.maskedSupabaseUrl ??
+                                    'ไม่ได้ตั้งค่า',
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                              ),
+                            ],
                           ),
                         ),
-                        style: TextStyle(color: textColor),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _keyController,
-                        decoration: InputDecoration(
-                          labelText: 'Anon Key',
-                          hintText: 'your-anon-key',
-                          labelStyle: TextStyle(color: secondaryTextColor),
-                          hintStyle: TextStyle(
-                            color: secondaryTextColor.withAlpha(128),
+                      ],
+                      if (dbManager.error != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.expense.withAlpha(18),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          border: const OutlineInputBorder(),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: dividerColor),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AppColors.header),
+                          child: Text(
+                            dbManager.error!,
+                            style: TextStyle(
+                              color: AppColors.expense,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                        style: TextStyle(color: textColor),
-                        obscureText: true,
-                      ),
+                      ],
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _isTestingConnection
-                                  ? null
-                                  : _testConnection,
-                              icon: _isTestingConnection
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.network_check, size: 18),
-                              label: const Text('ทดสอบ'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: textColor,
-                              ),
-                            ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              dbManager.isConfigured && !_isTestingConnection
+                              ? _testConnection
+                              : null,
+                          icon: _isTestingConnection
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.network_check, size: 18),
+                          label: const Text('ทดสอบการเชื่อมต่อ'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: textColor,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _saveSupabaseConfig,
-                              icon: const Icon(Icons.save, size: 18),
-                              label: const Text('บันทึก'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.header,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                      if (!dbManager.isConfigured) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'ค่า Supabase ต้องมากับ build เท่านั้น ผู้ใช้ไม่สามารถแก้จากในแอปได้',
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                       if (_connectionStatus != null) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -512,17 +390,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                                 ? AppColors.income
                                 : AppColors.expense,
                             fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      if (dbManager.isConfigured) ...[
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: _clearSupabaseConfig,
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          label: const Text('ลบการตั้งค่า'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.expense,
                           ),
                         ),
                       ],
@@ -756,6 +623,36 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         ],
       ),
       child: child,
+    );
+  }
+
+  Widget _buildConfigRow({
+    required String label,
+    required String value,
+    required Color textColor,
+    required Color secondaryTextColor,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(color: secondaryTextColor, fontSize: 12),
+          ),
+        ),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -1,9 +1,14 @@
 #!/bin/bash
 # Build script for iPA
 
+set -e
+
+source "$(dirname "$0")/flutter_env.sh"
+resolve_flutter_env "${1:-prod}"
+
 echo "📦 Building for IPA..."
 
-flutter build ipa --release --no-tree-shake-icons --export-options-plist=ios/ExportOptions-development.plist
+flutter build ipa --release --no-tree-shake-icons "${FLUTTER_ENV_ARGS[@]}" --export-options-plist=ios/ExportOptions-development.plist
 
 destination_dir="/Users/sumetph/Documents/Money Vibe/ipa"
 random_suffix=$RANDOM
@@ -19,13 +24,11 @@ echo "✅ IPA built!"
 
 # ---------------------------------------------------------------------
 
-set -e
-
 BUILD_MARKER=$(date +%s)
 
 # web release
 echo "📦 Building for Web..."
-flutter build web --release --no-tree-shake-icons
+flutter build web --release --no-tree-shake-icons "${FLUTTER_ENV_ARGS[@]}"
 
 echo "👀 Copying web build to github folder..."
 cp -R ./build/web/* /Users/sumetph/Development/money/money-vibe-build/web/

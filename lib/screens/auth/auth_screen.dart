@@ -442,7 +442,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             );
                           },
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: const Text('ตั้งค่า Supabase'),
+                    label: const Text('สถานะฐานข้อมูล'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: secondaryTextColor,
                       side: BorderSide(

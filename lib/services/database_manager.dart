@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import '../repositories/database_repository.dart';
 import '../repositories/supabase_repository.dart';
 
@@ -10,17 +10,12 @@ import '../repositories/supabase_repository.dart';
 /// - ตรงกันทุก device แบบ real-time
 /// - ไม่มี SQLite (ไม่ต้อง sync, ไม่ต้อง migration)
 class DatabaseManager extends ChangeNotifier {
-  static const String _supabaseUrlKey = 'supabase_url';
-  static const String _supabaseKeyKey = 'supabase_anon_key';
-
   static final DatabaseManager _instance = DatabaseManager._internal();
   factory DatabaseManager() => _instance;
   DatabaseManager._internal();
 
   DatabaseRepository? _repository;
-
-  String? _supabaseUrl;
-  String? _supabaseAnonKey;
+  AppConfig? _config;
   bool _isLoading = false;
   String? _error;
 
@@ -37,14 +32,13 @@ class DatabaseManager extends ChangeNotifier {
     _repository = repo;
   }
 
+  DatabaseRepository? get repositoryOrNull => _repository;
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasError => _error != null;
-  bool get isConfigured => _supabaseUrl != null && _supabaseAnonKey != null;
-
-  // Getters for saved config (for auto-fill in settings)
-  String? get supabaseUrl => _supabaseUrl;
-  String? get supabaseAnonKey => _supabaseAnonKey;
+  bool get isConfigured => _repository != null && _config != null;
+  AppConfig? get config => _config;
 
   // ── Initialization ─────────────────────────────────────────────────────────
 
@@ -53,89 +47,29 @@ class DatabaseManager extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _supabaseUrl = prefs.getString(_supabaseUrlKey);
-      _supabaseAnonKey = prefs.getString(_supabaseKeyKey);
-
-      if (isConfigured) {
-        _repository = SupabaseRepository(
-          supabaseUrl: _supabaseUrl!,
-          supabaseAnonKey: _supabaseAnonKey!,
-        );
-        await _repository!.init();
-        debugPrint('[DatabaseManager] Connected to Supabase');
-      } else {
-        debugPrint('[DatabaseManager] Supabase not configured yet');
-      }
+      final config = AppConfig.fromEnvironment();
+      _config = config;
+      _repository = SupabaseRepository(
+        supabaseUrl: config.supabaseUrl,
+        supabaseAnonKey: config.supabaseAnonKey,
+      );
+      await _repository!.init();
+      debugPrint(
+        '[DatabaseManager] Connected to Supabase (${config.environmentName})',
+      );
 
       _error = null;
+    } on AppConfigException catch (e) {
+      debugPrint('[DatabaseManager] Config error: ${e.message}');
+      _repository = null;
+      _config = null;
+      _error = e.message;
     } catch (e, stackTrace) {
-      debugPrint('[DatabaseManager] Initialization error: $e');
+      debugPrint('[DatabaseManager] Initialization error');
       debugPrint('[DatabaseManager] Stack trace: $stackTrace');
       _error = e.toString();
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ── Configuration ──────────────────────────────────────────────────────────
-
-  Future<bool> configureSupabase({
-    required String url,
-    required String anonKey,
-  }) async {
-    _setLoading(true);
-
-    try {
-      // Test connection first
-      final testRepo = SupabaseRepository(
-        supabaseUrl: url,
-        supabaseAnonKey: anonKey,
-      );
-      await testRepo.init();
-
-      if (!await testRepo.isConnected()) {
-        throw Exception('Cannot connect to Supabase');
-      }
-
-      // Save config
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_supabaseUrlKey, url);
-      await prefs.setString(_supabaseKeyKey, anonKey);
-
-      _supabaseUrl = url;
-      _supabaseAnonKey = anonKey;
-      _repository = testRepo;
-
-      _error = null;
-      notifyListeners();
-      debugPrint('[DatabaseManager] Supabase configured successfully');
-      return true;
-    } catch (e) {
-      debugPrint('[DatabaseManager] Configuration error: $e');
-      _error = e.toString();
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> clearSupabaseConfig() async {
-    _setLoading(true);
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_supabaseUrlKey);
-      await prefs.remove(_supabaseKeyKey);
-
-      await _repository?.close();
       _repository = null;
-      _supabaseUrl = null;
-      _supabaseAnonKey = null;
-
-      _error = null;
-      notifyListeners();
-      debugPrint('[DatabaseManager] Supabase config cleared');
+      _config = null;
     } finally {
       _setLoading(false);
     }
@@ -145,23 +79,8 @@ class DatabaseManager extends ChangeNotifier {
 
   Future<bool> testSupabaseConnection() async {
     if (!isConfigured) return false;
-    return await testSupabaseConnectionWithCredentials(
-      url: _supabaseUrl!,
-      anonKey: _supabaseAnonKey!,
-    );
-  }
-
-  Future<bool> testSupabaseConnectionWithCredentials({
-    required String url,
-    required String anonKey,
-  }) async {
     try {
-      final testRepo = SupabaseRepository(
-        supabaseUrl: url,
-        supabaseAnonKey: anonKey,
-      );
-      await testRepo.init();
-      return await testRepo.isConnected();
+      return await _repository!.isConnected();
     } catch (e) {
       debugPrint('[DatabaseManager] Connection test failed: $e');
       return false;

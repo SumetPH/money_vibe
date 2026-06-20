@@ -68,7 +68,7 @@ void main() async {
   final authProvider = AuthProvider();
   final llmProvider = LlmProvider();
   final syncProvider = SyncProvider(
-    repository: dbManager.repository,
+    repository: dbManager.repositoryOrNull,
     accountProvider: accountProvider,
     categoryProvider: categoryProvider,
     transactionProvider: transactionProvider,

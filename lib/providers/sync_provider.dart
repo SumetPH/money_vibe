@@ -8,7 +8,7 @@ import 'budget_provider.dart';
 import 'recurring_transaction_provider.dart';
 
 class SyncProvider extends ChangeNotifier {
-  final DatabaseRepository repository;
+  final DatabaseRepository? repository;
   final AccountProvider accountProvider;
   final CategoryProvider categoryProvider;
   final TransactionProvider transactionProvider;
@@ -28,7 +28,7 @@ class SyncProvider extends ChangeNotifier {
     required this.budgetProvider,
     required this.recurringProvider,
   }) {
-    _localSyncSubscription = repository.onLocalSyncLogUpdate.listen((module) {
+    _localSyncSubscription = repository?.onLocalSyncLogUpdate.listen((module) {
       final now = DateTime.now();
       debugPrint(
         '[SyncProvider] Local write detected for module "$module". Updating local timestamp to $now.',
@@ -45,8 +45,11 @@ class SyncProvider extends ChangeNotifier {
 
   /// เช็คและอัปเดตข้อมูลจาก Server
   Future<void> checkAndSync() async {
+    final repo = repository;
+    if (repo == null) return;
+
     // 1. ตรวจสอบ Auth (ป้องกัน Error ตอนยังไม่ Login)
-    if (!repository.isAuthenticated) return;
+    if (!repo.isAuthenticated) return;
 
     // 2. ป้องกันการเรียกซ้อนกัน
     if (_isChecking) return;
@@ -63,7 +66,7 @@ class SyncProvider extends ChangeNotifier {
 
     try {
       debugPrint('[SyncProvider] Checking for remote updates...');
-      final remoteLogs = await repository.getSyncLogs();
+      final remoteLogs = await repo.getSyncLogs();
 
       if (remoteLogs.isEmpty) {
         debugPrint('[SyncProvider] No remote logs found.');

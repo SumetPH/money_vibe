@@ -1,0 +1,9 @@
+{
+  "APP_ENV": "dev",
+  "SUPABASE_URL": "https://your-dev-project.supabase.co",
+  "SUPABASE_ANON_KEY": "your-dev-anon-key",
+  "DEBUG_WEB_BOOTSTRAP": "true",
+  "DEBUG_LOGIN_EMAIL": "dev@example.com",
+  "DEBUG_LOGIN_PASSWORD": "local-dev-password",
+  "DEBUG_FINNHUB_API_KEY": "optional-local-dev-finnhub-key"
+}

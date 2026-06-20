@@ -3,11 +3,14 @@
 
 set -e
 
+source "$(dirname "$0")/flutter_env.sh"
+resolve_flutter_env "${1:-prod}"
+
 BUILD_MARKER=$(date +%s)
 
 # web release
 echo "📦 Building for Web..."
-flutter build web --release --no-tree-shake-icons
+flutter build web --release --no-tree-shake-icons "${FLUTTER_ENV_ARGS[@]}"
 
 echo "👀 Copying web build to github folder..."
 cp -R ./build/web/* /Users/sumetph/Development/money/money-vibe-build/web/

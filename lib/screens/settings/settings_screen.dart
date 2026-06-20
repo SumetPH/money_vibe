@@ -131,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(color: textColor),
                     ),
                     subtitle: Text(
-                      'ไปที่จัดการข้อมูลเพื่อตั้งค่า',
+                      'แอปนี้ต้องถูก build พร้อมค่า Supabase',
                       style: TextStyle(color: secondaryTextColor),
                     ),
                     trailing: Icon(
@@ -326,8 +326,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   subtitle: Text(
                     dbManager.isConfigured
-                        ? 'ฐานข้อมูล: Supabase (Cloud) - แตะเพื่อตั้งค่า'
-                        : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่า - แตะเพื่อตั้งค่า',
+                        ? 'ฐานข้อมูล: Supabase (Cloud)'
+                        : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
                     style: TextStyle(color: secondaryTextColor),
                   ),
                   trailing: Icon(

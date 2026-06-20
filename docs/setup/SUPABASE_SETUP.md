@@ -34,7 +34,7 @@
 ## ขั้นตอนที่ 3: สร้าง Tables
 
 1. ไปที่ **SQL Editor** ใน Supabase Dashboard
-2. เปิดไฟล์ `supabase/schema.sql` จากโปรเจค Flutter
+2. เปิดไฟล์ `supabase/init_schema.sql` จากโปรเจค Flutter
 3. Copy ทั้งหมดและ Paste ลงใน SQL Editor
 4. กด **Run** เพื่อสร้าง tables ทั้งหมด
 
@@ -77,16 +77,27 @@
 
 ---
 
-## ขั้นตอนที่ 5: ตั้งค่าในแอพ
+## ขั้นตอนที่ 5: ตั้งค่า Build Config
 
-1. เปิดแอพ Flutter
-2. ไปที่ **ตั้งค่า** → **ตั้งค่า Database**
-3. ใส่ข้อมูล:
-   - **Supabase URL**: วาง URL ที่คัดลอกมา
-   - **Anon Key**: วาง API key ที่คัดลอกมา
-4. กด **"ทดสอบ"** เพื่อตรวจสอบการเชื่อมต่อ
-5. ถ้าสำเร็จ กด **"บันทึก"**
-6. แอพจะพาไปหน้า **Login/Register** โดยอัตโนมัติ
+แอปไม่ให้ผู้ใช้กรอก Supabase URL/Key ในหน้า UI แล้ว ค่า Supabase ต้องมากับ build เท่านั้น
+
+1. สร้างไฟล์ config จากตัวอย่าง:
+   ```bash
+   cp config/dev.example.json config/dev.json
+   cp config/prod.example.json config/prod.json
+   ```
+2. ใส่ค่าต่อไปนี้ในแต่ละไฟล์:
+   - `APP_ENV`: `dev` หรือ `prod`
+   - `SUPABASE_URL`: URL ของ project นั้น
+   - `SUPABASE_ANON_KEY`: anon/public key เท่านั้น
+3. ห้ามใส่ `service_role` หรือ `SUPABASE_SERVICE_ROLE_KEY` ใน config ของแอป เพราะ key นั้นมีสิทธิ์สูงและต้องอยู่ฝั่ง server เท่านั้น
+4. รันหรือ build ด้วย config:
+   ```bash
+   flutter run --dart-define-from-file=config/dev.json
+   ./scripts/build_android.sh prod
+   ./scripts/build_web.sh prod
+   ```
+5. เปิดแอปแล้วเข้าสู่ระบบหรือสมัครสมาชิกได้ทันที
 
 ---
 
@@ -108,9 +119,9 @@
 ```
 1. เปิดแอพ
    ↓
-2. ตรวจสอบ Configuration
-   ├─ ยังไม่ตั้งค่า Supabase → เข้าหน้า Setup
-   └─ ตั้งค่าแล้ว → ตรวจสอบ Login
+2. ตรวจสอบ Build Configuration
+   ├─ Config ไม่ถูกต้อง → แสดงหน้าแจ้งปัญหา build config
+   └─ Config ถูกต้อง → ตรวจสอบ Login
                     ├─ Logged in → เข้าหน้าหลัก
                     └─ Not logged in → แสดงหน้า Login
 ```
@@ -123,6 +134,9 @@
 - ✅ **RLS Policies** แยกข้อมูลต่อ user
 - ✅ ข้อมูลถูกเข้ารหัสใน transit (HTTPS)
 - ✅ รหัสผ่านถูก hash ก่อนเก็บ (Supabase จัดการให้)
+- ✅ Production config ต้องใช้ HTTPS
+- ✅ แอปและ build scripts ปฏิเสธ key ที่ดูเป็น service role key
+- ✅ ไฟล์ `config/*.json` ถูก ignore จาก git และ commit ได้เฉพาะ `*.example.json`
 
 ---
 
@@ -134,4 +148,4 @@
 
 ---
 
-*Last updated: 2026-05-10*
+*Last updated: 2026-06-20*

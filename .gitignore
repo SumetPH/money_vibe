@@ -52,3 +52,7 @@ macos/Pods/
 .claude/
 
 .codex/
+
+# Build-time app config
+config/*.json
+!config/*.example.json

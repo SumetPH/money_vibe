@@ -8,12 +8,6 @@ class DebugBootstrapService {
   static final DebugBootstrapService instance = DebugBootstrapService._();
 
   static const bool _enabled = bool.fromEnvironment('DEBUG_WEB_BOOTSTRAP');
-  static const String _supabaseUrl = String.fromEnvironment(
-    'DEBUG_SUPABASE_URL',
-  );
-  static const String _supabaseAnonKey = String.fromEnvironment(
-    'DEBUG_SUPABASE_ANON_KEY',
-  );
   static const String _loginEmail = String.fromEnvironment('DEBUG_LOGIN_EMAIL');
   static const String _loginPassword = String.fromEnvironment(
     'DEBUG_LOGIN_PASSWORD',
@@ -30,8 +24,6 @@ class DebugBootstrapService {
     'DEBUG_BUDGET_START_DAY',
   );
 
-  static const String _supabaseUrlKey = 'supabase_url';
-  static const String _supabaseKeyKey = 'supabase_anon_key';
   static const String _finnhubApiKeyKey = 'finnhub_api_key';
   static const String _darkModeKey = 'dark_mode';
   static const String _budgetStartDayKey = 'budget_start_day';
@@ -45,14 +37,6 @@ class DebugBootstrapService {
 
     final prefs = await SharedPreferences.getInstance();
     final appliedKeys = <String>[];
-
-    final supabaseUrl = _normalizeUrl(_supabaseUrl);
-    final supabaseAnonKey = _trimmedOrNull(_supabaseAnonKey);
-    if (supabaseUrl != null && supabaseAnonKey != null) {
-      await prefs.setString(_supabaseUrlKey, supabaseUrl);
-      await prefs.setString(_supabaseKeyKey, supabaseAnonKey);
-      appliedKeys.add('supabase');
-    }
 
     final finnhubApiKey = _trimmedOrNull(_finnhubApiKey);
     if (finnhubApiKey != null) {
@@ -105,21 +89,5 @@ class DebugBootstrapService {
   String? _trimmedOrNull(String value) {
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
-  }
-
-  String? _normalizeUrl(String value) {
-    var normalized = _trimmedOrNull(value);
-    if (normalized == null) return null;
-
-    if (!normalized.startsWith('http://') &&
-        !normalized.startsWith('https://')) {
-      normalized = 'https://$normalized';
-    }
-
-    if (normalized.endsWith('/')) {
-      normalized = normalized.substring(0, normalized.length - 1);
-    }
-
-    return normalized;
   }
 }
