@@ -251,6 +251,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   context,
                   groupSummaries,
                   periodLabel,
+                  totalBudget,
+                  totalSpent,
+                  totalRemaining,
+                  overallProgress,
                   isDarkMode,
                 ),
               ),
@@ -644,6 +648,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     BuildContext context,
     List<_BudgetGroupSummary> groupSummaries,
     String periodLabel,
+    double totalBudget,
+    double totalSpent,
+    double totalRemaining,
+    double overallProgress,
     bool isDarkMode,
   ) {
     showModalBottomSheet(
@@ -654,6 +662,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       builder: (_) => _BudgetGroupDetailsSheet(
         groupSummaries: groupSummaries,
         periodLabel: periodLabel,
+        totalBudget: totalBudget,
+        totalSpent: totalSpent,
+        totalRemaining: totalRemaining,
+        overallProgress: overallProgress,
         isDarkMode: isDarkMode,
       ),
     );
@@ -1264,11 +1276,19 @@ class _BudgetGroupSummary {
 class _BudgetGroupDetailsSheet extends StatelessWidget {
   final List<_BudgetGroupSummary> groupSummaries;
   final String periodLabel;
+  final double totalBudget;
+  final double totalSpent;
+  final double totalRemaining;
+  final double overallProgress;
   final bool isDarkMode;
 
   const _BudgetGroupDetailsSheet({
     required this.groupSummaries,
     required this.periodLabel,
+    required this.totalBudget,
+    required this.totalSpent,
+    required this.totalRemaining,
+    required this.overallProgress,
     required this.isDarkMode,
   });
 
@@ -1334,6 +1354,19 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          Divider(height: 1, color: dividerColor),
+          const SizedBox(height: 12),
+          _SummaryHeader(
+            totalBudget: totalBudget,
+            totalSpent: totalSpent,
+            totalRemaining: totalRemaining,
+            progress: overallProgress,
+            isDarkMode: isDarkMode,
+            surfaceColor: bgColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            dividerColor: dividerColor,
           ),
           Divider(height: 1, color: dividerColor),
           Expanded(

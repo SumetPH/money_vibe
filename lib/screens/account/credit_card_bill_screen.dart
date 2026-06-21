@@ -36,7 +36,8 @@ class CreditCardBillScreen extends StatefulWidget {
 class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
   List<CreditCardBill> _bills = [];
   bool _loading = true;
-  String _lastTxKey = '';
+  int? _lastTxKey;
+  int _recomputeVersion = 0;
 
   String _formatBillDateRange(CreditCardBill bill) {
     const thaiMonths = [
@@ -95,17 +96,34 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
   }
 
   void _scheduleRecomputeIfNeeded(List<AppTransaction> transactions) {
-    // ใช้ length + first/last id เป็น key ตรวจจับการเปลี่ยนแปลง
-    final key =
-        '${transactions.length}_${transactions.firstOrNull?.id}_${transactions.lastOrNull?.id}';
+    final relevantTransactions = CreditCardBillService.filterCardTransactions(
+      widget.account.id,
+      transactions,
+    );
+    final key = Object.hashAll(
+      relevantTransactions.map(
+        (tx) => Object.hash(
+          tx.id,
+          tx.type,
+          tx.amount,
+          tx.accountId,
+          tx.toAccountId,
+          tx.dateTime,
+        ),
+      ),
+    );
     if (key == _lastTxKey) return;
     _lastTxKey = key;
+    final recomputeVersion = ++_recomputeVersion;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _recompute(transactions);
+      if (mounted) _recompute(relevantTransactions, recomputeVersion);
     });
   }
 
-  Future<void> _recompute(List<AppTransaction> transactions) async {
+  Future<void> _recompute(
+    List<AppTransaction> relevantTransactions,
+    int recomputeVersion,
+  ) async {
     if (widget.account.statementDay == null) {
       setState(() {
         _bills = [];
@@ -118,17 +136,11 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
       setState(() => _loading = true);
     }
 
-    // กรองเฉพาะธุรกรรมของบัตรใบนี้ก่อนส่งเข้า Isolate เพื่อลด overhead ในการ copy ข้อมูลข้ามเทรด
-    final relevantTransactions = CreditCardBillService.filterCardTransactions(
-      widget.account.id,
-      transactions,
-    );
-
     final bills = await compute(
       _computeBillsIsolate,
       _BillParams(widget.account, relevantTransactions),
     );
-    if (mounted) {
+    if (mounted && recomputeVersion == _recomputeVersion) {
       setState(() {
         _bills = bills;
         _loading = false;
