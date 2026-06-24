@@ -27,6 +27,8 @@ TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
       return match ? newValue : oldValue;
     });
 
+double _roundToCents(double value) => (value * 100).roundToDouble() / 100;
+
 class HoldingSellFormScreen extends StatefulWidget {
   final StockHolding holding;
   final SellHoldingCallback onSell;
@@ -111,7 +113,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     final price = double.tryParse(_sellPriceController.text.trim()) ?? 0;
     final value = shares * price;
     if (value > 0) {
-      final newText = formatStockHoldingEditableNumber(value, scale: 2);
+      final newText = formatStockHoldingEditableNumber(value, scale: 4);
       if (_grossProceedsController.text != newText) {
         _grossProceedsController.text = newText;
       }
@@ -124,11 +126,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
   void _syncCashReceived({bool notify = true}) {
     if (_cashEdited) return;
-    final gross = double.tryParse(_grossProceedsController.text.trim()) ?? 0;
-    final broker = double.tryParse(_brokerFeeController.text.trim()) ?? 0;
-    final tax = double.tryParse(_taxFeeController.text.trim()) ?? 0;
-    final exchange = double.tryParse(_exchangeFeeController.text.trim()) ?? 0;
-    final value = gross - broker - tax - exchange;
+    final value = _calculateCashReceivedFromDetails();
 
     if (value > 0) {
       final newText = formatStockHoldingEditableNumber(value, scale: 2);
@@ -143,14 +141,27 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     if (notify) setState(() {});
   }
 
+  double _calculateCashReceivedFromDetails() {
+    final gross = double.tryParse(_grossProceedsController.text.trim()) ?? 0;
+    final broker = double.tryParse(_brokerFeeController.text.trim()) ?? 0;
+    final tax = double.tryParse(_taxFeeController.text.trim()) ?? 0;
+    final exchange = double.tryParse(_exchangeFeeController.text.trim()) ?? 0;
+    return gross - broker - tax - exchange;
+  }
+
   Future<void> _submit() async {
     final shares = double.tryParse(_sharesController.text.trim());
     final sellPrice = double.tryParse(_sellPriceController.text.trim());
-    final cashReceived = double.tryParse(_cashReceivedController.text.trim());
     final grossProceeds = double.tryParse(_grossProceedsController.text.trim());
     final brokerFee = double.tryParse(_brokerFeeController.text.trim());
     final taxFee = double.tryParse(_taxFeeController.text.trim());
     final exchangeFee = double.tryParse(_exchangeFeeController.text.trim());
+    final displayedCashReceived = double.tryParse(
+      _cashReceivedController.text.trim(),
+    );
+    final cashReceived = _cashEdited
+        ? displayedCashReceived
+        : _roundToCents(_calculateCashReceivedFromDetails());
 
     setState(() {
       _sharesError = null;
@@ -349,7 +360,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _cashReceivedError,
-                inputFormatters: [_decimalInputFormatter(4)],
+                inputFormatters: [_decimalInputFormatter(2)],
                 onChanged: (_) {
                   _cashEdited = true;
                   setState(() {});
