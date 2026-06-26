@@ -732,23 +732,24 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     itemBuilder: (_, i) {
                       final day = i + 1;
                       final selected = sp.budgetStartDay == day;
-                      return GestureDetector(
-                        onTap: () {
-                          sp.setBudgetStartDay(day);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: selected ? selectedColor : bgColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: selected
-                                ? null
-                                : Border.all(
-                                    color: isDark
-                                        ? AppColors.darkDivider
-                                        : AppColors.divider,
-                                  ),
-                          ),
+                      return Material(
+                        color: selected ? selectedColor : bgColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: selected
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: isDark
+                                      ? AppColors.darkDivider
+                                      : AppColors.divider,
+                                ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            sp.setBudgetStartDay(day);
+                            Navigator.pop(context);
+                          },
                           child: Center(
                             child: Text(
                               '$day',

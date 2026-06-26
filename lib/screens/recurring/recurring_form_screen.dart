@@ -694,12 +694,16 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                             style: TextStyle(fontSize: 15, color: textPrimary),
                           ),
                           const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () => setState(() => _endDate = null),
-                            child: Icon(
-                              Icons.close,
-                              size: 16,
-                              color: textSecondary,
+                          Material(
+                            color: Colors.transparent,
+                            child: InkResponse(
+                              onTap: () => setState(() => _endDate = null),
+                              radius: 16,
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: textSecondary,
+                              ),
                             ),
                           ),
                         ] else
@@ -1124,23 +1128,24 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 itemBuilder: (_, i) {
                   final day = i; // 0 = สิ้นเดือน, 1-31 = actual day
                   final isSelected = _dayOfMonth == day;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _dayOfMonth = day);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected ? selectedColor : bgColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: isSelected
-                            ? null
-                            : Border.all(
-                                color: isDark
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                      ),
+                  return Material(
+                    color: isSelected ? selectedColor : bgColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: isSelected
+                          ? BorderSide.none
+                          : BorderSide(
+                              color: isDark
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider,
+                            ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _dayOfMonth = day);
+                        Navigator.pop(context);
+                      },
                       child: Center(
                         child: Text(
                           day == 0 ? 'สิ้น' : '$day',
@@ -1270,29 +1275,30 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     final isSelected =
                         selectedYear == initialDate.year &&
                         month == initialDate.month;
-                    return GestureDetector(
-                      onTap: () {
-                        // For start date, use day 1; for end date, use last day
-                        final day = isEnd
-                            ? DateTime(selectedYear, month + 1, 0).day
-                            : 1;
-                        Navigator.pop(
-                          context,
-                          DateTime(selectedYear, month, day),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected ? selectedColor : bgColor,
-                          borderRadius: BorderRadius.circular(8),
-                          border: isSelected
-                              ? null
-                              : Border.all(
-                                  color: isDark
-                                      ? AppColors.darkDivider
-                                      : AppColors.divider,
-                                ),
-                        ),
+                    return Material(
+                      color: isSelected ? selectedColor : bgColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: isSelected
+                            ? BorderSide.none
+                            : BorderSide(
+                                color: isDark
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
+                              ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          // For start date, use day 1; for end date, use last day
+                          final day = isEnd
+                              ? DateTime(selectedYear, month + 1, 0).day
+                              : 1;
+                          Navigator.pop(
+                            context,
+                            DateTime(selectedYear, month, day),
+                          );
+                        },
                         child: Center(
                           child: Text(
                             _thaiMonthsShort[month - 1],
@@ -1475,21 +1481,20 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 itemBuilder: (_, i) {
                   final icon = AppColors.accountIcons[i];
                   final selected = icon == _icon;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _icon = icon);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? _color.withValues(alpha: 0.15)
-                            : bgColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: selected
-                            ? Border.all(color: _color, width: 2)
-                            : null,
-                      ),
+                  return Material(
+                    color: selected ? _color.withValues(alpha: 0.15) : bgColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: selected
+                          ? BorderSide(color: _color, width: 2)
+                          : BorderSide.none,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _icon = icon);
+                        Navigator.pop(context);
+                      },
                       child: Icon(
                         icon,
                         color: selected ? _color : textSecondary,
@@ -1549,19 +1554,20 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 itemBuilder: (_, i) {
                   final color = AppColors.accountColors[i];
                   final selected = color.toARGB32() == _color.toARGB32();
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _color = color);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(10),
-                        border: selected
-                            ? Border.all(color: Colors.black45, width: 2)
-                            : null,
-                      ),
+                  return Material(
+                    color: color,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: selected
+                          ? const BorderSide(color: Colors.black45, width: 2)
+                          : BorderSide.none,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _color = color);
+                        Navigator.pop(context);
+                      },
                       child: selected
                           ? const Icon(
                               Icons.check,

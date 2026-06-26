@@ -555,27 +555,29 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                             : AppColors.header;
                         return Padding(
                           padding: const EdgeInsets.only(left: 8),
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedType = t),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? accentColor
-                                    : accentColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                t.label,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : accentColor,
+                          child: Material(
+                            color: isSelected
+                                ? accentColor
+                                : accentColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => setState(() => _selectedType = t),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                child: Text(
+                                  t.label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : accentColor,
+                                  ),
                                 ),
                               ),
                             ),
@@ -919,21 +921,22 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   itemBuilder: (_, i) {
                     final icon = AppColors.accountIcons[i];
                     final selected = icon == _selectedIcon;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedIcon = icon);
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? _selectedColor.withValues(alpha: 0.15)
-                              : bgColor,
-                          borderRadius: BorderRadius.circular(10),
-                          border: selected
-                              ? Border.all(color: _selectedColor, width: 2)
-                              : null,
-                        ),
+                    return Material(
+                      color: selected
+                          ? _selectedColor.withValues(alpha: 0.15)
+                          : bgColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: selected
+                            ? BorderSide(color: _selectedColor, width: 2)
+                            : BorderSide.none,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _selectedIcon = icon);
+                          Navigator.pop(context);
+                        },
                         child: Icon(
                           icon,
                           color: selected ? _selectedColor : textSecondary,
@@ -987,19 +990,20 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     final color = AppColors.accountColors[i];
                     final selected =
                         color.toARGB32() == _selectedColor.toARGB32();
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedColor = color);
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(10),
-                          border: selected
-                              ? Border.all(color: Colors.black45, width: 2)
-                              : null,
-                        ),
+                    return Material(
+                      color: color,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: selected
+                            ? const BorderSide(color: Colors.black45, width: 2)
+                            : BorderSide.none,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _selectedColor = color);
+                          Navigator.pop(context);
+                        },
                         child: selected
                             ? const Icon(
                                 Icons.check,

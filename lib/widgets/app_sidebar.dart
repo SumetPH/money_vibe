@@ -184,7 +184,7 @@ class AppSidebar extends StatelessWidget {
   }
 }
 
-class _SidebarItemTile extends StatefulWidget {
+class _SidebarItemTile extends StatelessWidget {
   final SidebarItemData item;
   final bool isSelected;
   final bool isDarkMode;
@@ -198,70 +198,57 @@ class _SidebarItemTile extends StatefulWidget {
   });
 
   @override
-  State<_SidebarItemTile> createState() => _SidebarItemTileState();
-}
-
-class _SidebarItemTileState extends State<_SidebarItemTile> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final selectedColor = widget.isDarkMode
-        ? AppColors.darkIncome
-        : AppColors.header;
+    final selectedColor = isDarkMode ? AppColors.darkIncome : AppColors.header;
     final selectedTileColor =
-        (widget.isDarkMode ? AppColors.darkHeader : AppColors.background)
-            .withValues(alpha: 0.8);
-    final unselectedColor = widget.isDarkMode
+        (isDarkMode ? AppColors.darkHeader : AppColors.background).withValues(
+          alpha: 0.8,
+        );
+    final unselectedColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final hoverColor = (widget.isDarkMode ? Colors.white : Colors.black)
-        .withValues(alpha: 0.04);
+    final hoverColor = (isDarkMode ? Colors.white : Colors.black).withValues(
+      alpha: 0.04,
+    );
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: widget.isSelected
-                ? selectedTileColor
-                : (_isHovered ? hoverColor : Colors.transparent),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                widget.item.icon,
-                color: widget.isSelected ? selectedColor : unselectedColor,
-                size: 22,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  widget.item.label,
-                  style: TextStyle(
-                    color: widget.isSelected
-                        ? (widget.isDarkMode
-                              ? Colors.white
-                              : AppColors.textPrimary)
-                        : (widget.isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.textPrimary),
-                    fontSize: 14,
-                    fontWeight: widget.isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Material(
+        color: isSelected ? selectedTileColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: hoverColor,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  item.icon,
+                  color: isSelected ? selectedColor : unselectedColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      color: isSelected
+                          ? (isDarkMode ? Colors.white : AppColors.textPrimary)
+                          : (isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary),
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -539,54 +539,61 @@ class _TotalRow extends StatelessWidget {
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
 
-    return GestureDetector(
-      onTap: isReorderMode ? null : () => _showTotalMenu(context),
-      child: Container(
-        color: surfaceColor,
-        padding: const EdgeInsets.only(left: 16, right: 0, top: 10, bottom: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+    return Material(
+      color: surfaceColor,
+      child: InkWell(
+        onTap: isReorderMode ? null : () => _showTotalMenu(context),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: 16,
+            right: 0,
+            top: 10,
+            bottom: 10,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: isTopLevel
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: textPrimaryColor,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: isTopLevel
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: textPrimaryColor,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${formatAmount(amount)} บาท',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.getAmountColor(amount, isDarkMode),
+                    Text(
+                      '${formatAmount(amount)} บาท',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.getAmountColor(amount, isDarkMode),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (!isReorderMode)
-              IconButton(
-                icon: const Icon(Icons.more_vert, size: 20),
-                onPressed: () => _showTotalMenu(context),
-              ),
-          ],
+              if (!isReorderMode)
+                IconButton(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onPressed: () => _showTotalMenu(context),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -933,7 +940,8 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                             ),
                           ),
                         ),
-                        GestureDetector(
+                        InkWell(
+                          borderRadius: BorderRadius.circular(6),
                           onTap: () {
                             setState(() {
                               if (isAllSelected) {
@@ -943,9 +951,15 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                               }
                             });
                           },
-                          child: Text(
-                            isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
-                            style: const TextStyle(color: Color(0xFFFFB300)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            child: Text(
+                              isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
+                              style: const TextStyle(color: Color(0xFFFFB300)),
+                            ),
                           ),
                         ),
                       ],

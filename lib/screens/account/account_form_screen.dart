@@ -911,25 +911,26 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                       itemBuilder: (_, i) {
                         final day = i + 1;
                         final selected = _statementDay == day;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _statementDay = day);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? headerColor.withValues(alpha: 0.2)
-                                  : surfaceColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: selected
-                                  ? Border.all(color: headerColor, width: 2)
-                                  : Border.all(
-                                      color: textSecondaryColor.withValues(
-                                        alpha: 0.3,
-                                      ),
+                        return Material(
+                          color: selected
+                              ? headerColor.withValues(alpha: 0.2)
+                              : surfaceColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: selected
+                                ? BorderSide(color: headerColor, width: 2)
+                                : BorderSide(
+                                    color: textSecondaryColor.withValues(
+                                      alpha: 0.3,
                                     ),
-                            ),
+                                  ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() => _statementDay = day);
+                              Navigator.pop(context);
+                            },
                             child: Center(
                               child: Text(
                                 '$day',
@@ -1400,24 +1401,25 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                       itemBuilder: (_, i) {
                         final icon = AppColors.accountIcons[i];
                         final selected = icon == _selectedIcon;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedIcon = icon;
-                              _selectedIconUrl = '';
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? _selectedColor.withValues(alpha: 0.2)
-                                  : bgColor,
-                              borderRadius: BorderRadius.circular(10),
-                              border: selected
-                                  ? Border.all(color: _selectedColor, width: 2)
-                                  : null,
-                            ),
+                        return Material(
+                          color: selected
+                              ? _selectedColor.withValues(alpha: 0.2)
+                              : bgColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: selected
+                                ? BorderSide(color: _selectedColor, width: 2)
+                                : BorderSide.none,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedIcon = icon;
+                                _selectedIconUrl = '';
+                              });
+                              Navigator.pop(context);
+                            },
                             child: Icon(
                               icon,
                               color: selected
@@ -1503,19 +1505,23 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         final color = AppColors.accountColors[i];
                         final selected =
                             color.toARGB32() == _selectedColor.toARGB32();
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _selectedColor = color);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(10),
-                              border: selected
-                                  ? Border.all(color: Colors.black45, width: 2)
-                                  : null,
-                            ),
+                        return Material(
+                          color: color,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: selected
+                                ? const BorderSide(
+                                    color: Colors.black45,
+                                    width: 2,
+                                  )
+                                : BorderSide.none,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() => _selectedColor = color);
+                              Navigator.pop(context);
+                            },
                             child: selected
                                 ? const Icon(
                                     Icons.check,

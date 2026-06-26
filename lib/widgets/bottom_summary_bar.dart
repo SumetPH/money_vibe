@@ -31,19 +31,21 @@ class BottomSummaryBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: _BottomSummaryText(value: left)),
-            GestureDetector(
-              onTap: onAdd,
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: fabColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.add,
-                  color: addIconColor ?? Colors.white,
-                  size: 28,
+            Material(
+              color: fabColor,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onAdd,
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: Icon(
+                    Icons.add,
+                    color: addIconColor ?? Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
             ),

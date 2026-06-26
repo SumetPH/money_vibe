@@ -633,21 +633,22 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                     itemBuilder: (_, i) {
                       final icon = AppColors.accountIcons[i];
                       final selected = icon == _selectedIcon;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedIcon = icon);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? _selectedColor.withValues(alpha: 0.15)
-                                : bgColor,
-                            borderRadius: BorderRadius.circular(10),
-                            border: selected
-                                ? Border.all(color: _selectedColor, width: 2)
-                                : null,
-                          ),
+                      return Material(
+                        color: selected
+                            ? _selectedColor.withValues(alpha: 0.15)
+                            : bgColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: selected
+                              ? BorderSide(color: _selectedColor, width: 2)
+                              : BorderSide.none,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _selectedIcon = icon);
+                            Navigator.pop(context);
+                          },
                           child: Icon(
                             icon,
                             color: selected
@@ -707,19 +708,23 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       final color = AppColors.accountColors[i];
                       final selected =
                           color.toARGB32() == _selectedColor.toARGB32();
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: selected
-                                ? Border.all(color: Colors.black45, width: 2)
-                                : null,
-                          ),
+                      return Material(
+                        color: color,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: selected
+                              ? const BorderSide(
+                                  color: Colors.black45,
+                                  width: 2,
+                                )
+                              : BorderSide.none,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _selectedColor = color);
+                            Navigator.pop(context);
+                          },
                           child: selected
                               ? const Icon(
                                   Icons.check,

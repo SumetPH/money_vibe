@@ -1463,38 +1463,51 @@ class _SummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: onRateTap,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'อัตราแลกเปลี่ยน',
-                      style: TextStyle(fontSize: 11, color: textSecondaryColor),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: onRateTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
                     ),
-                    Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '1 USD = ${rate.toStringAsFixed(2)} THB',
+                          'อัตราแลกเปลี่ยน',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: textPrimaryColor,
+                            color: textSecondaryColor,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          account.autoUpdateRate
-                              ? Icons.sync
-                              : Icons.lock_outline,
-                          size: 12,
-                          color: account.autoUpdateRate
-                              ? incomeColor
-                              : textSecondaryColor,
+                        Row(
+                          children: [
+                            Text(
+                              '1 USD = ${rate.toStringAsFixed(2)} THB',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              account.autoUpdateRate
+                                  ? Icons.sync
+                                  : Icons.lock_outline,
+                              size: 12,
+                              color: account.autoUpdateRate
+                                  ? incomeColor
+                                  : textSecondaryColor,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
