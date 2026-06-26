@@ -21,7 +21,7 @@ git add .
 git commit -m "deploy web build"
 git push origin main
 
-cd /Users/sumetph/Development/money/money_vibe
+cd /Users/sumetph/Development/llm/money_vibe
 flutter clean
 flutter pub get
 
