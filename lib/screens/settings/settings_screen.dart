@@ -179,6 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+                Divider(color: dividerColor),
                 Consumer<SettingsProvider>(
                   builder: (context, settingsProvider, _) {
                     return ListTile(

@@ -46,50 +46,71 @@ class ThemeColorOption {
     darkOnFab: Colors.black,
   );
 
-  static const teal = ThemeColorOption(
-    id: 'teal',
-    label: 'Teal',
-    lightHeader: Color(0xFF00695C),
-    lightAccent: Color(0xFF00796B),
-    lightFab: Color(0xFF00897B),
+  static const forest = ThemeColorOption(
+    id: 'forest',
+    label: 'Forest',
+    lightHeader: Color(0xFF315142),
+    lightAccent: Color(0xFF527760),
+    lightFab: Color(0xFF6F9B69),
     lightOnFab: Colors.white,
-    darkHeader: Color(0xFF123A36),
-    darkAccent: Color(0xFF4DB6AC),
-    darkFab: Color(0xFF4DB6AC),
+    darkHeader: Color(0xFF24332F),
+    darkAccent: Color(0xFF7BAE8A),
+    darkFab: Color(0xFF8FBF75),
     darkOnFab: Colors.black,
   );
 
-  static const blue = ThemeColorOption(
-    id: 'blue',
-    label: 'Blue',
-    lightHeader: Color(0xFF1E3A8A),
-    lightAccent: Color(0xFF2563EB),
-    lightFab: Color(0xFF2563EB),
+  static const steel = ThemeColorOption(
+    id: 'steel',
+    label: 'Steel',
+    lightHeader: Color(0xFF334A5B),
+    lightAccent: Color(0xFF55758D),
+    lightFab: Color(0xFF6F8EA5),
     lightOnFab: Colors.white,
-    darkHeader: Color(0xFF172554),
-    darkAccent: Color(0xFF60A5FA),
-    darkFab: Color(0xFF60A5FA),
+    darkHeader: Color(0xFF26323C),
+    darkAccent: Color(0xFF7FA6C2),
+    darkFab: Color(0xFF8AAFC7),
     darkOnFab: Colors.black,
   );
 
-  static const violet = ThemeColorOption(
-    id: 'violet',
-    label: 'Violet',
-    lightHeader: Color(0xFF5B21B6),
-    lightAccent: Color(0xFF7C3AED),
-    lightFab: Color(0xFF7C3AED),
+  static const plum = ThemeColorOption(
+    id: 'plum',
+    label: 'Plum',
+    lightHeader: Color(0xFF4D405B),
+    lightAccent: Color(0xFF77628B),
+    lightFab: Color(0xFF9279A7),
     lightOnFab: Colors.white,
-    darkHeader: Color(0xFF2E1065),
-    darkAccent: Color(0xFFC084FC),
-    darkFab: Color(0xFFC084FC),
+    darkHeader: Color(0xFF302A3A),
+    darkAccent: Color(0xFFA18AB8),
+    darkFab: Color(0xFFB095C8),
     darkOnFab: Colors.black,
   );
 
-  static const values = [classic, teal, blue, violet];
+  static const copper = ThemeColorOption(
+    id: 'copper',
+    label: 'Copper',
+    lightHeader: Color(0xFF5B4433),
+    lightAccent: Color(0xFF8A6548),
+    lightFab: Color(0xFFB17A4F),
+    lightOnFab: Colors.white,
+    darkHeader: Color(0xFF352D26),
+    darkAccent: Color(0xFFC08A62),
+    darkFab: Color(0xFFD39A6A),
+    darkOnFab: Colors.black,
+  );
+
+  static const values = [classic, forest, steel, plum, copper];
 
   static ThemeColorOption byId(String? id) {
     for (final option in values) {
       if (option.id == id) return option;
+    }
+    switch (id) {
+      case 'teal':
+        return forest;
+      case 'blue':
+        return steel;
+      case 'violet':
+        return plum;
     }
     return classic;
   }
