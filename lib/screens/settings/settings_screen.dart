@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 
+import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
@@ -317,6 +319,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('ข้อมูล', textColor),
                 ListTile(
                   leading: Icon(
+                    Icons.content_copy_outlined,
+                    color: secondaryTextColor,
+                  ),
+                  title: Text(
+                    'คัดลอกข้อมูลสำหรับ AI',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    'สรุปข้อมูลการเงินเป็น Markdown สำหรับใช้กับ LLM',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: _showAiFinanceExportSheet,
+                ),
+                Divider(color: dividerColor),
+                ListTile(
+                  leading: Icon(
                     Icons.cloud,
                     color: dbManager.isConfigured ? Colors.blue : Colors.orange,
                   ),
@@ -446,6 +468,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _showAiFinanceExportSheet() async {
+    final scope = await showModalBottomSheet<AiFinanceExportScope>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final isDarkMode = ctx.watch<SettingsProvider>().isDarkMode;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondaryTextColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'คัดลอกข้อมูลสำหรับ AI',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'ข้อมูลที่คัดลอกจะเป็นสรุป Markdown และไม่รวมหมายเหตุของธุรกรรม',
+                  style: TextStyle(color: secondaryTextColor, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                _buildExportScopeTile(
+                  context: ctx,
+                  icon: Icons.auto_awesome_outlined,
+                  title: 'ภาพรวมทั้งหมด',
+                  subtitle: 'Net worth, บัญชี, cashflow, budget และพอร์ต',
+                  scope: AiFinanceExportScope.overview,
+                  textColor: textColor,
+                  secondaryTextColor: secondaryTextColor,
+                ),
+                _buildExportScopeTile(
+                  context: ctx,
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'บัญชีและเงินสด',
+                  subtitle: 'ยอดบัญชี, กลุ่มสินทรัพย์/หนี้สิน และพอร์ต',
+                  scope: AiFinanceExportScope.accounts,
+                  textColor: textColor,
+                  secondaryTextColor: secondaryTextColor,
+                ),
+                _buildExportScopeTile(
+                  context: ctx,
+                  icon: Icons.receipt_long_outlined,
+                  title: 'รายรับรายจ่าย/งบเดือนนี้',
+                  subtitle: 'Cashflow, หมวดรายจ่าย และสถานะงบประมาณ',
+                  scope: AiFinanceExportScope.monthlyCashflow,
+                  textColor: textColor,
+                  secondaryTextColor: secondaryTextColor,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (scope == null || !mounted) return;
+    await _copyAiFinanceSnapshot(scope);
+  }
+
+  Future<void> _copyAiFinanceSnapshot(AiFinanceExportScope scope) async {
+    try {
+      final snapshot = AiFinanceExportService.instance.buildMarkdown(
+        scope: scope,
+        accountProvider: context.read<AccountProvider>(),
+        transactionProvider: context.read<TransactionProvider>(),
+        categoryProvider: context.read<CategoryProvider>(),
+        budgetProvider: context.read<BudgetProvider>(),
+      );
+
+      await Clipboard.setData(ClipboardData(text: snapshot));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('คัดลอก${scope.label}เรียบร้อยแล้ว')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('คัดลอกข้อมูลไม่สำเร็จ: $e')));
+    }
+  }
+
   String _formatVersion(PackageInfo packageInfo) {
     final buildNumber = packageInfo.buildNumber.trim();
     if (buildNumber.isEmpty) {
@@ -461,6 +579,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title,
         style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
       ),
+    );
+  }
+
+  Widget _buildExportScopeTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required AiFinanceExportScope scope,
+    required Color textColor,
+    required Color secondaryTextColor,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: secondaryTextColor),
+      title: Text(title, style: TextStyle(color: textColor)),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: secondaryTextColor, fontSize: 12),
+      ),
+      trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
+      onTap: () => Navigator.pop(context, scope),
     );
   }
 }
