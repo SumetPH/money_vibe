@@ -82,134 +82,124 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     return Column(
       children: [
         // ── แถวหลัก (เห็นเสมอ) ──────────────────────────────────────────
-        GestureDetector(
-          onTap: widget.isReorderMode ? null : _toggleExpand,
-          onLongPress: widget.isReorderMode
-              ? null
-              : () => _openListMenu(context),
-          child: Container(
-            color: surfaceColor,
-            padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: 16,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Drag handle (only visible in reorder mode)
-                if (widget.isReorderMode) ...[
-                  Icon(Icons.drag_indicator, color: dividerColor, size: 20),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Row(
-                    children: [
-                      HoldingThumbnailWidget(
-                        ticker: widget.holding.ticker,
-                        logoUrl: widget.holding.logoUrl,
-                        accentColor: headerColor,
-                        badge: _buildSellPlanBadgeWidget(),
-                      ),
-                      const SizedBox(width: 12),
-                      // Ticker + allocation
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.holding.ticker,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${allocationPct.toStringAsFixed(2)}%',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: textSecondaryColor,
-                              ),
-                            ),
-                          ],
+        Material(
+          color: surfaceColor,
+          child: InkWell(
+            onTap: widget.isReorderMode ? null : _toggleExpand,
+            onLongPress: widget.isReorderMode
+                ? null
+                : () => _openListMenu(context),
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 16,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Drag handle (only visible in reorder mode)
+                  if (widget.isReorderMode) ...[
+                    Icon(Icons.drag_indicator, color: dividerColor, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        HoldingThumbnailWidget(
+                          ticker: widget.holding.ticker,
+                          logoUrl: widget.holding.logoUrl,
+                          accentColor: headerColor,
+                          badge: _buildSellPlanBadgeWidget(),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      // มูลค่า
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              formatAmount(valueTHB),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimaryColor,
+                        const SizedBox(width: 12),
+                        // Ticker + allocation
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.holding.ticker,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimaryColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${formatAmount(widget.holding.valueUsd)} USD',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: textSecondaryColor,
+                              const SizedBox(height: 4),
+                              Text(
+                                '${allocationPct.toStringAsFixed(2)}%',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: textSecondaryColor,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      // P&L
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: pnlTHB >= 0 ? incomeColor : expenseColor,
+                        const SizedBox(width: 8),
+                        // มูลค่า
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatAmount(valueTHB),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimaryColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: pnlTHB >= 0 ? incomeColor : expenseColor,
+                              const SizedBox(height: 4),
+                              Text(
+                                '${formatAmount(widget.holding.valueUsd)} USD',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: textSecondaryColor,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        // P&L
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: pnlTHB >= 0
+                                      ? incomeColor
+                                      : expenseColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: pnlTHB >= 0
+                                      ? incomeColor
+                                      : expenseColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                // ปุ่ม collapse/expand
-                // if (!widget.isReorderMode)
-                //   Padding(
-                //     padding: const EdgeInsets.symmetric(
-                //       horizontal: 8,
-                //       vertical: 4,
-                //     ),
-                //     child: RotationTransition(
-                //       turns: _rotationAnimation,
-                //       child: Icon(
-                //         Icons.keyboard_arrow_down_rounded,
-                //         size: 20,
-                //         color: textSecondaryColor,
-                //       ),
-                //     ),
-                //   ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
