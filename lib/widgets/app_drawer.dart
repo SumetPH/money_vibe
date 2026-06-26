@@ -14,19 +14,13 @@ class AppDrawer extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
-        final drawerHeaderColor = isDarkMode
-            ? AppColors.darkHeader
-            : AppColors.header;
+        final themeColor = settingsProvider.themeColor;
+        final drawerHeaderColor = AppColors.headerFor(isDarkMode, themeColor);
         final drawerItemSecondaryColor = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final selectedColor = isDarkMode
-            ? AppColors.darkIncome
-            : AppColors.header;
-        final selectedTileColor =
-            (isDarkMode ? AppColors.darkHeader : AppColors.header).withValues(
-              alpha: 0.08,
-            );
+        final selectedColor = AppColors.accentFor(isDarkMode, themeColor);
+        final selectedTileColor = drawerHeaderColor.withValues(alpha: 0.08);
 
         return Drawer(
           child: Column(

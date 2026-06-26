@@ -17,6 +17,7 @@ class DebugBootstrapService {
   );
   static const bool _hasDarkMode = bool.hasEnvironment('DEBUG_DARK_MODE');
   static const bool _darkMode = bool.fromEnvironment('DEBUG_DARK_MODE');
+  static const String _themeColor = String.fromEnvironment('DEBUG_THEME_COLOR');
   static const bool _hasBudgetStartDay = bool.hasEnvironment(
     'DEBUG_BUDGET_START_DAY',
   );
@@ -26,6 +27,7 @@ class DebugBootstrapService {
 
   static const String _finnhubApiKeyKey = 'finnhub_api_key';
   static const String _darkModeKey = 'dark_mode';
+  static const String _themeColorKey = 'theme_color';
   static const String _budgetStartDayKey = 'budget_start_day';
 
   DebugBootstrapService._();
@@ -47,6 +49,12 @@ class DebugBootstrapService {
     if (_hasDarkMode) {
       await prefs.setBool(_darkModeKey, _darkMode);
       appliedKeys.add('darkMode');
+    }
+
+    final themeColor = _trimmedOrNull(_themeColor);
+    if (themeColor != null) {
+      await prefs.setString(_themeColorKey, themeColor);
+      appliedKeys.add('themeColor');
     }
 
     if (_hasBudgetStartDay && _budgetStartDay >= 1 && _budgetStartDay <= 31) {

@@ -211,11 +211,15 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
     final bgColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final headerColor = AppColors.headerFor(
+      isDarkMode,
+      settingsProvider.themeColor,
+    );
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

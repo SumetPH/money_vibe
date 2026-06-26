@@ -15,6 +15,7 @@ import '../../providers/recurring_transaction_provider.dart';
 import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/theme_color_option.dart';
 import '../../widgets/app_drawer.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
@@ -38,7 +39,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final settings = context.watch<SettingsProvider>();
+    final isDarkMode = settings.isDarkMode;
+    final themeColor = settings.themeColor;
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
@@ -56,8 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         leading: isLargeScreen ? null : null,
-        backgroundColor: AppColors.header,
-        foregroundColor: textColor,
+        backgroundColor: AppColors.headerFor(isDarkMode, themeColor),
+        foregroundColor: Colors.white,
         title: Text('ตั้งค่า'),
         elevation: 0,
       ),
@@ -173,6 +176,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (value) {
                         settingsProvider.setDarkMode(value);
                       },
+                    );
+                  },
+                ),
+                Consumer<SettingsProvider>(
+                  builder: (context, settingsProvider, _) {
+                    return ListTile(
+                      leading: Icon(
+                        Icons.palette_outlined,
+                        color: secondaryTextColor,
+                      ),
+                      title: Text('สีธีม', style: TextStyle(color: textColor)),
+                      subtitle: Text(
+                        settingsProvider.themeColor.label,
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ThemeColorSwatch(
+                            option: settingsProvider.themeColor,
+                            isDarkMode: settingsProvider.isDarkMode,
+                            selected: false,
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.chevron_right, color: secondaryTextColor),
+                        ],
+                      ),
+                      onTap: _showThemeColorSheet,
                     );
                   },
                 ),
@@ -400,6 +431,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showThemeColorSheet() {
+    final currentSettings = context.read<SettingsProvider>();
+    final sheetColor = currentSettings.isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: sheetColor,
+      showDragHandle: true,
+      builder: (ctx) {
+        final settings = ctx.watch<SettingsProvider>();
+        final isDarkMode = settings.isDarkMode;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondaryTextColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+
+        return SafeArea(
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: 16),
+            itemCount: ThemeColorOption.values.length + 1,
+            separatorBuilder: (_, index) => index == 0
+                ? const SizedBox(height: 4)
+                : Divider(color: dividerColor, height: 1),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    'สีธีม',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }
+
+              final option = ThemeColorOption.values[index - 1];
+              final selected = option.id == settings.themeColor.id;
+              return ListTile(
+                tileColor: Colors.transparent,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                minLeadingWidth: 44,
+                leading: _ThemeColorSwatch(
+                  option: option,
+                  isDarkMode: isDarkMode,
+                  selected: selected,
+                ),
+                title: Text(option.label, style: TextStyle(color: textColor)),
+                subtitle: selected
+                    ? Text(
+                        'กำลังใช้งาน',
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 12,
+                        ),
+                      )
+                    : null,
+                trailing: selected
+                    ? Icon(
+                        Icons.check_circle,
+                        color: AppColors.accentFor(isDarkMode, option),
+                      )
+                    : null,
+                onTap: () {
+                  settings.setThemeColor(option);
+                  Navigator.pop(ctx);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
@@ -482,55 +598,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             : AppColors.textSecondary;
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'คัดลอกข้อมูลสำหรับ AI',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'คัดลอกข้อมูลสำหรับ AI',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'ข้อมูลที่คัดลอกจะเป็นสรุป Markdown และไม่รวมหมายเหตุของธุรกรรม',
+                      style: TextStyle(color: secondaryTextColor, fontSize: 13),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'ข้อมูลที่คัดลอกจะเป็นสรุป Markdown และไม่รวมหมายเหตุของธุรกรรม',
-                  style: TextStyle(color: secondaryTextColor, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                _buildExportScopeTile(
-                  context: ctx,
-                  icon: Icons.auto_awesome_outlined,
-                  title: 'ภาพรวมทั้งหมด',
-                  subtitle: 'Net worth, บัญชี, cashflow, budget และพอร์ต',
-                  scope: AiFinanceExportScope.overview,
-                  textColor: textColor,
-                  secondaryTextColor: secondaryTextColor,
-                ),
-                _buildExportScopeTile(
-                  context: ctx,
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'บัญชีและเงินสด',
-                  subtitle: 'ยอดบัญชี, กลุ่มสินทรัพย์/หนี้สิน และพอร์ต',
-                  scope: AiFinanceExportScope.accounts,
-                  textColor: textColor,
-                  secondaryTextColor: secondaryTextColor,
-                ),
-                _buildExportScopeTile(
-                  context: ctx,
-                  icon: Icons.receipt_long_outlined,
-                  title: 'รายรับรายจ่าย/งบเดือนนี้',
-                  subtitle: 'Cashflow, หมวดรายจ่าย และสถานะงบประมาณ',
-                  scope: AiFinanceExportScope.monthlyCashflow,
-                  textColor: textColor,
-                  secondaryTextColor: secondaryTextColor,
-                ),
-              ],
-            ),
+              ),
+              _buildExportScopeTile(
+                context: ctx,
+                icon: Icons.auto_awesome_outlined,
+                title: 'ภาพรวมทั้งหมด',
+                subtitle: 'Net worth, บัญชี, cashflow, budget และพอร์ต',
+                scope: AiFinanceExportScope.overview,
+                textColor: textColor,
+                secondaryTextColor: secondaryTextColor,
+              ),
+              _buildExportScopeTile(
+                context: ctx,
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'บัญชีและเงินสด',
+                subtitle: 'ยอดบัญชี, กลุ่มสินทรัพย์/หนี้สิน และพอร์ต',
+                scope: AiFinanceExportScope.accounts,
+                textColor: textColor,
+                secondaryTextColor: secondaryTextColor,
+              ),
+              _buildExportScopeTile(
+                context: ctx,
+                icon: Icons.receipt_long_outlined,
+                title: 'รายรับรายจ่าย/งบเดือนนี้',
+                subtitle: 'Cashflow, หมวดรายจ่าย และสถานะงบประมาณ',
+                scope: AiFinanceExportScope.monthlyCashflow,
+                textColor: textColor,
+                secondaryTextColor: secondaryTextColor,
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         );
       },
@@ -592,7 +713,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required Color secondaryTextColor,
   }) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
+      tileColor: Colors.transparent,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       leading: Icon(icon, color: secondaryTextColor),
       title: Text(title, style: TextStyle(color: textColor)),
       subtitle: Text(
@@ -601,6 +723,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
       onTap: () => Navigator.pop(context, scope),
+    );
+  }
+}
+
+class _ThemeColorSwatch extends StatelessWidget {
+  final ThemeColorOption option;
+  final bool isDarkMode;
+  final bool selected;
+
+  const _ThemeColorSwatch({
+    required this.option,
+    required this.isDarkMode,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final header = AppColors.headerFor(isDarkMode, option);
+    final accent = AppColors.accentFor(isDarkMode, option);
+    final fab = AppColors.fabFor(isDarkMode, option);
+
+    return Container(
+      width: 44,
+      height: 28,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurfaceVariant : AppColors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: selected
+              ? accent
+              : (isDarkMode ? AppColors.darkDivider : AppColors.divider),
+          width: 2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: header,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(4),
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: ColoredBox(color: accent)),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: fab,
+                borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

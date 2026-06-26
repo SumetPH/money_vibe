@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../theme/theme_color_option.dart';
+
 enum ExchangeRateSource { yahoo, frankfurter }
 
 class SettingsProvider extends ChangeNotifier {
@@ -13,6 +15,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _llmBaseUrlKey = 'llm_base_url';
   static const _llmModelKey = 'llm_model';
   static const _darkModeKey = 'dark_mode';
+  static const _themeColorKey = 'theme_color';
   static const _budgetStartDayKey = 'budget_start_day';
   static const _netWorthFilterKey = 'net_worth_filter_ids';
 
@@ -24,6 +27,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _llmBaseUrl;
   String? _llmModel;
   bool _isDarkMode = true;
+  ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
   int _budgetStartDay = 1;
   Set<String>? _netWorthFilterIds; // null = all accounts
@@ -33,6 +37,7 @@ class SettingsProvider extends ChangeNotifier {
   String? get llmBaseUrl => _llmBaseUrl;
   String? get llmModel => _llmModel;
   bool get isDarkMode => _isDarkMode;
+  ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
   int get budgetStartDay => _budgetStartDay;
   Set<String>? get netWorthFilterIds =>
@@ -61,6 +66,7 @@ class SettingsProvider extends ChangeNotifier {
     _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
     _llmModel = prefs.getString(_llmModelKey);
     _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
+    _themeColor = ThemeColorOption.byId(prefs.getString(_themeColorKey));
     _budgetStartDay = prefs.getInt(_budgetStartDayKey) ?? 1;
     final filterJson = prefs.getString(_netWorthFilterKey);
     if (filterJson != null) {
@@ -156,6 +162,13 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, enabled);
     _isDarkMode = enabled;
+    notifyListeners();
+  }
+
+  Future<void> setThemeColor(ThemeColorOption option) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeColorKey, option.id);
+    _themeColor = option;
     notifyListeners();
   }
 

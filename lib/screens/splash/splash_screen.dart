@@ -8,8 +8,11 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final headerColor = theme.appBarTheme.backgroundColor ?? AppColors.header;
+
     return Scaffold(
-      backgroundColor: AppColors.header,
+      backgroundColor: headerColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -32,7 +35,7 @@ class SplashScreen extends StatelessWidget {
               child: Icon(
                 Icons.account_balance_wallet,
                 size: 60,
-                color: AppColors.header,
+                color: headerColor,
               ),
             ),
             const SizedBox(height: 24),

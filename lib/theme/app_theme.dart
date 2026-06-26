@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_radii.dart';
+import 'theme_color_option.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme => ThemeData(
+  static ThemeData lightTheme(ThemeColorOption themeColor) => ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.header,
+      seedColor: themeColor.lightAccent,
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: AppColors.background,
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.header,
+      backgroundColor: themeColor.lightHeader,
       foregroundColor: Colors.white,
       elevation: 0,
       centerTitle: true,
@@ -23,9 +24,9 @@ class AppTheme {
       ),
     ),
     iconTheme: const IconThemeData(color: AppColors.textPrimary),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
-      selectedItemColor: AppColors.header,
+      selectedItemColor: themeColor.lightAccent,
       unselectedItemColor: AppColors.textSecondary,
       elevation: 8,
     ),
@@ -35,7 +36,9 @@ class AppTheme {
         return Colors.grey.shade400;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.header;
+        if (states.contains(WidgetState.selected)) {
+          return themeColor.lightAccent;
+        }
         return Colors.grey.shade300;
       }),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
@@ -57,9 +60,15 @@ class AppTheme {
       iconColor: AppColors.textPrimary,
       textColor: AppColors.textPrimary,
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: AppColors.fabYellow,
-      foregroundColor: Colors.white,
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.surface,
+      modalBackgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      dragHandleColor: AppColors.divider,
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: themeColor.lightFab,
+      foregroundColor: themeColor.lightOnFab,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -74,7 +83,7 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.medium),
-        borderSide: const BorderSide(color: AppColors.header, width: 2),
+        borderSide: BorderSide(color: themeColor.lightAccent, width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       hintStyle: const TextStyle(color: AppColors.textSecondary),
@@ -86,8 +95,8 @@ class AppTheme {
     useMaterial3: true,
   );
 
-  static ThemeData get darkTheme {
-    final darkHeader = AppColors.darkHeader;
+  static ThemeData darkTheme(ThemeColorOption themeColor) {
+    final darkHeader = themeColor.darkHeader;
     final darkBackground = AppColors.darkBackground;
     final darkSurface = AppColors.darkSurface;
     final darkDivider = AppColors.darkDivider;
@@ -95,7 +104,7 @@ class AppTheme {
 
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.header,
+        seedColor: themeColor.darkAccent,
         brightness: Brightness.dark,
       ),
       scaffoldBackgroundColor: darkBackground,
@@ -114,7 +123,7 @@ class AppTheme {
       iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: darkSurface,
-        selectedItemColor: AppColors.darkIncome,
+        selectedItemColor: themeColor.darkAccent,
         unselectedItemColor: darkTextSecondary,
         elevation: 8,
       ),
@@ -124,7 +133,9 @@ class AppTheme {
           return Colors.grey.shade600;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.header;
+          if (states.contains(WidgetState.selected)) {
+            return themeColor.darkAccent;
+          }
           return Colors.grey.shade700;
         }),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
@@ -146,9 +157,15 @@ class AppTheme {
         iconColor: AppColors.darkTextPrimary,
         textColor: AppColors.darkTextPrimary,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.darkFabYellow,
-        foregroundColor: Colors.black,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: darkSurface,
+        modalBackgroundColor: darkSurface,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: darkDivider,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: themeColor.darkFab,
+        foregroundColor: themeColor.darkOnFab,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -163,7 +180,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.medium),
-          borderSide: const BorderSide(color: AppColors.header, width: 2),
+          borderSide: BorderSide(color: themeColor.darkAccent, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -179,6 +196,6 @@ class AppTheme {
     );
   }
 
-  static ThemeData getTheme(bool isDarkMode) =>
-      isDarkMode ? darkTheme : lightTheme;
+  static ThemeData getTheme(bool isDarkMode, ThemeColorOption themeColor) =>
+      isDarkMode ? darkTheme(themeColor) : lightTheme(themeColor);
 }

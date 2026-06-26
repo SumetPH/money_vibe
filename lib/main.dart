@@ -321,7 +321,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         builder: (context, settingsProvider, _) {
           return MaterialApp.router(
             title: 'Money Vibe',
-            theme: AppTheme.getTheme(settingsProvider.isDarkMode),
+            theme: AppTheme.getTheme(
+              settingsProvider.isDarkMode,
+              settingsProvider.themeColor,
+            ),
             debugShowCheckedModeBanner: false,
             routerConfig: _router,
             builder: kIsWeb

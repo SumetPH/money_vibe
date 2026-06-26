@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_color_option.dart';
 
 class SidebarItemData {
   final IconData icon;
@@ -71,6 +72,7 @@ class AppSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final isDarkMode = settingsProvider.isDarkMode;
+    final themeColor = settingsProvider.themeColor;
 
     final sidebarBgColor = isDarkMode
         ? AppColors.darkSurface
@@ -104,7 +106,7 @@ class AppSidebar extends StatelessWidget {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Color(0xFF2C333A),
+                        color: AppColors.headerFor(isDarkMode, themeColor),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -162,6 +164,7 @@ class AppSidebar extends StatelessWidget {
                     item: item,
                     isSelected: isSelected,
                     isDarkMode: isDarkMode,
+                    themeColor: themeColor,
                     onTap: () {
                       if (currentRoute != item.route) {
                         if (onNavigate != null) {
@@ -188,22 +191,23 @@ class _SidebarItemTile extends StatelessWidget {
   final SidebarItemData item;
   final bool isSelected;
   final bool isDarkMode;
+  final ThemeColorOption themeColor;
   final VoidCallback onTap;
 
   const _SidebarItemTile({
     required this.item,
     required this.isSelected,
     required this.isDarkMode,
+    required this.themeColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = isDarkMode ? AppColors.darkIncome : AppColors.header;
-    final selectedTileColor =
-        (isDarkMode ? AppColors.darkHeader : AppColors.background).withValues(
-          alpha: 0.8,
-        );
+    final selectedColor = AppColors.accentFor(isDarkMode, themeColor);
+    final selectedTileColor = isDarkMode
+        ? AppColors.headerFor(isDarkMode, themeColor).withValues(alpha: 0.75)
+        : AppColors.background;
     final unselectedColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;

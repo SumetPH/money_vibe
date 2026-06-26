@@ -104,7 +104,8 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     debugPrint('[AuthScreen] build - rendering UI');
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
     final authProvider = context.watch<AuthProvider>();
 
     final backgroundColor = isDarkMode
@@ -117,13 +118,17 @@ class _AuthScreenState extends State<AuthScreen> {
     final secondaryTextColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final headerColor = AppColors.headerFor(
+      isDarkMode,
+      settingsProvider.themeColor,
+    );
+    final fabColor = AppColors.fabFor(isDarkMode, settingsProvider.themeColor);
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: headerColor,
-        foregroundColor: textColor,
+        foregroundColor: Colors.white,
         title: Text(_isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'),
         elevation: 0,
       ),
@@ -147,9 +152,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Icon(
                       Icons.account_balance_wallet,
                       size: 40,
-                      color: isDarkMode
-                          ? AppColors.darkFabYellow
-                          : AppColors.fabYellow,
+                      color: fabColor,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -462,7 +465,8 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _showForgotPasswordDialog(BuildContext context) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final settingsProvider = context.read<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -470,7 +474,10 @@ class _AuthScreenState extends State<AuthScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final headerColor = AppColors.headerFor(
+      isDarkMode,
+      settingsProvider.themeColor,
+    );
 
     final emailController = TextEditingController();
 

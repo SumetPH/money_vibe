@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme_color_option.dart';
+
 class AppColors {
   // Light mode colors
   static const Color header = Color(0xFF393E46);
@@ -8,23 +10,23 @@ class AppColors {
   static const Color transfer = Color(0xFF2196F3);
   static const Color debtTransfer = Color(0xFFFB8C00);
   static const Color debtRepay = Color(0xFFFB8C00);
-  static const Color background = Color(0xFFF0F0F0);
-  static const Color surface = Colors.white;
+  static const Color background = Color(0xFFF4F5F7);
+  static const Color surface = Color(0xFFFCFCFD);
   static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color divider = Color(0xFFE0E0E0);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color divider = Color(0xFFD9DDE3);
   static const Color fabYellow = Color(0xFFFB8C00);
-  static const Color sectionHeader = Color(0xFFEEEEEE);
+  static const Color sectionHeader = Color(0xFFEEF0F3);
 
   // Dark mode colors
   static const Color darkHeader = Color(0xFF2C333A);
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E1E);
-  static const Color darkSurfaceVariant = Color(0xFF2A2A2A);
+  static const Color darkBackground = Color(0xFF111315);
+  static const Color darkSurface = Color(0xFF202226);
+  static const Color darkSurfaceVariant = Color(0xFF2B2D31);
   static const Color darkTextPrimary = Color(0xFFE0E0E0);
   static const Color darkTextSecondary = Color(0xFFBDBDBD);
-  static const Color darkDivider = Color(0xFF424242);
-  static const Color darkSectionHeader = Color(0xFF2A2A2A);
+  static const Color darkDivider = Color(0xFF3A3D42);
+  static const Color darkSectionHeader = Color(0xFF2B2D31);
 
   // Slightly adjusted colors for better visibility on dark backgrounds
   static const Color darkIncome = Color(0xFF66BB6A);
@@ -46,6 +48,18 @@ class AppColors {
 
   static Color getAmountColor(double amount, bool isDarkMode) =>
       amountColor(amount, isDarkMode: isDarkMode);
+
+  static Color headerFor(bool isDarkMode, ThemeColorOption themeColor) =>
+      themeColor.header(isDarkMode);
+
+  static Color accentFor(bool isDarkMode, ThemeColorOption themeColor) =>
+      themeColor.accent(isDarkMode);
+
+  static Color fabFor(bool isDarkMode, ThemeColorOption themeColor) =>
+      themeColor.fab(isDarkMode);
+
+  static Color onFabFor(bool isDarkMode, ThemeColorOption themeColor) =>
+      themeColor.onFab(isDarkMode);
 
   static const List<Color> accountColors = [
     Color(0xFF607D8B),

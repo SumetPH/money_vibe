@@ -41,9 +41,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
-        final headerColor = isDarkMode
-            ? AppColors.darkHeader
-            : AppColors.header;
+        final headerColor = AppColors.headerFor(
+          isDarkMode,
+          settingsProvider.themeColor,
+        );
         final backgroundColor = isDarkMode
             ? AppColors.darkBackground
             : AppColors.background;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 
 class BottomSummaryBar extends StatelessWidget {
@@ -20,8 +22,10 @@ class BottomSummaryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headerColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
-    final fabColor = isDarkMode ? AppColors.darkFabYellow : AppColors.fabYellow;
+    final themeColor = context.watch<SettingsProvider>().themeColor;
+    final headerColor = AppColors.headerFor(isDarkMode, themeColor);
+    final fabColor = AppColors.fabFor(isDarkMode, themeColor);
+    final onFabColor = AppColors.onFabFor(isDarkMode, themeColor);
 
     return Container(
       color: headerColor,
@@ -43,7 +47,7 @@ class BottomSummaryBar extends StatelessWidget {
                   height: 50,
                   child: Icon(
                     Icons.add,
-                    color: addIconColor ?? Colors.white,
+                    color: addIconColor ?? onFabColor,
                     size: 28,
                   ),
                 ),

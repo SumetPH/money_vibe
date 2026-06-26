@@ -220,7 +220,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
+    final themeColor = settingsProvider.themeColor;
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
@@ -236,8 +238,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.header,
-        foregroundColor: textColor,
+        backgroundColor: AppColors.headerFor(isDarkMode, themeColor),
+        foregroundColor: Colors.white,
         title: const Text('จัดการข้อมูล'),
         elevation: 0,
       ),
@@ -250,7 +252,12 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSectionTitle('ฐานข้อมูล', textColor, secondaryTextColor),
+                _buildSectionTitle(
+                  'ฐานข้อมูล',
+                  textColor,
+                  secondaryTextColor,
+                  AppColors.accentFor(isDarkMode, themeColor),
+                ),
                 const SizedBox(height: 8),
                 _buildCard(
                   surfaceColor: surfaceColor,
@@ -405,6 +412,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                     'สำรองและกู้คืน',
                     textColor,
                     secondaryTextColor,
+                    AppColors.accentFor(isDarkMode, themeColor),
                   ),
                   const SizedBox(height: 8),
 
@@ -480,6 +488,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                     'ล้างข้อมูล',
                     textColor,
                     secondaryTextColor,
+                    AppColors.accentFor(isDarkMode, themeColor),
                   ),
                   const SizedBox(height: 8),
                   _buildCard(
@@ -584,6 +593,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     String title,
     Color textColor,
     Color secondaryTextColor,
+    Color accentColor,
   ) {
     return Row(
       children: [
@@ -591,7 +601,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           width: 4,
           height: 20,
           decoration: BoxDecoration(
-            color: AppColors.header,
+            color: accentColor,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
