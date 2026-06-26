@@ -670,6 +670,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         transactionProvider: context.read<TransactionProvider>(),
         categoryProvider: context.read<CategoryProvider>(),
         budgetProvider: context.read<BudgetProvider>(),
+        settingsProvider: context.read<SettingsProvider>(),
       );
 
       await Clipboard.setData(ClipboardData(text: snapshot));

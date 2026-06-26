@@ -6,6 +6,7 @@ import '../models/transaction.dart';
 import '../providers/account_provider.dart';
 import '../providers/budget_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
 
 enum AiFinanceExportScope {
@@ -32,6 +33,7 @@ class AiFinanceExportService {
     required TransactionProvider transactionProvider,
     required CategoryProvider categoryProvider,
     required BudgetProvider budgetProvider,
+    required SettingsProvider settingsProvider,
     DateTime? now,
   }) {
     final generatedAt = now ?? DateTime.now();
@@ -46,6 +48,17 @@ class AiFinanceExportService {
               tx.dateTime.isBefore(nextMonth),
         )
         .toList();
+    final budgetCycle = _currentBudgetCycle(
+      generatedAt,
+      settingsProvider.budgetStartDay,
+    );
+    final budgetTransactions = transactions
+        .where(
+          (tx) =>
+              !tx.dateTime.isBefore(budgetCycle.start) &&
+              tx.dateTime.isBefore(budgetCycle.endExclusive),
+        )
+        .toList();
 
     final lines = <String>[
       '# Money Vibe Finance Snapshot',
@@ -53,6 +66,9 @@ class AiFinanceExportService {
       '- Generated at: ${_dateFormatter.format(generatedAt)}',
       '- Scope: ${scope.label}',
       '- Period: ${_monthFormatter.format(monthStart)}',
+      '- Budget cycle: ${_dateFormatter.format(budgetCycle.start)} to '
+          '${_dateFormatter.format(budgetCycle.endInclusive)} '
+          '(starts day ${settingsProvider.budgetStartDay})',
       '- Privacy: transaction notes and raw IDs are excluded',
       '',
     ];
@@ -72,7 +88,8 @@ class AiFinanceExportService {
           lines,
           budgetProvider,
           categoryProvider,
-          monthTransactions,
+          budgetTransactions,
+          budgetCycle,
         );
         _appendPortfolio(lines, accountProvider, accounts);
       case AiFinanceExportScope.accounts:
@@ -91,7 +108,8 @@ class AiFinanceExportService {
           lines,
           budgetProvider,
           categoryProvider,
-          monthTransactions,
+          budgetTransactions,
+          budgetCycle,
         );
     }
 
@@ -138,8 +156,10 @@ class AiFinanceExportService {
     lines
       ..add('## Accounts')
       ..add('')
-      ..add('| Group | Account | Currency | Balance | THB Value | Flags |')
-      ..add('| --- | --- | --- | ---: | ---: | --- |');
+      ..add(
+        '| Group | Account | Currency | Balance | THB Value | Statement Day | Flags |',
+      )
+      ..add('| --- | --- | --- | ---: | ---: | --- | --- |');
 
     for (final account in accounts) {
       final balance = accountProvider.getBalance(account.id, transactions);
@@ -155,7 +175,8 @@ class AiFinanceExportService {
       lines.add(
         '| ${account.type.group.label} | ${_cell(account.name)} | '
         '${account.currency} | ${_money(balance, account.currency)} | '
-        '${_money(thbValue, 'THB')} | ${flags.isEmpty ? '-' : flags} |',
+        '${_money(thbValue, 'THB')} | ${_statementDayText(account)} | '
+        '${flags.isEmpty ? '-' : flags} |',
       );
     }
 
@@ -230,12 +251,18 @@ class AiFinanceExportService {
     List<String> lines,
     BudgetProvider budgetProvider,
     CategoryProvider categoryProvider,
-    List<AppTransaction> monthTransactions,
+    List<AppTransaction> budgetTransactions,
+    _DateWindow budgetCycle,
   ) {
     final budgets = budgetProvider.budgets;
 
     lines
       ..add('## Budgets')
+      ..add('')
+      ..add(
+        '- Current cycle: ${_dateFormatter.format(budgetCycle.start)} to '
+        '${_dateFormatter.format(budgetCycle.endInclusive)}',
+      )
       ..add('');
 
     if (budgets.isEmpty) {
@@ -250,7 +277,7 @@ class AiFinanceExportService {
       ..add('| --- | --- | ---: | ---: | ---: | --- |');
 
     for (final budget in budgets) {
-      final used = _budgetUsed(budget, monthTransactions);
+      final used = _budgetUsed(budget, budgetTransactions);
       final remaining = budget.amount - used;
       final categories = budget.categoryIds
           .map((id) => categoryProvider.findById(id)?.name)
@@ -339,6 +366,36 @@ class AiFinanceExportService {
     return '${_amountFormatter.format(cleanAmount)} $currency';
   }
 
+  String _statementDayText(Account account) {
+    if (account.type != AccountType.creditCard) return '-';
+    return account.statementDay == null
+        ? 'not set'
+        : 'day ${account.statementDay}';
+  }
+
+  _DateWindow _currentBudgetCycle(DateTime now, int startDay) {
+    final cycleMonth = now.day >= startDay
+        ? DateTime(now.year, now.month)
+        : DateTime(now.year, now.month - 1);
+    final start = _budgetCycleStart(
+      cycleMonth.year,
+      cycleMonth.month,
+      startDay,
+    );
+    final nextCycleMonth = DateTime(cycleMonth.year, cycleMonth.month + 1);
+    final endExclusive = _budgetCycleStart(
+      nextCycleMonth.year,
+      nextCycleMonth.month,
+      startDay,
+    );
+    return _DateWindow(start: start, endExclusive: endExclusive);
+  }
+
+  DateTime _budgetCycleStart(int year, int month, int startDay) {
+    final lastDay = DateTime(year, month + 1, 0).day;
+    return DateTime(year, month, startDay.clamp(1, lastDay));
+  }
+
   String _cell(String value) {
     return value
         .replaceAll('|', '/')
@@ -346,4 +403,13 @@ class AiFinanceExportService {
         .replaceAll('\r', ' ')
         .trim();
   }
+}
+
+class _DateWindow {
+  final DateTime start;
+  final DateTime endExclusive;
+
+  const _DateWindow({required this.start, required this.endExclusive});
+
+  DateTime get endInclusive => endExclusive.subtract(const Duration(days: 1));
 }
