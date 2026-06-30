@@ -689,7 +689,13 @@ class AccountProvider extends ChangeNotifier {
     if (isFullSell) {
       holdings.removeAt(holdingIndex);
     } else {
-      holdings[holdingIndex] = holding.copyWith(shares: remainingShares);
+      holdings[holdingIndex] = holding.copyWith(
+        shares: remainingShares,
+        peakProfitPct: _resolveResetPeakProfitPct(
+          holding: holding,
+          shares: remainingShares,
+        ),
+      );
     }
     _stockTrades.insert(0, trade);
     notifyListeners();
@@ -739,6 +745,28 @@ class AccountProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  double? _resolveResetPeakProfitPct({
+    required StockHolding holding,
+    required double shares,
+  }) {
+    if (!holding.sellPlanEnabled || holding.costBasisUsd <= 0 || shares <= 0) {
+      return null;
+    }
+
+    final totalCostUsd = shares * holding.costBasisUsd;
+    if (totalCostUsd <= 0) return null;
+
+    final currentValueUsd = shares * holding.priceUsd;
+    final currentPnlPct =
+        ((currentValueUsd - totalCostUsd) / totalCostUsd) * 100;
+    final shouldTrackPeak = holding.takeProfitPct <= 0
+        ? currentPnlPct > 0
+        : currentPnlPct >= holding.takeProfitPct;
+
+    if (!shouldTrackPeak) return null;
+    return double.parse(currentPnlPct.toStringAsFixed(2));
   }
 
   Future<void> addStockTrade(StockTrade trade) async {
