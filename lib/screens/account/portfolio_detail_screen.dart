@@ -205,7 +205,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   StockHolding _syncSellPlanProgress(StockHolding holding) {
     if (!holding.sellPlanEnabled ||
         !holding.canCalculateSellPlan ||
-        holding.takeProfitPct <= 0 ||
         holding.trailingStopPct <= 0) {
       return holding;
     }
@@ -213,7 +212,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     final currentPnlPct = holding.unrealizedPnlPct;
     final peakProfitPct = holding.peakProfitPct;
     if (peakProfitPct == null) {
-      if (currentPnlPct >= holding.takeProfitPct) {
+      if (_shouldTrackPeakProfit(
+        currentPnlPct: currentPnlPct,
+        takeProfitPct: holding.takeProfitPct,
+      )) {
         return holding.copyWith(peakProfitPct: _roundPct(currentPnlPct));
       }
       return holding;
@@ -227,6 +229,16 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   }
 
   double _roundPct(double value) => double.parse(value.toStringAsFixed(2));
+
+  bool _shouldTrackPeakProfit({
+    required double currentPnlPct,
+    required double takeProfitPct,
+  }) {
+    if (takeProfitPct <= 0) {
+      return currentPnlPct > 0;
+    }
+    return currentPnlPct >= takeProfitPct;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -761,26 +773,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   ),
                   Divider(height: 1, color: dividerColor),
                   ListTile(
-                    leading: Icon(Icons.auto_awesome, color: textColor),
-                    title: Text(
-                      'วิเคราะห์พอร์ต',
-                      style: TextStyle(color: textColor),
-                    ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PortfolioAnalyzeScreen(
-                            accountId: widget.account.id,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
                     leading: Icon(Icons.edit_document, color: textColor),
                     title: Text(
                       'ปรับรายงานประจำปี',
@@ -794,6 +786,26 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         MaterialPageRoute(
                           builder: (_) => BrokerReportListScreen(
                             portfolioId: widget.account.id,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
+                    leading: Icon(Icons.auto_awesome, color: textColor),
+                    title: Text(
+                      'วิเคราะห์พอร์ต',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PortfolioAnalyzeScreen(
+                            accountId: widget.account.id,
                           ),
                         ),
                       );

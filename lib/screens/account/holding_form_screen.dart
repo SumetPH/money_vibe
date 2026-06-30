@@ -96,7 +96,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         );
       }
       _sellPlanEnabled = holding.sellPlanEnabled;
-      if (holding.takeProfitPct > 0) {
+      if (holding.sellPlanEnabled) {
         _takeProfitController.text = formatStockHoldingEditableNumber(
           holding.takeProfitPct,
           scale: 2,
@@ -191,8 +191,8 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         _sellPlanError = 'ต้องมีราคาทุนมากกว่า 0 เพื่อใช้แผนขาย';
         hasError = true;
       }
-      if (takeProfit <= 0) {
-        _takeProfitError = 'กรุณากรอก Take Profit %';
+      if (takeProfit < 0) {
+        _takeProfitError = 'Take Profit % ต้องไม่ติดลบ';
         hasError = true;
       }
       if (trailingStop <= 0) {
@@ -333,7 +333,12 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     );
 
     if (existing == null) {
-      return currentPnlPct >= takeProfitPct ? _roundPct(currentPnlPct) : null;
+      return _shouldTrackPeakProfit(
+            currentPnlPct: currentPnlPct,
+            takeProfitPct: takeProfitPct,
+          )
+          ? _roundPct(currentPnlPct)
+          : null;
     }
 
     // Buying more or selling part of a position changes the investment basis,
@@ -356,17 +361,36 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       peakProfitPct: existing.peakProfitPct,
     ).hasInvestmentBasisChangedFrom(existing);
     if (basisChanged || !existing.sellPlanEnabled) {
-      return currentPnlPct >= takeProfitPct ? _roundPct(currentPnlPct) : null;
+      return _shouldTrackPeakProfit(
+            currentPnlPct: currentPnlPct,
+            takeProfitPct: takeProfitPct,
+          )
+          ? _roundPct(currentPnlPct)
+          : null;
     }
 
     final previousPeak = existing.peakProfitPct;
-    if (previousPeak == null && currentPnlPct < takeProfitPct) {
+    if (previousPeak == null &&
+        !_shouldTrackPeakProfit(
+          currentPnlPct: currentPnlPct,
+          takeProfitPct: takeProfitPct,
+        )) {
       return null;
     }
     if (previousPeak == null || currentPnlPct > previousPeak) {
       return _roundPct(currentPnlPct);
     }
     return _roundPct(previousPeak);
+  }
+
+  bool _shouldTrackPeakProfit({
+    required double currentPnlPct,
+    required double takeProfitPct,
+  }) {
+    if (takeProfitPct <= 0) {
+      return currentPnlPct > 0;
+    }
+    return currentPnlPct >= takeProfitPct;
   }
 
   Future<void> _delete() async {
@@ -604,7 +628,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss %',
+                  'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss % (Take Profit ใส่ 0 ได้)',
                   style: TextStyle(fontSize: 13, color: labelColor),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),

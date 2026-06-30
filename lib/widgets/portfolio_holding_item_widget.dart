@@ -487,9 +487,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
       );
     }
 
-    // 2. Check Take Profit & Trailing Stop
-    if (widget.holding.takeProfitPct > 0 &&
-        widget.holding.trailingStopPct > 0) {
+    // 2. Check Trailing Stop after profit tracking has started.
+    if (widget.holding.trailingStopPct > 0) {
       final trailingStopTriggerPct = _resolveTrailingStopTriggerPct();
       if (trailingStopTriggerPct != null) {
         final trailingStopPrice = _calculateStopPrice(
@@ -507,8 +506,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         }
 
         final remainingPct = currentPnlPct - trailingStopTriggerPct;
+        final waitingTitle = widget.holding.takeProfitPct > 0
+            ? 'ถึงเป้าแล้ว รอ Trailing Stop'
+            : 'กำลังใช้ Trailing Stop';
         return _SellPlanStatusHelper(
-          title: 'ถึงเป้าแล้ว รอ Trailing Stop',
+          title: waitingTitle,
           message:
               'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • เหลืออีก ${remainingPct.toStringAsFixed(2)}%',
           textColor: incomeColor,
@@ -521,6 +523,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     final List<String> parts = [];
     if (widget.holding.takeProfitPct > 0) {
       parts.add('เป้า ${_formatSignedPct(widget.holding.takeProfitPct)}');
+    }
+    if (widget.holding.trailingStopPct > 0) {
+      parts.add('Trail ${widget.holding.trailingStopPct.toStringAsFixed(2)}%');
     }
     if (widget.holding.stopLossPct > 0) {
       parts.add('Cut -${widget.holding.stopLossPct.toStringAsFixed(2)}%');
@@ -608,9 +613,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
       );
     }
 
-    // 2. Check Take Profit & Trailing Stop
-    if (widget.holding.takeProfitPct > 0 &&
-        widget.holding.trailingStopPct > 0) {
+    // 2. Check Trailing Stop after profit tracking has started.
+    if (widget.holding.trailingStopPct > 0) {
       final trailingStopTriggerPct = _resolveTrailingStopTriggerPct();
       if (trailingStopTriggerPct != null) {
         if (currentPnlPct <= trailingStopTriggerPct) {
