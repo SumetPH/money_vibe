@@ -1563,9 +1563,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                         if (value != idx.toDouble()) {
                                           return const SizedBox.shrink();
                                         }
-                                        if (idx < 0 ||
-                                            idx >=
-                                                filteredNetWorthData.length) {
+                                        if (!_shouldShowBottomTitle(
+                                          idx,
+                                          filteredNetWorthData,
+                                          _selectedFilter,
+                                        )) {
                                           return const SizedBox.shrink();
                                         }
                                         return Padding(
@@ -1866,6 +1868,27 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     if (length <= 24) return 2;
     if (length <= 36) return 3;
     return 12;
+  }
+
+  bool _shouldShowBottomTitle(
+    int idx,
+    List<_NetWorthData> data,
+    _NetWorthPeriodFilter filter,
+  ) {
+    if (idx < 0 || idx >= data.length) return false;
+
+    final lastIdx = data.length - 1;
+    if (idx == lastIdx) return true;
+
+    final interval = _getBottomInterval(data, filter);
+    final lastIntervalIdx = (lastIdx ~/ interval) * interval;
+    final minGapFromLast = interval > 1 ? (interval / 2).ceil() : 1;
+
+    if (idx == lastIntervalIdx && lastIdx - idx < minGapFromLast) {
+      return false;
+    }
+
+    return idx % interval == 0;
   }
 
   String _formatCompact(double value) {
