@@ -1252,7 +1252,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
 
         final netWorthData = _calculateNetWorth(
           txProvider.transactions,
-          accountProvider.visibleAccounts,
+          accountProvider.accounts,
           accountProvider,
           includeExcluded: _includeExcluded,
         );
@@ -1409,7 +1409,6 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                     Switch(
                       value: _includeExcluded,
                       onChanged: (v) => setState(() => _includeExcluded = v),
-                      activeThumbColor: lineColor,
                     ),
                   ],
                 ),
@@ -1646,7 +1645,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                             filteredNetWorthData[spot.x
                                                 .toInt()];
                                         return LineTooltipItem(
-                                          '${_formatDate(data.date)}\n',
+                                          '${_formatTooltipDate(data.date)}\n',
                                           TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -1686,117 +1685,67 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     AccountProvider accountProvider, {
     bool includeExcluded = false,
   }) {
-    if (accounts.isEmpty) return [];
-
-    // Apply excludeFromNetWorth filter unless user opted to include them
     final effectiveAccounts = includeExcluded
         ? accounts
         : accounts.where((a) => !a.excludeFromNetWorth).toList();
-
-    // Portfolio accounts use cashBalance+holdings (not transaction-based),
-    // so exclude them from the running total and add their current value as a static offset.
-    final portfolioAccountIds = {
-      for (final a in effectiveAccounts)
-        if (a.type == AccountType.portfolio) a.id,
-    };
-
-    // Current portfolio value (constant offset added to all data points)
-    double portfolioValue = 0;
-    for (final a in effectiveAccounts) {
-      if (a.type == AccountType.portfolio) {
-        portfolioValue += accountProvider.getBalanceInThb(a.id, transactions);
-      }
-    }
+    if (effectiveAccounts.isEmpty) return [];
 
     String monthKey(DateTime dt) =>
         '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
 
-    // Collect initial balance injections per month based on account.startDate
-    final Map<String, double> initialByMonth = {};
-    for (final a in effectiveAccounts) {
-      if (a.type != AccountType.portfolio) {
-        final mk = monthKey(a.startDate);
-        initialByMonth[mk] = (initialByMonth[mk] ?? 0) + a.initialBalance;
-      }
-    }
-
-    // Sort transactions by date
-    final sortedTx = List<AppTransaction>.from(transactions)
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-    // Collect all months to show (account starts + transaction months)
-    final allMonths = <String>{
-      ...initialByMonth.keys,
-      for (final tx in sortedTx) monthKey(tx.dateTime),
-    };
-    final sortedMonths = allMonths.toList()..sort();
-
-    // Group transactions by month for quick lookup
-    final Map<String, List<AppTransaction>> txByMonth = {};
-    for (final tx in sortedTx) {
-      txByMonth.putIfAbsent(monthKey(tx.dateTime), () => []).add(tx);
-    }
-
-    // Account IDs that are included (non-portfolio only, portfolio handled separately)
-    final effectiveAccountIds = {
-      for (final a in effectiveAccounts)
-        if (a.type != AccountType.portfolio) a.id,
-    };
-
-    double runningTotal = 0;
-    final Map<String, double> monthlyNetWorth = {};
-
-    for (final mk in sortedMonths) {
-      // Add initial balances of accounts that started this month
-      runningTotal += initialByMonth[mk] ?? 0;
-
-      // Apply transactions for this month
-      for (final tx in txByMonth[mk] ?? []) {
-        final fromIncluded = effectiveAccountIds.contains(tx.accountId);
-        final toIncluded =
-            tx.toAccountId != null &&
-            effectiveAccountIds.contains(tx.toAccountId);
-        final fromPortfolio = portfolioAccountIds.contains(tx.accountId);
-        final toPortfolio =
-            tx.toAccountId != null &&
-            portfolioAccountIds.contains(tx.toAccountId);
-
-        if (tx.type == TransactionType.income ||
-            tx.type == TransactionType.increaseBalance) {
-          if (fromIncluded) runningTotal += tx.amount;
-        } else if (tx.type == TransactionType.expense ||
-            tx.type == TransactionType.decreaseBalance) {
-          if (fromIncluded) runningTotal -= tx.amount;
-        } else if (tx.type.usesDestinationAccount) {
-          if (!fromPortfolio && toPortfolio && fromIncluded) {
-            runningTotal -= tx.amount;
-          } else if (fromPortfolio && !toPortfolio && toIncluded) {
-            runningTotal += tx.amount;
-          } else if (!fromPortfolio && !toPortfolio) {
-            if (fromIncluded && !toIncluded) runningTotal -= tx.amount;
-            if (!fromIncluded && toIncluded) runningTotal += tx.amount;
-            // both included or both excluded → neutral
-          }
-        }
-      }
-
-      monthlyNetWorth[mk] = runningTotal;
-    }
-
-    // Convert to list
-    final now = DateTime.now();
-    final currentMonthKey = monthKey(now);
-    final result = monthlyNetWorth.entries.map((entry) {
-      final parts = entry.key.split('-');
-      final year = int.parse(parts[0]);
-      final month = int.parse(parts[1]);
-      final date = entry.key == currentMonthKey
-          ? now
-          : DateTime(year, month, 1);
-      return _NetWorthData(date: date, netWorth: entry.value + portfolioValue);
+    final effectiveAccountIds = effectiveAccounts.map((a) => a.id).toSet();
+    final relevantTransactions = transactions.where((tx) {
+      final fromIncluded = effectiveAccountIds.contains(tx.accountId);
+      final toIncluded =
+          tx.toAccountId != null &&
+          effectiveAccountIds.contains(tx.toAccountId);
+      return fromIncluded || toIncluded;
     }).toList();
 
-    result.sort((a, b) => a.date.compareTo(b.date));
+    final monthKeys = <String>{
+      for (final account in effectiveAccounts) monthKey(account.startDate),
+      for (final tx in relevantTransactions) monthKey(tx.dateTime),
+    };
+    if (monthKeys.isEmpty) return [];
+
+    final sortedMonthKeys = monthKeys.toList()..sort();
+    final firstParts = sortedMonthKeys.first.split('-');
+    final firstMonth = DateTime(
+      int.parse(firstParts[0]),
+      int.parse(firstParts[1]),
+    );
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    final result = <_NetWorthData>[];
+    for (
+      var month = firstMonth;
+      !month.isAfter(currentMonth);
+      month = DateTime(month.year, month.month + 1)
+    ) {
+      final isCurrentMonth =
+          month.year == currentMonth.year && month.month == currentMonth.month;
+      final snapshotDate = isCurrentMonth
+          ? now
+          : DateTime(month.year, month.month + 1, 0, 23, 59, 59, 999);
+      final snapshotTransactions = relevantTransactions
+          .where((tx) => !tx.dateTime.isAfter(snapshotDate))
+          .toList();
+      final netWorth = effectiveAccounts
+          .where((account) => !account.startDate.isAfter(snapshotDate))
+          .fold(
+            0.0,
+            (sum, account) =>
+                sum +
+                accountProvider.getBalanceInThb(
+                  account.id,
+                  snapshotTransactions,
+                ),
+          );
+
+      result.add(_NetWorthData(date: snapshotDate, netWorth: netWorth));
+    }
+
     return result;
   }
 
@@ -1902,6 +1851,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatTooltipDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    return '$month/${date.year}';
   }
 
   String _formatMonthYear(DateTime date) {

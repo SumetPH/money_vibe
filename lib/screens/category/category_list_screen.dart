@@ -18,7 +18,9 @@ class CategoryListScreen extends StatefulWidget {
   State<CategoryListScreen> createState() => _CategoryListScreenState();
 }
 
-class _CategoryListScreenState extends State<CategoryListScreen> {
+class _CategoryListScreenState extends State<CategoryListScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
   int _currentIndex = 0;
   bool _isReorderMode = false;
   String _searchQuery = '';
@@ -27,6 +29,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SyncProvider>().checkAndSync();
@@ -36,6 +39,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -43,7 +47,12 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   CategoryType get _currentType =>
       _currentIndex == 0 ? CategoryType.expense : CategoryType.income;
 
-  void _onTabChanged(int index) {
+  void _selectTab(int index) {
+    if (_isReorderMode) {
+      _tabController.animateTo(_currentIndex);
+      return;
+    }
+
     setState(() {
       _currentIndex = index;
       _searchQuery = '';
@@ -53,13 +62,15 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final selectedTabColor = _currentType == CategoryType.expense
-        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
-        : (isDarkMode ? AppColors.darkIncome : AppColors.income);
-    final unselectedTabColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
+    final headerColor = AppColors.headerFor(
+      isDarkMode,
+      settingsProvider.themeColor,
+    );
+    final backgroundColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -83,46 +94,47 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
             onPressed: () => _showMenuBottomSheet(context),
           ),
         ],
+        backgroundColor: headerColor,
+        foregroundColor: Colors.white,
+        bottom: TabBar(
+          controller: _tabController,
+          onTap: _selectTab,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(text: 'รายจ่าย'),
+            Tab(text: 'รายรับ'),
+          ],
+        ),
       ),
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          return IndexedStack(
-            index: _currentIndex,
-            children: [
-              _buildCategoryList(
-                catProvider,
-                txProvider,
-                CategoryType.expense,
-                isDarkMode,
+          return SafeArea(
+            child: Container(
+              color: backgroundColor,
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                controller: _tabController,
+                children: [
+                  _buildCategoryList(
+                    catProvider,
+                    txProvider,
+                    CategoryType.expense,
+                    isDarkMode,
+                  ),
+                  _buildCategoryList(
+                    catProvider,
+                    txProvider,
+                    CategoryType.income,
+                    isDarkMode,
+                  ),
+                ],
               ),
-              _buildCategoryList(
-                catProvider,
-                txProvider,
-                CategoryType.income,
-                isDarkMode,
-              ),
-            ],
+            ),
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _isReorderMode ? null : _onTabChanged,
-        selectedItemColor: selectedTabColor,
-        unselectedItemColor: unselectedTabColor,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.arrow_upward),
-            label: 'รายจ่าย',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.arrow_downward),
-            label: 'รายรับ',
-          ),
-        ],
       ),
     );
   }
