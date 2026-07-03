@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
 import '../../main.dart';
+import '../transaction/transaction_list_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -1052,26 +1053,24 @@ class _CategoryPieChart extends StatelessWidget {
                   Container(
                     color: surfaceColor,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: categoryData.length,
-                          itemBuilder: (context, index) {
-                            final data = categoryData[index];
-                            final percentage = total > 0
-                                ? (data.amount / total) * 100
-                                : 0.0;
-                            return _CategoryListItem(
-                              data: data,
-                              percentage: percentage.toDouble(),
-                              isDarkMode: isDarkMode,
-                            );
-                          },
-                        ),
-                      ],
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: categoryData.length,
+                      separatorBuilder: (_, _) =>
+                          Divider(height: 1, color: dividerColor),
+                      itemBuilder: (context, index) {
+                        final data = categoryData[index];
+                        final percentage = total > 0
+                            ? (data.amount / total) * 100
+                            : 0.0;
+                        return _CategoryListItem(
+                          data: data,
+                          percentage: percentage.toDouble(),
+                          isDarkMode: isDarkMode,
+                          onTap: () => _openCategoryTransactions(context, data),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -1088,6 +1087,7 @@ class _CategoryPieChart extends StatelessWidget {
     List<Account> accounts,
   ) {
     final Map<String, double> categoryAmounts = {};
+    final Map<String, List<String>> categoryTransactionIds = {};
     final accountTypesById = _accountTypesById(accounts);
 
     for (final tx in transactions) {
@@ -1102,6 +1102,7 @@ class _CategoryPieChart extends StatelessWidget {
       if (categoryId != null) {
         categoryAmounts[categoryId] =
             (categoryAmounts[categoryId] ?? 0) + tx.amount;
+        categoryTransactionIds.putIfAbsent(categoryId, () => []).add(tx.id);
       }
     }
 
@@ -1126,12 +1127,26 @@ class _CategoryPieChart extends StatelessWidget {
           amount: entry.value.toDouble(),
           color: category.color,
           icon: category.icon,
+          transactionIds: categoryTransactionIds[entry.key] ?? const [],
         ),
       );
     }
 
     result.sort((a, b) => b.amount.compareTo(a.amount));
     return result;
+  }
+
+  void _openCategoryTransactions(BuildContext context, _CategoryData data) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionListScreen(
+          categoryIds: [data.category.id],
+          transactionIds: data.transactionIds,
+          title: data.category.name,
+        ),
+      ),
+    );
   }
 }
 
@@ -1140,12 +1155,14 @@ class _CategoryData {
   final double amount;
   final Color color;
   final IconData icon;
+  final List<String> transactionIds;
 
   _CategoryData({
     required this.category,
     required this.amount,
     required this.color,
     required this.icon,
+    required this.transactionIds,
   });
 }
 
@@ -1153,11 +1170,13 @@ class _CategoryListItem extends StatelessWidget {
   final _CategoryData data;
   final double percentage;
   final bool isDarkMode;
+  final VoidCallback onTap;
 
   const _CategoryListItem({
     required this.data,
     required this.percentage,
     required this.isDarkMode,
+    required this.onTap,
   });
 
   @override
@@ -1169,76 +1188,81 @@ class _CategoryListItem extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: data.color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(data.icon, color: data.color, size: 20),
             ),
-            child: Icon(data.icon, color: data.color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.category.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: percentage / 100,
-                    backgroundColor: isDarkMode
-                        ? AppColors.darkDivider
-                        : AppColors.divider,
-                    valueColor: AlwaysStoppedAnimation<Color>(data.color),
-                    minHeight: 6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 96,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    formatAmount(data.amount),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data.category.name,
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
                   ),
-                ),
-                Text(
-                  '${percentage.toStringAsFixed(1)}%',
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: percentage / 100,
+                      backgroundColor: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                      valueColor: AlwaysStoppedAnimation<Color>(data.color),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 96,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      formatAmount(data.amount),
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${percentage.toStringAsFixed(1)}%',
+                    style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 20, color: secondaryTextColor),
+          ],
+        ),
       ),
     );
   }

@@ -57,9 +57,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     super.initState();
     final r = widget.recurring;
     _nameController.text = r?.name ?? '';
-    _amountController.text = r != null && r.amount > 0
-        ? formatAmount(r.amount)
-        : '';
+    _amountController.text = r != null ? formatAmount(r.amount) : '';
     _noteController.text = r?.note ?? '';
     _type = r?.transactionType ?? TransactionType.expense;
     _icon = r?.icon ?? Icons.repeat;
@@ -223,8 +221,8 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       return;
     }
     final rawAmount = _amountController.text.replaceAll(',', '').trim();
-    final amount = double.tryParse(rawAmount) ?? 0.0;
-    if (amount <= 0) {
+    final amount = double.tryParse(rawAmount);
+    if (rawAmount.isEmpty || amount == null || amount < 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณากรอกจำนวนเงิน')));

@@ -5,6 +5,7 @@ import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
@@ -51,8 +52,12 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<RecurringTransactionProvider, SettingsProvider>(
-      builder: (context, provider, sp, _) {
+    return Consumer3<
+      RecurringTransactionProvider,
+      SettingsProvider,
+      TransactionProvider
+    >(
+      builder: (context, provider, sp, transactionProvider, _) {
         final isDark = sp.isDarkMode;
         final bgColor = isDark
             ? AppColors.darkBackground
@@ -67,6 +72,10 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
         final list = provider.recurring;
+        final transactionsById = {
+          for (final transaction in transactionProvider.transactions)
+            transaction.id: transaction,
+        };
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -148,7 +157,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                     itemCount: list.length,
                     itemBuilder: (_, i) {
                       final r = list[i];
-                      final next = r.nextOccurrence;
+                      var next = r.nextOccurrence;
                       final typeColor = _typeColor(r.transactionType, isDark);
 
                       // Get occurrence status for current month only
@@ -173,13 +182,22 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                       // Determine current month status
                       String? statusLabel;
                       Color? statusColor;
+                      var displayAmount = r.amount;
 
                       if (monthDates.isNotEmpty) {
+                        final currentMonthDate = monthDates.first;
                         final occ = provider.findOccurrence(
                           r.id,
-                          monthDates.first,
+                          currentMonthDate,
                         );
+                        final linkedTransaction = occ?.transactionId != null
+                            ? transactionsById[occ!.transactionId]
+                            : null;
+                        displayAmount = linkedTransaction?.amount ?? r.amount;
                         final status = occ?.status ?? OccurrenceStatus.pending;
+                        next = status == OccurrenceStatus.pending
+                            ? currentMonthDate
+                            : null;
                         switch (status) {
                           case OccurrenceStatus.done:
                             statusLabel = 'เสร็จแล้ว';
@@ -200,6 +218,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                         opacity: r.isHidden ? 0.45 : 1.0,
                         child: _RecurringItem(
                           recurring: r,
+                          displayAmount: displayAmount,
                           nextOccurrence: next,
                           statusLabel: statusLabel,
                           statusColor: statusColor,
@@ -346,6 +365,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
 
 class _RecurringItem extends StatelessWidget {
   final RecurringTransaction recurring;
+  final double displayAmount;
   final DateTime? nextOccurrence;
   final String? statusLabel;
   final Color? statusColor;
@@ -362,6 +382,7 @@ class _RecurringItem extends StatelessWidget {
 
   const _RecurringItem({
     required this.recurring,
+    required this.displayAmount,
     required this.nextOccurrence,
     required this.statusLabel,
     required this.statusColor,
@@ -457,28 +478,28 @@ class _RecurringItem extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          if (statusLabel != null && statusColor != null) ...[
+                            _StatusChip(
+                              label: statusLabel!,
+                              color: statusColor!,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
                           Text(
-                            formatAmount(recurring.amount),
+                            formatAmount(displayAmount),
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: typeColor,
                             ),
                           ),
-                          if (statusLabel != null && statusColor != null) ...[
-                            const SizedBox(height: 4),
-                            _StatusChip(
-                              label: statusLabel!,
-                              color: statusColor!,
-                            ),
-                          ],
                         ],
                       ),
                     ],
                   )
                 else
                   Text(
-                    formatAmount(recurring.amount),
+                    formatAmount(displayAmount),
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
