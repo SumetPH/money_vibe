@@ -25,7 +25,7 @@ class AppColors {
   static const Color darkSurfaceVariant = Color(0xFF2B2D31);
   static const Color darkTextPrimary = Color(0xFFE0E0E0);
   static const Color darkTextSecondary = Color(0xFFBDBDBD);
-  static const Color darkDivider = Color(0xFF3A3D42);
+  static const Color darkDivider = Color(0xFF4B5058);
   static const Color darkSectionHeader = Color(0xFF2B2D31);
 
   // Slightly adjusted colors for better visibility on dark backgrounds

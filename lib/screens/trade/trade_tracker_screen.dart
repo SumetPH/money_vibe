@@ -142,6 +142,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
 
           return SafeArea(
             child: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
               controller: _tabController,
               children: [
                 CustomScrollView(

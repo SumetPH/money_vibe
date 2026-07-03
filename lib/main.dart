@@ -539,13 +539,14 @@ class _RecurringDetailRouteScreenState
 }
 
 // Shared helper for amount formatting
+final NumberFormat _amountFormatter = NumberFormat('#,##0.00', 'en_US');
+
 String formatAmount(double amount, {bool showSign = false}) {
   // Handle -0.0 case explicitly
   if (amount == 0.0 || amount == -0.0) {
     return '0.00';
   }
-  final formatter = NumberFormat('#,##0.00', 'en_US');
-  final result = formatter.format(amount);
+  final result = _amountFormatter.format(amount);
   if (result == '-0.00') return '0.00';
   if (showSign && amount > 0 && !result.startsWith('+')) return '+$result';
   return result;
@@ -557,9 +558,9 @@ String formatAmountShort(double amount) {
   final abs = amount.abs();
   String formatted;
   if (abs >= 1000000) {
-    formatted = '${NumberFormat('#,##0.00', 'en_US').format(abs / 1000000)}M';
+    formatted = '${_amountFormatter.format(abs / 1000000)}M';
   } else {
-    formatted = NumberFormat('#,##0.00', 'en_US').format(abs);
+    formatted = _amountFormatter.format(abs);
   }
   if (amount < 0) return '-$formatted';
   return formatted;

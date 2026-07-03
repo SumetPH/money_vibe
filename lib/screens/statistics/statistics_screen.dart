@@ -105,6 +105,22 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 }
 
+Map<String, AccountType> _accountTypesById(List<Account> accounts) => {
+  for (final account in accounts) account.id: account.type,
+};
+
+bool _isActualExpense(
+  AppTransaction tx,
+  Map<String, AccountType> accountTypesById,
+) {
+  if (tx.type == TransactionType.expense) return true;
+  if (tx.type == TransactionType.debtTransfer) return true;
+  if (tx.type == TransactionType.debtRepay) {
+    return accountTypesById[tx.toAccountId] != AccountType.creditCard;
+  }
+  return false;
+}
+
 // ==================== Yearly Bar Chart ====================
 
 class _YearlyBarChart extends StatelessWidget {
@@ -132,10 +148,13 @@ class _YearlyBarChart extends StatelessWidget {
             : AppColors.divider;
 
         final accounts = accountProvider.accounts;
-        final yearlyData = _calculateYearlyData(
+        final statsData = _calculateYearlyStats(
           txProvider.transactions,
+          selectedYear,
           accounts,
         );
+        final yearlyData = statsData.yearlyData;
+        final monthlyData = statsData.monthlyData;
         final currentYearData = yearlyData[selectedYear] ?? {};
 
         final netWorthYear =
@@ -151,12 +170,6 @@ class _YearlyBarChart extends StatelessWidget {
         final netWorthYearColor = netWorthYear >= -0.001
             ? incomeColor
             : expenseColor;
-
-        final monthlyData = _calculateMonthlyData(
-          txProvider.transactions,
-          selectedYear,
-          accounts,
-        );
 
         return SingleChildScrollView(
           child: Column(
@@ -244,24 +257,47 @@ class _YearlyBarChart extends StatelessWidget {
     );
   }
 
-  Map<int, Map<String, double>> _calculateYearlyData(
+  _YearlyStatsData _calculateYearlyStats(
     List<AppTransaction> transactions,
+    int selectedYear,
     List<Account> accounts,
   ) {
     final data = <int, Map<String, double>>{};
+    final monthlyData = List.generate(
+      12,
+      (index) => _MonthlyData(
+        month: index + 1,
+        monthName: _getMonthName(index + 1),
+        monthShort: _getMonthShort(index + 1),
+      ),
+    );
+    final accountTypesById = _accountTypesById(accounts);
 
     for (final tx in transactions) {
+      final isIncome = tx.type == TransactionType.income;
+      final isExpense = _isActualExpense(tx, accountTypesById);
+      if (!isIncome && !isExpense) continue;
+
       final year = tx.dateTime.year;
       data.putIfAbsent(year, () => {'income': 0, 'expense': 0});
 
-      if (tx.type == TransactionType.income) {
+      if (isIncome) {
         data[year]!['income'] = (data[year]!['income'] ?? 0) + tx.amount;
-      } else if (TransactionProvider.isActualExpense(tx, accounts)) {
+      } else if (isExpense) {
         data[year]!['expense'] = (data[year]!['expense'] ?? 0) + tx.amount;
+      }
+
+      if (year == selectedYear) {
+        final monthIndex = tx.dateTime.month - 1;
+        if (isIncome) {
+          monthlyData[monthIndex].income += tx.amount;
+        } else if (isExpense) {
+          monthlyData[monthIndex].expense += tx.amount;
+        }
       }
     }
 
-    return data;
+    return _YearlyStatsData(yearlyData: data, monthlyData: monthlyData);
   }
 
   Widget _buildBarChart(
@@ -557,34 +593,6 @@ class _YearlyBarChart extends StatelessWidget {
     );
   }
 
-  List<_MonthlyData> _calculateMonthlyData(
-    List<AppTransaction> transactions,
-    int year,
-    List<Account> accounts,
-  ) {
-    final monthlyData = List.generate(
-      12,
-      (index) => _MonthlyData(
-        month: index + 1,
-        monthName: _getMonthName(index + 1),
-        monthShort: _getMonthShort(index + 1),
-      ),
-    );
-
-    for (final tx in transactions) {
-      if (tx.dateTime.year != year) continue;
-
-      final monthIndex = tx.dateTime.month - 1;
-      if (tx.type == TransactionType.income) {
-        monthlyData[monthIndex].income += tx.amount;
-      } else if (TransactionProvider.isActualExpense(tx, accounts)) {
-        monthlyData[monthIndex].expense += tx.amount;
-      }
-    }
-
-    return monthlyData;
-  }
-
   String _getMonthName(int month) {
     const months = [
       'มกราคม',
@@ -643,6 +651,13 @@ class _MonthlyData {
     required this.monthName,
     required this.monthShort,
   });
+}
+
+class _YearlyStatsData {
+  final Map<int, Map<String, double>> yearlyData;
+  final List<_MonthlyData> monthlyData;
+
+  const _YearlyStatsData({required this.yearlyData, required this.monthlyData});
 }
 
 class _StatsYearSelector extends StatelessWidget {
@@ -1073,12 +1088,13 @@ class _CategoryPieChart extends StatelessWidget {
     List<Account> accounts,
   ) {
     final Map<String, double> categoryAmounts = {};
+    final accountTypesById = _accountTypesById(accounts);
 
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : TransactionProvider.isActualExpense(tx, accounts);
+          : _isActualExpense(tx, accountTypesById);
 
       if (!shouldInclude) continue;
 
@@ -1090,17 +1106,19 @@ class _CategoryPieChart extends StatelessWidget {
     }
 
     final result = <_CategoryData>[];
+    final categoriesById = {
+      for (final category in categories) category.id: category,
+    };
     for (final entry in categoryAmounts.entries) {
-      final category = categories.firstWhere(
-        (c) => c.id == entry.key,
-        orElse: () => Category(
-          id: entry.key,
-          name: 'ไม่ระบุหมวดหมู่',
-          icon: Icons.help_outline,
-          color: Colors.grey,
-          type: type,
-        ),
-      );
+      final category =
+          categoriesById[entry.key] ??
+          Category(
+            id: entry.key,
+            name: 'ไม่ระบุหมวดหมู่',
+            icon: Icons.help_outline,
+            color: Colors.grey,
+            type: type,
+          );
 
       result.add(
         _CategoryData(
@@ -1690,9 +1708,10 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
         : accounts.where((a) => !a.excludeFromNetWorth).toList();
     if (effectiveAccounts.isEmpty) return [];
 
-    String monthKey(DateTime dt) =>
-        '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
-
+    DateTime monthStart(DateTime dt) => DateTime(dt.year, dt.month);
+    final effectiveAccountsById = {
+      for (final account in effectiveAccounts) account.id: account,
+    };
     final effectiveAccountIds = effectiveAccounts.map((a) => a.id).toSet();
     final relevantTransactions = transactions.where((tx) {
       final fromIncluded = effectiveAccountIds.contains(tx.accountId);
@@ -1700,24 +1719,27 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
           tx.toAccountId != null &&
           effectiveAccountIds.contains(tx.toAccountId);
       return fromIncluded || toIncluded;
-    }).toList();
+    }).toList()..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-    final monthKeys = <String>{
-      for (final account in effectiveAccounts) monthKey(account.startDate),
-      for (final tx in relevantTransactions) monthKey(tx.dateTime),
+    final monthKeys = <DateTime>{
+      for (final account in effectiveAccounts) monthStart(account.startDate),
+      for (final tx in relevantTransactions) monthStart(tx.dateTime),
     };
     if (monthKeys.isEmpty) return [];
 
-    final sortedMonthKeys = monthKeys.toList()..sort();
-    final firstParts = sortedMonthKeys.first.split('-');
-    final firstMonth = DateTime(
-      int.parse(firstParts[0]),
-      int.parse(firstParts[1]),
-    );
+    final sortedMonthKeys = monthKeys.toList()..sort((a, b) => a.compareTo(b));
+    final firstMonth = sortedMonthKeys.first;
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month);
+    final balancesByAccountId = <String, double>{};
+    for (final account in effectiveAccounts) {
+      balancesByAccountId[account.id] = account.type == AccountType.portfolio
+          ? accountProvider.getBalance(account.id, const <AppTransaction>[])
+          : account.initialBalance;
+    }
 
     final result = <_NetWorthData>[];
+    var txIndex = 0;
     for (
       var month = firstMonth;
       !month.isAfter(currentMonth);
@@ -1728,25 +1750,55 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
       final snapshotDate = isCurrentMonth
           ? now
           : DateTime(month.year, month.month + 1, 0, 23, 59, 59, 999);
-      final snapshotTransactions = relevantTransactions
-          .where((tx) => !tx.dateTime.isAfter(snapshotDate))
-          .toList();
-      final netWorth = effectiveAccounts
-          .where((account) => !account.startDate.isAfter(snapshotDate))
-          .fold(
-            0.0,
-            (sum, account) =>
-                sum +
-                accountProvider.getBalanceInThb(
-                  account.id,
-                  snapshotTransactions,
-                ),
-          );
+      while (txIndex < relevantTransactions.length &&
+          !relevantTransactions[txIndex].dateTime.isAfter(snapshotDate)) {
+        _applyBalanceDelta(
+          relevantTransactions[txIndex],
+          effectiveAccountsById,
+          balancesByAccountId,
+        );
+        txIndex++;
+      }
+
+      var netWorth = 0.0;
+      for (final account in effectiveAccounts) {
+        if (account.startDate.isAfter(snapshotDate)) continue;
+        final balance = balancesByAccountId[account.id] ?? 0.0;
+        netWorth += account.currency == 'USD'
+            ? balance * account.exchangeRate
+            : balance;
+      }
 
       result.add(_NetWorthData(date: snapshotDate, netWorth: netWorth));
     }
 
     return result;
+  }
+
+  void _applyBalanceDelta(
+    AppTransaction tx,
+    Map<String, Account> effectiveAccountsById,
+    Map<String, double> balancesByAccountId,
+  ) {
+    final fromAccount = effectiveAccountsById[tx.accountId];
+    if (fromAccount != null && fromAccount.type != AccountType.portfolio) {
+      final current = balancesByAccountId[tx.accountId] ?? 0.0;
+      final delta =
+          tx.type == TransactionType.income ||
+              tx.type == TransactionType.increaseBalance
+          ? tx.amount
+          : -tx.amount;
+      balancesByAccountId[tx.accountId] = current + delta;
+    }
+
+    final toAccountId = tx.toAccountId;
+    if (toAccountId == null || !tx.type.usesDestinationAccount) return;
+
+    final toAccount = effectiveAccountsById[toAccountId];
+    if (toAccount == null || toAccount.type == AccountType.portfolio) return;
+
+    balancesByAccountId[toAccountId] =
+        (balancesByAccountId[toAccountId] ?? 0.0) + (tx.toAmount ?? tx.amount);
   }
 
   List<_NetWorthData> _filterNetWorthData(
