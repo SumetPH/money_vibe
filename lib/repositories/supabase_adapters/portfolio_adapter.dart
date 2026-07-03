@@ -77,6 +77,22 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
   }
 
   @override
+  Future<void> updateHoldingMarketData(StockHolding holding) async {
+    _requireAuth();
+    repo.log('Updating holding market data: ${holding.id}');
+    await client
+        .from('portfolio_holdings')
+        .update({
+          'price_usd': holding.priceUsd,
+          'logo_url': holding.logoUrl,
+          'peak_profit_pct': holding.peakProfitPct,
+        })
+        .eq('id', holding.id)
+        .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('portfolio');
+  }
+
+  @override
   Future<void> updateHoldingSortOrder(String id, int sortOrder) async {
     _requireAuth();
     repo.log('Updating holding sort order: $id -> $sortOrder');

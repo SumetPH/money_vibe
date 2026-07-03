@@ -186,7 +186,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         }
       }
       if (updatedHoldings.isNotEmpty) {
-        await provider.updateHoldingsBatch(updatedHoldings);
+        await provider.updateHoldingsMarketDataBatch(updatedHoldings);
       }
     } catch (e) {
       if (mounted) {

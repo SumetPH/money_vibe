@@ -585,6 +585,32 @@ class AccountProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> updateHoldingsMarketDataBatch(
+    List<StockHolding> holdings,
+  ) async {
+    if (holdings.isEmpty) return;
+    final portfolioId = holdings.first.portfolioId;
+    final list = _holdings[portfolioId];
+    if (list == null) return;
+
+    for (final h in holdings) {
+      final idx = list.indexWhere((e) => e.id == h.id);
+      if (idx != -1) list[idx] = h;
+    }
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    notifyListeners();
+
+    await Future.wait(
+      holdings.map(
+        (h) => _db.updateHoldingMarketData(h).catchError((e) {
+          debugPrint(
+            'AccountProvider: Error updating holding market data ${h.id}: $e',
+          );
+        }),
+      ),
+    );
+  }
+
   Future<void> deleteHolding(String id, String portfolioId) async {
     final list = _holdings[portfolioId];
     if (list == null) return;

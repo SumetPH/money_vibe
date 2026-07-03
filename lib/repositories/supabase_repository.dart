@@ -254,6 +254,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _portfolioAdapter.updateHolding(holding);
 
   @override
+  Future<void> updateHoldingMarketData(StockHolding holding) =>
+      _portfolioAdapter.updateHoldingMarketData(holding);
+
+  @override
   Future<void> updateHoldingSortOrder(String id, int sortOrder) =>
       _portfolioAdapter.updateHoldingSortOrder(id, sortOrder);
 
