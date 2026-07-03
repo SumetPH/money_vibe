@@ -87,6 +87,8 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
   String _formatMonthYear(DateTime d) =>
       '${_thaiMonths[d.month - 1]} ${d.year + 543}';
 
+  DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
+
   void _openForm() {
     Navigator.push(
       context,
@@ -195,12 +197,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
   void _undoOccurrence(BuildContext context, DateTime dueDate, bool isDark) {
     final recurProvider = context.read<RecurringTransactionProvider>();
     final txProvider = context.read<TransactionProvider>();
+    final transactionsById = {
+      for (final transaction in txProvider.transactions)
+        transaction.id: transaction,
+    };
 
     final occ = recurProvider.findOccurrence(_recurring.id, dueDate);
     final linkedTx = occ?.transactionId != null
-        ? txProvider.transactions
-              .where((t) => t.id == occ!.transactionId)
-              .firstOrNull
+        ? transactionsById[occ!.transactionId]
         : null;
 
     final bgColor = isDark ? AppColors.darkSurface : Colors.white;
@@ -325,6 +329,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
 
         final typeColor = _typeColor(recurring.transactionType, isDark);
         final occurrenceDates = _getOccurrenceDatesFrom(recurring);
+        final occurrencesByDay = {
+          for (final occurrence in recurProvider.occurrencesFor(recurring.id))
+            _dayKey(occurrence.dueDate): occurrence,
+        };
+        final transactionsById = {
+          for (final transaction in txProvider.transactions)
+            transaction.id: transaction,
+        };
 
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
@@ -538,8 +550,8 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           upcoming: upcoming,
                           past: past,
                           recurring: recurring,
-                          recurProvider: recurProvider,
-                          txProvider: txProvider,
+                          occurrencesByDay: occurrencesByDay,
+                          transactionsById: transactionsById,
                           isDark: isDark,
                           textPrimary: textPrimary,
                           textSecondary: textSecondary,
@@ -581,14 +593,9 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           itemCount: upcoming.length,
                           itemBuilder: (context, i) {
                             final date = upcoming[i];
-                            final occ = recurProvider.findOccurrence(
-                              recurring.id,
-                              date,
-                            );
+                            final occ = occurrencesByDay[_dayKey(date)];
                             final linkedTx = occ?.transactionId != null
-                                ? txProvider.transactions
-                                      .where((t) => t.id == occ!.transactionId)
-                                      .firstOrNull
+                                ? transactionsById[occ!.transactionId]
                                 : null;
                             return _OccurrenceItem(
                               date: date,
@@ -629,14 +636,9 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           itemCount: past.length,
                           itemBuilder: (context, i) {
                             final date = past[i];
-                            final occ = recurProvider.findOccurrence(
-                              recurring.id,
-                              date,
-                            );
+                            final occ = occurrencesByDay[_dayKey(date)];
                             final linkedTx = occ?.transactionId != null
-                                ? txProvider.transactions
-                                      .where((t) => t.id == occ!.transactionId)
-                                      .firstOrNull
+                                ? transactionsById[occ!.transactionId]
                                 : null;
                             return _OccurrenceItem(
                               date: date,
@@ -1087,8 +1089,8 @@ class _RemainingSummary extends StatelessWidget {
   final List<DateTime> upcoming;
   final List<DateTime> past;
   final RecurringTransaction recurring;
-  final RecurringTransactionProvider recurProvider;
-  final TransactionProvider txProvider;
+  final Map<DateTime, RecurringOccurrence> occurrencesByDay;
+  final Map<String, AppTransaction> transactionsById;
   final bool isDark;
   final Color textPrimary;
   final Color textSecondary;
@@ -1099,8 +1101,8 @@ class _RemainingSummary extends StatelessWidget {
     required this.upcoming,
     required this.past,
     required this.recurring,
-    required this.recurProvider,
-    required this.txProvider,
+    required this.occurrencesByDay,
+    required this.transactionsById,
     required this.isDark,
     required this.textPrimary,
     required this.textSecondary,
@@ -1121,7 +1123,7 @@ class _RemainingSummary extends StatelessWidget {
     // Process all dates (upcoming + past)
     final allDates = [...upcoming, ...past];
     for (final date in allDates) {
-      final occ = recurProvider.findOccurrence(recurring.id, date);
+      final occ = occurrencesByDay[DateTime(date.year, date.month, date.day)];
       final status = occ?.status ?? OccurrenceStatus.pending;
       final amount = _amountForOccurrence(occ);
       switch (status) {
@@ -1371,9 +1373,7 @@ class _RemainingSummary extends StatelessWidget {
       return recurring.amount;
     }
 
-    final linkedTransaction = txProvider.transactions
-        .where((transaction) => transaction.id == transactionId)
-        .firstOrNull;
+    final linkedTransaction = transactionsById[transactionId];
     return linkedTransaction?.amount ?? recurring.amount;
   }
 }

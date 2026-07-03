@@ -70,20 +70,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           ) {
             final isDarkMode = settingsProvider.isDarkMode;
             final allTx = _getFilteredTransactions(txProvider);
-            final grouped = txProvider.groupByDate(allTx);
-            final sortedDates = grouped.keys.toList()
-              ..sort((a, b) => b.compareTo(a));
-
-            final totalIncome = _calculateTotalIncome(
-              allTx,
-              txProvider,
-              accountProvider,
-            );
-            final totalExpense = _calculateTotalExpense(
-              allTx,
-              txProvider,
-              accountProvider,
-            );
+            final listData = _buildTransactionListData(allTx, accountProvider);
             final isFromAccount = widget.accountId != null;
             final isFiltered =
                 isFromAccount ||
@@ -113,8 +100,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             )),
                 title: Text(
                   widget.title != null
-                      ? '${widget.title} (${NumberFormat('#,###').format(allTx.length)})'
-                      : '${_filter.label} (${NumberFormat('#,###').format(allTx.length)})',
+                      ? '${widget.title} (${NumberFormat('#,###').format(listData.transactions.length)})'
+                      : '${_filter.label} (${NumberFormat('#,###').format(listData.transactions.length)})',
                   style: const TextStyle(fontSize: 16),
                 ),
                 actions: [
@@ -126,7 +113,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                 ],
               ),
-              body: allTx.isEmpty
+              body: listData.transactions.isEmpty
                   ? Center(
                       child: Text(
                         'ยังไม่มีรายการ',
@@ -139,32 +126,21 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.only(bottom: 80),
-                      itemCount: sortedDates.length,
+                      itemCount: listData.groups.length,
                       itemBuilder: (context, i) {
-                        final date = sortedDates[i];
-                        final txs = grouped[date]!
-                          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-                        final dayIncome = _calculateTotalIncome(
-                          txs,
-                          txProvider,
-                          accountProvider,
-                        );
-                        final dayExpense = _calculateTotalExpense(
-                          txs,
-                          txProvider,
-                          accountProvider,
-                        );
+                        final group = listData.groups[i];
+                        final txs = group.transactions;
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             GroupHeader(
-                              title: _formatDate(date),
+                              title: _formatDate(group.date),
                               isDarkMode: isDarkMode,
                               trailing: [
-                                if (dayIncome > 0) ...[
+                                if (group.income > 0) ...[
                                   Text(
-                                    '+${formatAmount(dayIncome)}',
+                                    '+${formatAmount(group.income)}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -174,11 +150,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     ),
                                   ),
                                 ],
-                                if (dayIncome > 0 && dayExpense > 0)
+                                if (group.income > 0 && group.expense > 0)
                                   const SizedBox(width: 8),
-                                if (dayExpense > 0) ...[
+                                if (group.expense > 0) ...[
                                   Text(
-                                    '-${formatAmount(dayExpense)}',
+                                    '-${formatAmount(group.expense)}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -220,12 +196,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               bottomNavigationBar: BottomSummaryBar(
                 left: BottomSummaryValue(
                   label: 'รายรับรวม',
-                  value: formatAmount(totalIncome),
+                  value: formatAmount(listData.totalIncome),
                   color: isDarkMode ? AppColors.darkIncome : AppColors.income,
                 ),
                 right: BottomSummaryValue(
                   label: 'รายจ่ายรวม',
-                  value: '-${formatAmount(totalExpense)}',
+                  value: '-${formatAmount(listData.totalExpense)}',
                   color: AppColors.expense,
                 ),
                 onAdd: () => _openForm(context, null),
@@ -346,114 +322,127 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     return transactions;
   }
 
-  double _calculateTotalIncome(
+  _TransactionListData _buildTransactionListData(
     List<AppTransaction> txs,
-    TransactionProvider txProvider,
     AccountProvider accountProvider,
   ) {
-    double totalThb = 0;
+    final accounts = accountProvider.accounts;
+    final accountsById = {for (final account in accounts) account.id: account};
+    final accountTypesById = {
+      for (final account in accounts) account.id: account.type,
+    };
+    final grouped = <DateTime, _MutableTransactionDateGroup>{};
+    var totalIncome = 0.0;
+    var totalExpense = 0.0;
+
     for (final tx in txs) {
-      final account = accountProvider.findById(tx.accountId);
-      final rate = (account?.exchangeRate ?? 0) > 0
-          ? account!.exchangeRate
-          : 1.0;
+      final date = DateTime(
+        tx.dateTime.year,
+        tx.dateTime.month,
+        tx.dateTime.day,
+      );
+      final group = grouped.putIfAbsent(
+        date,
+        () => _MutableTransactionDateGroup(date),
+      );
+      group.transactions.add(tx);
 
-      if (widget.accountId == null) {
-        if (tx.type == TransactionType.income ||
-            tx.type == TransactionType.increaseBalance) {
-          totalThb += tx.amount * rate;
-        }
-      } else {
-        final toAccount = tx.toAccountId != null
-            ? accountProvider.findById(tx.toAccountId!)
-            : null;
-        final toRate = (toAccount?.exchangeRate ?? 0) > 0
-            ? toAccount!.exchangeRate
-            : 1.0;
-
-        double displayAmount =
-            tx.type.isExpenseLike || tx.type.isDecreaseBalance
-            ? -tx.amount
-            : tx.amount;
-
-        double amountInThb = tx.amount * rate;
-
-        if ((tx.type == TransactionType.debtRepay ||
-                tx.type == TransactionType.debtTransfer) &&
-            tx.toAccountId == widget.accountId) {
-          displayAmount = tx.amount;
-          amountInThb = tx.amount * toRate;
-        } else if (tx.type == TransactionType.transfer) {
-          if (tx.accountId == widget.accountId) {
-            displayAmount = -tx.amount;
-            amountInThb = -tx.amount * rate;
-          } else if (tx.toAccountId == widget.accountId) {
-            displayAmount = tx.toAmount ?? tx.amount;
-            amountInThb = displayAmount * toRate;
-          }
-        }
-
-        if (displayAmount > 0) {
-          totalThb += amountInThb;
-        }
+      final summaryAmount = _getSummaryAmountInThb(
+        tx,
+        accountsById,
+        accountTypesById,
+      );
+      if (summaryAmount > 0) {
+        totalIncome += summaryAmount;
+        group.income += summaryAmount;
+      } else if (summaryAmount < 0) {
+        final expense = summaryAmount.abs();
+        totalExpense += expense;
+        group.expense += expense;
       }
     }
-    return totalThb;
+
+    final groups = grouped.values.map((group) {
+      group.transactions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      return _TransactionDateGroup(
+        date: group.date,
+        transactions: group.transactions,
+        income: group.income,
+        expense: group.expense,
+      );
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
+
+    return _TransactionListData(
+      transactions: txs,
+      groups: groups,
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+    );
   }
 
-  double _calculateTotalExpense(
-    List<AppTransaction> txs,
-    TransactionProvider txProvider,
-    AccountProvider accountProvider,
+  double _getSummaryAmountInThb(
+    AppTransaction tx,
+    Map<String, Account> accountsById,
+    Map<String, AccountType> accountTypesById,
   ) {
-    double totalThb = 0;
-    for (final tx in txs) {
-      final account = accountProvider.findById(tx.accountId);
-      final rate = (account?.exchangeRate ?? 0) > 0
-          ? account!.exchangeRate
-          : 1.0;
+    final account = accountsById[tx.accountId];
+    final rate = _effectiveRate(account);
 
-      if (widget.accountId == null) {
-        if (TransactionProvider.isActualExpense(tx, accountProvider.accounts) ||
-            tx.type == TransactionType.decreaseBalance) {
-          totalThb += tx.amount * rate;
-        }
-      } else {
-        final toAccount = tx.toAccountId != null
-            ? accountProvider.findById(tx.toAccountId!)
-            : null;
-        final toRate = (toAccount?.exchangeRate ?? 0) > 0
-            ? toAccount!.exchangeRate
-            : 1.0;
+    if (widget.accountId == null) {
+      if (tx.type == TransactionType.income ||
+          tx.type == TransactionType.increaseBalance) {
+        return tx.amount * rate;
+      }
+      if (_isActualExpense(tx, accountTypesById) ||
+          tx.type == TransactionType.decreaseBalance) {
+        return -tx.amount * rate;
+      }
+      return 0.0;
+    }
 
-        double displayAmount =
-            tx.type.isExpenseLike || tx.type.isDecreaseBalance
-            ? -tx.amount
-            : tx.amount;
+    final toAccount = tx.toAccountId != null
+        ? accountsById[tx.toAccountId!]
+        : null;
+    final toRate = _effectiveRate(toAccount);
 
-        double amountInThb = tx.amount * rate;
+    var displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
+        ? -tx.amount
+        : tx.amount;
+    var amountInThb = tx.amount * rate;
 
-        if ((tx.type == TransactionType.debtRepay ||
-                tx.type == TransactionType.debtTransfer) &&
-            tx.toAccountId == widget.accountId) {
-          displayAmount = tx.amount;
-          amountInThb = tx.amount * toRate;
-        } else if (tx.type == TransactionType.transfer) {
-          if (tx.accountId == widget.accountId) {
-            displayAmount = -tx.amount;
-            amountInThb = -tx.amount * rate;
-          } else if (tx.toAccountId == widget.accountId) {
-            displayAmount = tx.toAmount ?? tx.amount;
-            amountInThb = displayAmount * toRate;
-          }
-        }
-
-        if (displayAmount < 0) {
-          totalThb += amountInThb.abs();
-        }
+    if ((tx.type == TransactionType.debtRepay ||
+            tx.type == TransactionType.debtTransfer) &&
+        tx.toAccountId == widget.accountId) {
+      displayAmount = tx.amount;
+      amountInThb = tx.amount * toRate;
+    } else if (tx.type == TransactionType.transfer) {
+      if (tx.accountId == widget.accountId) {
+        displayAmount = -tx.amount;
+        amountInThb = -tx.amount * rate;
+      } else if (tx.toAccountId == widget.accountId) {
+        displayAmount = tx.toAmount ?? tx.amount;
+        amountInThb = displayAmount * toRate;
       }
     }
-    return totalThb;
+
+    if (displayAmount > 0) return amountInThb;
+    if (displayAmount < 0) return -amountInThb.abs();
+    return 0.0;
+  }
+
+  double _effectiveRate(Account? account) =>
+      (account?.exchangeRate ?? 0) > 0 ? account!.exchangeRate : 1.0;
+
+  bool _isActualExpense(
+    AppTransaction tx,
+    Map<String, AccountType> accountTypesById,
+  ) {
+    if (tx.type == TransactionType.expense) return true;
+    if (tx.type == TransactionType.debtTransfer) return true;
+    if (tx.type == TransactionType.debtRepay) {
+      return accountTypesById[tx.toAccountId] != AccountType.creditCard;
+    }
+    return false;
   }
 
   void _showPeriodPicker(bool isDarkMode) {
@@ -528,6 +517,43 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       MaterialPageRoute(builder: (_) => TransactionFormScreen(transaction: tx)),
     );
   }
+}
+
+class _TransactionListData {
+  final List<AppTransaction> transactions;
+  final List<_TransactionDateGroup> groups;
+  final double totalIncome;
+  final double totalExpense;
+
+  const _TransactionListData({
+    required this.transactions,
+    required this.groups,
+    required this.totalIncome,
+    required this.totalExpense,
+  });
+}
+
+class _TransactionDateGroup {
+  final DateTime date;
+  final List<AppTransaction> transactions;
+  final double income;
+  final double expense;
+
+  const _TransactionDateGroup({
+    required this.date,
+    required this.transactions,
+    required this.income,
+    required this.expense,
+  });
+}
+
+class _MutableTransactionDateGroup {
+  final DateTime date;
+  final List<AppTransaction> transactions = [];
+  double income = 0;
+  double expense = 0;
+
+  _MutableTransactionDateGroup(this.date);
 }
 
 enum _PeriodFilter {

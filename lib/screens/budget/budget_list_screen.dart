@@ -94,28 +94,59 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     return DateTimeRange(start: start, end: end);
   }
 
-  double _getSpent(
-    Budget budget,
+  Map<String, double> _buildSpentByCategoryId(
     List<AppTransaction> txs,
     DateTimeRange period,
     List<Account> accounts,
   ) {
-    return txs
-        .where(
-          (tx) =>
-              TransactionProvider.isActualExpense(tx, accounts) &&
-              budget.categoryIds.contains(tx.categoryId) &&
-              !tx.dateTime.isBefore(period.start) &&
-              !tx.dateTime.isAfter(period.end),
-        )
-        .fold(0.0, (sum, tx) => sum + tx.amount);
+    final accountTypesById = {
+      for (final account in accounts) account.id: account.type,
+    };
+    final spentByCategoryId = <String, double>{};
+
+    for (final tx in txs) {
+      if (tx.dateTime.isBefore(period.start) ||
+          tx.dateTime.isAfter(period.end)) {
+        continue;
+      }
+      if (!_isActualExpense(tx, accountTypesById)) continue;
+
+      final categoryId = tx.categoryId;
+      if (categoryId == null) continue;
+
+      spentByCategoryId[categoryId] =
+          (spentByCategoryId[categoryId] ?? 0.0) + tx.amount;
+    }
+
+    return spentByCategoryId;
+  }
+
+  bool _isActualExpense(
+    AppTransaction tx,
+    Map<String, AccountType> accountTypesById,
+  ) {
+    if (tx.type == TransactionType.expense) return true;
+    if (tx.type == TransactionType.debtTransfer) return true;
+    if (tx.type == TransactionType.debtRepay) {
+      return accountTypesById[tx.toAccountId] != AccountType.creditCard;
+    }
+    return false;
+  }
+
+  double _getSpentFromCategoryTotals(
+    Budget budget,
+    Map<String, double> spentByCategoryId,
+  ) {
+    var spent = 0.0;
+    for (final categoryId in budget.categoryIds) {
+      spent += spentByCategoryId[categoryId] ?? 0.0;
+    }
+    return spent;
   }
 
   List<_BudgetGroupSummary> _buildGroupSummaries({
     required List<Budget> budgets,
-    required List<AppTransaction> allTx,
-    required DateTimeRange period,
-    required List<Account> accounts,
+    required Map<String, double> spentByCategoryId,
     required double totalBudget,
   }) {
     final Map<String, List<Budget>> groupedBudgets = {};
@@ -144,7 +175,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       final total = entry.value.fold(0.0, (sum, budget) => sum + budget.amount);
       final spent = entry.value.fold(
         0.0,
-        (sum, budget) => sum + _getSpent(budget, allTx, period, accounts),
+        (sum, budget) =>
+            sum + _getSpentFromCategoryTotals(budget, spentByCategoryId),
       );
       return _BudgetGroupSummary(
         name: entry.key,
@@ -208,10 +240,15 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             : AppColors.divider;
 
         // Summary
+        final spentByCategoryId = _buildSpentByCategoryId(
+          allTx,
+          period,
+          accounts,
+        );
         final totalBudget = budgets.fold(0.0, (s, b) => s + b.amount);
         final totalSpent = budgets.fold(
           0.0,
-          (s, b) => s + _getSpent(b, allTx, period, accounts),
+          (s, b) => s + _getSpentFromCategoryTotals(b, spentByCategoryId),
         );
         final totalRemaining = totalBudget - totalSpent;
         final overallProgress = totalBudget > 0
@@ -219,9 +256,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             : 0.0;
         final groupSummaries = _buildGroupSummaries(
           budgets: budgets,
-          allTx: allTx,
-          period: period,
-          accounts: accounts,
+          spentByCategoryId: spentByCategoryId,
           totalBudget: totalBudget,
         );
         final periodLabel = _formatBudgetPeriodLabel(period);
@@ -300,9 +335,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       ],
                     ),
                     budgets: budgets,
-                    allTx: allTx,
+                    spentByCategoryId: spentByCategoryId,
                     period: period,
-                    accounts: accounts,
                     totalBudget: totalBudget,
                     budgetProvider: budgetProvider,
                     isDarkMode: isDarkMode,
@@ -341,9 +375,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     BuildContext context, {
     required Widget header,
     required List<Budget> budgets,
-    required List<AppTransaction> allTx,
+    required Map<String, double> spentByCategoryId,
     required DateTimeRange period,
-    required List<Account> accounts,
     required double totalBudget,
     required BudgetProvider budgetProvider,
     required bool isDarkMode,
@@ -388,7 +421,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         itemCount: budgets.length,
         itemBuilder: (context, i) {
           final budget = budgets[i];
-          final spent = _getSpent(budget, allTx, period, accounts);
+          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
           return _BudgetItem(
             key: ValueKey(budget.id),
             budget: budget,
@@ -437,7 +470,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
 
     // Ungrouped items (no header)
     for (final budget in ungrouped) {
-      final spent = _getSpent(budget, allTx, period, accounts);
+      final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
       items.add(
         _BudgetItem(
           key: ValueKey(budget.id),
@@ -494,7 +527,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       );
 
       for (final budget in groupBudgets) {
-        final spent = _getSpent(budget, allTx, period, accounts);
+        final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
         items.add(
           _BudgetItem(
             key: ValueKey(budget.id),

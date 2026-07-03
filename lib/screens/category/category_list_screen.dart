@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/category.dart';
+import '../../models/transaction.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -146,6 +147,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     bool isDarkMode,
   ) {
     final allTransactions = txProvider.transactions;
+    final totalsByCategoryId = _buildCategoryTotals(allTransactions);
     final cats = catProvider.categoriesOfType(type);
     final filtered = _searchQuery.isEmpty
         ? cats
@@ -199,7 +201,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       itemCount: filtered.length,
       itemBuilder: (context, i) {
         final cat = filtered[i];
-        final total = catProvider.getTotalForCategory(cat.id, allTransactions);
+        final total = totalsByCategoryId[cat.id] ?? 0.0;
         return _CategoryItem(
           key: ValueKey(cat.id),
           category: cat,
@@ -211,6 +213,16 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         );
       },
     );
+  }
+
+  Map<String, double> _buildCategoryTotals(List<AppTransaction> transactions) {
+    final totals = <String, double>{};
+    for (final tx in transactions) {
+      final categoryId = tx.categoryId;
+      if (categoryId == null || tx.type.isTransferLike) continue;
+      totals[categoryId] = (totals[categoryId] ?? 0.0) + tx.amount;
+    }
+    return totals;
   }
 
   void _openForm(BuildContext context, Category? cat) {

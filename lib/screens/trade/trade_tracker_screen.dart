@@ -642,13 +642,16 @@ class _YearlyTradeTab extends StatelessWidget {
   }
 
   List<_MonthlyTradeSummary> _monthlySummaries(List<StockTrade> trades) {
+    final tradesByMonth = List.generate(12, (_) => <StockTrade>[]);
+    for (final trade in trades) {
+      tradesByMonth[trade.soldAt.month - 1].add(trade);
+    }
+
     return List.generate(12, (index) {
-      final month = index + 1;
-      final monthTrades = trades
-          .where((trade) => trade.soldAt.month == month)
-          .toList();
-      final summary = _TradeSummary.fromTrades(monthTrades);
-      return _MonthlyTradeSummary(month: month, summary: summary);
+      return _MonthlyTradeSummary(
+        month: index + 1,
+        summary: _TradeSummary.fromTrades(tradesByMonth[index]),
+      );
     });
   }
 }
@@ -969,14 +972,14 @@ class _AnnualTaxSummary {
     required List<PortfolioAnnualReport> reports,
     required double principalAvailableForYearUsd,
   }) {
-    final remittedUsd = reports.fold(
-      0.0,
-      (sum, item) => sum + item.remittedUsd,
-    );
-    final remittedThb = reports.fold(
-      0.0,
-      (sum, item) => sum + item.remittedThb,
-    );
+    var remittedUsd = 0.0;
+    var remittedThb = 0.0;
+    var reportCount = 0;
+    for (final report in reports) {
+      remittedUsd += report.remittedUsd;
+      remittedThb += report.remittedThb;
+      if (report.remittedUsd > 0) reportCount++;
+    }
     final principalUsedUsd = remittedUsd <= principalAvailableForYearUsd
         ? remittedUsd
         : principalAvailableForYearUsd;
@@ -991,7 +994,7 @@ class _AnnualTaxSummary {
       principalUsedUsd: principalUsedUsd,
       taxableUsd: taxableUsd,
       taxableThb: taxableUsd * effectiveFxRate,
-      reportCount: reports.where((report) => report.remittedUsd > 0).length,
+      reportCount: reportCount,
     );
   }
 }
@@ -1020,23 +1023,32 @@ class _PortfolioAnnualReportSummary {
   factory _PortfolioAnnualReportSummary.fromReports(
     List<PortfolioAnnualReport> reports,
   ) {
+    var inflowUsd = 0.0;
+    var inflowThb = 0.0;
+    var dividendGrossUsd = 0.0;
+    var dividendTaxWithheldUsd = 0.0;
+    var dividendNetUsd = 0.0;
+    var remittedUsd = 0.0;
+    var remittedThb = 0.0;
+
+    for (final report in reports) {
+      inflowUsd += report.inflowUsd;
+      inflowThb += report.inflowThb;
+      dividendGrossUsd += report.dividendGrossUsd;
+      dividendTaxWithheldUsd += report.dividendTaxWithheldUsd;
+      dividendNetUsd += report.dividendNetUsd;
+      remittedUsd += report.remittedUsd;
+      remittedThb += report.remittedThb;
+    }
+
     return _PortfolioAnnualReportSummary(
-      inflowUsd: reports.fold(0.0, (sum, item) => sum + item.inflowUsd),
-      inflowThb: reports.fold(0.0, (sum, item) => sum + item.inflowThb),
-      dividendGrossUsd: reports.fold(
-        0.0,
-        (sum, item) => sum + item.dividendGrossUsd,
-      ),
-      dividendTaxWithheldUsd: reports.fold(
-        0.0,
-        (sum, item) => sum + item.dividendTaxWithheldUsd,
-      ),
-      dividendNetUsd: reports.fold(
-        0.0,
-        (sum, item) => sum + item.dividendNetUsd,
-      ),
-      remittedUsd: reports.fold(0.0, (sum, item) => sum + item.remittedUsd),
-      remittedThb: reports.fold(0.0, (sum, item) => sum + item.remittedThb),
+      inflowUsd: inflowUsd,
+      inflowThb: inflowThb,
+      dividendGrossUsd: dividendGrossUsd,
+      dividendTaxWithheldUsd: dividendTaxWithheldUsd,
+      dividendNetUsd: dividendNetUsd,
+      remittedUsd: remittedUsd,
+      remittedThb: remittedThb,
       reportCount: reports.length,
     );
   }
@@ -1772,24 +1784,33 @@ class _TradeSummary {
   });
 
   factory _TradeSummary.fromTrades(List<StockTrade> trades) {
+    var cashReceivedUsd = 0.0;
+    var realizedPnlUsd = 0.0;
+    var profitUsd = 0.0;
+    var lossUsd = 0.0;
+    var winCount = 0;
+    var lossCount = 0;
+
+    for (final trade in trades) {
+      cashReceivedUsd += trade.cashReceivedUsd;
+      realizedPnlUsd += trade.realizedPnlUsd;
+      if (trade.realizedPnlUsd > 0) {
+        profitUsd += trade.realizedPnlUsd;
+        winCount++;
+      } else if (trade.realizedPnlUsd < 0) {
+        lossUsd += trade.realizedPnlUsd;
+        lossCount++;
+      }
+    }
+
     return _TradeSummary(
-      cashReceivedUsd: trades.fold(
-        0,
-        (sum, trade) => sum + trade.cashReceivedUsd,
-      ),
-      realizedPnlUsd: trades.fold(
-        0,
-        (sum, trade) => sum + trade.realizedPnlUsd,
-      ),
-      profitUsd: trades
-          .where((trade) => trade.realizedPnlUsd > 0)
-          .fold(0, (sum, trade) => sum + trade.realizedPnlUsd),
-      lossUsd: trades
-          .where((trade) => trade.realizedPnlUsd < 0)
-          .fold(0, (sum, trade) => sum + trade.realizedPnlUsd),
+      cashReceivedUsd: cashReceivedUsd,
+      realizedPnlUsd: realizedPnlUsd,
+      profitUsd: profitUsd,
+      lossUsd: lossUsd,
       tradeCount: trades.length,
-      winCount: trades.where((trade) => trade.realizedPnlUsd > 0).length,
-      lossCount: trades.where((trade) => trade.realizedPnlUsd < 0).length,
+      winCount: winCount,
+      lossCount: lossCount,
     );
   }
 }

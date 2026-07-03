@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
+import '../../models/transaction.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -72,13 +73,16 @@ class _AccountListScreenState extends State<AccountListScreen> {
       body: Consumer2<AccountProvider, TransactionProvider>(
         builder: (context, accountProvider, txProvider, _) {
           final transactions = txProvider.transactions;
+          final allAccounts = accountProvider.accounts;
           final accounts = accountProvider.visibleAccounts;
           final isReorderMode = _isReorderMode;
-          final netWorth = accountProvider.getTotalNetWorth(
-            transactions,
+          final totals = _buildAccountTotals(
+            accountProvider: accountProvider,
+            allAccounts: allAccounts,
+            visibleAccounts: accounts,
+            transactions: transactions,
             filterIds: filterIds,
           );
-          final groupTotals = accountProvider.getGroupTotals(transactions);
 
           // Group accounts by display group
           final Map<String, List<Account>> groupedAccounts = {};
@@ -97,12 +101,12 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     children: [
                       _TotalRow(
                         label: 'ยอดรวม',
-                        amount: netWorth,
+                        amount: totals.netWorth,
                         icon: Icons.account_balance_wallet,
                         iconColor: const Color(0xFFFFB300),
                         isTopLevel: true,
                         isDarkMode: isDarkMode,
-                        accounts: accountProvider.accounts,
+                        accounts: allAccounts,
                         filterIds: filterIds,
                         isReorderMode: isReorderMode,
                       ),
@@ -122,12 +126,12 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             isDarkMode: isDarkMode,
                             trailing: [
                               Text(
-                                '${formatAmount(groupTotals[group.label] ?? 0)} บาท',
+                                '${formatAmount(totals.groupTotals[group.label] ?? 0)} บาท',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.getAmountColor(
-                                    groupTotals[group.label] ?? 0,
+                                    totals.groupTotals[group.label] ?? 0,
                                     isDarkMode,
                                   ),
                                 ),
@@ -175,10 +179,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             itemBuilder: (context, index) {
                               final account =
                                   groupedAccounts[group.label]![index];
-                              final balance = accountProvider.getBalance(
-                                account.id,
-                                transactions,
-                              );
+                              final balance =
+                                  totals.balancesByAccountId[account.id] ?? 0;
 
                               return _AccountItem(
                                 key: ValueKey(account.id),
@@ -202,15 +204,25 @@ class _AccountListScreenState extends State<AccountListScreen> {
       ),
       bottomNavigationBar: Consumer2<AccountProvider, TransactionProvider>(
         builder: (context, accountProvider, txProvider, _) {
-          final groupTotals = accountProvider.getGroupTotals(
-            txProvider.transactions,
+          final totals = _buildAccountTotals(
+            accountProvider: accountProvider,
+            allAccounts: accountProvider.accounts,
+            visibleAccounts: accountProvider.visibleAccounts,
+            transactions: txProvider.transactions,
+            filterIds: filterIds,
           );
           final totalAssets = accountGroupsForSummary
               .where((group) => group.isAsset)
-              .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+              .fold(
+                0.0,
+                (sum, group) => sum + (totals.groupTotals[group.label] ?? 0),
+              );
           final totalLiabilities = accountGroupsForSummary
               .where((group) => !group.isAsset)
-              .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
+              .fold(
+                0.0,
+                (sum, group) => sum + (totals.groupTotals[group.label] ?? 0),
+              );
 
           return BottomSummaryBar(
             left: BottomSummaryValue(
@@ -375,7 +387,14 @@ class _AccountListScreenState extends State<AccountListScreen> {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
 
     final transactions = txProvider.transactions;
-    final groupTotals = accountProvider.getGroupTotals(transactions);
+    final totals = _buildAccountTotals(
+      accountProvider: accountProvider,
+      allAccounts: accountProvider.accounts,
+      visibleAccounts: accountProvider.visibleAccounts,
+      transactions: transactions,
+      filterIds: context.read<SettingsProvider>().netWorthFilterIds,
+    );
+    final groupTotals = totals.groupTotals;
 
     final totalAssets = accountGroupsForSummary
         .where((group) => group.isAsset)
@@ -507,6 +526,82 @@ class _AccountListScreenState extends State<AccountListScreen> {
       },
     );
   }
+}
+
+_AccountTotals _buildAccountTotals({
+  required AccountProvider accountProvider,
+  required List<Account> allAccounts,
+  required List<Account> visibleAccounts,
+  required List<AppTransaction> transactions,
+  Set<String>? filterIds,
+}) {
+  final accountsById = {for (final account in allAccounts) account.id: account};
+  final balancesByAccountId = <String, double>{};
+
+  for (final account in allAccounts) {
+    balancesByAccountId[account.id] = account.type == AccountType.portfolio
+        ? accountProvider.getBalance(account.id, const [])
+        : account.initialBalance;
+  }
+
+  for (final tx in transactions) {
+    final fromAccount = accountsById[tx.accountId];
+    if (fromAccount != null && fromAccount.type != AccountType.portfolio) {
+      final current = balancesByAccountId[tx.accountId] ?? 0;
+      final delta =
+          tx.type == TransactionType.income ||
+              tx.type == TransactionType.increaseBalance
+          ? tx.amount
+          : -tx.amount;
+      balancesByAccountId[tx.accountId] = current + delta;
+    }
+
+    final toAccountId = tx.toAccountId;
+    if (toAccountId != null && tx.type.usesDestinationAccount) {
+      final toAccount = accountsById[toAccountId];
+      if (toAccount != null && toAccount.type != AccountType.portfolio) {
+        balancesByAccountId[toAccountId] =
+            (balancesByAccountId[toAccountId] ?? 0) +
+            (tx.toAmount ?? tx.amount);
+      }
+    }
+  }
+
+  double toThb(Account account) {
+    final balance = balancesByAccountId[account.id] ?? 0;
+    return account.currency == 'USD' ? balance * account.exchangeRate : balance;
+  }
+
+  final groupTotals = <String, double>{};
+  for (final account in visibleAccounts) {
+    final group = accountTypeDisplayGroup(account.type);
+    groupTotals[group] = (groupTotals[group] ?? 0) + toThb(account);
+  }
+
+  var netWorth = 0.0;
+  for (final account in allAccounts) {
+    if (account.excludeFromNetWorth) continue;
+    if (filterIds != null && !filterIds.contains(account.id)) continue;
+    netWorth += toThb(account);
+  }
+
+  return _AccountTotals(
+    balancesByAccountId: balancesByAccountId,
+    groupTotals: groupTotals,
+    netWorth: netWorth,
+  );
+}
+
+class _AccountTotals {
+  final Map<String, double> balancesByAccountId;
+  final Map<String, double> groupTotals;
+  final double netWorth;
+
+  const _AccountTotals({
+    required this.balancesByAccountId,
+    required this.groupTotals,
+    required this.netWorth,
+  });
 }
 
 class _TotalRow extends StatelessWidget {
