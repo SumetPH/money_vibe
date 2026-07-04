@@ -1757,7 +1757,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     final currentMonth = DateTime(now.year, now.month);
     final balancesByAccountId = <String, double>{};
     for (final account in effectiveAccounts) {
-      balancesByAccountId[account.id] = account.type == AccountType.portfolio
+      balancesByAccountId[account.id] = account.isPortfolio
           ? accountProvider.getBalance(account.id, const <AppTransaction>[])
           : account.initialBalance;
     }
@@ -1805,7 +1805,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     Map<String, double> balancesByAccountId,
   ) {
     final fromAccount = effectiveAccountsById[tx.accountId];
-    if (fromAccount != null && fromAccount.type != AccountType.portfolio) {
+    if (fromAccount != null && !fromAccount.isPortfolio) {
       final current = balancesByAccountId[tx.accountId] ?? 0.0;
       final delta =
           tx.type == TransactionType.income ||
@@ -1819,7 +1819,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     if (toAccountId == null || !tx.type.usesDestinationAccount) return;
 
     final toAccount = effectiveAccountsById[toAccountId];
-    if (toAccount == null || toAccount.type == AccountType.portfolio) return;
+    if (toAccount == null || toAccount.isPortfolio) return;
 
     balancesByAccountId[toAccountId] =
         (balancesByAccountId[toAccountId] ?? 0.0) + (tx.toAmount ?? tx.amount);

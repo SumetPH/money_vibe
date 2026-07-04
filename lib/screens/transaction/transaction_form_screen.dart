@@ -525,18 +525,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   (a) =>
                       (a.type == AccountType.debt ||
                           a.type == AccountType.creditCard) &&
-                      a.type != AccountType.portfolio,
+                      !a.isPortfolio,
                 )
                 .toList(),
           TransactionType.income ||
           TransactionType.expense ||
           TransactionType.debtRepay =>
             allVisibleAccounts
-                .where(
-                  (a) =>
-                      a.type != AccountType.debt &&
-                      a.type != AccountType.portfolio,
-                )
+                .where((a) => a.type != AccountType.debt && !a.isPortfolio)
                 .toList(),
           TransactionType.increaseBalance || TransactionType.decreaseBalance =>
             allVisibleAccounts

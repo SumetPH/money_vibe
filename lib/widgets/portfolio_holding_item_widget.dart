@@ -11,6 +11,7 @@ import '../main.dart';
 class PortfolioHoldingItemWidget extends StatefulWidget {
   final StockHolding holding;
   final double exchangeRate;
+  final String currencyCode;
   final double totalHoldingsValueUsd;
   final bool isReorderMode;
   final VoidCallback onEdit;
@@ -24,6 +25,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
     super.key,
     required this.holding,
     required this.exchangeRate,
+    required this.currencyCode,
     required this.totalHoldingsValueUsd,
     this.isReorderMode = false,
     required this.onEdit,
@@ -49,11 +51,16 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 
   @override
   Widget build(BuildContext context) {
-    final valueTHB = widget.holding.valueUsd * widget.exchangeRate;
+    final isUsd = widget.currencyCode == 'USD';
+    final displayValue = isUsd
+        ? widget.holding.valueUsd * widget.exchangeRate
+        : widget.holding.valueUsd;
     final allocationPct = widget.totalHoldingsValueUsd > 0
         ? (widget.holding.valueUsd / widget.totalHoldingsValueUsd) * 100
         : 0.0;
-    final pnlTHB = widget.holding.unrealizedPnlUsd * widget.exchangeRate;
+    final displayPnl = isUsd
+        ? widget.holding.unrealizedPnlUsd * widget.exchangeRate
+        : widget.holding.unrealizedPnlUsd;
     final pnlPct = widget.holding.unrealizedPnlPct;
 
     final surfaceColor = widget.isDarkMode
@@ -146,7 +153,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                formatAmount(valueTHB),
+                                formatAmount(displayValue),
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -154,14 +161,15 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                '${formatAmount(widget.holding.valueUsd)} USD',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: textSecondaryColor,
+                              if (isUsd)
+                                Text(
+                                  '${formatAmount(widget.holding.valueUsd)} ${widget.currencyCode}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: textSecondaryColor,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -176,18 +184,18 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: pnlTHB >= 0
+                                  color: displayPnl >= 0
                                       ? incomeColor
                                       : expenseColor,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${pnlTHB >= 0 ? '+' : ''}${formatAmount(pnlTHB)}',
+                                '${displayPnl >= 0 ? '+' : ''}${formatAmount(displayPnl)}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: pnlTHB >= 0
+                                  color: displayPnl >= 0
                                       ? incomeColor
                                       : expenseColor,
                                 ),
@@ -228,7 +236,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนรวม',
-                        value: widget.holding.totalCostUsd.toStringAsFixed(2),
+                        value:
+                            '${widget.holding.totalCostUsd.toStringAsFixed(2)} ${widget.currencyCode}',
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -237,9 +246,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนต่อหุ้น',
-                        value: formatStockHoldingCostBasis(
-                          widget.holding.costBasisUsd,
-                        ),
+                        value:
+                            '${formatStockHoldingCostBasis(widget.holding.costBasisUsd)} ${widget.currencyCode}',
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -248,7 +256,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ราคาปัจจุบัน',
-                        value: widget.holding.priceUsd.toStringAsFixed(2),
+                        value:
+                            '${widget.holding.priceUsd.toStringAsFixed(2)} ${widget.currencyCode}',
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),

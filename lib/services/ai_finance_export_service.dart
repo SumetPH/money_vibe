@@ -301,7 +301,7 @@ class AiFinanceExportService {
     List<Account> accounts,
   ) {
     final portfolios = accounts
-        .where((account) => account.type == AccountType.portfolio)
+        .where((account) => account.isPortfolio)
         .toList();
 
     if (portfolios.isEmpty) return;
@@ -310,9 +310,9 @@ class AiFinanceExportService {
       ..add('## Portfolios')
       ..add('')
       ..add(
-        '| Portfolio | Cash USD | Holdings USD | Unrealized P/L USD | Top Holdings |',
+        '| Portfolio | Currency | Cash | Holdings | Unrealized P/L | Top Holdings |',
       )
-      ..add('| --- | ---: | ---: | ---: | --- |');
+      ..add('| --- | --- | ---: | ---: | ---: | --- |');
 
     for (final portfolio in portfolios) {
       final holdings = accountProvider.getHoldings(portfolio.id);
@@ -329,13 +329,16 @@ class AiFinanceExportService {
       final topHoldingText = topHoldings
           .take(5)
           .map(
-            (holding) => '${holding.ticker} ${_money(holding.valueUsd, 'USD')}',
+            (holding) =>
+                '${holding.ticker} ${_money(holding.valueUsd, portfolio.currencyCodeLabel)}',
           )
           .join(', ');
 
       lines.add(
-        '| ${_cell(portfolio.name)} | ${_money(portfolio.cashBalance, 'USD')} | '
-        '${_money(holdingsValue, 'USD')} | ${_money(unrealizedPnl, 'USD')} | '
+        '| ${_cell(portfolio.name)} | ${portfolio.currencyCodeLabel} | '
+        '${_money(portfolio.cashBalance, portfolio.currencyCodeLabel)} | '
+        '${_money(holdingsValue, portfolio.currencyCodeLabel)} | '
+        '${_money(unrealizedPnl, portfolio.currencyCodeLabel)} | '
         '${topHoldingText.isEmpty ? '-' : _cell(topHoldingText)} |',
       );
     }

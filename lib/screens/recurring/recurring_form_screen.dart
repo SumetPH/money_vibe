@@ -445,18 +445,14 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   (a) =>
                       (a.type == AccountType.debt ||
                           a.type == AccountType.creditCard) &&
-                      a.type != AccountType.portfolio,
+                      !a.isPortfolio,
                 )
                 .toList(),
           TransactionType.income ||
           TransactionType.expense ||
           TransactionType.debtRepay =>
             accountProvider.visibleAccounts
-                .where(
-                  (a) =>
-                      a.type != AccountType.debt &&
-                      a.type != AccountType.portfolio,
-                )
+                .where((a) => a.type != AccountType.debt && !a.isPortfolio)
                 .toList(),
           _ => accountProvider.visibleAccounts,
         };

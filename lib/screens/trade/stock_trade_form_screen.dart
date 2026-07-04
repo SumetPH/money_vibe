@@ -79,6 +79,17 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   String? _taxFeeError;
 
   bool get _isEditing => widget.existing != null;
+  Account? get _selectedPortfolio {
+    final id = _portfolioId;
+    if (id == null) return null;
+    for (final portfolio in widget.portfolios) {
+      if (portfolio.id == id) return portfolio;
+    }
+    return null;
+  }
+
+  String get _selectedCurrencyCode =>
+      _selectedPortfolio?.currencyCodeLabel ?? 'USD';
 
   @override
   void initState() {
@@ -453,7 +464,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _TradeTextFieldRow(
-              label: 'ราคาทุน (USD)',
+              label: 'ราคาทุน ($_selectedCurrencyCode)',
               controller: _costBasisController,
               hintText: '0.00',
               isDarkMode: isDarkMode,
@@ -465,7 +476,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _TradeTextFieldRow(
-              label: 'ราคาขาย (USD)',
+              label: 'ราคาขาย ($_selectedCurrencyCode)',
               controller: _sellPriceController,
               hintText: '0.00',
               isDarkMode: isDarkMode,
@@ -477,7 +488,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _TradeTextFieldRow(
-              label: 'เงินสดรับ (USD)',
+              label: 'เงินสดรับ ($_selectedCurrencyCode)',
               controller: _cashReceivedController,
               hintText: '0.00',
               isDarkMode: isDarkMode,
@@ -576,7 +587,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                 if (_useBrokerPnl) ...[
                   _buildDivider(isDarkMode),
                   _TradeTextFieldRow(
-                    label: 'Realized P/L (USD)',
+                    label: 'Realized P/L ($_selectedCurrencyCode)',
                     controller: _realizedPnlController,
                     hintText: '0.00',
                     isDarkMode: isDarkMode,

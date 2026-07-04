@@ -247,7 +247,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
   }
 
   void _openForm(BuildContext context, Account? account) {
-    if (account != null && account.type == AccountType.portfolio) {
+    if (account != null && account.isPortfolio) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -539,14 +539,14 @@ _AccountTotals _buildAccountTotals({
   final balancesByAccountId = <String, double>{};
 
   for (final account in allAccounts) {
-    balancesByAccountId[account.id] = account.type == AccountType.portfolio
+    balancesByAccountId[account.id] = account.isPortfolio
         ? accountProvider.getBalance(account.id, const [])
         : account.initialBalance;
   }
 
   for (final tx in transactions) {
     final fromAccount = accountsById[tx.accountId];
-    if (fromAccount != null && fromAccount.type != AccountType.portfolio) {
+    if (fromAccount != null && !fromAccount.isPortfolio) {
       final current = balancesByAccountId[tx.accountId] ?? 0;
       final delta =
           tx.type == TransactionType.income ||
@@ -559,7 +559,7 @@ _AccountTotals _buildAccountTotals({
     final toAccountId = tx.toAccountId;
     if (toAccountId != null && tx.type.usesDestinationAccount) {
       final toAccount = accountsById[toAccountId];
-      if (toAccount != null && toAccount.type != AccountType.portfolio) {
+      if (toAccount != null && !toAccount.isPortfolio) {
         balancesByAccountId[toAccountId] =
             (balancesByAccountId[toAccountId] ?? 0) +
             (tx.toAmount ?? tx.amount);

@@ -59,13 +59,19 @@ enum AccountType {
   debt('หนี้สิน', AccountGroup.debt, 3),
   asset('ทรัพย์สิน', AccountGroup.asset, 5),
   investment('เงินลงทุน / เงินออม', AccountGroup.investment, 4),
-  portfolio('พอร์ตหุ้น US', AccountGroup.investment, 4);
+  portfolio('พอร์ตหุ้น US', AccountGroup.investment, 4),
+  thaiPortfolio('พอร์ตหุ้นไทย', AccountGroup.investment, 4);
 
   final String label;
   final AccountGroup group;
   final int order;
 
   const AccountType(this.label, this.group, this.order);
+
+  bool get isPortfolio => this == portfolio || this == thaiPortfolio;
+  bool get isThaiPortfolio => this == thaiPortfolio;
+  bool get isUsPortfolio => this == portfolio;
+  String get defaultCurrency => isUsPortfolio ? 'USD' : 'THB';
 }
 
 List<AccountGroup> _sortedAccountGroupsBy(int Function(AccountGroup) order) {
@@ -134,7 +140,19 @@ class Account {
     this.statementDay,
   }) : startDate = startDate ?? DateTime.now();
 
-  bool get isPortfolio => type == AccountType.portfolio;
+  bool get isPortfolio => type.isPortfolio;
+  bool get isThaiPortfolio => type.isThaiPortfolio;
+  bool get isUsPortfolio => type.isUsPortfolio;
+  String get currencyCodeLabel => currency == 'USD' ? 'USD' : 'THB';
+  String get currencyAmountSuffix => currency == 'USD' ? 'USD' : 'บาท';
+
+  String yahooSymbolFor(String ticker) {
+    final normalized = ticker.trim().toUpperCase();
+    if (!isThaiPortfolio || normalized.isEmpty || normalized.contains('.')) {
+      return normalized;
+    }
+    return '$normalized.BK';
+  }
 
   Map<String, dynamic> toMap() => {
     'id': id,

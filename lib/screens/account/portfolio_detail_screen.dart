@@ -127,10 +127,14 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     _refreshIconController.repeat();
     setState(() => _isRefreshing = true);
     try {
-      final tickers = holdings.map((h) => h.ticker).toList();
+      final priceSymbolsByHoldingId = {
+        for (final h in holdings) h.id: acc.yahooSymbolFor(h.ticker),
+      };
+      final tickers = priceSymbolsByHoldingId.values.toSet().toList();
       final tickersNeedingProfile = _priceService.isConfigured
           ? holdings
                 .where((h) => h.logoUrl.isEmpty)
+                .where((h) => acc.isUsPortfolio)
                 .map((h) => h.ticker)
                 .toSet()
                 .toList()
@@ -154,7 +158,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       for (final h in holdings) {
         var updatedHolding = h;
         var hasChanges = false;
-        final newPrice = prices[h.ticker];
+        final newPrice = prices[priceSymbolsByHoldingId[h.id]];
         if (newPrice != null) {
           updatedHolding = updatedHolding.copyWith(priceUsd: newPrice);
           hasChanges = true;
@@ -283,6 +287,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                       _CashRow(
                         cashBalance: acc.cashBalance,
                         exchangeRate: acc.exchangeRate,
+                        currencyCode: acc.currencyCodeLabel,
                         onTap: () => _editCashBalance(context, provider, acc),
                         isDarkMode: isDarkMode,
                       ),
@@ -376,6 +381,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     AccountProvider provider,
     Account acc,
   ) async {
+    if (acc.currency != 'USD') return;
+
     final controller = TextEditingController(
       text: acc.exchangeRate.toStringAsFixed(2),
     );
@@ -487,8 +494,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   autofocus: !autoUpdate,
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
-                    labelText: 'ยอดเงินสด (USD)',
-                    suffixText: 'USD',
+                    labelText: 'ยอดเงินสด (${acc.currencyCodeLabel})',
+                    suffixText: acc.currencyAmountSuffix,
                     labelStyle: TextStyle(
                       color: isDarkMode
                           ? AppColors.darkTextSecondary
@@ -531,6 +538,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       MaterialPageRoute(
         builder: (_) => HoldingFormScreen(
           portfolioId: portfolioId,
+          currencyCode: widget.account.currencyCodeLabel,
           existing: existing,
           onSave: (holding) async {
             final holdingWithProfile = await _enrichHoldingWithProfile(
@@ -555,8 +563,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
 
   Future<double?> _fetchCurrentHoldingPrice(String ticker) async {
     _priceService = _buildPriceService();
-    final prices = await _priceService.fetchPrices([ticker]);
-    return prices[ticker];
+    final symbol = widget.account.yahooSymbolFor(ticker);
+    final prices = await _priceService.fetchPrices([symbol]);
+    return prices[symbol];
   }
 
   Future<void> _openHoldingSellForm(
@@ -570,6 +579,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       MaterialPageRoute(
         builder: (_) => HoldingSellFormScreen(
           holding: holding,
+          currencyCode: widget.account.currencyCodeLabel,
           onSell:
               ({
                 required sharesSold,
@@ -771,26 +781,28 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                       );
                     },
                   ),
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
-                    leading: Icon(Icons.edit_document, color: textColor),
-                    title: Text(
-                      'ปรับรายงานประจำปี',
-                      style: TextStyle(color: textColor),
-                    ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BrokerReportListScreen(
-                            portfolioId: widget.account.id,
+                  if (widget.account.isUsPortfolio) ...[
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      leading: Icon(Icons.edit_document, color: textColor),
+                      title: Text(
+                        'ปรับรายงานประจำปี',
+                        style: TextStyle(color: textColor),
+                      ),
+                      tileColor: bgColor,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BrokerReportListScreen(
+                              portfolioId: widget.account.id,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+                  ],
                   Divider(height: 1, color: dividerColor),
                   ListTile(
                     leading: Icon(Icons.auto_awesome, color: textColor),
@@ -942,6 +954,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     AccountProvider provider,
   ) {
     final rate = acc.exchangeRate;
+    final isUsd = acc.currency == 'USD';
+    final currencyCode = acc.currencyCodeLabel;
     final groupValueUsd = groupHoldings.fold<double>(
       0,
       (sum, h) => sum + h.valueUsd,
@@ -950,9 +964,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       0,
       (sum, h) => sum + h.totalCostUsd,
     );
-    final groupValueThb = groupValueUsd * rate;
+    final groupValue = isUsd ? groupValueUsd * rate : groupValueUsd;
     final groupPnlUsd = groupCostUsd > 0 ? groupValueUsd - groupCostUsd : 0.0;
-    final groupPnlThb = groupPnlUsd * rate;
+    final groupPnl = isUsd ? groupPnlUsd * rate : groupPnlUsd;
     final groupPnlPct = groupCostUsd > 0
         ? (groupPnlUsd / groupCostUsd * 100)
         : 0.0;
@@ -1024,17 +1038,21 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                           style: TextStyle(fontSize: 13, color: secondaryColor),
                         ),
                         Text(
-                          formatAmount(groupValueThb),
+                          formatAmount(groupValue),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: textColor,
                           ),
                         ),
-                        Text(
-                          '${formatAmount(groupValueUsd)} USD',
-                          style: TextStyle(fontSize: 13, color: secondaryColor),
-                        ),
+                        if (isUsd)
+                          Text(
+                            '${formatAmount(groupValueUsd)} $currencyCode',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: secondaryColor,
+                            ),
+                          ),
                       ],
                     ),
                     Column(
@@ -1055,7 +1073,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                           ),
                         ),
                         Text(
-                          '${groupPnlUsd >= 0 ? '+' : ''}${formatAmount(groupPnlThb)}',
+                          '${groupPnlUsd >= 0 ? '+' : ''}${formatAmount(groupPnl)}',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -1145,6 +1163,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   PortfolioHoldingItemWidget(
                     holding: h,
                     exchangeRate: acc.exchangeRate,
+                    currencyCode: acc.currencyCodeLabel,
                     totalHoldingsValueUsd: groupValueUsd,
                     isReorderMode: false,
                     onEdit: () =>
@@ -1321,6 +1340,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   PortfolioHoldingItemWidget(
                     holding: h,
                     exchangeRate: acc.exchangeRate,
+                    currencyCode: acc.currencyCodeLabel,
                     totalHoldingsValueUsd: totalHoldingsValueUsd,
                     isReorderMode: _isReorderMode,
                     onEdit: () =>
@@ -1391,16 +1411,16 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rate = account.exchangeRate;
-    final totalValueUsd =
+    final isUsd = account.currency == 'USD';
+    final currencyCode = account.currencyCodeLabel;
+    final totalValueBase =
         account.cashBalance + holdings.fold(0.0, (sum, h) => sum + h.valueUsd);
-    final totalCostUsd = holdings.fold(0.0, (sum, h) => sum + h.totalCostUsd);
-    final totalCost = holdings.fold(
-      0.0,
-      (sum, h) => sum + h.totalCostUsd * rate,
-    );
-    final stocksValueUsd = holdings.fold(0.0, (sum, h) => sum + h.valueUsd);
-    final stocksValueThb = stocksValueUsd * rate;
-    final pnl = totalCost > 0 ? stocksValueThb - totalCost : 0.0;
+    final totalCostBase = holdings.fold(0.0, (sum, h) => sum + h.totalCostUsd);
+    final totalCost = isUsd ? totalCostBase * rate : totalCostBase;
+    final stocksValueBase = holdings.fold(0.0, (sum, h) => sum + h.valueUsd);
+    final stocksValue = isUsd ? stocksValueBase * rate : stocksValueBase;
+    final displayTotalValue = isUsd ? totalValue * rate : totalValue;
+    final pnl = totalCost > 0 ? stocksValue - totalCost : 0.0;
     final pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0.0;
     final hasCost = totalCost > 0;
 
@@ -1452,7 +1472,7 @@ class _SummaryCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            formatAmount(totalValue * rate),
+                            formatAmount(displayTotalValue),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -1462,66 +1482,68 @@ class _SummaryCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Text(
-                            '${formatAmount(totalValueUsd)} USD',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: textSecondaryColor,
+                          if (isUsd)
+                            Text(
+                              '${formatAmount(totalValueBase)} $currencyCode',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textSecondaryColor,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: onRateTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'อัตราแลกเปลี่ยน',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: textSecondaryColor,
+              if (isUsd)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: onRateTap,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'อัตราแลกเปลี่ยน',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: textSecondaryColor,
+                            ),
                           ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              '1 USD = ${rate.toStringAsFixed(2)} THB',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimaryColor,
+                          Row(
+                            children: [
+                              Text(
+                                '1 USD = ${rate.toStringAsFixed(2)} THB',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimaryColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              account.autoUpdateRate
-                                  ? Icons.sync
-                                  : Icons.lock_outline,
-                              size: 12,
-                              color: account.autoUpdateRate
-                                  ? incomeColor
-                                  : textSecondaryColor,
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 4),
+                              Icon(
+                                account.autoUpdateRate
+                                    ? Icons.sync
+                                    : Icons.lock_outline,
+                                size: 12,
+                                color: account.autoUpdateRate
+                                    ? incomeColor
+                                    : textSecondaryColor,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           if (hasCost) ...[
@@ -1550,7 +1572,9 @@ class _SummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${formatAmount(totalCostUsd)} USD',
+                        isUsd
+                            ? '${formatAmount(totalCostBase)} $currencyCode'
+                            : currencyCode,
                         style: TextStyle(
                           fontSize: 13,
                           color: textSecondaryColor,
@@ -1572,7 +1596,7 @@ class _SummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        formatAmount(stocksValueThb),
+                        formatAmount(stocksValue),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1580,7 +1604,9 @@ class _SummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${formatAmount(stocksValueUsd)} USD',
+                        isUsd
+                            ? '${formatAmount(stocksValueBase)} $currencyCode'
+                            : currencyCode,
                         style: TextStyle(
                           fontSize: 13,
                           color: textSecondaryColor,
@@ -1634,19 +1660,22 @@ class _SummaryCard extends StatelessWidget {
 class _CashRow extends StatelessWidget {
   final double cashBalance;
   final double exchangeRate;
+  final String currencyCode;
   final VoidCallback onTap;
   final bool isDarkMode;
 
   const _CashRow({
     required this.cashBalance,
     required this.exchangeRate,
+    required this.currencyCode,
     required this.onTap,
     required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cashBalanceThb = cashBalance * exchangeRate;
+    final isUsd = currencyCode == 'USD';
+    final cashBalanceThb = isUsd ? cashBalance * exchangeRate : cashBalance;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
         ? AppColors.darkTextPrimary
@@ -1690,10 +1719,11 @@ class _CashRow extends StatelessWidget {
                     color: AppColors.getAmountColor(cashBalanceThb, isDarkMode),
                   ),
                 ),
-                Text(
-                  '${formatAmount(cashBalance)} USD',
-                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                ),
+                if (isUsd)
+                  Text(
+                    '${formatAmount(cashBalance)} $currencyCode',
+                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                  ),
               ],
             ),
           ],
