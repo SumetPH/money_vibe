@@ -483,14 +483,23 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   ],
                 ],
                 // Currency
-                _buildPickerRow(
-                  label: 'สกุลเงิน',
-                  value: _getCurrencyDisplay(_effectiveSelectedCurrency),
-                  onTap: _pickCurrency,
-                  surfaceColor: surfaceColor,
-                  textPrimaryColor: textPrimaryColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
+                if (_selectedType.isPortfolio)
+                  _buildReadOnlyRow(
+                    label: 'สกุลเงิน',
+                    value: _getCurrencyDisplay(_effectiveSelectedCurrency),
+                    surfaceColor: surfaceColor,
+                    textPrimaryColor: textPrimaryColor,
+                    textSecondaryColor: textSecondaryColor,
+                  )
+                else
+                  _buildPickerRow(
+                    label: 'สกุลเงิน',
+                    value: _getCurrencyDisplay(_effectiveSelectedCurrency),
+                    onTap: _pickCurrency,
+                    surfaceColor: surfaceColor,
+                    textPrimaryColor: textPrimaryColor,
+                    textSecondaryColor: textSecondaryColor,
+                  ),
                 _buildDivider(color: dividerColor),
                 // Start Date
                 _buildPickerRow(
@@ -700,6 +709,29 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyRow({
+    required String label,
+    required String value,
+    required Color surfaceColor,
+    required Color textPrimaryColor,
+    required Color textSecondaryColor,
+  }) {
+    return Container(
+      color: surfaceColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 16, color: textSecondaryColor),
+          ),
+          const Spacer(),
+          Text(value, style: TextStyle(fontSize: 16, color: textPrimaryColor)),
+        ],
       ),
     );
   }
