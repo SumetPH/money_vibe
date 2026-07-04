@@ -26,6 +26,7 @@ final _sevenDecimalInputFormatter = _decimalInputFormatter(
 
 class HoldingFormScreen extends StatefulWidget {
   final String portfolioId;
+  final String currencyCode;
   final StockHolding? existing;
   final Future<void> Function(StockHolding holding) onSave;
   final Future<double?> Function(String ticker)? fetchCurrentPrice;
@@ -35,6 +36,7 @@ class HoldingFormScreen extends StatefulWidget {
   const HoldingFormScreen({
     super.key,
     required this.portfolioId,
+    required this.currencyCode,
     required this.existing,
     required this.onSave,
     required this.generateId,
@@ -586,7 +588,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _HoldingNumberFieldRow(
-              label: 'ราคาทุน (USD)',
+              label: 'ราคาทุน (${widget.currencyCode})',
               controller: _costController,
               focusNode: _costFocusNode,
               hintText: '0.00',
@@ -595,7 +597,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
             ),
             _buildDivider(isDarkMode),
             _HoldingNumberFieldRow(
-              label: 'ราคาปัจจุบัน (USD)',
+              label: 'ราคาปัจจุบัน (${widget.currencyCode})',
               controller: _priceController,
               focusNode: _priceFocusNode,
               hintText: '0.00',

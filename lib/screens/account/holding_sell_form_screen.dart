@@ -31,11 +31,13 @@ double _roundToCents(double value) => (value * 100).roundToDouble() / 100;
 
 class HoldingSellFormScreen extends StatefulWidget {
   final StockHolding holding;
+  final String currencyCode;
   final SellHoldingCallback onSell;
 
   const HoldingSellFormScreen({
     super.key,
     required this.holding,
+    required this.currencyCode,
     required this.onSell,
   });
 
@@ -296,7 +298,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(
-                label: 'ราคาขาย (USD)',
+                label: 'ราคาขาย (${widget.currencyCode})',
                 controller: _sellPriceController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -307,7 +309,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(
-                label: 'มูลค่าหุ้น (Gross USD)',
+                label: 'มูลค่าหุ้น (Gross ${widget.currencyCode})',
                 controller: _grossProceedsController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -334,7 +336,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 ),
               ),
               _SellNumberFieldRow(
-                label: 'ค่าคอมมิชชัน (USD)',
+                label: 'ค่าคอมมิชชัน (${widget.currencyCode})',
                 controller: _brokerFeeController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -342,7 +344,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(
-                label: 'ภาษี (VAT USD)',
+                label: 'ภาษี (VAT ${widget.currencyCode})',
                 controller: _taxFeeController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -359,7 +361,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
               const SizedBox(height: 12),
               _SellNumberFieldRow(
-                label: 'ยอดที่จะได้รับคืน \n(Net USD)',
+                label: 'ยอดที่จะได้รับคืน \n(Net ${widget.currencyCode})',
                 controller: _cashReceivedController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
@@ -373,6 +375,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               const SizedBox(height: 12),
               _SellSummary(
                 holding: widget.holding,
+                currencyCode: widget.currencyCode,
                 isDarkMode: isDarkMode,
                 sharesSold: double.tryParse(_sharesController.text.trim()) ?? 0,
                 cashReceivedUsd:
@@ -469,12 +472,14 @@ class _SellNumberFieldRow extends StatelessWidget {
 
 class _SellSummary extends StatelessWidget {
   final StockHolding holding;
+  final String currencyCode;
   final bool isDarkMode;
   final double sharesSold;
   final double cashReceivedUsd;
 
   const _SellSummary({
     required this.holding,
+    required this.currencyCode,
     required this.isDarkMode,
     required this.sharesSold,
     required this.cashReceivedUsd,
@@ -496,13 +501,13 @@ class _SellSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            'ราคาทุนเฉลี่ย: ${formatStockHoldingCostBasis(holding.costBasisUsd)} USD/หุ้น',
+            'ราคาทุนเฉลี่ย: ${formatStockHoldingCostBasis(holding.costBasisUsd)} $currencyCode/หุ้น',
             style: TextStyle(color: textColor, fontSize: 13),
           ),
           const SizedBox(height: 4),
           if (sharesSold > 0)
             Text(
-              'กำไร/ขาดทุนโดยประมาณ: ${isProfit ? '+' : ''}${formatStockHoldingCostBasis(estimatedPnl)} USD',
+              'กำไร/ขาดทุนโดยประมาณ: ${isProfit ? '+' : ''}${formatStockHoldingCostBasis(estimatedPnl)} $currencyCode',
               style: TextStyle(
                 color: isProfit ? AppColors.income : AppColors.expense,
                 fontSize: 13,

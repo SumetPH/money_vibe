@@ -20,6 +20,7 @@ create table if not exists public.accounts (
             'debt',
             'investment',
             'portfolio',
+            'thaiPortfolio',
             'asset'
         )
     ),
@@ -400,7 +401,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 1. Update accounts table check constraint (added 'asset')
 ALTER TABLE public.accounts DROP CONSTRAINT IF EXISTS accounts_type_check;
 ALTER TABLE public.accounts ADD CONSTRAINT accounts_type_check 
-CHECK (type IN ('cash', 'bankAccount', 'creditCard', 'debt', 'investment', 'portfolio', 'asset'));
+CHECK (type IN ('cash', 'bankAccount', 'creditCard', 'debt', 'investment', 'portfolio', 'thaiPortfolio', 'asset'));
 
 -- 2. Update transactions table check constraint (added 'debtTransfer')
 ALTER TABLE public.transactions DROP CONSTRAINT IF EXISTS transactions_type_check;

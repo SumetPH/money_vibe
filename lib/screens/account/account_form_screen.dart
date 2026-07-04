@@ -46,6 +46,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   int? _statementDay;
 
   bool get _isEditing => widget.account != null;
+  String get _effectiveSelectedCurrency => _selectedType.isPortfolio
+      ? _selectedType.defaultCurrency
+      : _selectedCurrency;
   bool _isDarkMode = false;
   bool _isLoading = false;
 
@@ -65,7 +68,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _autoUpdateRate = acc?.autoUpdateRate ?? true;
     _statementDay = acc?.statementDay;
 
-    if (_selectedType == AccountType.portfolio) {
+    if (_selectedType.isPortfolio) {
       _initialBalanceController.text = acc != null
           ? formatAmount(acc.cashBalance)
           : '';
@@ -182,6 +185,23 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     }
   }
 
+  void _applyAccountTypeDefaults(AccountType type) {
+    _selectedType = type;
+    if (!type.isPortfolio) return;
+
+    _selectedCurrency = type.defaultCurrency;
+    if (type.isThaiPortfolio) {
+      _autoUpdateRate = false;
+      _exchangeRateController.text = '1';
+    } else {
+      _autoUpdateRate = true;
+      if (_exchangeRateController.text.trim().isEmpty ||
+          _exchangeRateController.text.trim() == '1') {
+        _exchangeRateController.text = '1.0';
+      }
+    }
+  }
+
   void _formatAmountInput(String value) {
     final raw = value.replaceAll(',', '');
     if (raw.isEmpty) {
@@ -231,12 +251,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         .replaceAll(',', '')
         .trim();
     final balanceValue = double.tryParse(balanceText) ?? 0;
-    final exchangeRate =
-        double.tryParse(_exchangeRateController.text.trim()) ?? 1.0;
+    final effectiveCurrency = _effectiveSelectedCurrency;
+    final exchangeRate = effectiveCurrency == 'USD'
+        ? double.tryParse(_exchangeRateController.text.trim()) ?? 1.0
+        : 1.0;
 
-    final isPortfolio = _selectedType == AccountType.portfolio;
+    final isPortfolio = _selectedType.isPortfolio;
     final initialBalance = isPortfolio ? 0.0 : balanceValue;
     final cashBalance = isPortfolio ? balanceValue : 0.0;
+    final autoUpdateRate = effectiveCurrency == 'USD' && _autoUpdateRate;
 
     final provider = context.read<AccountProvider>();
 
@@ -249,7 +272,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             name: name,
             type: _selectedType,
             initialBalance: initialBalance,
-            currency: _selectedCurrency,
+            currency: effectiveCurrency,
             startDate: _startDate,
             iconUrl: _selectedIconUrl,
             icon: _selectedIcon,
@@ -261,7 +284,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 : _noteController.text.trim(),
             cashBalance: cashBalance,
             exchangeRate: exchangeRate,
-            autoUpdateRate: _autoUpdateRate,
+            autoUpdateRate: autoUpdateRate,
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
                 : null,
@@ -274,7 +297,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             name: name,
             type: _selectedType,
             initialBalance: initialBalance,
-            currency: _selectedCurrency,
+            currency: effectiveCurrency,
             startDate: _startDate,
             iconUrl: _selectedIconUrl,
             icon: _selectedIcon,
@@ -283,7 +306,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             isHidden: _isHidden,
             cashBalance: cashBalance,
             exchangeRate: exchangeRate,
-            autoUpdateRate: _autoUpdateRate,
+            autoUpdateRate: autoUpdateRate,
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
                 : null,
@@ -442,7 +465,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 ),
                 _buildDivider(color: dividerColor),
                 // Exchange Rate & Auto Update (USD only)
-                if (_selectedCurrency == 'USD') ...[
+                if (_effectiveSelectedCurrency == 'USD') ...[
                   _buildSwitchRow(
                     label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
                     value: _autoUpdateRate,
@@ -462,7 +485,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 // Currency
                 _buildPickerRow(
                   label: 'สกุลเงิน',
-                  value: _getCurrencyDisplay(_selectedCurrency),
+                  value: _getCurrencyDisplay(_effectiveSelectedCurrency),
                   onTap: _pickCurrency,
                   surfaceColor: surfaceColor,
                   textPrimaryColor: textPrimaryColor,
@@ -557,7 +580,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required Color surfaceColor,
     required Color textSecondaryColor,
   }) {
-    final isPortfolio = _selectedType == AccountType.portfolio;
+    final isPortfolio = _selectedType.isPortfolio;
     return Container(
       color: surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -580,7 +603,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               decoration: InputDecoration(
                 hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',
                 hintStyle: TextStyle(color: textSecondaryColor),
-                suffixText: _selectedCurrency == 'USD' ? 'USD' : 'บาท',
+                suffixText: _effectiveSelectedCurrency == 'USD' ? 'USD' : 'บาท',
                 suffixStyle: TextStyle(
                   color: textSecondaryColor,
                   fontSize: 16,
@@ -1048,7 +1071,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                                 : null,
                             onTap: () {
                               setState(() {
-                                _selectedType = type;
+                                _applyAccountTypeDefaults(type);
                                 _initialBalanceController.clear();
                               });
                               Navigator.pop(context);
@@ -1072,6 +1095,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickCurrency() {
+    if (_selectedType.isPortfolio) return;
+
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,

@@ -294,8 +294,8 @@ class AccountProvider extends ChangeNotifier {
     final account = findById(accountId);
     if (account == null) return 0;
 
-    // Portfolio: balance = (cashBalance in USD) + sum of holdings value in USD
-    if (account.type == AccountType.portfolio) {
+    // Portfolio: balance = cash balance + holdings value in the portfolio currency
+    if (account.isPortfolio) {
       double total = account.cashBalance;
       for (final h in (_holdings[accountId] ?? [])) {
         total += h.shares * h.priceUsd;
@@ -331,7 +331,7 @@ class AccountProvider extends ChangeNotifier {
     final account = findById(accountId);
     if (account == null) return 0;
     final balance = getBalance(accountId, transactions);
-    // Portfolio และ USD account ต้อง convert ด้วย exchangeRate
+    // USD accounts convert with exchangeRate; THB portfolios already stay in THB
     if (account.currency == 'USD') {
       return balance * account.exchangeRate;
     }
