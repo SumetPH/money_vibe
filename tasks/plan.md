@@ -1,126 +1,129 @@
-# Implementation Plan: Thai Stock Portfolio Account Type
+# Implementation Plan: Portfolio Investment Plan
 
 ## Overview
 
-Add a Thai stock portfolio account type while reusing the existing portfolio engine. The first release should let users create a THB-denominated Thai portfolio, add/edit/sell Thai holdings, refresh Thai stock prices through Yahoo symbols, and include the portfolio correctly in account balances and net worth. This plan intentionally keeps the existing `*_usd` database columns and Dart field names for the MVP to avoid a broad data migration; UI labels and currency behavior should become portfolio-aware.
+เพิ่ม tab `แผนการลงทุน` ในหน้า portfolio account เพื่อให้ผู้ใช้เช็ค DCA รายเดือน, ตั้ง target allocation ต่อหุ้น, เห็นว่าพอร์ตขาด/เกินเป้ากี่เปอร์เซ็นต์และกี่หน่วยเงิน, และลองกรอกเงินซื้อเพิ่มเพื่อดู recommendation ว่าควรเติมหุ้นตัวไหนเท่าไหร่ ฟีเจอร์นี้ต้องเก็บข้อมูลใน Supabase แยกจาก `portfolio_holdings` เพื่อไม่ให้ price refresh หรือ stale holding writes ไปทับข้อมูลแผนลงทุน
 
 ## Scope
 
 ### In Scope
 
-- Add a new account type for Thai stock portfolios under the existing investment group.
-- Treat both US and Thai stock portfolios as portfolio accounts in shared logic.
-- Default Thai stock portfolios to THB, exchange rate `1`, and no USD/THB auto-update UI.
-- Reuse existing `portfolio_holdings`, `stock_trades`, and portfolio screens.
-- Normalize Thai tickers for Yahoo Finance using `.BK` where appropriate.
-- Show portfolio currency labels based on the account currency instead of hard-coded USD labels in the core portfolio flow.
-- Update Supabase migration and `supabase/init_schema.sql`.
-- Run `dart format .` and `flutter analyze` after implementation.
+- เพิ่มข้อมูลแผนลงทุนราย portfolio ใน Supabase
+- เพิ่ม DCA checklist เฉพาะเดือนปัจจุบัน โดยใช้ local month key รูปแบบ `YYYY-MM`
+- เพิ่ม target allocation ต่อ ticker/holding พร้อมเปิดปิดได้
+- เพิ่ม pure calculation สำหรับ rebalance rows และ buy amount recommendation
+- เพิ่ม tab `แผนการลงทุน` ใน `PortfolioDetailScreen`
+- รองรับทั้ง US และ Thai portfolio ผ่าน `account.isPortfolio`
+- ใช้ค่าเงินของ portfolio account สำหรับข้อความและจำนวนเงินที่แสดง
+- รัน `rtk dart format .` และ `rtk flutter analyze` หลัง implementation
 
 ### Out of Scope
 
-- Renaming `price_usd`, `cost_basis_usd`, `sell_price_usd`, and related columns.
-- Thai tax-specific logic, average cost tax reports, or broker statement redesign.
-- New unit tests, browser tests, CI/CD, Docker, or telemetry.
-- Reworking the full portfolio analysis prompt/reporting model.
+- ไม่สร้าง transaction หรือคำสั่งซื้ออัตโนมัติ
+- ไม่เชื่อม broker หรือส่ง order จริง
+- ไม่เพิ่ม unit test หรือ browser test เว้นแต่ผู้ใช้ขอ
+- ไม่ทำประวัติ DCA checklist ย้อนหลังหลายเดือนใน UI รอบแรก
+- ไม่ rename field/column กลุ่ม `*_usd`
+- ไม่แก้ระบบ price refresh นอกจากต้องไม่ให้ชนกับ investment plan state
+
+## MVP Decisions
+
+- Allocation calculation รอบแรกใช้ `sum(holding.valueUsd)` เป็นฐาน ไม่รวม `account.cashBalance`
+- DCA checklist แสดงและแก้ได้เฉพาะเดือนปัจจุบัน
+- Buy recommendation เติมหุ้นที่ขาดจากเป้ามากสุดให้ถึงเป้าก่อน แล้วค่อยตัวถัดไป เพื่อให้เหมาะกับ DCA ก้อนเล็กรายเดือน
+- Target ที่อ้างถึง ticker ที่ยังไม่มี holding จะเก็บใน data model ได้ แต่ UI รอบแรกให้เน้น holdings ปัจจุบันก่อน
+- Sync log ใช้ module `portfolio` ใน MVP เพื่อลดการแตะ `SyncProvider`; ถ้าภายหลังต้องแยก timing ค่อยเพิ่ม module `investment_plan`
 
 ## Architecture Decisions
 
-- Use a new `AccountType.thaiPortfolio` instead of overloading the existing `portfolio` label. This preserves existing US portfolio data and makes UI behavior explicit.
-- Expand `Account.isPortfolio` and add helper methods such as portfolio currency label / Yahoo symbol normalization rather than scattering `type == AccountType.portfolio || type == AccountType.thaiPortfolio` checks.
-- Keep persistence backward-compatible by adding only the new account type to the `accounts.type` check constraint. Existing portfolio child tables can continue to reference `accounts(id)`.
-- Use `account.currency` as the source of truth for display and THB conversion. A Thai portfolio should have `currency == 'THB'`, so `getBalanceInThb()` should not convert it.
-- For price refresh, normalize symbols at the service boundary or call site while preserving the user's display ticker where practical.
+- สร้าง model ใหม่ เช่น `InvestmentPlanMonthStatus`, `PortfolioAllocationTarget`, `AllocationRecommendation` แยกจาก `StockHolding`
+- เพิ่ม repository interface ใหม่ใน `DatabaseRepository` แล้ว implement ผ่าน `SupabaseInvestmentPlanAdapter`
+- ให้ `AccountProvider` โหลด investment plan พร้อมข้อมูล account/holding เพื่อให้หน้า portfolio อ่านจาก provider เดิมได้
+- แยก calculation helper เป็น pure Dart function เพื่อไม่ให้ logic ไปกองใน `build()`
+- UI เป็น widget/screen แยก เช่น `portfolio_investment_plan_screen.dart` แล้วให้ `PortfolioDetailScreen` เป็นคนส่ง account, holdings, plan state เข้าไป
+- ใช้ surface/list-first style ตาม portfolio screens เดิม ไม่ทำ card ซ้อนหรือ layout marketing
 
 ## Dependency Graph
 
-Database constraint
-  -> Account enum/model helpers
-  -> Repository serialization remains compatible
-  -> Account creation/edit UI
-  -> Portfolio routing and balance calculations
-  -> Price refresh and holding forms
-  -> Sell/trade UI labels
-  -> Export/analyze/statistics cleanup
-  -> Verification
+Database migration
+  -> Dart models and repository interface
+  -> Supabase adapter delegation
+  -> AccountProvider state and methods
+  -> Calculation helper
+  -> Portfolio tab wiring
+  -> Investment plan UI
+  -> Verification and cleanup
 
 ## Task List
 
-### Phase 1: Foundation
+### Phase 1: Data Foundation
 
-- [ ] Task 1: Add Thai portfolio account type to schema and model
-- [ ] Task 2: Replace core portfolio type checks with `Account.isPortfolio`
+- [ ] Task 1: Add investment plan schema and Supabase contract
+- [ ] Task 2: Add Dart models and pure allocation calculations
 
 ### Checkpoint: Foundation
 
-- [ ] Existing US portfolio accounts still parse as `AccountType.portfolio`
-- [ ] New Thai portfolio accounts can be represented locally and accepted by Supabase constraints
+- [ ] Schema has RLS and `init_schema.sql` includes the migration
+- [ ] Calculation code has no UI or repository side effects
+- [ ] No existing holding refresh path writes investment plan state
 
-### Phase 2: Create and View Thai Portfolios
+### Phase 2: Persistence and State
 
-- [ ] Task 3: Make account form portfolio-aware for THB vs USD portfolios
-- [ ] Task 4: Route Thai portfolios to the existing portfolio detail flow and include them in account summaries
+- [ ] Task 3: Add repository adapter for investment plans
+- [ ] Task 4: Load and mutate investment plan data through `AccountProvider`
 
-### Checkpoint: Account Flow
+### Checkpoint: Data Flow
 
-- [ ] User can create a Thai stock portfolio with THB cash balance
-- [ ] Account list opens the Thai portfolio detail screen
-- [ ] Net worth includes Thai portfolio balance without USD conversion
+- [ ] Account provider can expose current month DCA status by portfolio
+- [ ] Account provider can expose/update allocation targets by portfolio
+- [ ] Failed writes do not leave permanent incorrect optimistic state
 
-### Phase 3: Holdings and Prices
+### Phase 3: UI Integration
 
-- [ ] Task 5: Make holding form and portfolio detail labels currency-aware
-- [ ] Task 6: Add Thai ticker normalization for Yahoo price refresh
+- [ ] Task 5: Add the `แผนการลงทุน` tab shell to portfolio detail
+- [ ] Task 6: Build DCA checklist and target allocation editor
+- [ ] Task 7: Build rebalance table and buy amount recommendation UI
 
-### Checkpoint: Holding Flow
+### Checkpoint: User Flow
 
-- [ ] User can add a Thai holding with THB cost/current price labels
-- [ ] Refresh price requests a Yahoo-compatible Thai symbol such as `PTT.BK`
-- [ ] Market-data refresh still writes only market fields, preserving the previous stale-write mitigation
+- [ ] User can enter the new tab from a portfolio account
+- [ ] User can toggle DCA current month and see persisted state after reload
+- [ ] User can set target allocation and see warning when total target is not 100%
+- [ ] User can enter buy amount and see recommendations without changing holdings/transactions
 
-### Phase 4: Selling, Reports, and Secondary Surfaces
+### Phase 4: Final Verification
 
-- [ ] Task 7: Make sell holding and trade edit labels currency-aware
-- [ ] Task 8: Gate or label US-only annual report/tax/reporting surfaces
-- [ ] Task 9: Update CSV and AI export behavior for Thai portfolios
-
-### Checkpoint: Secondary Surfaces
-
-- [ ] Selling Thai holdings updates Thai portfolio cash in THB
-- [ ] US-only broker report/tax UI is not misleading for Thai portfolios
-- [ ] Exported data remains backward-compatible and does not mislabel Thai THB values as USD in user-facing output
-
-### Phase 5: Final Verification
-
-- [ ] Task 10: Format, analyze, and do a focused manual code review
+- [ ] Task 8: Format, analyze, and focused manual review
 
 ### Checkpoint: Complete
 
-- [ ] `dart format .` completes
-- [ ] `flutter analyze` completes, or any environment permission issue is recorded clearly
-- [ ] All planned acceptance criteria are met
+- [ ] `rtk dart format .` has run
+- [ ] `rtk flutter analyze` has run, or any environment permission issue is recorded
+- [ ] Manual code review confirms the feature does not use SQLite, transaction `tags`, or full holding refresh writes
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Hard-coded `AccountType.portfolio` checks miss Thai portfolios | High | Start by expanding `Account.isPortfolio`, then search and convert routing/balance/statistics checks. |
-| Hard-coded USD labels mislead users | High | Add small currency label helpers and update the core holding/sell/detail screens first. |
-| Existing database columns are named `*_usd` but Thai portfolios store THB values | Medium | Accept as MVP technical debt, document in comments/plan, and avoid schema rename until a dedicated migration is desired. |
-| Yahoo Thai ticker behavior differs from user-entered ticker | Medium | Normalize only for price lookup and keep display ticker stable. |
-| Portfolio annual report and trade tracker are US-tax oriented | Medium | Gate or explicitly label those actions as US-only for Thai portfolios in the first release. |
-| Price refresh could reintroduce stale full-row writes | High | Preserve `updateHoldingMarketData()` partial update path and avoid full holding writes during refresh. |
-| Flutter tooling may hit SDK cache permission errors | Low | Run required commands; if blocked by `engine.stamp` permission, report the exact failure and do not treat it as code failure. |
+| Plan state gets mixed into `portfolio_holdings` and is overwritten by refresh | High | Store checklist/targets in separate tables and never update them from price refresh paths |
+| Target percentage math becomes hard to trust | High | Keep allocation calculation in a pure helper with explicit inputs and outputs |
+| UI becomes too dense on mobile | Medium | Use compact list rows, surface sections, and horizontal-safe numeric layout |
+| Thai portfolio values are mislabeled as USD | Medium | Use `account.currencyCodeLabel` for display and keep `*_usd` names internal only |
+| Optimistic provider update diverges from Supabase on error | Medium | Snapshot old state before mutation and restore on catch |
+| Sync log granularity is too broad | Low | Use `portfolio` for MVP, document that a future `investment_plan` module can split sync timing |
+| Flutter analyze may hit SDK cache permissions | Low | Run required command and report exact `engine.stamp` permission failure if it occurs |
 
-## Open Questions
+## Open Questions for Review
 
-- Should Thai portfolio ticker input store `PTT` and add `.BK` only for lookup, or store `PTT.BK` directly?
-- Should the annual broker report/tax menu be hidden for Thai portfolios, or shown with a US-only label?
-- Should Thai portfolio support dividends in phase 1, or leave dividend/tax reporting out entirely?
+- ควรเปลี่ยน MVP ให้ allocation รวม cash balance ด้วยไหม
+- DCA checklist ต้องดู/แก้ย้อนหลังในรอบแรกไหม
+- Target ของ ticker ที่ไม่มี holding แล้วควรค้างใน UI หรือซ่อนก่อน
+- ถ้าภายหลังมีเงินก้อนใหญ่ ควรเพิ่ม mode กระจายตาม gap แยกจาก DCA รายเดือนหรือไม่
 
 ## Implementation Notes
 
-- Prefer helpers over broad renames in the MVP.
-- Keep edits scoped to existing portfolio/account/trade modules.
-- Do not add tests unless explicitly requested.
-- Do not make a git commit unless explicitly requested.
+- ทำทีละ task และให้แต่ละ task อยู่ในสภาพที่ analyze ต่อได้
+- หลีกเลี่ยงการแก้ไฟล์ portfolio ใหญ่แบบกว้างเกินจำเป็น โดยเฉพาะ `portfolio_detail_screen.dart`
+- ไม่ทำ git commit
+- ไม่เพิ่ม unit test/browser test
+- หาก schema เปลี่ยน ต้องอัปเดตทั้ง `supabase/migrations` และ `supabase/init_schema.sql`

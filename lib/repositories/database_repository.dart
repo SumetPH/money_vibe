@@ -7,6 +7,7 @@ import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
 import '../models/portfolio_annual_report.dart';
+import '../models/investment_plan.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -73,6 +74,18 @@ abstract class PortfolioAnnualReportRepositoryInterface {
   Future<void> deletePortfolioAnnualReport(String id);
 }
 
+/// Interface สำหรับจัดการแผนลงทุนของ Portfolio
+abstract class InvestmentPlanRepositoryInterface {
+  Future<List<InvestmentPlanMonthStatus>> getInvestmentPlanMonthStatuses();
+  Future<void> upsertInvestmentPlanMonthStatus(
+    InvestmentPlanMonthStatus status,
+  );
+  Future<List<PortfolioAllocationTarget>> getPortfolioAllocationTargets();
+  Future<void> upsertPortfolioAllocationTarget(
+    PortfolioAllocationTarget target,
+  );
+}
+
 /// Interface สำหรับจัดการข้อมูลงบประมาณ (Budget)
 abstract class BudgetRepositoryInterface {
   Future<List<Budget>> getBudgets();
@@ -131,6 +144,7 @@ abstract class DatabaseRepository
         BudgetRepositoryInterface,
         RecurringRepositoryInterface,
         PortfolioAnnualReportRepositoryInterface,
+        InvestmentPlanRepositoryInterface,
         SyncRepositoryInterface {
   /// ชื่อของ repository (สำหรับ debug)
   String get name;

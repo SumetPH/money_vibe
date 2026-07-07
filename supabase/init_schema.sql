@@ -21,3 +21,4 @@
 \ir migrations/20260618120000_add_dividend_fields_to_portfolio_annual_reports.sql
 \ir migrations/20260620090000_harden_security_linter_warnings.sql
 \ir migrations/20260704120000_add_thai_portfolio_account_type.sql
+\ir migrations/20260707120000_create_portfolio_investment_plans.sql

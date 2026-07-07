@@ -1,223 +1,181 @@
-# Todo: Thai Stock Portfolio Account Type
+# Todo: Portfolio Investment Plan
 
-## Task 1: Add Thai Portfolio Account Type to Schema and Model
+## Task 1: Add Investment Plan Schema and Supabase Contract
 
-**Description:** Add the new account type to Dart and Supabase so Thai stock portfolio accounts can exist without affecting existing US portfolio accounts.
+**Description:** Add Supabase tables for monthly DCA status and portfolio allocation targets, with RLS, updated triggers, indexes, and `init_schema.sql` wiring.
 
 **Acceptance criteria:**
-- [x] `AccountType.thaiPortfolio` exists with Thai label and investment group ordering.
-- [x] `Account.isPortfolio` returns true for both US and Thai stock portfolio types.
-- [x] Supabase account type check constraint accepts the new type.
-- [x] `supabase/init_schema.sql` includes the same allowed type list as the migration.
+- [x] A migration creates `portfolio_investment_plans` with unique `(user_id, portfolio_id, dca_month)`.
+- [x] A migration creates `portfolio_allocation_targets` with unique `(user_id, portfolio_id, ticker)`.
+- [x] Both tables enable RLS and only allow users to manage their own rows.
+- [x] `supabase/init_schema.sql` includes the new migration in order.
 
 **Verification:**
-- [x] Search confirms no schema constraint still omits the new account type.
-- [x] Run later in final verification: `dart format .`
-- [x] Run later in final verification: `flutter analyze`
+- [x] Search confirms both new tables appear in migration and `supabase/init_schema.sql`.
+- [x] Manual SQL review confirms no SQLite or transaction `tags` usage.
+- [x] Run later in final verification: `rtk flutter analyze`.
 
 **Dependencies:** None
 
 **Files likely touched:**
-- `lib/models/account.dart`
-- `supabase/migrations/<timestamp>_add_thai_portfolio_account_type.sql`
+- `supabase/migrations/<timestamp>_create_portfolio_investment_plans.sql`
 - `supabase/init_schema.sql`
-
-**Estimated scope:** M
-
-## Task 2: Replace Core Portfolio Type Checks with `Account.isPortfolio`
-
-**Description:** Convert core logic that special-cases `AccountType.portfolio` so both US and Thai portfolios use portfolio balance and exclusion rules.
-
-**Acceptance criteria:**
-- [x] Balance calculation treats both portfolio types as holdings plus cash balance.
-- [x] Account list, statistics, transaction account filtering, and AI export no longer miss Thai portfolios in core portfolio checks.
-- [x] Existing non-portfolio accounts are unaffected.
-
-**Verification:**
-- [x] Search for `AccountType.portfolio` and classify remaining references as US-only or intentionally unchanged.
-- [x] Run later in final verification: `flutter analyze`
-
-**Dependencies:** Task 1
-
-**Files likely touched:**
-- `lib/providers/account_provider.dart`
-- `lib/screens/account/account_list_screen.dart`
-- `lib/screens/statistics/statistics_screen.dart`
-- `lib/screens/transaction/transaction_form_screen.dart`
-- `lib/services/ai_finance_export_service.dart`
-
-**Estimated scope:** M
-
-## Task 3: Make Account Form Portfolio-Aware for THB vs USD Portfolios
-
-**Description:** Let users create/edit Thai stock portfolio accounts with THB defaults and without irrelevant USD exchange-rate controls.
-
-**Acceptance criteria:**
-- [x] Choosing Thai stock portfolio defaults currency to THB, exchange rate to `1`, and auto update rate to false or irrelevant.
-- [x] Choosing US stock portfolio preserves the existing USD broker cash flow.
-- [x] The initial balance field label remains portfolio cash-oriented, but suffix follows selected currency.
-- [x] Switching account type does not leave stale USD settings on Thai portfolios.
-
-**Verification:**
-- [x] Manual code review of account form state transitions.
-- [x] Run later in final verification: `flutter analyze`
-
-**Dependencies:** Task 1
-
-**Files likely touched:**
-- `lib/screens/account/account_form_screen.dart`
-- `lib/models/account.dart`
-
-**Estimated scope:** M
-
-## Task 4: Route Thai Portfolios to Existing Portfolio Detail and Summaries
-
-**Description:** Ensure Thai portfolios open the existing portfolio detail screen and appear correctly in account group totals and account rows.
-
-**Acceptance criteria:**
-- [x] Tapping a Thai portfolio account opens `PortfolioDetailScreen`.
-- [x] Account list balance row shows THB value without a USD conversion sublabel.
-- [x] Group totals include Thai portfolio value once, in THB.
-
-**Verification:**
-- [x] Search account list route and total calculation for hard-coded portfolio checks.
-- [x] Run later in final verification: `flutter analyze`
-
-**Dependencies:** Tasks 2 and 3
-
-**Files likely touched:**
-- `lib/screens/account/account_list_screen.dart`
-- `lib/providers/account_provider.dart`
 
 **Estimated scope:** S
 
-## Task 5: Make Holding Form and Portfolio Detail Labels Currency-Aware
+## Task 2: Add Dart Models and Pure Allocation Calculations
 
-**Description:** Replace user-facing hard-coded USD labels in the core holding and portfolio detail flow with the portfolio account currency.
+**Description:** Add typed Dart models for investment plan data and pure helper functions for rebalance rows and buy recommendations.
 
 **Acceptance criteria:**
-- [x] Holding form price and cost labels show THB for Thai portfolios and USD for US portfolios.
-- [x] Portfolio detail cash, holdings value, total cost, P/L, and group labels use the correct currency text.
-- [x] Internal field names may remain `priceUsd` / `costBasisUsd` for MVP compatibility.
+- [x] Models can serialize/deserialize DCA status and allocation target rows without `as dynamic`.
+- [x] Calculation helper returns current percent, target value, diff percent, diff amount, and buy recommendation per ticker.
+- [x] Buy recommendation uses holdings-only total for MVP and never mutates holdings, account, transactions, or provider state.
 
 **Verification:**
-- [x] Search affected screens for remaining hard-coded `USD` labels and classify them as updated, US-only, or deferred.
-- [x] Run later in final verification: `flutter analyze`
+- [x] Manual review of calculation inputs/outputs against examples in the spec.
+- [x] Search confirms helper has no repository/provider imports.
+- [x] Run later in final verification: `rtk flutter analyze`.
+
+**Dependencies:** Task 1
+
+**Files likely touched:**
+- `lib/models/investment_plan.dart`
+- `lib/models/stock_holding.dart` only if a tiny shared formatting/helper hook is truly needed
+
+**Estimated scope:** S
+
+## Task 3: Add Repository Adapter for Investment Plans
+
+**Description:** Extend the database repository contract and Supabase delegation so investment plan data can be loaded and saved through the same architecture as existing portfolio data.
+
+**Acceptance criteria:**
+- [x] `DatabaseRepository` exposes methods to get DCA statuses, upsert current month DCA status, get allocation targets, and upsert allocation targets.
+- [x] `SupabaseRepository` delegates those methods to a new investment plan adapter.
+- [x] Supabase writes update the `portfolio` sync log for MVP consistency.
+
+**Verification:**
+- [x] Search confirms new repository methods are implemented by the Supabase path.
+- [x] Manual review confirms no full holding update path is reused for plan writes.
+- [x] Run later in final verification: `rtk flutter analyze`.
+
+**Dependencies:** Tasks 1 and 2
+
+**Files likely touched:**
+- `lib/repositories/database_repository.dart`
+- `lib/repositories/supabase_repository.dart`
+- `lib/repositories/supabase_adapters/investment_plan_adapter.dart`
+
+**Estimated scope:** M
+
+## Task 4: Load and Mutate Investment Plan Data Through AccountProvider
+
+**Description:** Load investment plan rows during account initialization and expose small provider methods for portfolio screens to read/update current month DCA and target allocation.
+
+**Acceptance criteria:**
+- [x] `AccountProvider.init()` loads DCA statuses and allocation targets alongside accounts/holdings.
+- [x] Provider exposes current month DCA status per portfolio using local `YYYY-MM`.
+- [x] Provider exposes allocation targets per portfolio and can upsert target changes.
+- [x] Optimistic updates restore previous state if Supabase write fails.
+
+**Verification:**
+- [x] Manual review of provider reload/init path.
+- [x] Manual review of local month key generation.
+- [x] Run later in final verification: `rtk flutter analyze`.
+
+**Dependencies:** Task 3
+
+**Files likely touched:**
+- `lib/providers/account_provider.dart`
+- `lib/models/investment_plan.dart`
+
+**Estimated scope:** M
+
+## Task 5: Add the `แผนการลงทุน` Tab Shell to Portfolio Detail
+
+**Description:** Add a third portfolio detail tab and route it to a dedicated investment plan widget while keeping the existing `พอร์ต` and `หุ้นทั้งหมด` tabs unchanged.
+
+**Acceptance criteria:**
+- [x] `DefaultTabController.length` becomes 3.
+- [x] Tab labels are `พอร์ต`, `หุ้นทั้งหมด`, and `แผนการลงทุน`.
+- [x] The new tab receives account, holdings, provider callbacks, and currency display context.
+- [x] Existing refresh, menu, portfolio tab, and all-stocks tab behavior stays unchanged.
+
+**Verification:**
+- [x] Manual code review of `TabBar` and `TabBarView` order.
+- [x] Search confirms no unrelated portfolio detail behavior was refactored.
+- [x] Run later in final verification: `rtk flutter analyze`.
 
 **Dependencies:** Task 4
 
 **Files likely touched:**
-- `lib/screens/account/holding_form_screen.dart`
 - `lib/screens/account/portfolio_detail_screen.dart`
-- `lib/widgets/portfolio_holding_item_widget.dart`
+- `lib/screens/account/portfolio_investment_plan_screen.dart`
 
-**Estimated scope:** M
+**Estimated scope:** S
 
-## Task 6: Add Thai Ticker Normalization for Yahoo Price Refresh
+## Task 6: Build DCA Checklist and Target Allocation Editor
 
-**Description:** Make price refresh work for Thai stocks by mapping user-entered Thai tickers to Yahoo-compatible symbols.
+**Description:** Implement the upper part of the investment plan UI: current month DCA toggle and editable target allocation rows for holdings.
 
 **Acceptance criteria:**
-- [x] Thai portfolio price refresh uses `.BK` for plain Thai symbols such as `PTT`.
-- [x] Existing US portfolio tickers are sent unchanged.
-- [x] Display ticker remains predictable and does not unexpectedly duplicate `.BK`.
-- [x] Refresh still persists via `updateHoldingMarketData()` or equivalent partial market-data update only.
+- [x] DCA row shows the current local month and toggles persisted state through `AccountProvider`.
+- [x] Holding rows can be enabled/disabled for the plan and edit target percent.
+- [x] UI shows total target percent and warns when the enabled total is outside `99.99% - 100.01%`.
+- [x] UI uses portfolio currency label, `SettingsProvider` dark mode, and existing app color/radius tokens.
 
 **Verification:**
-- [x] Inspect `_refreshPrices()` and single-holding refresh call sites.
-- [x] Run later in final verification: `flutter analyze`
+- [x] Manual review in light/dark style paths.
+- [x] Manual check that editing targets does not change holdings or transactions.
+- [x] Run later in final verification: `rtk flutter analyze`.
 
 **Dependencies:** Task 5
 
 **Files likely touched:**
-- `lib/screens/account/portfolio_detail_screen.dart`
-- `lib/services/stock_price_service.dart`
-- `lib/models/account.dart`
+- `lib/screens/account/portfolio_investment_plan_screen.dart`
+- `lib/theme/app_colors.dart` only if an existing token is missing and a new token is justified
 
 **Estimated scope:** M
 
-## Task 7: Make Sell Holding and Trade Edit Labels Currency-Aware
+## Task 7: Build Rebalance Table and Buy Amount Recommendation UI
 
-**Description:** Ensure selling Thai holdings and editing trade history does not label THB values as USD.
+**Description:** Implement the lower part of the investment plan UI: computed under/over allocation rows and a buy amount simulator that recommends how much to add per ticker.
 
 **Acceptance criteria:**
-- [x] Sell holding form labels use THB for Thai portfolios and USD for US portfolios.
-- [x] Cash received, gross proceeds, fees, taxes, and P/L labels follow portfolio currency.
-- [x] Selling a Thai holding increases portfolio cash balance in THB.
+- [x] Rebalance rows show ticker/name, target percent, current percent, target value, current value, diff percent, and diff amount.
+- [x] Rows clearly mark `ขาด`, `เกิน`, or `พอดี` without using color as the only signal.
+- [x] Buy amount input recomputes recommendation without saving transactions, cash, or holdings.
+- [x] Recommendation total does not exceed the entered buy amount except for rounding tolerance.
 
 **Verification:**
-- [x] Search sell/trade screens for hard-coded USD labels.
-- [x] Run later in final verification: `flutter analyze`
+- [x] Manual calculation review with at least one overweight and one underweight holding.
+- [x] Manual review of empty/zero holdings states.
+- [x] Run later in final verification: `rtk flutter analyze`.
 
-**Dependencies:** Task 6
+**Dependencies:** Tasks 2 and 6
 
 **Files likely touched:**
-- `lib/screens/account/holding_sell_form_screen.dart`
-- `lib/screens/trade/stock_trade_form_screen.dart`
-- `lib/providers/account_provider.dart`
+- `lib/screens/account/portfolio_investment_plan_screen.dart`
+- `lib/models/investment_plan.dart`
 
 **Estimated scope:** M
 
-## Task 8: Gate or Label US-Only Annual Report and Tax Surfaces
+## Task 8: Format, Analyze, and Focused Manual Review
 
-**Description:** Prevent Thai portfolios from seeing US-specific tax/reporting surfaces as if they apply to Thai holdings.
-
-**Acceptance criteria:**
-- [x] Annual broker report action is hidden, disabled, or explicitly marked US-only for Thai portfolios.
-- [x] Trade tracker/report screens do not present Thai portfolio values as USD tax summaries.
-- [x] Existing US portfolio report behavior remains available.
-
-**Verification:**
-- [x] Manual code review of portfolio menu and trade tracker portfolio filtering.
-- [x] Run later in final verification: `flutter analyze`
-
-**Dependencies:** Task 7
-
-**Files likely touched:**
-- `lib/screens/account/portfolio_detail_screen.dart`
-- `lib/screens/trade/trade_tracker_screen.dart`
-- `lib/screens/trade/broker_report_list_screen.dart`
-- `lib/screens/trade/broker_report_form_screen.dart`
-
-**Estimated scope:** M
-
-## Task 9: Update CSV and AI Export Behavior for Thai Portfolios
-
-**Description:** Keep data export/import compatible while avoiding misleading user-facing currency labels for Thai portfolios.
+**Description:** Run required repo verification and search for integration mistakes around schema wiring, portfolio tabs, currency labels, and stale holding writes.
 
 **Acceptance criteria:**
-- [x] CSV export remains backward-compatible with existing column names.
-- [x] Any user-facing export summary labels portfolio currency correctly where account context is available.
-- [x] AI finance export includes Thai portfolios or intentionally separates them from US-only portfolio summaries.
+- [x] `rtk dart format .` has been run.
+- [x] `rtk flutter analyze` has been run, or an environment permission issue is recorded exactly.
+- [x] `portfolio_detail_screen.dart` still uses partial market-data update for refresh and does not write investment plan state.
+- [x] Remaining open questions are documented for review if they affect behavior.
 
 **Verification:**
-- [x] Search export services for hard-coded USD portfolio text.
-- [x] Run later in final verification: `flutter analyze`
+- [x] `rtk dart format .`
+- [x] `rtk flutter analyze`
+- [x] `rtk rg -n "portfolio_investment_plans|portfolio_allocation_targets|แผนการลงทุน|updateHoldingMarketData|updateHoldingsMarketDataBatch" lib supabase`
 
-**Dependencies:** Task 8
-
-**Files likely touched:**
-- `lib/services/csv_service.dart`
-- `lib/services/ai_finance_export_service.dart`
-
-**Estimated scope:** M
-
-## Task 10: Format, Analyze, and Focused Manual Review
-
-**Description:** Run the required repo verification and do a final search-based review for missed portfolio type or USD display paths.
-
-**Acceptance criteria:**
-- [x] `dart format .` has been run.
-- [x] `flutter analyze` has been run.
-- [x] Remaining `AccountType.portfolio` references are intentional.
-- [x] Remaining hard-coded `USD` labels in portfolio/trade surfaces are intentional, US-only, or documented as deferred.
-
-**Verification:**
-- [x] `dart format .`
-- [x] `flutter analyze`
-- [x] `rg -n "AccountType\\.portfolio| USD|USD\\)|usd" lib supabase`
-
-**Dependencies:** Tasks 1-9
+**Dependencies:** Tasks 1-7
 
 **Files likely touched:**
 - No planned code changes beyond cleanup from earlier tasks.

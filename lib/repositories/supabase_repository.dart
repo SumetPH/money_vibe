@@ -10,9 +10,11 @@ import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
 import '../models/portfolio_annual_report.dart';
+import '../models/investment_plan.dart';
 import 'supabase_adapters/account_adapter.dart';
 import 'supabase_adapters/budget_adapter.dart';
 import 'supabase_adapters/category_adapter.dart';
+import 'supabase_adapters/investment_plan_adapter.dart';
 import 'supabase_adapters/portfolio_adapter.dart';
 import 'supabase_adapters/recurring_adapter.dart';
 import 'supabase_adapters/stock_trade_adapter.dart';
@@ -52,6 +54,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   late final _recurringAdapter = SupabaseRecurringAdapter(this);
   late final _portfolioAnnualReportAdapter =
       SupabasePortfolioAnnualReportAdapter(this);
+  late final _investmentPlanAdapter = SupabaseInvestmentPlanAdapter(this);
 
   SupabaseRepository({
     required this.supabaseUrl,
@@ -304,6 +307,26 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> deletePortfolioAnnualReport(String id) =>
       _portfolioAnnualReportAdapter.deletePortfolioAnnualReport(id);
 
+  // ── Investment Plans (Delegated to Adapter) ───────────────────────────────
+
+  @override
+  Future<List<InvestmentPlanMonthStatus>> getInvestmentPlanMonthStatuses() =>
+      _investmentPlanAdapter.getInvestmentPlanMonthStatuses();
+
+  @override
+  Future<void> upsertInvestmentPlanMonthStatus(
+    InvestmentPlanMonthStatus status,
+  ) => _investmentPlanAdapter.upsertInvestmentPlanMonthStatus(status);
+
+  @override
+  Future<List<PortfolioAllocationTarget>> getPortfolioAllocationTargets() =>
+      _investmentPlanAdapter.getPortfolioAllocationTargets();
+
+  @override
+  Future<void> upsertPortfolioAllocationTarget(
+    PortfolioAllocationTarget target,
+  ) => _investmentPlanAdapter.upsertPortfolioAllocationTarget(target);
+
   // ── Budgets ────────────────────────────────────────────────────────────────
 
   // ── Budgets (Delegated to Adapter) ────────────────────────────────────────
@@ -441,12 +464,26 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .select();
     log('Deleted ${transactions.length} transactions');
 
+    final allocationTargets = await client
+        .from('portfolio_allocation_targets')
+        .delete()
+        .eq('user_id', currentUserId!)
+        .select();
+    log('Deleted ${allocationTargets.length} allocation targets');
+
     final holdings = await client
         .from('portfolio_holdings')
         .delete()
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${holdings.length} holdings');
+
+    final investmentPlans = await client
+        .from('portfolio_investment_plans')
+        .delete()
+        .eq('user_id', currentUserId!)
+        .select();
+    log('Deleted ${investmentPlans.length} investment plan statuses');
 
     final stockTrades = await client
         .from('stock_trades')

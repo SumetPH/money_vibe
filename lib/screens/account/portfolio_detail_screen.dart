@@ -19,6 +19,7 @@ import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
 import 'holding_form_screen.dart';
 import 'holding_sell_form_screen.dart';
+import 'portfolio_investment_plan_screen.dart';
 import '../trade/broker_report_list_screen.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
@@ -311,7 +312,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                           : AppColors.textSecondary,
                       tabs: const [
                         Tab(text: 'พอร์ต'),
-                        Tab(text: 'หุ้นทั้งหมด'),
+                        // Tab(text: 'หุ้นทั้งหมด'),
+                        Tab(text: 'แผนการลงทุน'),
                       ],
                     ),
                     isDarkMode ? AppColors.darkSurface : AppColors.surface,
@@ -331,13 +333,44 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   isDarkMode,
                 ),
                 // Tab หุ้นทั้งหมด
-                _buildAllStocksTab(
-                  context,
-                  provider,
-                  acc,
-                  holdings,
-                  totalHoldingsValueUsd,
-                  isDarkMode,
+                // _buildAllStocksTab(
+                //   context,
+                //   provider,
+                //   acc,
+                //   holdings,
+                //   totalHoldingsValueUsd,
+                //   isDarkMode,
+                // ),
+                PortfolioInvestmentPlanScreen(
+                  account: acc,
+                  holdings: holdings,
+                  targets: provider.getPortfolioAllocationTargets(acc.id),
+                  dcaCompleted: provider.isInvestmentPlanDcaCompleted(acc.id),
+                  onDcaChanged: (completed) async {
+                    try {
+                      await provider.setInvestmentPlanDcaCompleted(
+                        portfolioId: acc.id,
+                        completed: completed,
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('บันทึก DCA ไม่ได้: $e')),
+                      );
+                    }
+                  },
+                  onTargetChanged:
+                      ({
+                        required holding,
+                        required targetPercent,
+                        required isEnabled,
+                      }) => provider.updateAllocationTargetForHolding(
+                        portfolioId: acc.id,
+                        holding: holding,
+                        targetPercent: targetPercent,
+                        isEnabled: isEnabled,
+                      ),
+                  isDarkMode: isDarkMode,
                 ),
               ],
             ),
@@ -1271,99 +1304,99 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     );
   }
 
-  Widget _buildAllStocksTab(
-    BuildContext context,
-    AccountProvider provider,
-    Account acc,
-    List<StockHolding> holdings,
-    double totalHoldingsValueUsd,
-    bool isDarkMode,
-  ) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+  // Widget _buildAllStocksTab(
+  //   BuildContext context,
+  //   AccountProvider provider,
+  //   Account acc,
+  //   List<StockHolding> holdings,
+  //   double totalHoldingsValueUsd,
+  //   bool isDarkMode,
+  // ) {
+  //   final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+  //   final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    if (holdings.isEmpty) {
-      return Center(
-        child: Text(
-          'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
-          style: TextStyle(
-            color: isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary,
-          ),
-        ),
-      );
-    }
+  //   if (holdings.isEmpty) {
+  //     return Center(
+  //       child: Text(
+  //         'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
+  //         style: TextStyle(
+  //           color: isDarkMode
+  //               ? AppColors.darkTextSecondary
+  //               : AppColors.textSecondary,
+  //         ),
+  //       ),
+  //     );
+  //   }
 
-    return Container(
-      color: surfaceColor,
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 80),
-        children: [
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            buildDefaultDragHandles: _isReorderMode,
-            itemCount: holdings.length,
-            onReorder: _isReorderMode
-                ? (oldIndex, newIndex) {
-                    provider.reorderHoldings(acc.id, oldIndex, newIndex);
-                  }
-                : (_, _) {},
-            proxyDecorator: (child, index, animation) {
-              return AnimatedBuilder(
-                animation: animation,
-                builder: (context, child) {
-                  final animValue = Curves.easeInOut.transform(animation.value);
-                  final elevation = 1 + animValue * 8;
-                  final scale = 1 + animValue * 0.02;
-                  return Transform.scale(
-                    scale: scale,
-                    child: Material(
-                      elevation: elevation,
-                      color: isDarkMode
-                          ? AppColors.darkSurface
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      child: child,
-                    ),
-                  );
-                },
-                child: child,
-              );
-            },
-            itemBuilder: (context, index) {
-              final h = holdings[index];
-              return Column(
-                key: ValueKey(h.id),
-                children: [
-                  PortfolioHoldingItemWidget(
-                    holding: h,
-                    exchangeRate: acc.exchangeRate,
-                    currencyCode: acc.currencyCodeLabel,
-                    totalHoldingsValueUsd: totalHoldingsValueUsd,
-                    isReorderMode: _isReorderMode,
-                    onEdit: () =>
-                        _openHoldingForm(context, provider, acc.id, h),
-                    onChangeLogo: () =>
-                        _pickAndUploadHoldingLogo(context, provider, h),
-                    onClearLogo: h.logoUrl.isNotEmpty
-                        ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
-                        : null,
-                    onSell: () =>
-                        _openHoldingSellForm(context, provider, acc.id, h),
-                    onDelete: () => provider.deleteHolding(h.id, acc.id),
-                    isDarkMode: isDarkMode,
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     color: surfaceColor,
+  //     child: ListView(
+  //       padding: const EdgeInsets.only(bottom: 80),
+  //       children: [
+  //         ReorderableListView.builder(
+  //           shrinkWrap: true,
+  //           physics: const NeverScrollableScrollPhysics(),
+  //           buildDefaultDragHandles: _isReorderMode,
+  //           itemCount: holdings.length,
+  //           onReorder: _isReorderMode
+  //               ? (oldIndex, newIndex) {
+  //                   provider.reorderHoldings(acc.id, oldIndex, newIndex);
+  //                 }
+  //               : (_, _) {},
+  //           proxyDecorator: (child, index, animation) {
+  //             return AnimatedBuilder(
+  //               animation: animation,
+  //               builder: (context, child) {
+  //                 final animValue = Curves.easeInOut.transform(animation.value);
+  //                 final elevation = 1 + animValue * 8;
+  //                 final scale = 1 + animValue * 0.02;
+  //                 return Transform.scale(
+  //                   scale: scale,
+  //                   child: Material(
+  //                     elevation: elevation,
+  //                     color: isDarkMode
+  //                         ? AppColors.darkSurface
+  //                         : AppColors.surface,
+  //                     borderRadius: BorderRadius.circular(8),
+  //                     child: child,
+  //                   ),
+  //                 );
+  //               },
+  //               child: child,
+  //             );
+  //           },
+  //           itemBuilder: (context, index) {
+  //             final h = holdings[index];
+  //             return Column(
+  //               key: ValueKey(h.id),
+  //               children: [
+  //                 PortfolioHoldingItemWidget(
+  //                   holding: h,
+  //                   exchangeRate: acc.exchangeRate,
+  //                   currencyCode: acc.currencyCodeLabel,
+  //                   totalHoldingsValueUsd: totalHoldingsValueUsd,
+  //                   isReorderMode: _isReorderMode,
+  //                   onEdit: () =>
+  //                       _openHoldingForm(context, provider, acc.id, h),
+  //                   onChangeLogo: () =>
+  //                       _pickAndUploadHoldingLogo(context, provider, h),
+  //                   onClearLogo: h.logoUrl.isNotEmpty
+  //                       ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
+  //                       : null,
+  //                   onSell: () =>
+  //                       _openHoldingSellForm(context, provider, acc.id, h),
+  //                   onDelete: () => provider.deleteHolding(h.id, acc.id),
+  //                   isDarkMode: isDarkMode,
+  //                 ),
+  //                 Divider(height: 1, color: dividerColor),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {

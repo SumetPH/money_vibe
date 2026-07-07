@@ -9,6 +9,7 @@ import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
 import '../models/transaction.dart';
 import '../models/portfolio_annual_report.dart';
+import '../models/investment_plan.dart';
 
 class AccountProvider extends ChangeNotifier {
   final _uuid = const Uuid();
@@ -23,6 +24,9 @@ class AccountProvider extends ChangeNotifier {
       {}; // portfolioId → holdings
   final List<StockTrade> _stockTrades = [];
   final List<PortfolioAnnualReport> _portfolioAnnualReports = [];
+  final Map<String, Map<String, InvestmentPlanMonthStatus>>
+  _investmentPlanMonthStatuses = {};
+  final Map<String, List<PortfolioAllocationTarget>> _allocationTargets = {};
 
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
@@ -60,6 +64,8 @@ class AccountProvider extends ChangeNotifier {
       final holdings = await _db.getPortfolioHoldings();
       final stockTrades = await _db.getStockTrades();
       final annualReports = await _db.getPortfolioAnnualReports();
+      final investmentPlanStatuses = await _db.getInvestmentPlanMonthStatuses();
+      final allocationTargets = await _db.getPortfolioAllocationTargets();
       _holdings.clear();
       for (final holding in holdings) {
         _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
@@ -78,9 +84,24 @@ class AccountProvider extends ChangeNotifier {
         ..clear()
         ..addAll(annualReports)
         ..sort((a, b) => b.year.compareTo(a.year));
+      _investmentPlanMonthStatuses.clear();
+      for (final status in investmentPlanStatuses) {
+        _investmentPlanMonthStatuses
+            .putIfAbsent(status.portfolioId, () => {})
+            .addAll({status.dcaMonth: status});
+      }
+      _allocationTargets.clear();
+      for (final target in allocationTargets) {
+        _allocationTargets
+            .putIfAbsent(target.portfolioId, () => [])
+            .add(target);
+      }
+      for (final portfolioId in _allocationTargets.keys) {
+        _sortAllocationTargets(portfolioId);
+      }
 
       debugPrint(
-        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${annualReports.length} annual reports',
+        'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${annualReports.length} annual reports, ${investmentPlanStatuses.length} investment plan statuses, ${allocationTargets.length} allocation targets',
       );
 
       // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
@@ -165,11 +186,149 @@ class AccountProvider extends ChangeNotifier {
   List<PortfolioAnnualReport> get portfolioAnnualReports =>
       List.unmodifiable(_portfolioAnnualReports);
 
+  InvestmentPlanMonthStatus? getInvestmentPlanMonthStatus(
+    String portfolioId, {
+    String? dcaMonth,
+  }) {
+    final month = dcaMonth ?? currentInvestmentMonthKey();
+    return _investmentPlanMonthStatuses[portfolioId]?[month];
+  }
+
+  bool isInvestmentPlanDcaCompleted(String portfolioId, {String? dcaMonth}) =>
+      getInvestmentPlanMonthStatus(
+        portfolioId,
+        dcaMonth: dcaMonth,
+      )?.dcaCompleted ??
+      false;
+
+  List<PortfolioAllocationTarget> getPortfolioAllocationTargets(
+    String portfolioId,
+  ) => List.unmodifiable(_allocationTargets[portfolioId] ?? []);
+
+  PortfolioAllocationTarget? findPortfolioAllocationTarget({
+    required String portfolioId,
+    required String ticker,
+  }) {
+    final normalizedTicker = ticker.trim().toUpperCase();
+    for (final target in _allocationTargets[portfolioId] ?? const []) {
+      if (target.ticker.trim().toUpperCase() == normalizedTicker) {
+        return target;
+      }
+    }
+    return null;
+  }
+
   List<PortfolioAnnualReport> getPortfolioAnnualReportsForPortfolio(
     String portfolioId,
   ) => List.unmodifiable(
     _portfolioAnnualReports.where((r) => r.portfolioId == portfolioId),
   );
+
+  Future<void> setInvestmentPlanDcaCompleted({
+    required String portfolioId,
+    required bool completed,
+    String? dcaMonth,
+  }) async {
+    final month = dcaMonth ?? currentInvestmentMonthKey();
+    final previous = Map<String, InvestmentPlanMonthStatus>.from(
+      _investmentPlanMonthStatuses[portfolioId] ?? {},
+    );
+    final existing = previous[month];
+    final updated =
+        existing?.copyWith(dcaCompleted: completed) ??
+        InvestmentPlanMonthStatus(
+          id: generateId(),
+          portfolioId: portfolioId,
+          dcaMonth: month,
+          dcaCompleted: completed,
+        );
+
+    _investmentPlanMonthStatuses.putIfAbsent(portfolioId, () => {}).addAll({
+      month: updated,
+    });
+    notifyListeners();
+
+    try {
+      await _db.upsertInvestmentPlanMonthStatus(updated);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating DCA status: $e');
+      if (previous.isEmpty) {
+        _investmentPlanMonthStatuses.remove(portfolioId);
+      } else {
+        _investmentPlanMonthStatuses[portfolioId] = previous;
+      }
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> upsertPortfolioAllocationTarget(
+    PortfolioAllocationTarget target,
+  ) async {
+    final previous = List<PortfolioAllocationTarget>.from(
+      _allocationTargets[target.portfolioId] ?? const [],
+    );
+    final list = _allocationTargets.putIfAbsent(target.portfolioId, () => []);
+    final idx = list.indexWhere((item) => item.id == target.id);
+    if (idx == -1) {
+      final tickerIdx = list.indexWhere(
+        (item) =>
+            item.ticker.trim().toUpperCase() ==
+            target.ticker.trim().toUpperCase(),
+      );
+      if (tickerIdx == -1) {
+        list.add(target);
+      } else {
+        list[tickerIdx] = target;
+      }
+    } else {
+      list[idx] = target;
+    }
+    _sortAllocationTargets(target.portfolioId);
+    notifyListeners();
+
+    try {
+      await _db.upsertPortfolioAllocationTarget(target);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating allocation target: $e');
+      if (previous.isEmpty) {
+        _allocationTargets.remove(target.portfolioId);
+      } else {
+        _allocationTargets[target.portfolioId] = previous;
+      }
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateAllocationTargetForHolding({
+    required String portfolioId,
+    required StockHolding holding,
+    required double targetPercent,
+    required bool isEnabled,
+  }) {
+    final existing = findPortfolioAllocationTarget(
+      portfolioId: portfolioId,
+      ticker: holding.ticker,
+    );
+    final target =
+        existing?.copyWith(
+          holdingId: holding.id,
+          targetPercent: targetPercent < 0 ? 0 : targetPercent,
+          isEnabled: isEnabled,
+          sortOrder: holding.sortOrder,
+        ) ??
+        PortfolioAllocationTarget(
+          id: generateId(),
+          portfolioId: portfolioId,
+          holdingId: holding.id,
+          ticker: holding.ticker,
+          targetPercent: targetPercent < 0 ? 0 : targetPercent,
+          isEnabled: isEnabled,
+          sortOrder: holding.sortOrder,
+        );
+    return upsertPortfolioAllocationTarget(target);
+  }
 
   Future<void> addPortfolioAnnualReport(PortfolioAnnualReport report) async {
     _validatePortfolioAnnualReport(report);
@@ -963,6 +1122,14 @@ class AccountProvider extends ChangeNotifier {
 
   void _sortStockTrades() {
     _stockTrades.sort((a, b) => b.soldAt.compareTo(a.soldAt));
+  }
+
+  void _sortAllocationTargets(String portfolioId) {
+    _allocationTargets[portfolioId]?.sort((a, b) {
+      final orderCompare = a.sortOrder.compareTo(b.sortOrder);
+      if (orderCompare != 0) return orderCompare;
+      return a.ticker.compareTo(b.ticker);
+    });
   }
 
   Future<void> reorderHoldings(
