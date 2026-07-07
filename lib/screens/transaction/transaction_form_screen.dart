@@ -16,6 +16,7 @@ import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
 import '../../widgets/calculator_keyboard.dart';
+import '../../widgets/calculator_text_field_config.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -692,8 +693,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               child: TextField(
                 controller: _amountController,
                 focusNode: _amountFocusNode,
-                readOnly: true,
+                readOnly: calculatorTextFieldReadOnly,
                 showCursor: true,
+                keyboardType: calculatorTextInputType,
+                inputFormatters: calculatorTextInputFormatters,
                 textAlign: TextAlign.right,
                 style: const TextStyle(
                   fontSize: 24,
@@ -750,8 +753,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 child: TextField(
                   controller: _toAmountController,
                   focusNode: _toAmountFocusNode,
-                  readOnly: true,
+                  readOnly: calculatorTextFieldReadOnly,
                   showCursor: true,
+                  keyboardType: calculatorTextInputType,
+                  inputFormatters: calculatorTextInputFormatters,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     fontSize: 24,

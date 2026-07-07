@@ -12,6 +12,7 @@ import '../../main.dart';
 import '../../widgets/app_bar_action_button.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
+import '../../widgets/calculator_text_field_config.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -606,8 +607,10 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             child: TextField(
               controller: _initialBalanceController,
               focusNode: _amountFocusNode,
-              readOnly: true,
+              readOnly: calculatorTextFieldReadOnly,
               showCursor: true,
+              keyboardType: calculatorTextInputType,
+              inputFormatters: calculatorTextInputFormatters,
               textAlign: TextAlign.right,
               decoration: InputDecoration(
                 hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',

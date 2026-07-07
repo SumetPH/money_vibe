@@ -14,6 +14,7 @@ import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/app_bar_action_button.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
+import '../../widgets/calculator_text_field_config.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -539,8 +540,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   child: TextField(
                     controller: _amountController,
                     focusNode: _amountFocusNode,
-                    readOnly: true,
+                    readOnly: calculatorTextFieldReadOnly,
                     showCursor: true,
+                    keyboardType: calculatorTextInputType,
+                    inputFormatters: calculatorTextInputFormatters,
                     decoration: InputDecoration(
                       hintText: 'จำนวนเงิน',
                       hintStyle: TextStyle(color: textSecondary),

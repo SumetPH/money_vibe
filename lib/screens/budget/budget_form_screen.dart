@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/calculator_keyboard.dart';
+import '../../widgets/calculator_text_field_config.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final Budget? budget;
@@ -507,8 +508,10 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         child: TextField(
                           controller: _amountController,
                           focusNode: _amountFocusNode,
-                          readOnly: true,
+                          readOnly: calculatorTextFieldReadOnly,
                           showCursor: true,
+                          keyboardType: calculatorTextInputType,
+                          inputFormatters: calculatorTextInputFormatters,
                           textAlign: TextAlign.right,
                           decoration: InputDecoration(
                             hintText: '0.00',
