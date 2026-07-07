@@ -970,16 +970,16 @@ class _RebalanceRow extends StatelessWidget {
               ),
               _Metric(
                 label: 'มูลค่าเป้า',
-                value: '${formatAmount(row.targetValue)} $currencyCode',
+                value: formatAmount(row.targetValue),
               ),
               _Metric(
                 label: 'มูลค่าตอนนี้',
-                value: '${formatAmount(row.currentValue)} $currencyCode',
+                value: formatAmount(row.currentValue),
               ),
               _Metric(
                 label: 'ขาด/เกิน',
                 value:
-                    '${row.diffAmount >= 0 ? '+' : ''}${formatAmount(row.diffAmount)} $currencyCode',
+                    '${row.diffAmount >= 0 ? '+' : ''}${formatAmount(row.diffAmount)}',
               ),
             ],
           ),

@@ -236,8 +236,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนรวม',
-                        value:
-                            '${widget.holding.totalCostUsd.toStringAsFixed(2)} ${widget.currencyCode}',
+                        value: widget.holding.totalCostUsd.toStringAsFixed(2),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -246,8 +245,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนต่อหุ้น',
-                        value:
-                            '${formatStockHoldingCostBasis(widget.holding.costBasisUsd)} ${widget.currencyCode}',
+                        value: formatStockHoldingCostBasis(
+                          widget.holding.costBasisUsd,
+                        ),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -256,8 +256,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                     Expanded(
                       child: _DetailCell(
                         label: 'ราคาปัจจุบัน',
-                        value:
-                            '${widget.holding.priceUsd.toStringAsFixed(2)} ${widget.currencyCode}',
+                        value: widget.holding.priceUsd.toStringAsFixed(2),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
