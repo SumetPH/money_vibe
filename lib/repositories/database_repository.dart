@@ -16,6 +16,12 @@ abstract class AccountRepositoryInterface {
   Future<List<Account>> getAccounts();
   Future<void> insertAccount(Account account);
   Future<void> updateAccount(Account account);
+  Future<void> updateAccountCashBalance(String id, double cashBalance);
+  Future<void> updateAccountExchangeRate(
+    String id, {
+    required double exchangeRate,
+    bool? autoUpdateRate,
+  });
   Future<void> updateAccountSortOrder(String id, int sortOrder);
   Future<void> deleteAccount(String id);
   Future<Set<String>> getExistingAccountIds();

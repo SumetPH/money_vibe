@@ -282,7 +282,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                           sellPlanStatus.title,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: sellPlanStatus.textColor,
                           ),
                         ),
@@ -291,7 +291,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                           sellPlanStatus.message,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                            fontWeight: FontWeight.w500,
                             color: sellPlanStatus.textColor,
                           ),
                         ),
@@ -486,10 +487,12 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
       final stopLossPrice =
           widget.holding.costBasisUsd *
           (1 - (widget.holding.stopLossPct / 100));
+      final stopLossTriggerPct = -widget.holding.stopLossPct;
+      final distancePct = stopLossTriggerPct - currentPnlPct;
       return _SellPlanStatusHelper(
-        title: 'ขายได้แล้ว (Stop Loss)',
+        title: 'แตะ Stop Loss แล้ว',
         message:
-            'Stop Loss \$${stopLossPrice.toStringAsFixed(2)} • -${widget.holding.stopLossPct.toStringAsFixed(2)}% • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+            'Stop: \$${stopLossPrice.toStringAsFixed(2)} (${_formatSignedPct(stopLossTriggerPct)})\nตอนนี้: ${_formatSignedPct(currentPnlPct)} ต่ำกว่า stop ${_formatAbsPct(distancePct)}',
         textColor: expenseColor,
         backgroundColor: surfaceColor,
       );
@@ -504,10 +507,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
           stopProfitPct: trailingStopTriggerPct,
         );
         if (currentPnlPct <= trailingStopTriggerPct) {
+          final distancePct = trailingStopTriggerPct - currentPnlPct;
           return _SellPlanStatusHelper(
-            title: 'ขายได้แล้ว',
+            title: 'แตะ Trailing Stop แล้ว',
             message:
-                'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • ตอนนี้ ${_formatSignedPct(currentPnlPct)}',
+                'Stop: \$${trailingStopPrice.toStringAsFixed(2)} (${_formatSignedPct(trailingStopTriggerPct)})\nตอนนี้: ${_formatSignedPct(currentPnlPct)} ต่ำกว่า stop ${_formatAbsPct(distancePct)}',
             textColor: expenseColor,
             backgroundColor: surfaceColor,
           );
@@ -520,7 +524,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         return _SellPlanStatusHelper(
           title: waitingTitle,
           message:
-              'Stop \$${trailingStopPrice.toStringAsFixed(2)} • ${_formatSignedPct(trailingStopTriggerPct)} • เหลืออีก ${remainingPct.toStringAsFixed(2)}%',
+              'Stop: \$${trailingStopPrice.toStringAsFixed(2)} (${_formatSignedPct(trailingStopTriggerPct)})\nตอนนี้: ${_formatSignedPct(currentPnlPct)} สูงกว่า stop ${_formatAbsPct(remainingPct)}',
           textColor: incomeColor,
           backgroundColor: surfaceColor,
         );
@@ -528,21 +532,40 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     }
 
     // 3. Still active but target/cut not hit yet
-    final List<String> parts = [];
+    final List<String> rules = [];
     if (widget.holding.takeProfitPct > 0) {
-      parts.add('เป้า ${_formatSignedPct(widget.holding.takeProfitPct)}');
+      rules.add('เป้า ${_formatSignedPct(widget.holding.takeProfitPct)}');
     }
     if (widget.holding.trailingStopPct > 0) {
-      parts.add('Trail ${widget.holding.trailingStopPct.toStringAsFixed(2)}%');
+      rules.add('Trail ${widget.holding.trailingStopPct.toStringAsFixed(2)}%');
     }
     if (widget.holding.stopLossPct > 0) {
-      parts.add('Cut -${widget.holding.stopLossPct.toStringAsFixed(2)}%');
+      rules.add('Cut -${widget.holding.stopLossPct.toStringAsFixed(2)}%');
     }
-    parts.add('ตอนนี้ ${_formatSignedPct(currentPnlPct)}');
+
+    var title = 'แผนขายยังไม่ทำงาน';
+    var currentLine = 'ตอนนี้: ${_formatSignedPct(currentPnlPct)}';
+    if (widget.holding.takeProfitPct > 0) {
+      final gapPct = widget.holding.takeProfitPct - currentPnlPct;
+      if (gapPct > 0) {
+        title = 'รอถึง Take Profit';
+        currentLine =
+            'ตอนนี้: ${_formatSignedPct(currentPnlPct)} ขาดอีก ${_formatAbsPct(gapPct)}';
+      } else {
+        title = 'ถึงเป้าแล้ว รอ Trailing Stop';
+        currentLine =
+            'ตอนนี้: ${_formatSignedPct(currentPnlPct)} รอเก็บจุดสูงสุด';
+      }
+    } else if (widget.holding.trailingStopPct > 0) {
+      title = 'รอเริ่ม Trailing Stop';
+      currentLine = currentPnlPct > 0
+          ? 'ตอนนี้: ${_formatSignedPct(currentPnlPct)} รอเก็บจุดสูงสุด'
+          : 'ตอนนี้: ${_formatSignedPct(currentPnlPct)} รอกำไรเป็นบวก';
+    }
 
     return _SellPlanStatusHelper(
-      title: 'ยังไม่ถึงเป้า',
-      message: parts.join(' • '),
+      title: title,
+      message: '${rules.join(' • ')}\n$currentLine',
       textColor: textSecondaryColor,
       backgroundColor: surfaceColor,
     );
@@ -550,6 +573,10 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 
   String _formatSignedPct(double value) {
     return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}%';
+  }
+
+  String _formatAbsPct(double value) {
+    return '${value.abs().toStringAsFixed(2)}%';
   }
 
   double? _resolveTrailingStopTriggerPct() {

@@ -182,7 +182,7 @@ class _PortfolioInvestmentPlanScreenState
       children: [
         SwitchListTile(
           value: widget.dcaCompleted,
-          onChanged: widget.onDcaChanged,
+          onChanged: _handleDcaChanged,
           title: Text(
             'DCA $monthLabel',
             style: TextStyle(
@@ -223,6 +223,54 @@ class _PortfolioInvestmentPlanScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _handleDcaChanged(bool completed) async {
+    final confirmed = await _confirmDcaChange(completed);
+    if (!mounted || confirmed != true) return;
+
+    widget.onDcaChanged(completed);
+  }
+
+  Future<bool?> _confirmDcaChange(bool completed) {
+    final backgroundColor = widget.isDarkMode
+        ? AppColors.darkSurface
+        : Colors.white;
+    final textColor = widget.isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final actionColor = completed
+        ? (widget.isDarkMode ? AppColors.darkIncome : AppColors.income)
+        : (widget.isDarkMode ? AppColors.darkExpense : AppColors.expense);
+    final monthLabel = _formatMonthLabel(currentInvestmentMonthKey());
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: backgroundColor,
+        title: Text(
+          completed ? 'ยืนยัน DCA เดือนนี้' : 'ยกเลิกสถานะ DCA',
+          style: TextStyle(color: textColor),
+        ),
+        content: Text(
+          completed
+              ? 'ต้องการติ๊กว่า DCA $monthLabel ซื้อครบตามแผนแล้วใช่ไหม?'
+              : 'ต้องการยกเลิกสถานะซื้อครบของ DCA $monthLabel ใช่ไหม?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: actionColor),
+            child: Text(completed ? 'ยืนยัน' : 'ยกเลิกสถานะ'),
+          ),
+        ],
+      ),
     );
   }
 

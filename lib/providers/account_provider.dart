@@ -137,7 +137,7 @@ class AccountProvider extends ChangeNotifier {
         final updated = acc.copyWith(exchangeRate: rate);
         final idx = _accounts.indexWhere((a) => a.id == acc.id);
         if (idx != -1) _accounts[idx] = updated;
-        await _db.updateAccount(updated);
+        await _db.updateAccountExchangeRate(acc.id, exchangeRate: rate);
       }
       notifyListeners();
     } catch (e) {
@@ -568,6 +568,55 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateAccountCashBalance(String id, double cashBalance) async {
+    final idx = _accounts.indexWhere((a) => a.id == id);
+    if (idx == -1) return;
+
+    final oldAccount = _accounts[idx];
+    final updated = oldAccount.copyWith(cashBalance: cashBalance);
+    _accounts[idx] = updated;
+    notifyListeners();
+
+    try {
+      await _db.updateAccountCashBalance(id, cashBalance);
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating account cash balance: $e');
+      _accounts[idx] = oldAccount;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateAccountExchangeRate(
+    String id, {
+    required double exchangeRate,
+    bool? autoUpdateRate,
+  }) async {
+    final idx = _accounts.indexWhere((a) => a.id == id);
+    if (idx == -1) return;
+
+    final oldAccount = _accounts[idx];
+    final updated = oldAccount.copyWith(
+      exchangeRate: exchangeRate,
+      autoUpdateRate: autoUpdateRate,
+    );
+    _accounts[idx] = updated;
+    notifyListeners();
+
+    try {
+      await _db.updateAccountExchangeRate(
+        id,
+        exchangeRate: exchangeRate,
+        autoUpdateRate: autoUpdateRate,
+      );
+    } catch (e) {
+      debugPrint('AccountProvider: Error updating account exchange rate: $e');
+      _accounts[idx] = oldAccount;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> deleteAccount(String id) async {
     final idx = _accounts.indexWhere((a) => a.id == id);
     if (idx == -1) return;
@@ -752,15 +801,26 @@ class AccountProvider extends ChangeNotifier {
     final list = _holdings[portfolioId];
     if (list == null) return;
 
+    final mergedHoldings = <StockHolding>[];
     for (final h in holdings) {
       final idx = list.indexWhere((e) => e.id == h.id);
-      if (idx != -1) list[idx] = h;
+      if (idx != -1) {
+        final current = list[idx];
+        final canApplyPeak = _hasSameSellPlanBasis(current, h);
+        final merged = current.copyWith(
+          priceUsd: h.priceUsd,
+          logoUrl: h.logoUrl,
+          peakProfitPct: canApplyPeak ? h.peakProfitPct : current.peakProfitPct,
+        );
+        list[idx] = merged;
+        mergedHoldings.add(merged);
+      }
     }
     list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
     await Future.wait(
-      holdings.map(
+      mergedHoldings.map(
         (h) => _db.updateHoldingMarketData(h).catchError((e) {
           debugPrint(
             'AccountProvider: Error updating holding market data ${h.id}: $e',
@@ -768,6 +828,15 @@ class AccountProvider extends ChangeNotifier {
         }),
       ),
     );
+  }
+
+  bool _hasSameSellPlanBasis(StockHolding a, StockHolding b) {
+    return a.sellPlanEnabled == b.sellPlanEnabled &&
+        a.takeProfitPct == b.takeProfitPct &&
+        a.trailingStopPct == b.trailingStopPct &&
+        a.stopLossPct == b.stopLossPct &&
+        a.shares == b.shares &&
+        a.costBasisUsd == b.costBasisUsd;
   }
 
   Future<void> deleteHolding(String id, String portfolioId) async {

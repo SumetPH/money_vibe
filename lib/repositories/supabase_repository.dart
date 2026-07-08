@@ -198,6 +198,21 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _accountAdapter.updateAccount(account);
 
   @override
+  Future<void> updateAccountCashBalance(String id, double cashBalance) =>
+      _accountAdapter.updateAccountCashBalance(id, cashBalance);
+
+  @override
+  Future<void> updateAccountExchangeRate(
+    String id, {
+    required double exchangeRate,
+    bool? autoUpdateRate,
+  }) => _accountAdapter.updateAccountExchangeRate(
+    id,
+    exchangeRate: exchangeRate,
+    autoUpdateRate: autoUpdateRate,
+  );
+
+  @override
   Future<void> updateAccountSortOrder(String id, int sortOrder) =>
       _accountAdapter.updateAccountSortOrder(id, sortOrder);
 

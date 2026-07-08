@@ -153,7 +153,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       final profiles = futures[2] as Map<String, StockCompanyProfile>;
 
       if (acc.autoUpdateRate) {
-        provider.updateAccount(acc.copyWith(exchangeRate: rate));
+        provider.updateAccountExchangeRate(acc.id, exchangeRate: rate);
       }
       final updatedHoldings = <StockHolding>[];
       for (final h in holdings) {
@@ -479,8 +479,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 onPressed: () {
                   final v = double.tryParse(controller.text.trim());
                   if (v != null && v > 0) {
-                    provider.updateAccount(
-                      acc.copyWith(exchangeRate: v, autoUpdateRate: autoUpdate),
+                    provider.updateAccountExchangeRate(
+                      acc.id,
+                      exchangeRate: v,
+                      autoUpdateRate: autoUpdate,
                     );
                   }
                   Navigator.pop(ctx);
@@ -547,7 +549,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 onPressed: () {
                   final v = double.tryParse(controller.text.trim());
                   if (v != null) {
-                    provider.updateAccount(acc.copyWith(cashBalance: v));
+                    provider.updateAccountCashBalance(acc.id, v);
                   }
                   Navigator.pop(ctx);
                 },

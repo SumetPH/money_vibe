@@ -86,6 +86,38 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
   }
 
   @override
+  Future<void> updateAccountCashBalance(String id, double cashBalance) async {
+    _requireAuth();
+    repo.log('Updating account cash balance: $id');
+    await client
+        .from('accounts')
+        .update({'cash_balance': cashBalance})
+        .eq('id', id)
+        .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('accounts');
+  }
+
+  @override
+  Future<void> updateAccountExchangeRate(
+    String id, {
+    required double exchangeRate,
+    bool? autoUpdateRate,
+  }) async {
+    _requireAuth();
+    repo.log('Updating account exchange rate: $id');
+    final values = <String, dynamic>{'exchange_rate': exchangeRate};
+    if (autoUpdateRate != null) {
+      values['auto_update_rate'] = autoUpdateRate ? 1 : 0;
+    }
+    await client
+        .from('accounts')
+        .update(values)
+        .eq('id', id)
+        .eq('user_id', currentUserId!);
+    await repo.updateSyncLog('accounts');
+  }
+
+  @override
   Future<void> updateAccountSortOrder(String id, int sortOrder) async {
     _requireAuth();
     repo.log('Updating account sort order: $id -> $sortOrder');
