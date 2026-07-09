@@ -222,6 +222,13 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       }
     }
 
+    final resetPeakProfit = await _confirmResetPeakProfitIfNeeded(
+      shares: shares,
+      costBasisUsd: cost,
+      usesManualPeakProfit: effectiveManualPeakProfit != null,
+    );
+    if (resetPeakProfit == null) return;
+
     setState(() => _isSaving = true);
     try {
       final currentPrice = await _fetchCurrentPrice(ticker);
@@ -240,6 +247,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         sellPlanEnabled: _sellPlanEnabled,
         takeProfitPct: takeProfit,
         manualPeakProfitPct: effectiveManualPeakProfit,
+        resetPeakProfit: resetPeakProfit,
       );
 
       final holding = StockHolding(
@@ -318,6 +326,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     required bool sellPlanEnabled,
     required double takeProfitPct,
     required double? manualPeakProfitPct,
+    required bool resetPeakProfit,
   }) {
     final existing = widget.existing;
     if (!sellPlanEnabled) {
@@ -343,9 +352,8 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
           : null;
     }
 
-    // Buying more or selling part of a position changes the investment basis,
-    // so any historical peak profit percentage must start over from
-    // the new position state.
+    // Buying more or selling part of a position changes the investment basis.
+    // Let the edit flow decide whether to reset or carry the previous peak.
     final basisChanged = StockHolding(
       id: existing.id,
       portfolioId: existing.portfolioId,
@@ -363,6 +371,14 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       peakProfitPct: existing.peakProfitPct,
     ).hasInvestmentBasisChangedFrom(existing);
     if (basisChanged || !existing.sellPlanEnabled) {
+      if (!resetPeakProfit && existing.sellPlanEnabled) {
+        final previousPeak = existing.peakProfitPct;
+        if (previousPeak == null || currentPnlPct > previousPeak) {
+          return _roundPct(currentPnlPct);
+        }
+        return _roundPct(previousPeak);
+      }
+
       return _shouldTrackPeakProfit(
             currentPnlPct: currentPnlPct,
             takeProfitPct: takeProfitPct,
@@ -383,6 +399,60 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       return _roundPct(currentPnlPct);
     }
     return _roundPct(previousPeak);
+  }
+
+  Future<bool?> _confirmResetPeakProfitIfNeeded({
+    required double shares,
+    required double costBasisUsd,
+    required bool usesManualPeakProfit,
+  }) async {
+    final existing = widget.existing;
+    if (existing == null ||
+        !_sellPlanEnabled ||
+        usesManualPeakProfit ||
+        !existing.sellPlanEnabled ||
+        existing.peakProfitPct == null) {
+      return true;
+    }
+
+    final basisChanged = existing
+        .copyWith(shares: shares, costBasisUsd: costBasisUsd)
+        .hasInvestmentBasisChangedFrom(existing);
+    if (!basisChanged) return true;
+
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final primaryColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: backgroundColor,
+        title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
+        content: Text(
+          'จำนวนหุ้นหรือราคาทุนเปลี่ยนจากเดิม ต้องการเริ่มนับ Peak Profit ใหม่จากสถานะล่าสุดหรือคงค่าเดิมไว้?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('คงค่าเดิม', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: primaryColor),
+            child: const Text('รีเซ็ต'),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _shouldTrackPeakProfit({
