@@ -84,7 +84,7 @@ class SyncProvider extends ChangeNotifier {
             '[SyncProvider] Module "$module" needs refresh. Remote: $remoteTime, Local: $localTime',
           );
 
-          _refreshModule(module);
+          await _refreshModule(module);
           _localTimestamps[module] = remoteTime;
         }
       }
@@ -96,24 +96,24 @@ class SyncProvider extends ChangeNotifier {
   }
 
   /// สั่งให้ Provider ที่เกี่ยวข้องโหลดข้อมูลใหม่
-  void _refreshModule(String module) {
+  Future<void> _refreshModule(String module) async {
     try {
       switch (module) {
         case 'accounts':
         case 'portfolio':
-          accountProvider.reload();
+          await accountProvider.reload();
           break;
         case 'categories':
-          categoryProvider.reload();
+          await categoryProvider.reload();
           break;
         case 'transactions':
-          transactionProvider.reload();
+          await transactionProvider.reload();
           break;
         case 'budgets':
-          budgetProvider.reload();
+          await budgetProvider.reload();
           break;
         case 'recurring':
-          recurringProvider.reload();
+          await recurringProvider.reload();
           break;
         default:
           debugPrint('[SyncProvider] Unknown module: $module');

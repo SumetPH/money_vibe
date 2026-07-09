@@ -116,18 +116,27 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     );
   }
 
-  Future<void> _refreshPrices() async {
+  Future<void> _refreshPrices({bool reloadBeforeRefresh = false}) async {
     if (_isRefreshing) return;
-    _priceService = _buildPriceService();
     final provider = context.read<AccountProvider>();
-    final acc = provider.findById(widget.account.id);
-    if (acc == null) return;
-    final holdings = provider.getHoldings(acc.id);
-    if (holdings.isEmpty) return;
 
     _refreshIconController.repeat();
     setState(() => _isRefreshing = true);
+
     try {
+      if (reloadBeforeRefresh) {
+        await provider.reload();
+      } else {
+        await provider.waitForIdle();
+      }
+      if (!mounted) return;
+
+      _priceService = _buildPriceService();
+      final acc = provider.findById(widget.account.id);
+      if (acc == null) return;
+      final holdings = provider.getHoldings(acc.id);
+      if (holdings.isEmpty) return;
+
       final priceSymbolsByHoldingId = {
         for (final h in holdings) h.id: acc.yahooSymbolFor(h.ticker),
       };
@@ -386,7 +395,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             actions: [
               AppBarActionButton(
                 tooltip: 'อัพเดทราคาหุ้น',
-                onPressed: _refreshPrices,
+                onPressed: () => _refreshPrices(reloadBeforeRefresh: true),
                 isLoading: _isRefreshing,
                 loadingIcon: RotationTransition(
                   turns: _refreshIconController,

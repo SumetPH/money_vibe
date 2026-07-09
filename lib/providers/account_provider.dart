@@ -30,6 +30,7 @@ class AccountProvider extends ChangeNotifier {
 
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
+  Future<void>? _activeLoad;
 
   bool get showHiddenAccounts => _showHiddenAccounts;
   bool get isLoading => _isLoading;
@@ -51,6 +52,25 @@ class AccountProvider extends ChangeNotifier {
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
+    final activeLoad = _activeLoad;
+    if (activeLoad != null) return activeLoad;
+
+    final load = _loadData();
+    _activeLoad = load;
+    load.whenComplete(() {
+      if (identical(_activeLoad, load)) {
+        _activeLoad = null;
+      }
+    });
+    return load;
+  }
+
+  Future<void> waitForIdle() async {
+    final activeLoad = _activeLoad;
+    if (activeLoad != null) await activeLoad;
+  }
+
+  Future<void> _loadData() async {
     debugPrint('AccountProvider: Initializing...');
     _setLoading(true);
 
