@@ -3,12 +3,18 @@
 
 set -e
 
-source "$(dirname "$0")/flutter_env.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$PROJECT_ROOT"
+
+source "$SCRIPT_DIR/flutter_env.sh"
 resolve_flutter_env "${1:-prod}"
+resolve_flutter_build_version
 
 echo "📦 Building for IPA..."
 
-flutter build ipa --release --no-tree-shake-icons "${FLUTTER_ENV_ARGS[@]}" --export-options-plist=ios/ExportOptions-development.plist
+flutter build ipa --release --no-tree-shake-icons "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" --export-options-plist=ios/ExportOptions-development.plist
 
 destination_dir="/Users/sumetph/Documents/Money Vibe/ipa"
 random_suffix=$RANDOM
@@ -28,7 +34,7 @@ BUILD_MARKER=$(date +%s)
 
 # web release
 echo "📦 Building for Web..."
-flutter build web --release --no-tree-shake-icons "${FLUTTER_ENV_ARGS[@]}"
+flutter build web --release --no-tree-shake-icons "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}"
 
 echo "👀 Copying web build to github folder..."
 cp -R ./build/web/* /Users/sumetph/Development/money/money-vibe-build/web/
@@ -39,7 +45,7 @@ git add .
 git commit -m "deploy web build"
 git push origin main
 
-cd /Users/sumetph/Development/llm/money_vibe
+cd "$PROJECT_ROOT"
 flutter clean
 flutter pub get
 

@@ -45,3 +45,28 @@ resolve_flutter_env() {
 
   echo "🌿 Using ${FLUTTER_ENV_NAME} config: ${FLUTTER_ENV_CONFIG_FILE}"
 }
+
+resolve_flutter_build_version() {
+  if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+    echo "❌ Cannot calculate a reliable build number from a shallow clone."
+    echo "   Run: git fetch --unshallow"
+    exit 1
+  fi
+
+  local app_version
+  app_version=$(awk '$1 == "version:" { print $2; exit }' pubspec.yaml)
+
+  if [[ -z "$app_version" ]]; then
+    echo "❌ Missing version in pubspec.yaml."
+    exit 1
+  fi
+
+  FLUTTER_BUILD_NAME="${app_version%%+*}"
+  FLUTTER_BUILD_NUMBER=$(git rev-list --count HEAD)
+  FLUTTER_BUILD_VERSION_ARGS=(
+    "--build-name=$FLUTTER_BUILD_NAME"
+    "--build-number=$FLUTTER_BUILD_NUMBER"
+  )
+
+  echo "🏷️  Version: $FLUTTER_BUILD_NAME+$FLUTTER_BUILD_NUMBER"
+}
