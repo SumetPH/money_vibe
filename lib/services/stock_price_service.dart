@@ -14,6 +14,9 @@ class StockCompanyProfile {
 
 class StockPriceService {
   static const _finnhubBase = 'https://finnhub.io/api/v1';
+  static const _maxConcurrentPriceRequests = 4;
+  static const _maxPriceFetchAttempts = 3;
+  static const _singlePriceTimeout = Duration(seconds: 12);
 
   final String? _finnhubApiKey;
   final bool _useFinnhub;
@@ -44,15 +47,50 @@ class StockPriceService {
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {
     if (tickers.isEmpty) return {};
 
-    final results = await Future.wait(
-      tickers.map(_fetchSinglePrice),
-      eagerError: false,
-    );
-
+    final pendingTickers = tickers.toSet().toList();
     final prices = <String, double>{};
-    for (int i = 0; i < tickers.length; i++) {
-      if (results[i] != null) prices[tickers[i]] = results[i]!;
+    for (
+      var attempt = 0;
+      attempt < _maxPriceFetchAttempts && pendingTickers.isNotEmpty;
+      attempt++
+    ) {
+      prices.addAll(await _fetchPriceBatch(pendingTickers));
+      pendingTickers.removeWhere(prices.containsKey);
+
+      if (pendingTickers.isNotEmpty && attempt < _maxPriceFetchAttempts - 1) {
+        await Future<void>.delayed(Duration(milliseconds: 300 * (attempt + 1)));
+      }
     }
+    return prices;
+  }
+
+  Future<Map<String, double>> _fetchPriceBatch(List<String> tickers) async {
+    final prices = <String, double>{};
+
+    for (
+      var start = 0;
+      start < tickers.length;
+      start += _maxConcurrentPriceRequests
+    ) {
+      final end = start + _maxConcurrentPriceRequests < tickers.length
+          ? start + _maxConcurrentPriceRequests
+          : tickers.length;
+      final batch = tickers.sublist(start, end);
+      final results = await Future.wait(
+        batch.map(
+          (ticker) => _fetchSinglePrice(
+            ticker,
+          ).timeout(_singlePriceTimeout, onTimeout: () => null),
+        ),
+        eagerError: false,
+      );
+
+      for (var i = 0; i < batch.length; i++) {
+        final price = results[i];
+        if (price != null) prices[batch[i]] = price;
+      }
+    }
+
     return prices;
   }
 
@@ -91,15 +129,16 @@ class StockPriceService {
       }
 
       // ใช้ราคาจาก candle ล่าสุด — รวม pre/regular/post ทุกช่วงตลาด
-      final timestamps = (result['timestamp'] as List?)?.cast<num>();
       final quotes =
           (result['indicators']?['quote'] as List?)?.first
               as Map<String, dynamic>?;
-      if (timestamps != null && timestamps.isNotEmpty && quotes != null) {
-        final closes = (quotes['close'] as List?)?.cast<num>();
-        if (closes != null && closes.isNotEmpty) {
-          final lastClose = closes.last.toDouble();
-          if (lastClose > 0) return lastClose;
+      final closes = quotes?['close'];
+      if (closes is List) {
+        for (var i = closes.length - 1; i >= 0; i--) {
+          final close = closes[i];
+          if (close is num && close > 0) {
+            return close.toDouble();
+          }
         }
       }
 

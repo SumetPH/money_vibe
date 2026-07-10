@@ -160,6 +160,14 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       final prices = futures[0] as Map<String, double>;
       final rate = futures[1] as double;
       final profiles = futures[2] as Map<String, StockCompanyProfile>;
+      final failedTickers = holdings
+          .where(
+            (holding) =>
+                !prices.containsKey(priceSymbolsByHoldingId[holding.id]),
+          )
+          .map((holding) => holding.ticker)
+          .toSet()
+          .toList();
 
       if (acc.autoUpdateRate) {
         provider.updateAccountExchangeRate(acc.id, exchangeRate: rate);
@@ -201,6 +209,23 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       }
       if (updatedHoldings.isNotEmpty) {
         await provider.updateHoldingsMarketDataBatch(updatedHoldings);
+      }
+      if (failedTickers.isNotEmpty && mounted) {
+        final displayedTickers = failedTickers.take(5).join(', ');
+        final remainingCount = failedTickers.length - 5;
+        final remainingLabel = remainingCount > 0
+            ? ' และอีก $remainingCount รายการ'
+            : '';
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                'อัปเดตราคาไม่ครบ: $displayedTickers$remainingLabel '
+                '(กำลังใช้ราคาเดิม)',
+              ),
+            ),
+          );
       }
     } catch (e) {
       if (mounted) {
