@@ -16,7 +16,7 @@ class SyncProvider extends ChangeNotifier {
   final RecurringTransactionProvider recurringProvider;
 
   final Map<String, DateTime> _localTimestamps = {};
-  bool _isChecking = false;
+  Future<void>? _activeCheck;
   DateTime? _lastCheckTime;
   StreamSubscription<String>? _localSyncSubscription;
 
@@ -44,24 +44,34 @@ class SyncProvider extends ChangeNotifier {
   }
 
   /// เช็คและอัปเดตข้อมูลจาก Server
-  Future<void> checkAndSync() async {
+  Future<void> checkAndSync() {
+    final activeCheck = _activeCheck;
+    if (activeCheck != null) return activeCheck;
+
+    final check = _checkAndSync();
+    _activeCheck = check;
+    check.whenComplete(() {
+      if (identical(_activeCheck, check)) {
+        _activeCheck = null;
+      }
+    });
+    return check;
+  }
+
+  Future<void> _checkAndSync() async {
     final repo = repository;
     if (repo == null) return;
 
     // 1. ตรวจสอบ Auth (ป้องกัน Error ตอนยังไม่ Login)
     if (!repo.isAuthenticated) return;
 
-    // 2. ป้องกันการเรียกซ้อนกัน
-    if (_isChecking) return;
-
-    // 3. Debouncing (ไม่เช็คซ้ำภายใน 30 วินาที)
+    // 2. Debouncing (ไม่เช็คซ้ำภายใน 30 วินาที)
     final now = DateTime.now();
     if (_lastCheckTime != null &&
         now.difference(_lastCheckTime!) < const Duration(seconds: 30)) {
       return;
     }
 
-    _isChecking = true;
     _lastCheckTime = now;
 
     try {
@@ -90,8 +100,6 @@ class SyncProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('[SyncProvider] Sync Error: $e');
-    } finally {
-      _isChecking = false;
     }
   }
 

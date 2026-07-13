@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
@@ -116,7 +117,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     );
   }
 
-  Future<void> _refreshPrices({bool reloadBeforeRefresh = false}) async {
+  Future<void> _refreshPrices() async {
     if (_isRefreshing) return;
     final provider = context.read<AccountProvider>();
 
@@ -124,11 +125,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     setState(() => _isRefreshing = true);
 
     try {
-      if (reloadBeforeRefresh) {
-        await provider.reload();
-      } else {
-        await provider.waitForIdle();
-      }
+      await context.read<SyncProvider>().checkAndSync();
+      if (!mounted) return;
+
+      await provider.reload();
       if (!mounted) return;
 
       _priceService = _buildPriceService();
@@ -151,14 +151,19 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           : <String>[];
       final futures = await Future.wait([
         _priceService.fetchPrices(tickers),
-        _priceService.fetchUsdThbRate(),
+        acc.autoUpdateRate
+            ? _priceService
+                  .fetchUsdThbRate()
+                  .then<double?>((value) => value)
+                  .catchError((_) => null)
+            : Future<double?>.value(null),
         tickersNeedingProfile.isEmpty
             ? Future.value(<String, StockCompanyProfile>{})
             : _priceService.fetchProfiles(tickersNeedingProfile),
       ]);
 
       final prices = futures[0] as Map<String, double>;
-      final rate = futures[1] as double;
+      final rate = futures[1] as double?;
       final profiles = futures[2] as Map<String, StockCompanyProfile>;
       final failedTickers = holdings
           .where(
@@ -168,16 +173,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           .map((holding) => holding.ticker)
           .toSet()
           .toList();
+      if (!mounted) return;
 
-      if (acc.autoUpdateRate) {
-        provider.updateAccountExchangeRate(acc.id, exchangeRate: rate);
-      }
+      final hasCompletePriceSnapshot = failedTickers.isEmpty;
       final updatedHoldings = <StockHolding>[];
       for (final h in holdings) {
         var updatedHolding = h;
         var hasChanges = false;
         final newPrice = prices[priceSymbolsByHoldingId[h.id]];
-        if (newPrice != null) {
+        if (hasCompletePriceSnapshot && newPrice != null) {
           updatedHolding = updatedHolding.copyWith(priceUsd: newPrice);
           hasChanges = true;
         }
@@ -198,6 +202,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             sourceUrl: sourceLogoUrl,
             currentLogoUrl: h.logoUrl,
           );
+          if (!mounted) return;
           if (mirroredLogoUrl.isNotEmpty && mirroredLogoUrl != h.logoUrl) {
             updatedHolding = updatedHolding.copyWith(logoUrl: mirroredLogoUrl);
             hasChanges = true;
@@ -207,25 +212,30 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           updatedHoldings.add(updatedHolding);
         }
       }
-      if (updatedHoldings.isNotEmpty) {
-        await provider.updateHoldingsMarketDataBatch(updatedHoldings);
-      }
-      if (failedTickers.isNotEmpty && mounted) {
+      await provider.updatePortfolioMarketData(
+        portfolioId: acc.id,
+        holdings: updatedHoldings,
+        exchangeRate: hasCompletePriceSnapshot ? rate : null,
+      );
+      final warningMessages = <String>[];
+      if (failedTickers.isNotEmpty) {
         final displayedTickers = failedTickers.take(5).join(', ');
         final remainingCount = failedTickers.length - 5;
         final remainingLabel = remainingCount > 0
             ? ' และอีก $remainingCount รายการ'
             : '';
+        warningMessages.add(
+          'อัปเดตราคาไม่ครบ: $displayedTickers$remainingLabel '
+          '(ยังไม่เปลี่ยนราคาเพื่อป้องกันยอดรวมคลาดเคลื่อน)',
+        );
+      }
+      if (acc.autoUpdateRate && rate == null) {
+        warningMessages.add('อัปเดตอัตราแลกเปลี่ยนไม่ได้ (กำลังใช้ค่าเดิม)');
+      }
+      if (warningMessages.isNotEmpty && mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                'อัปเดตราคาไม่ครบ: $displayedTickers$remainingLabel '
-                '(กำลังใช้ราคาเดิม)',
-              ),
-            ),
-          );
+          ..showSnackBar(SnackBar(content: Text(warningMessages.join('\n'))));
       }
     } catch (e) {
       if (mounted) {
@@ -234,10 +244,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         ).showSnackBar(SnackBar(content: Text('โหลดราคาไม่ได้: $e')));
       }
     } finally {
-      _refreshIconController
-        ..stop()
-        ..reset();
-      if (mounted) setState(() => _isRefreshing = false);
+      if (mounted) {
+        _refreshIconController
+          ..stop()
+          ..reset();
+        setState(() => _isRefreshing = false);
+      }
     }
   }
 
@@ -420,7 +432,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             actions: [
               AppBarActionButton(
                 tooltip: 'อัพเดทราคาหุ้น',
-                onPressed: () => _refreshPrices(reloadBeforeRefresh: true),
+                onPressed: _refreshPrices,
                 isLoading: _isRefreshing,
                 loadingIcon: RotationTransition(
                   turns: _refreshIconController,

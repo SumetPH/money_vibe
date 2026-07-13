@@ -31,6 +31,7 @@ class AccountProvider extends ChangeNotifier {
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
   Future<void>? _activeLoad;
+  Future<void>? _activeMarketDataUpdate;
 
   bool get showHiddenAccounts => _showHiddenAccounts;
   bool get isLoading => _isLoading;
@@ -55,7 +56,7 @@ class AccountProvider extends ChangeNotifier {
     final activeLoad = _activeLoad;
     if (activeLoad != null) return activeLoad;
 
-    final load = _loadData();
+    final load = _loadData(_activeMarketDataUpdate);
     _activeLoad = load;
     load.whenComplete(() {
       if (identical(_activeLoad, load)) {
@@ -70,11 +71,14 @@ class AccountProvider extends ChangeNotifier {
     if (activeLoad != null) await activeLoad;
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData(Future<void>? pendingMarketDataUpdate) async {
     debugPrint('AccountProvider: Initializing...');
     _setLoading(true);
 
     try {
+      if (pendingMarketDataUpdate != null) {
+        await pendingMarketDataUpdate;
+      }
       final accounts = await _db.getAccounts();
       // Sort by sortOrder to ensure correct order
       accounts.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -813,13 +817,62 @@ class AccountProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> updateHoldingsMarketDataBatch(
-    List<StockHolding> holdings,
-  ) async {
-    if (holdings.isEmpty) return;
-    final portfolioId = holdings.first.portfolioId;
+  Future<void> updateHoldingsMarketDataBatch(List<StockHolding> holdings) =>
+      updatePortfolioMarketData(
+        portfolioId: holdings.isEmpty ? '' : holdings.first.portfolioId,
+        holdings: holdings,
+      );
+
+  Future<void> updatePortfolioMarketData({
+    required String portfolioId,
+    required List<StockHolding> holdings,
+    double? exchangeRate,
+  }) {
+    if (portfolioId.isEmpty || (holdings.isEmpty && exchangeRate == null)) {
+      return Future.value();
+    }
+
+    final update = _applyPortfolioMarketData(
+      portfolioId: portfolioId,
+      holdings: holdings,
+      exchangeRate: exchangeRate,
+      pendingLoad: _activeLoad,
+      pendingMarketDataUpdate: _activeMarketDataUpdate,
+    );
+    _activeMarketDataUpdate = update;
+    update.whenComplete(() {
+      if (identical(_activeMarketDataUpdate, update)) {
+        _activeMarketDataUpdate = null;
+      }
+    });
+    return update;
+  }
+
+  Future<void> _applyPortfolioMarketData({
+    required String portfolioId,
+    required List<StockHolding> holdings,
+    required double? exchangeRate,
+    required Future<void>? pendingLoad,
+    required Future<void>? pendingMarketDataUpdate,
+  }) async {
+    if (pendingLoad != null) await pendingLoad;
+    if (pendingMarketDataUpdate != null) await pendingMarketDataUpdate;
+
     final list = _holdings[portfolioId];
     if (list == null) return;
+
+    Account? updatedAccount;
+    if (exchangeRate != null) {
+      final accountIndex = _accounts.indexWhere(
+        (account) => account.id == portfolioId,
+      );
+      if (accountIndex != -1) {
+        updatedAccount = _accounts[accountIndex].copyWith(
+          exchangeRate: exchangeRate,
+        );
+        _accounts[accountIndex] = updatedAccount;
+      }
+    }
 
     final mergedHoldings = <StockHolding>[];
     for (final h in holdings) {
@@ -839,15 +892,26 @@ class AccountProvider extends ChangeNotifier {
     list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     notifyListeners();
 
-    await Future.wait(
-      mergedHoldings.map(
+    await Future.wait([
+      if (updatedAccount != null)
+        _db
+            .updateAccountExchangeRate(
+              updatedAccount.id,
+              exchangeRate: updatedAccount.exchangeRate,
+            )
+            .catchError((e) {
+              debugPrint(
+                'AccountProvider: Error updating portfolio exchange rate: $e',
+              );
+            }),
+      ...mergedHoldings.map(
         (h) => _db.updateHoldingMarketData(h).catchError((e) {
           debugPrint(
             'AccountProvider: Error updating holding market data ${h.id}: $e',
           );
         }),
       ),
-    );
+    ]);
   }
 
   bool _hasSameSellPlanBasis(StockHolding a, StockHolding b) {
