@@ -12,6 +12,7 @@ typedef SellHoldingCallback =
       required double sharesSold,
       required double sellPriceUsd,
       required double cashReceivedUsd,
+      double? remainingCostBasisUsd,
       double? grossProceedsUsd,
       double? brokerFeeUsd,
       double? exchangeFeeUsd,
@@ -53,14 +54,21 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
   final _taxFeeController = TextEditingController();
   final _exchangeFeeController = TextEditingController();
   final _cashReceivedController = TextEditingController();
+  final _remainingSharesController = TextEditingController();
+  final _remainingTotalCostController = TextEditingController();
+  final _remainingCostBasisController = TextEditingController();
 
   bool _grossEdited = false;
   bool _cashEdited = false;
+  bool _isSyncingRemainingHolding = false;
   bool _isSaving = false;
 
   String? _sharesError;
   String? _sellPriceError;
   String? _cashReceivedError;
+  String? _remainingSharesError;
+  String? _remainingTotalCostError;
+  String? _remainingCostBasisError;
 
   @override
   void initState() {
@@ -74,6 +82,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       scale: stockHoldingPriceDecimalPlaces,
     );
     _syncGrossProceeds();
+    _syncRemainingHoldingFromSharesSold();
 
     _sharesController.addListener(_onSharesOrPriceChanged);
     _sellPriceController.addListener(_onSharesOrPriceChanged);
@@ -81,6 +90,11 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     _brokerFeeController.addListener(_syncCashReceived);
     _taxFeeController.addListener(_syncCashReceived);
     _exchangeFeeController.addListener(_syncCashReceived);
+    _remainingSharesController.addListener(_syncSharesSoldFromRemaining);
+    _remainingTotalCostController.addListener(_syncRemainingCostBasisFromTotal);
+    _remainingCostBasisController.addListener(
+      _syncRemainingTotalCostFromCostBasis,
+    );
 
     _syncCashReceived(notify: false);
   }
@@ -94,6 +108,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     _taxFeeController.dispose();
     _exchangeFeeController.dispose();
     _cashReceivedController.dispose();
+    _remainingSharesController.dispose();
+    _remainingTotalCostController.dispose();
+    _remainingCostBasisController.dispose();
     super.dispose();
   }
 
@@ -101,6 +118,92 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     if (!_grossEdited) {
       _syncGrossProceeds();
     }
+    _syncRemainingHoldingFromSharesSold();
+  }
+
+  void _syncRemainingHoldingFromSharesSold() {
+    if (_isSyncingRemainingHolding) return;
+    final sharesSold = double.tryParse(_sharesController.text.trim()) ?? 0;
+    final remainingShares = (widget.holding.shares - sharesSold)
+        .clamp(0.0, widget.holding.shares)
+        .toDouble();
+    _setRemainingHoldingValues(
+      shares: remainingShares,
+      costBasis: widget.holding.costBasisUsd,
+    );
+  }
+
+  void _syncSharesSoldFromRemaining() {
+    if (_isSyncingRemainingHolding) return;
+    final remainingShares =
+        double.tryParse(_remainingSharesController.text.trim()) ?? 0;
+    final sharesSold = widget.holding.shares - remainingShares;
+    _isSyncingRemainingHolding = true;
+    _sharesController.text = formatStockHoldingEditableNumber(
+      sharesSold.clamp(0.0, widget.holding.shares).toDouble(),
+      scale: stockHoldingSharesDecimalPlaces,
+    );
+    _isSyncingRemainingHolding = false;
+    _setRemainingHoldingValues(
+      shares: remainingShares.clamp(0.0, widget.holding.shares).toDouble(),
+      costBasis: widget.holding.costBasisUsd,
+    );
+  }
+
+  void _syncRemainingCostBasisFromTotal() {
+    if (_isSyncingRemainingHolding) return;
+    final shares = double.tryParse(_remainingSharesController.text.trim()) ?? 0;
+    final totalCost =
+        double.tryParse(_remainingTotalCostController.text.trim()) ?? 0;
+    _setRemainingHoldingValues(
+      shares: shares,
+      costBasis: shares > 0 ? totalCost / shares : 0,
+      updateShares: false,
+      updateTotalCost: false,
+    );
+  }
+
+  void _syncRemainingTotalCostFromCostBasis() {
+    if (_isSyncingRemainingHolding) return;
+    final shares = double.tryParse(_remainingSharesController.text.trim()) ?? 0;
+    final costBasis =
+        double.tryParse(_remainingCostBasisController.text.trim()) ?? 0;
+    _setRemainingHoldingValues(
+      shares: shares,
+      costBasis: costBasis,
+      updateShares: false,
+      updateCostBasis: false,
+    );
+  }
+
+  void _setRemainingHoldingValues({
+    required double shares,
+    required double costBasis,
+    bool updateShares = true,
+    bool updateTotalCost = true,
+    bool updateCostBasis = true,
+  }) {
+    _isSyncingRemainingHolding = true;
+    if (updateShares) {
+      _remainingSharesController.text = formatStockHoldingEditableNumber(
+        shares,
+        scale: stockHoldingSharesDecimalPlaces,
+      );
+    }
+    if (updateTotalCost) {
+      _remainingTotalCostController.text = formatStockHoldingEditableNumber(
+        shares * costBasis,
+        scale: stockHoldingCostBasisDecimalPlaces,
+      );
+    }
+    if (updateCostBasis) {
+      _remainingCostBasisController.text = formatStockHoldingEditableNumber(
+        costBasis,
+        scale: stockHoldingCostBasisDecimalPlaces,
+      );
+    }
+    _isSyncingRemainingHolding = false;
+    if (mounted) setState(() {});
   }
 
   void _onGrossChanged() {
@@ -115,7 +218,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     final price = double.tryParse(_sellPriceController.text.trim()) ?? 0;
     final value = shares * price;
     if (value > 0) {
-      final newText = formatStockHoldingEditableNumber(value, scale: 4);
+      final newText = formatStockHoldingEditableNumber(value, scale: 2);
       if (_grossProceedsController.text != newText) {
         _grossProceedsController.text = newText;
       }
@@ -164,11 +267,21 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     final cashReceived = _cashEdited
         ? displayedCashReceived
         : _roundToCents(_calculateCashReceivedFromDetails());
+    final remainingShares = double.tryParse(_remainingSharesController.text);
+    final remainingTotalCost = double.tryParse(
+      _remainingTotalCostController.text,
+    );
+    final remainingCostBasis = double.tryParse(
+      _remainingCostBasisController.text,
+    );
 
     setState(() {
       _sharesError = null;
       _sellPriceError = null;
       _cashReceivedError = null;
+      _remainingSharesError = null;
+      _remainingTotalCostError = null;
+      _remainingCostBasisError = null;
     });
 
     var hasError = false;
@@ -190,6 +303,21 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       hasError = true;
     }
 
+    final expectedRemainingShares = widget.holding.shares - (shares ?? 0);
+    if (remainingShares == null ||
+        (remainingShares - expectedRemainingShares).abs() > 0.0000001) {
+      _remainingSharesError = 'ต้องเท่ากับจำนวนหุ้นคงเหลือ';
+      hasError = true;
+    }
+    if (remainingTotalCost == null || remainingTotalCost < 0) {
+      _remainingTotalCostError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+    if (remainingCostBasis == null || remainingCostBasis < 0) {
+      _remainingCostBasisError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    }
+
     if (hasError) {
       return;
     }
@@ -200,6 +328,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
         sharesSold: shares!,
         sellPriceUsd: sellPrice!,
         cashReceivedUsd: cashReceived!,
+        remainingCostBasisUsd: remainingCostBasis,
         grossProceedsUsd: grossProceeds,
         brokerFeeUsd: brokerFee,
         taxFeeUsd: taxFee,
@@ -313,7 +442,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 controller: _grossProceedsController,
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
-                inputFormatters: [_decimalInputFormatter(4)],
+                inputFormatters: [_decimalInputFormatter(2)],
                 onChanged: (_) {
                   _grossEdited = true;
                   _syncCashReceived();
@@ -371,6 +500,53 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                   _cashEdited = true;
                   setState(() {});
                 },
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'หลังการขาย',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              _SellNumberFieldRow(
+                label: 'จำนวนหุ้นคงเหลือ',
+                controller: _remainingSharesController,
+                hintText: '0',
+                isDarkMode: isDarkMode,
+                errorText: _remainingSharesError,
+                inputFormatters: [
+                  _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
+                ],
+              ),
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'ต้นทุนรวมคงเหลือ (${widget.currencyCode})',
+                controller: _remainingTotalCostController,
+                hintText: '0.00',
+                isDarkMode: isDarkMode,
+                errorText: _remainingTotalCostError,
+                inputFormatters: [
+                  _decimalInputFormatter(stockHoldingCostBasisDecimalPlaces),
+                ],
+              ),
+              _buildDivider(isDarkMode),
+              _SellNumberFieldRow(
+                label: 'ต้นทุนต่อหุ้นคงเหลือ (${widget.currencyCode})',
+                controller: _remainingCostBasisController,
+                hintText: '0.0000',
+                isDarkMode: isDarkMode,
+                errorText: _remainingCostBasisError,
+                inputFormatters: [
+                  _decimalInputFormatter(stockHoldingCostBasisDecimalPlaces),
+                ],
               ),
               const SizedBox(height: 12),
               _SellSummary(

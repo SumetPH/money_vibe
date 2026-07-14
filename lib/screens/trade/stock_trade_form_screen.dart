@@ -113,7 +113,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       if (trade.grossProceedsUsd != null) {
         _grossProceedsController.text = _formatEditable(
           trade.grossProceedsUsd!,
-          4,
+          2,
         );
       }
       if (trade.brokerFeeUsd != null) {
@@ -596,7 +596,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       decimal: true,
                       signed: true,
                     ),
-                    inputFormatters: [_decimalInputFormatter(4)],
+                    inputFormatters: [_decimalInputFormatter(2)],
                   ),
                 ],
               ],

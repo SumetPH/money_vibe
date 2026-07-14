@@ -950,6 +950,7 @@ class AccountProvider extends ChangeNotifier {
     required double sharesSold,
     required double sellPriceUsd,
     required double cashReceivedUsd,
+    double? remainingCostBasisUsd,
     double? grossProceedsUsd,
     double? brokerFeeUsd,
     double? exchangeFeeUsd,
@@ -966,6 +967,13 @@ class AccountProvider extends ChangeNotifier {
       throw ArgumentError.value(
         cashReceivedUsd,
         'cashReceivedUsd',
+        'ต้องไม่ติดลบ',
+      );
+    }
+    if (remainingCostBasisUsd != null && remainingCostBasisUsd < 0) {
+      throw ArgumentError.value(
+        remainingCostBasisUsd,
+        'remainingCostBasisUsd',
         'ต้องไม่ติดลบ',
       );
     }
@@ -1029,8 +1037,11 @@ class AccountProvider extends ChangeNotifier {
     } else {
       holdings[holdingIndex] = holding.copyWith(
         shares: remainingShares,
+        costBasisUsd: remainingCostBasisUsd ?? holding.costBasisUsd,
         peakProfitPct: _resolveResetPeakProfitPct(
-          holding: holding,
+          holding: holding.copyWith(
+            costBasisUsd: remainingCostBasisUsd ?? holding.costBasisUsd,
+          ),
           shares: remainingShares,
         ),
       );
