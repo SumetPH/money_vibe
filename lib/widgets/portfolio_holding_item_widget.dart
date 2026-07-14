@@ -18,6 +18,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
   final VoidCallback onChangeLogo;
   final VoidCallback? onClearLogo;
   final VoidCallback onSell;
+  final VoidCallback onBuy;
   final VoidCallback onDelete;
   final bool isDarkMode;
 
@@ -32,6 +33,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
     required this.onChangeLogo,
     required this.onClearLogo,
     required this.onSell,
+    required this.onBuy,
     required this.onDelete,
     required this.isDarkMode,
   });
@@ -358,6 +360,18 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
               onTap: () {
                 Navigator.pop(context);
                 widget.onEdit();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.add_shopping_cart_outlined, color: textColor),
+              title: Text(
+                'ซื้อเพิ่ม ${widget.holding.ticker}',
+                style: TextStyle(color: textColor),
+              ),
+              tileColor: bgColor,
+              onTap: () {
+                Navigator.pop(context);
+                widget.onBuy();
               },
             ),
             ListTile(

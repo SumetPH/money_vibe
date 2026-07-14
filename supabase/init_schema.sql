@@ -22,3 +22,4 @@
 \ir migrations/20260620090000_harden_security_linter_warnings.sql
 \ir migrations/20260704120000_add_thai_portfolio_account_type.sql
 \ir migrations/20260707120000_create_portfolio_investment_plans.sql
+\ir migrations/20260714100000_create_stock_purchases.sql

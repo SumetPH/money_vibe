@@ -6,6 +6,7 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
+import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 
@@ -70,6 +71,13 @@ abstract class StockTradeRepositoryInterface {
   Future<void> deleteStockTrade(String id);
   Future<Set<String>> getExistingStockTradeIds();
   Future<void> bulkInsertStockTrades(List<StockTrade> trades);
+}
+
+abstract class StockPurchaseRepositoryInterface {
+  Future<List<StockPurchase>> getStockPurchases();
+  Future<void> insertStockPurchase(StockPurchase purchase);
+  Future<void> updateStockPurchase(StockPurchase purchase);
+  Future<void> deleteStockPurchase(String id);
 }
 
 /// Interface สำหรับจัดการข้อมูลรายงานพอร์ตประจำปี (Broker Statement)
@@ -147,6 +155,7 @@ abstract class DatabaseRepository
         TransactionRepositoryInterface,
         PortfolioRepositoryInterface,
         StockTradeRepositoryInterface,
+        StockPurchaseRepositoryInterface,
         BudgetRepositoryInterface,
         RecurringRepositoryInterface,
         PortfolioAnnualReportRepositoryInterface,

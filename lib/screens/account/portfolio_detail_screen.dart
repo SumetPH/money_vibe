@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
+import '../../models/stock_purchase.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -20,6 +21,7 @@ import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
 import 'holding_form_screen.dart';
 import 'holding_sell_form_screen.dart';
+import 'holding_buy_form_screen.dart';
 import 'portfolio_investment_plan_screen.dart';
 import '../trade/broker_report_list_screen.dart';
 
@@ -697,6 +699,87 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     );
   }
 
+  Future<void> _openHoldingBuyForm(
+    BuildContext context,
+    AccountProvider provider,
+    String portfolioId,
+    StockHolding? holding,
+  ) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HoldingBuyFormScreen(
+          holding: holding,
+          currencyCode: widget.account.currencyCodeLabel,
+          portfolios: provider.accounts
+              .where((account) => account.isPortfolio)
+              .toList(),
+          initialPortfolioId: portfolioId,
+          onBuy:
+              ({
+                required ticker,
+                required portfolioId,
+                required sharesBought,
+                required buyPriceUsd,
+                required cashPaidUsd,
+                required resultingShares,
+                required resultingCostBasisUsd,
+                grossCostUsd,
+                brokerFeeUsd,
+                exchangeFeeUsd,
+                taxFeeUsd,
+                required sellPlanEnabled,
+                required takeProfitPct,
+                required trailingStopPct,
+                required stopLossPct,
+              }) async {
+                final baseHolding =
+                    holding ??
+                    StockHolding(
+                      id: provider.generateId(),
+                      portfolioId: portfolioId,
+                      ticker: ticker,
+                    );
+                final updatedHolding = await _enrichHoldingWithProfile(
+                  baseHolding.copyWith(
+                    ticker: ticker,
+                    shares: resultingShares,
+                    costBasisUsd: resultingCostBasisUsd,
+                    priceUsd: buyPriceUsd,
+                    sellPlanEnabled: sellPlanEnabled,
+                    takeProfitPct: takeProfitPct,
+                    trailingStopPct: trailingStopPct,
+                    stopLossPct: stopLossPct,
+                    peakProfitPct: null,
+                  ),
+                  existing: holding,
+                );
+                await provider.buyHolding(
+                  purchase: StockPurchase(
+                    id: provider.generateId(),
+                    portfolioId: portfolioId,
+                    holdingId: updatedHolding.id,
+                    ticker: ticker,
+                    name: updatedHolding.name,
+                    logoUrl: updatedHolding.logoUrl,
+                    sharesBought: sharesBought,
+                    buyPriceUsd: buyPriceUsd,
+                    cashPaidUsd: cashPaidUsd,
+                    grossCostUsd: grossCostUsd,
+                    brokerFeeUsd: brokerFeeUsd,
+                    exchangeFeeUsd: exchangeFeeUsd,
+                    taxFeeUsd: taxFeeUsd,
+                    boughtAt: DateTime.now(),
+                    createdAt: DateTime.now(),
+                  ),
+                  updatedHolding: updatedHolding,
+                );
+              },
+        ),
+      ),
+    );
+  }
+
   Future<StockHolding> _enrichHoldingWithProfile(
     StockHolding holding, {
     StockHolding? existing,
@@ -848,9 +931,30 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   ),
                   const SizedBox(height: 12),
                   ListTile(
+                    leading: Icon(
+                      Icons.add_shopping_cart_outlined,
+                      color: textColor,
+                    ),
+                    title: Text(
+                      'ซื้อหุ้นใหม่',
+                      style: TextStyle(color: textColor),
+                    ),
+                    tileColor: bgColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _openHoldingBuyForm(
+                        context,
+                        context.read<AccountProvider>(),
+                        widget.account.id,
+                        null,
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: dividerColor),
+                  ListTile(
                     leading: Icon(Icons.add_circle_outline, color: textColor),
                     title: Text(
-                      'เพิ่มหุ้นใหม่',
+                      'เพิ่มหุ้นเป็นยอดตั้งต้น',
                       style: TextStyle(color: textColor),
                     ),
                     tileColor: bgColor,
@@ -1258,6 +1362,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         : null,
                     onSell: () =>
                         _openHoldingSellForm(context, provider, acc.id, h),
+                    onBuy: () =>
+                        _openHoldingBuyForm(context, provider, acc.id, h),
                     onDelete: () => provider.deleteHolding(h.id, acc.id),
                     isDarkMode: isDarkMode,
                   ),

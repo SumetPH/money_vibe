@@ -7,6 +7,7 @@ import '../../main.dart';
 import '../../models/account.dart';
 import '../../models/portfolio_annual_report.dart';
 import '../../models/stock_trade.dart';
+import '../../models/stock_purchase.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -18,8 +19,18 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
+import '../account/holding_buy_form_screen.dart';
 
 enum _TradePnlFilter { all, profit, loss }
+
+String _formatTradeDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
+}
+
+String _formatTradeShares(double value) =>
+    value.toStringAsFixed(7).replaceFirst(RegExp(r'\.?0+$'), '');
 
 class TradeTrackerScreen extends StatefulWidget {
   const TradeTrackerScreen({super.key});
@@ -39,7 +50,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_handleTabChanged);
     _priceService = _buildPriceService();
   }
@@ -98,6 +109,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
             Tab(text: 'สรุป'),
             Tab(text: 'รายปี'),
             Tab(text: 'ภาษีไทย'),
+            Tab(text: 'ซื้อ'),
           ],
         ),
       ),
@@ -201,6 +213,17 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   onYearChanged: (year) => setState(() => _selectedYear = year),
                   isDarkMode: isDarkMode,
                 ),
+                _PurchaseHistoryTab(
+                  purchases: accountProvider.stockPurchases,
+                  isDarkMode: isDarkMode,
+                  portfolioNameOf: (purchase) =>
+                      accountProvider.findById(purchase.portfolioId)?.name ??
+                      'พอร์ตหุ้น',
+                  onEdit: (purchase) =>
+                      _openPurchaseHistoryForm(context, purchase),
+                  onDelete: (purchase) =>
+                      _confirmDeletePurchase(context, purchase),
+                ),
               ],
             ),
           );
@@ -244,6 +267,8 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
             onPressed: () => _openBrokerReportPicker(context),
           ),
         ];
+      case 3:
+        return [];
     }
     return const [];
   }
@@ -413,6 +438,85 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     );
   }
 
+  Future<void> _openPurchaseHistoryForm(
+    BuildContext context,
+    StockPurchase purchase,
+  ) async {
+    final provider = context.read<AccountProvider>();
+    final portfolios = provider.accounts
+        .where((account) => account.isPortfolio)
+        .toList();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HoldingBuyFormScreen(
+          currencyCode:
+              provider.findById(purchase.portfolioId)?.currencyCodeLabel ??
+              'USD',
+          portfolios: portfolios,
+          initialPortfolioId: purchase.portfolioId,
+          existingPurchase: purchase,
+          onBuy:
+              ({
+                required ticker,
+                required portfolioId,
+                required sharesBought,
+                required buyPriceUsd,
+                required cashPaidUsd,
+                required resultingShares,
+                required resultingCostBasisUsd,
+                grossCostUsd,
+                brokerFeeUsd,
+                exchangeFeeUsd,
+                taxFeeUsd,
+                required sellPlanEnabled,
+                required takeProfitPct,
+                required trailingStopPct,
+                required stopLossPct,
+              }) => provider.updateStockPurchase(
+                purchase.copyWith(
+                  portfolioId: portfolioId,
+                  ticker: ticker,
+                  sharesBought: sharesBought,
+                  buyPriceUsd: buyPriceUsd,
+                  cashPaidUsd: cashPaidUsd,
+                  grossCostUsd: grossCostUsd,
+                  brokerFeeUsd: brokerFeeUsd,
+                  exchangeFeeUsd: exchangeFeeUsd,
+                  taxFeeUsd: taxFeeUsd,
+                ),
+              ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeletePurchase(
+    BuildContext context,
+    StockPurchase purchase,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ลบประวัติซื้อ'),
+        content: Text('ต้องการลบประวัติซื้อ ${purchase.ticker} ใช่ไหม?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      await context.read<AccountProvider>().deleteStockPurchase(purchase.id);
+    }
+  }
+
   void _showFilterSheet(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final portfolios = context
@@ -565,6 +669,360 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('ลบ Trade ${trade.ticker} แล้ว')));
+  }
+}
+
+class _PurchaseHistoryTab extends StatelessWidget {
+  final List<StockPurchase> purchases;
+  final bool isDarkMode;
+  final String Function(StockPurchase purchase) portfolioNameOf;
+  final ValueChanged<StockPurchase> onEdit;
+  final ValueChanged<StockPurchase> onDelete;
+
+  const _PurchaseHistoryTab({
+    required this.purchases,
+    required this.isDarkMode,
+    required this.portfolioNameOf,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final sections = _groupPurchasesByMonth(purchases);
+    return CustomScrollView(
+      slivers: [
+        if (purchases.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _EmptyTradeState(
+              isDarkMode: isDarkMode,
+              textColor: textColor,
+              icon: Icons.add_shopping_cart_outlined,
+              message: 'ยังไม่มีประวัติซื้อ',
+              description: 'เมื่อซื้อหุ้น รายการจะแสดงที่นี่',
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _PurchaseMonthSection(
+                section: sections[index],
+                isDarkMode: isDarkMode,
+                portfolioNameOf: portfolioNameOf,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              ),
+              childCount: sections.length,
+            ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
+  }
+}
+
+class _PurchaseMonthGroup {
+  final int year;
+  final int month;
+  final List<StockPurchase> purchases;
+
+  const _PurchaseMonthGroup({
+    required this.year,
+    required this.month,
+    required this.purchases,
+  });
+}
+
+List<_PurchaseMonthGroup> _groupPurchasesByMonth(
+  List<StockPurchase> purchases,
+) {
+  final groups = <_PurchaseMonthGroup>[];
+  for (final purchase in purchases) {
+    final index = groups.indexWhere(
+      (group) =>
+          group.year == purchase.boughtAt.year &&
+          group.month == purchase.boughtAt.month,
+    );
+    if (index == -1) {
+      groups.add(
+        _PurchaseMonthGroup(
+          year: purchase.boughtAt.year,
+          month: purchase.boughtAt.month,
+          purchases: [purchase],
+        ),
+      );
+    } else {
+      groups[index].purchases.add(purchase);
+    }
+  }
+  return groups;
+}
+
+class _PurchaseMonthSection extends StatelessWidget {
+  final _PurchaseMonthGroup section;
+  final bool isDarkMode;
+  final String Function(StockPurchase purchase) portfolioNameOf;
+  final ValueChanged<StockPurchase> onEdit;
+  final ValueChanged<StockPurchase> onDelete;
+
+  const _PurchaseMonthSection({
+    required this.section,
+    required this.isDarkMode,
+    required this.portfolioNameOf,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GroupHeader(
+          title: '${_monthFullLabel(section.month)} ${section.year}',
+          isDarkMode: isDarkMode,
+          trailing: [
+            Text(
+              '${section.purchases.length} รายการ',
+              style: TextStyle(
+                color: secondaryColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        ...section.purchases.asMap().entries.map(
+          (entry) => Column(
+            children: [
+              _PurchaseListItem(
+                purchase: entry.value,
+                portfolioName: portfolioNameOf(entry.value),
+                isDarkMode: isDarkMode,
+                onEdit: () => onEdit(entry.value),
+                onDelete: () => onDelete(entry.value),
+              ),
+              if (entry.key != section.purchases.length - 1)
+                Divider(height: 1, color: dividerColor),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PurchaseListItem extends StatelessWidget {
+  final StockPurchase purchase;
+  final String portfolioName;
+  final bool isDarkMode;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PurchaseListItem({
+    required this.purchase,
+    required this.portfolioName,
+    required this.isDarkMode,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final thumbnailColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.header;
+    return InkWell(
+      onTap: onEdit,
+      onLongPress: () => _showActionSheet(context),
+      child: Container(
+        color: surfaceColor,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: thumbnailColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+              ),
+              padding: purchase.logoUrl.isEmpty
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.all(6),
+              child: purchase.logoUrl.isEmpty
+                  ? _TickerFallback(
+                      ticker: purchase.ticker,
+                      color: thumbnailColor,
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadii.small),
+                      child: CachedNetworkImage(
+                        imageUrl: purchase.logoUrl,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => _TickerFallback(
+                          ticker: purchase.ticker,
+                          color: thumbnailColor,
+                        ),
+                        errorWidget: (context, url, error) => _TickerFallback(
+                          ticker: purchase.ticker,
+                          color: thumbnailColor,
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    purchase.ticker,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '$portfolioName • ${_formatTradeDate(purchase.boughtAt)}',
+                    style: TextStyle(color: secondaryColor, fontSize: 12),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${_formatTradeShares(purchase.sharesBought)} shares • ${purchase.buyPriceUsd.toStringAsFixed(4)} USD',
+                    style: TextStyle(color: secondaryColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '+${formatAmount(purchase.costUsd)}',
+                  style: TextStyle(
+                    color: AppColors.income,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${formatAmount(purchase.cashPaidUsd)} USD',
+                  style: TextStyle(color: secondaryColor, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showActionSheet(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: surfaceColor,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadii.sheet),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: dividerColor,
+                  borderRadius: BorderRadius.circular(AppRadii.tiny),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.add_shopping_cart_outlined, color: textColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      purchase.ticker,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${formatAmount(purchase.cashPaidUsd)} USD',
+                    style: TextStyle(color: secondaryColor, fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(height: 1, color: dividerColor),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.edit_outlined, color: textColor),
+                title: Text(
+                  'แก้ไขประวัติซื้อ',
+                  style: TextStyle(color: textColor),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onEdit();
+                },
+              ),
+              Divider(height: 1, color: dividerColor),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.delete_outline, color: dangerColor),
+                title: Text(
+                  'ลบประวัติซื้อ',
+                  style: TextStyle(color: dangerColor),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onDelete();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -2482,14 +2940,14 @@ class _TradeListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '$portfolioName • ${_formatDate(trade.soldAt)}',
+                    '$portfolioName • ${_formatTradeDate(trade.soldAt)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: secondaryColor, fontSize: 12),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${_formatShares(trade.sharesSold)} shares • ${trade.sellPriceUsd.toStringAsFixed(4)} USD',
+                    '${_formatTradeShares(trade.sharesSold)} shares • ${trade.sellPriceUsd.toStringAsFixed(4)} USD',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: secondaryColor, fontSize: 12),
@@ -2668,7 +3126,7 @@ class _TradeListItem extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '$portfolioName • ${_formatDate(trade.soldAt)}',
+                              '$portfolioName • ${_formatTradeDate(trade.soldAt)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -2694,7 +3152,7 @@ class _TradeListItem extends StatelessWidget {
                   const SizedBox(height: 12),
                   _TradeDetailRow(
                     label: 'จำนวน',
-                    value: _formatShares(trade.sharesSold),
+                    value: _formatTradeShares(trade.sharesSold),
                     isDarkMode: isDarkMode,
                   ),
                   _TradeDetailRow(
@@ -2775,16 +3233,6 @@ class _TradeListItem extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
-  }
-
-  String _formatShares(double value) {
-    return value.toStringAsFixed(7).replaceFirst(RegExp(r'\.?0+$'), '');
   }
 }
 

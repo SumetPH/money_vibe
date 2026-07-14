@@ -9,6 +9,7 @@ import '../models/budget.dart';
 import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
+import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 import 'supabase_adapters/account_adapter.dart';
@@ -18,6 +19,7 @@ import 'supabase_adapters/investment_plan_adapter.dart';
 import 'supabase_adapters/portfolio_adapter.dart';
 import 'supabase_adapters/recurring_adapter.dart';
 import 'supabase_adapters/stock_trade_adapter.dart';
+import 'supabase_adapters/stock_purchase_adapter.dart';
 import 'supabase_adapters/transaction_adapter.dart';
 import 'supabase_adapters/portfolio_annual_report_adapter.dart';
 
@@ -50,6 +52,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   late final _transactionAdapter = SupabaseTransactionAdapter(this);
   late final _portfolioAdapter = SupabasePortfolioAdapter(this);
   late final _stockTradeAdapter = SupabaseStockTradeAdapter(this);
+  late final _stockPurchaseAdapter = SupabaseStockPurchaseAdapter(this);
   late final _budgetAdapter = SupabaseBudgetAdapter(this);
   late final _recurringAdapter = SupabaseRecurringAdapter(this);
   late final _portfolioAnnualReportAdapter =
@@ -303,6 +306,22 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> deleteStockTrade(String id) =>
       _stockTradeAdapter.deleteStockTrade(id);
+
+  @override
+  Future<List<StockPurchase>> getStockPurchases() =>
+      _stockPurchaseAdapter.getStockPurchases();
+
+  @override
+  Future<void> insertStockPurchase(StockPurchase purchase) =>
+      _stockPurchaseAdapter.insertStockPurchase(purchase);
+
+  @override
+  Future<void> updateStockPurchase(StockPurchase purchase) =>
+      _stockPurchaseAdapter.updateStockPurchase(purchase);
+
+  @override
+  Future<void> deleteStockPurchase(String id) =>
+      _stockPurchaseAdapter.deleteStockPurchase(id);
 
   // ── Portfolio Annual Reports (Delegated to Adapter) ───────────────────────
 

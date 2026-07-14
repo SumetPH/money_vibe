@@ -7,6 +7,7 @@ import '../services/stock_price_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
+import '../models/stock_purchase.dart';
 import '../models/transaction.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
@@ -23,6 +24,7 @@ class AccountProvider extends ChangeNotifier {
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
   final List<StockTrade> _stockTrades = [];
+  final List<StockPurchase> _stockPurchases = [];
   final List<PortfolioAnnualReport> _portfolioAnnualReports = [];
   final Map<String, Map<String, InvestmentPlanMonthStatus>>
   _investmentPlanMonthStatuses = {};
@@ -87,6 +89,7 @@ class AccountProvider extends ChangeNotifier {
 
       final holdings = await _db.getPortfolioHoldings();
       final stockTrades = await _db.getStockTrades();
+      final stockPurchases = await _db.getStockPurchases();
       final annualReports = await _db.getPortfolioAnnualReports();
       final investmentPlanStatuses = await _db.getInvestmentPlanMonthStatuses();
       final allocationTargets = await _db.getPortfolioAllocationTargets();
@@ -104,6 +107,10 @@ class AccountProvider extends ChangeNotifier {
         ..clear()
         ..addAll(stockTrades)
         ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
+      _stockPurchases
+        ..clear()
+        ..addAll(stockPurchases);
+      _sortStockPurchases();
       _portfolioAnnualReports
         ..clear()
         ..addAll(annualReports)
@@ -201,6 +208,7 @@ class AccountProvider extends ChangeNotifier {
       List.unmodifiable(_holdings[portfolioId] ?? []);
 
   List<StockTrade> get stockTrades => List.unmodifiable(_stockTrades);
+  List<StockPurchase> get stockPurchases => List.unmodifiable(_stockPurchases);
 
   List<StockTrade> getStockTradesForPortfolio(String portfolioId) =>
       List.unmodifiable(
@@ -750,10 +758,7 @@ class AccountProvider extends ChangeNotifier {
     final list = _holdings.putIfAbsent(holding.portfolioId, () => []);
 
     // Calculate new sortOrder (max + 10) for this portfolio
-    final sortOrder = list.isEmpty
-        ? 0
-        : (list.map((h) => h.sortOrder).reduce((a, b) => a > b ? a : b) + 10);
-    final updated = holding.copyWith(sortOrder: sortOrder);
+    final updated = holding.copyWith(sortOrder: _nextHoldingSortOrder(list));
 
     list.add(updated);
     // Keep list sorted in memory
@@ -1096,6 +1101,92 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> buyHolding({
+    required StockPurchase purchase,
+    required StockHolding updatedHolding,
+  }) async {
+    final accountIndex = _accounts.indexWhere(
+      (account) => account.id == purchase.portfolioId && account.isPortfolio,
+    );
+    if (accountIndex == -1) throw StateError('ไม่พบพอร์ตที่ต้องการซื้อหุ้น');
+    if (purchase.sharesBought <= 0 || purchase.cashPaidUsd < 0) {
+      throw ArgumentError('จำนวนหุ้นและเงินสดที่จ่ายต้องถูกต้อง');
+    }
+
+    final holdings = _holdings.putIfAbsent(purchase.portfolioId, () => []);
+    final holdingIndex = holdings.indexWhere((h) => h.id == updatedHolding.id);
+    final isNewHolding = holdingIndex == -1;
+    final persistedHolding = isNewHolding
+        ? updatedHolding.copyWith(sortOrder: _nextHoldingSortOrder(holdings))
+        : updatedHolding;
+
+    final oldAccount = _accounts[accountIndex];
+    final oldHolding = isNewHolding ? null : holdings[holdingIndex];
+    final updatedAccount = oldAccount.copyWith(
+      cashBalance: oldAccount.cashBalance - purchase.cashPaidUsd,
+    );
+    _accounts[accountIndex] = updatedAccount;
+    if (isNewHolding) {
+      holdings.add(persistedHolding);
+      holdings.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    } else {
+      holdings[holdingIndex] = persistedHolding;
+    }
+    _stockPurchases.insert(0, purchase);
+    notifyListeners();
+
+    try {
+      await _db.insertStockPurchase(purchase);
+      await _db.updateAccount(updatedAccount);
+      if (isNewHolding) {
+        await _db.insertHolding(persistedHolding);
+      } else {
+        await _db.updateHolding(persistedHolding);
+      }
+    } catch (e) {
+      _accounts[accountIndex] = oldAccount;
+      if (isNewHolding) {
+        holdings.removeWhere((holding) => holding.id == persistedHolding.id);
+      } else {
+        holdings[holdingIndex] = oldHolding!;
+      }
+      _stockPurchases.removeWhere((item) => item.id == purchase.id);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateStockPurchase(StockPurchase purchase) async {
+    final index = _stockPurchases.indexWhere((item) => item.id == purchase.id);
+    if (index == -1) return;
+    final previous = _stockPurchases[index];
+    _stockPurchases[index] = purchase;
+    _sortStockPurchases();
+    notifyListeners();
+    try {
+      await _db.updateStockPurchase(purchase);
+    } catch (e) {
+      _stockPurchases[index] = previous;
+      _sortStockPurchases();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteStockPurchase(String id) async {
+    final index = _stockPurchases.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+    final purchase = _stockPurchases.removeAt(index);
+    notifyListeners();
+    try {
+      await _db.deleteStockPurchase(id);
+    } catch (e) {
+      _stockPurchases.insert(index, purchase);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   double? _resolveResetPeakProfitPct({
     required StockHolding holding,
     required double shares,
@@ -1287,6 +1378,19 @@ class AccountProvider extends ChangeNotifier {
   void _sortStockTrades() {
     _stockTrades.sort((a, b) => b.soldAt.compareTo(a.soldAt));
   }
+
+  void _sortStockPurchases() =>
+      _stockPurchases.sort((a, b) => b.boughtAt.compareTo(a.boughtAt));
+
+  int _nextHoldingSortOrder(List<StockHolding> holdings) => holdings.isEmpty
+      ? 0
+      : holdings
+                .map((holding) => holding.sortOrder)
+                .reduce(
+                  (maxOrder, sortOrder) =>
+                      sortOrder > maxOrder ? sortOrder : maxOrder,
+                ) +
+            10;
 
   void _sortAllocationTargets(String portfolioId) {
     _allocationTargets[portfolioId]?.sort((a, b) {

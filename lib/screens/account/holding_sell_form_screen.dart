@@ -449,7 +449,6 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 },
               ),
 
-              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -501,7 +500,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                   setState(() {});
                 },
               ),
-              const SizedBox(height: 12),
+
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
