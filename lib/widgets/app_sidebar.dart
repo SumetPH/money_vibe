@@ -19,7 +19,7 @@ class SidebarItemData {
   });
 }
 
-class AppSidebar extends StatelessWidget {
+class AppSidebar extends StatefulWidget {
   final String currentRoute;
   final ValueChanged<String>? onNavigate;
 
@@ -67,6 +67,34 @@ class AppSidebar extends StatelessWidget {
       route: '/settings',
     ),
   ];
+
+  @override
+  State<AppSidebar> createState() => _AppSidebarState();
+}
+
+class _AppSidebarState extends State<AppSidebar> with WidgetsBindingObserver {
+  int _interactionEpoch = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Flutter Web can retain an InkWell hover or pressed overlay while its
+      // browser tab is unfocused. Recreate the controls to clear that state.
+      setState(() => _interactionEpoch++);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,24 +179,25 @@ class AppSidebar extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.zero,
-                itemCount: _items.length,
+                itemCount: AppSidebar._items.length,
                 itemBuilder: (context, index) {
-                  final item = _items[index];
+                  final item = AppSidebar._items[index];
                   // Check if currentRoute matches item.route as a prefix (handling subroutes)
                   final isSelected =
-                      currentRoute == item.route ||
+                      widget.currentRoute == item.route ||
                       (item.route != '/' &&
-                          currentRoute.startsWith(item.route));
+                          widget.currentRoute.startsWith(item.route));
 
                   return _SidebarItemTile(
+                    key: ValueKey('${item.route}-$_interactionEpoch'),
                     item: item,
                     isSelected: isSelected,
                     isDarkMode: isDarkMode,
                     themeColor: themeColor,
                     onTap: () {
-                      if (currentRoute != item.route) {
-                        if (onNavigate != null) {
-                          onNavigate!(item.route);
+                      if (widget.currentRoute != item.route) {
+                        if (widget.onNavigate != null) {
+                          widget.onNavigate!(item.route);
                         } else {
                           Router.neglect(context, () => context.go(item.route));
                         }
@@ -179,7 +208,10 @@ class AppSidebar extends StatelessWidget {
               ),
             ),
             // Sidebar Footer
-            _SidebarFooter(isDarkMode: isDarkMode, onNavigate: onNavigate),
+            _SidebarFooter(
+              isDarkMode: isDarkMode,
+              onNavigate: widget.onNavigate,
+            ),
           ],
         ),
       ),
@@ -195,6 +227,7 @@ class _SidebarItemTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _SidebarItemTile({
+    super.key,
     required this.item,
     required this.isSelected,
     required this.isDarkMode,
