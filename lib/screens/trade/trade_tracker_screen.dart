@@ -120,6 +120,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               .transactions;
           final trades = _filteredTrades(accountProvider.stockTrades);
           final summary = _TradeSummary.fromTrades(trades);
+          final sellFeeSummary = _FeeSummary.fromTrades(trades);
           final tradeMonthSections = _groupTradesByMonth(trades);
           final portfolioAccounts = accountProvider.accounts
               .where((account) => account.isPortfolio)
@@ -162,6 +163,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                     SliverToBoxAdapter(
                       child: _SummaryPanel(
                         summary: summary,
+                        feeSummary: sellFeeSummary,
                         isDarkMode: isDarkMode,
                       ),
                     ),
@@ -694,8 +696,13 @@ class _PurchaseHistoryTab extends StatelessWidget {
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final sections = _groupPurchasesByMonth(purchases);
+    final feeSummary = _FeeSummary.fromPurchases(purchases);
     return CustomScrollView(
       slivers: [
+        SliverToBoxAdapter(
+          child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
         if (purchases.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -2274,11 +2281,69 @@ class _TradeSummary {
   }
 }
 
+class _FeeSummary {
+  final double brokerFeeUsd;
+  final double exchangeFeeUsd;
+  final double taxFeeUsd;
+
+  const _FeeSummary({
+    required this.brokerFeeUsd,
+    required this.exchangeFeeUsd,
+    required this.taxFeeUsd,
+  });
+
+  double get totalFeesUsd => brokerFeeUsd + exchangeFeeUsd + taxFeeUsd;
+
+  factory _FeeSummary.fromTrades(List<StockTrade> trades) => _FeeSummary._from(
+    trades.map(
+      (trade) => (
+        broker: trade.brokerFeeUsd ?? 0,
+        exchange: trade.exchangeFeeUsd ?? 0,
+        tax: trade.taxFeeUsd ?? 0,
+      ),
+    ),
+  );
+
+  factory _FeeSummary.fromPurchases(List<StockPurchase> purchases) =>
+      _FeeSummary._from(
+        purchases.map(
+          (purchase) => (
+            broker: purchase.brokerFeeUsd ?? 0,
+            exchange: purchase.exchangeFeeUsd ?? 0,
+            tax: purchase.taxFeeUsd ?? 0,
+          ),
+        ),
+      );
+
+  factory _FeeSummary._from(
+    Iterable<({double broker, double exchange, double tax})> fees,
+  ) {
+    var brokerFeeUsd = 0.0;
+    var exchangeFeeUsd = 0.0;
+    var taxFeeUsd = 0.0;
+    for (final fee in fees) {
+      brokerFeeUsd += fee.broker;
+      exchangeFeeUsd += fee.exchange;
+      taxFeeUsd += fee.tax;
+    }
+    return _FeeSummary(
+      brokerFeeUsd: brokerFeeUsd,
+      exchangeFeeUsd: exchangeFeeUsd,
+      taxFeeUsd: taxFeeUsd,
+    );
+  }
+}
+
 class _SummaryPanel extends StatelessWidget {
   final _TradeSummary summary;
+  final _FeeSummary? feeSummary;
   final bool isDarkMode;
 
-  const _SummaryPanel({required this.summary, required this.isDarkMode});
+  const _SummaryPanel({
+    required this.summary,
+    this.feeSummary,
+    required this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2364,8 +2429,103 @@ class _SummaryPanel extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: secondaryColor),
           ),
           const SizedBox(height: 14),
+          if (feeSummary != null) ...[
+            Divider(
+              height: 1,
+              color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+            ),
+            const SizedBox(height: 14),
+            _FeeSummaryBreakdown(summary: feeSummary!, isDarkMode: isDarkMode),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _FeeSummaryPanel extends StatelessWidget {
+  final _FeeSummary summary;
+  final bool isDarkMode;
+
+  const _FeeSummaryPanel({required this.summary, required this.isDarkMode});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      child: _FeeSummaryBreakdown(summary: summary, isDarkMode: isDarkMode),
+    );
+  }
+}
+
+class _FeeSummaryBreakdown extends StatelessWidget {
+  final _FeeSummary summary;
+  final bool isDarkMode;
+
+  const _FeeSummaryBreakdown({required this.summary, required this.isDarkMode});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final feeColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'สรุปค่าธรรมเนียม',
+          style: TextStyle(
+            color: secondaryColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${formatAmount(summary.totalFeesUsd)} USD',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: feeColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _SummaryMetric(
+                label: 'Broker',
+                value: '${formatAmount(summary.brokerFeeUsd)} USD',
+                color: textColor,
+              ),
+            ),
+            Expanded(
+              child: _SummaryMetric(
+                label: 'VAT',
+                value: '${formatAmount(summary.taxFeeUsd)} USD',
+                color: textColor,
+                alignEnd: true,
+              ),
+            ),
+            Expanded(
+              child: _SummaryMetric(
+                label: 'SEC/TAF',
+                value: '${formatAmount(summary.exchangeFeeUsd)} USD',
+                color: textColor,
+                alignEnd: true,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
