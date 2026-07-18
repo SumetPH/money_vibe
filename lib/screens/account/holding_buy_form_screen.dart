@@ -19,6 +19,7 @@ typedef BuyHoldingCallback =
       required double cashPaidUsd,
       required double resultingShares,
       required double resultingCostBasisUsd,
+      required bool resetPeakProfit,
       double? grossCostUsd,
       double? brokerFeeUsd,
       double? exchangeFeeUsd,
@@ -69,6 +70,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
   bool _syncing = false;
   bool _grossEdited = false;
   bool _cashEdited = false;
+  bool _resultSharesEdited = false;
   bool _saving = false;
   bool _sellPlanEnabled = true;
   late String _selectedPortfolioId;
@@ -106,6 +108,19 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         holding.priceUsd,
         scale: stockHoldingPriceDecimalPlaces,
       );
+      _sellPlanEnabled = holding.sellPlanEnabled;
+      _takeProfit.text = formatStockHoldingEditableNumber(
+        holding.takeProfitPct,
+        scale: 2,
+      );
+      _trailingStop.text = formatStockHoldingEditableNumber(
+        holding.trailingStopPct,
+        scale: 2,
+      );
+      _stopLoss.text = formatStockHoldingEditableNumber(
+        holding.stopLossPct,
+        scale: 2,
+      );
     }
     final purchase = widget.existingPurchase;
     if (purchase != null) {
@@ -142,9 +157,11 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
       _grossEdited = true;
       _cashEdited = true;
     }
-    _takeProfit.text = '10';
-    _trailingStop.text = '5';
-    _stopLoss.text = '5';
+    if (holding == null) {
+      _takeProfit.text = '10';
+      _trailingStop.text = '5';
+      _stopLoss.text = '5';
+    }
     for (final controller in [_shares, _price]) {
       controller.addListener(_syncFromPurchase);
     }
@@ -195,7 +212,9 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     final gross = shares * price;
     _syncing = true;
     if (!_grossEdited) _set(_gross, gross, 2);
-    _set(_resultShares, resultingShares, stockHoldingSharesDecimalPlaces);
+    if (!_resultSharesEdited) {
+      _set(_resultShares, resultingShares, stockHoldingSharesDecimalPlaces);
+    }
     _syncing = false;
     _syncCashPaid();
   }
@@ -212,7 +231,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     final resultingShares = _value(_resultShares);
     final totalCost = (_holding?.totalCostUsd ?? 0) + _value(_gross);
     _syncing = true;
-    _set(_resultTotalCost, totalCost, stockHoldingCostBasisDecimalPlaces);
+    _set(_resultTotalCost, totalCost, 2);
     _set(
       _resultCostBasis,
       resultingShares > 0 ? totalCost / resultingShares : 0,
@@ -243,11 +262,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
   void _syncTotalFromCostBasis() {
     if (_syncing) return;
     _syncing = true;
-    _set(
-      _resultTotalCost,
-      _value(_resultShares) * _value(_resultCostBasis),
-      stockHoldingCostBasisDecimalPlaces,
-    );
+    _set(_resultTotalCost, _value(_resultShares) * _value(_resultCostBasis), 2);
     _syncing = false;
   }
 
@@ -264,6 +279,8 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         (takeProfit < 0 || trailingStop <= 0 || stopLoss <= 0)) {
       return;
     }
+    final resetPeakProfit = await _confirmResetPeakProfitIfNeeded();
+    if (resetPeakProfit == null) return;
     setState(() => _saving = true);
     try {
       await widget.onBuy(
@@ -282,11 +299,63 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         cashPaidUsd: cash,
         resultingShares: _value(_resultShares),
         resultingCostBasisUsd: _value(_resultCostBasis),
+        resetPeakProfit: resetPeakProfit,
       );
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<bool?> _confirmResetPeakProfitIfNeeded() async {
+    final holding = _holding;
+    if (holding == null ||
+        !holding.sellPlanEnabled ||
+        holding.peakProfitPct == null) {
+      return false;
+    }
+
+    final basisChanged = holding
+        .copyWith(
+          shares: _value(_resultShares),
+          costBasisUsd: _value(_resultCostBasis),
+        )
+        .hasInvestmentBasisChangedFrom(holding);
+    if (!basisChanged) return false;
+
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final primaryColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: backgroundColor,
+        title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
+        content: Text(
+          'จำนวนหุ้นหรือราคาทุนเปลี่ยนจากเดิม ต้องการเริ่มนับ Peak Profit ใหม่จากสถานะล่าสุดหรือคงค่าเดิมไว้?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('คงค่าเดิม', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: primaryColor),
+            child: const Text('รีเซ็ต'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -478,8 +547,11 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   controller: _resultShares,
                   hintText: '0',
                   isDarkMode: isDarkMode,
-                  readOnly: true,
                   inputFormatters: [_decimalInputFormatter(7)],
+                  onChanged: (_) {
+                    _resultSharesEdited = true;
+                    _syncCostBasisFromTotal();
+                  },
                 ),
                 _divider(isDarkMode),
                 _BuyNumberFieldRow(
@@ -487,7 +559,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   controller: _resultTotalCost,
                   hintText: '0.00',
                   isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(4)],
+                  inputFormatters: [_decimalInputFormatter(2)],
                 ),
                 _divider(isDarkMode),
                 _BuyNumberFieldRow(
@@ -498,43 +570,45 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   inputFormatters: [_decimalInputFormatter(4)],
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  color: surfaceColor,
-                  child: SwitchListTile(
-                    title: Text(
-                      'กำหนดแผนขาย',
-                      style: TextStyle(color: textColor),
+                if (_isNewHolding) ...[
+                  Container(
+                    color: surfaceColor,
+                    child: SwitchListTile(
+                      title: Text(
+                        'กำหนดแผนขาย',
+                        style: TextStyle(color: textColor),
+                      ),
+                      value: _sellPlanEnabled,
+                      onChanged: (value) =>
+                          setState(() => _sellPlanEnabled = value),
                     ),
-                    value: _sellPlanEnabled,
-                    onChanged: (value) =>
-                        setState(() => _sellPlanEnabled = value),
                   ),
-                ),
-                if (_sellPlanEnabled) ...[
-                  _divider(isDarkMode),
-                  _BuyNumberFieldRow(
-                    label: 'Take Profit (%)',
-                    controller: _takeProfit,
-                    hintText: '0',
-                    isDarkMode: isDarkMode,
-                    inputFormatters: [_decimalInputFormatter(2)],
-                  ),
-                  _divider(isDarkMode),
-                  _BuyNumberFieldRow(
-                    label: 'Trailing Stop (%)',
-                    controller: _trailingStop,
-                    hintText: '0',
-                    isDarkMode: isDarkMode,
-                    inputFormatters: [_decimalInputFormatter(2)],
-                  ),
-                  _divider(isDarkMode),
-                  _BuyNumberFieldRow(
-                    label: 'Stop Loss (%)',
-                    controller: _stopLoss,
-                    hintText: '0',
-                    isDarkMode: isDarkMode,
-                    inputFormatters: [_decimalInputFormatter(2)],
-                  ),
+                  if (_sellPlanEnabled) ...[
+                    _divider(isDarkMode),
+                    _BuyNumberFieldRow(
+                      label: 'Take Profit (%)',
+                      controller: _takeProfit,
+                      hintText: '0',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(2)],
+                    ),
+                    _divider(isDarkMode),
+                    _BuyNumberFieldRow(
+                      label: 'Trailing Stop (%)',
+                      controller: _trailingStop,
+                      hintText: '0',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(2)],
+                    ),
+                    _divider(isDarkMode),
+                    _BuyNumberFieldRow(
+                      label: 'Stop Loss (%)',
+                      controller: _stopLoss,
+                      hintText: '0',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(2)],
+                    ),
+                  ],
                 ],
               ],
             ],
@@ -682,7 +756,6 @@ class _BuyNumberFieldRow extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool isDarkMode;
-  final bool readOnly;
   final List<TextInputFormatter> inputFormatters;
   final ValueChanged<String>? onChanged;
 
@@ -692,7 +765,6 @@ class _BuyNumberFieldRow extends StatelessWidget {
     required this.hintText,
     required this.isDarkMode,
     required this.inputFormatters,
-    this.readOnly = false,
     this.onChanged,
   });
 
@@ -723,7 +795,6 @@ class _BuyNumberFieldRow extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              readOnly: readOnly,
               textAlign: TextAlign.right,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,

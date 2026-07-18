@@ -373,7 +373,10 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     if (basisChanged || !existing.sellPlanEnabled) {
       if (!resetPeakProfit && existing.sellPlanEnabled) {
         final previousPeak = existing.peakProfitPct;
-        if (previousPeak == null || currentPnlPct > previousPeak) {
+        if (previousPeak == null) {
+          return null;
+        }
+        if (currentPnlPct > previousPeak) {
           return _roundPct(currentPnlPct);
         }
         return _roundPct(previousPeak);
@@ -410,8 +413,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     if (existing == null ||
         !_sellPlanEnabled ||
         usesManualPeakProfit ||
-        !existing.sellPlanEnabled ||
-        existing.peakProfitPct == null) {
+        !existing.sellPlanEnabled) {
       return true;
     }
 

@@ -465,6 +465,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                 required cashPaidUsd,
                 required resultingShares,
                 required resultingCostBasisUsd,
+                required resetPeakProfit,
                 grossCostUsd,
                 brokerFeeUsd,
                 exchangeFeeUsd,

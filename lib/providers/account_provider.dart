@@ -955,6 +955,8 @@ class AccountProvider extends ChangeNotifier {
     required double sharesSold,
     required double sellPriceUsd,
     required double cashReceivedUsd,
+    required double remainingShares,
+    required bool resetPeakProfit,
     double? remainingCostBasisUsd,
     double? grossProceedsUsd,
     double? brokerFeeUsd,
@@ -982,6 +984,13 @@ class AccountProvider extends ChangeNotifier {
         'ต้องไม่ติดลบ',
       );
     }
+    if (remainingShares < 0) {
+      throw ArgumentError.value(
+        remainingShares,
+        'remainingShares',
+        'ต้องไม่ติดลบ',
+      );
+    }
 
     final accountIndex = _accounts.indexWhere((a) => a.id == portfolioId);
     if (accountIndex == -1) {
@@ -1004,6 +1013,13 @@ class AccountProvider extends ChangeNotifier {
         sharesSold,
         'sharesSold',
         'จำนวนขายมากกว่าจำนวนที่ถือ',
+      );
+    }
+    if (remainingShares > holding.shares + 0.0000001) {
+      throw ArgumentError.value(
+        remainingShares,
+        'remainingShares',
+        'จำนวนคงเหลือมากกว่าจำนวนที่ถือ',
       );
     }
 
@@ -1030,7 +1046,6 @@ class AccountProvider extends ChangeNotifier {
     final oldAccount = _accounts[accountIndex];
     final oldHolding = holding;
     final oldTrades = List<StockTrade>.from(_stockTrades);
-    final remainingShares = holding.shares - sharesSold;
     final isFullSell = remainingShares <= 0.0000001;
     final updatedAccount = oldAccount.copyWith(
       cashBalance: oldAccount.cashBalance + cashReceivedUsd,
@@ -1043,12 +1058,14 @@ class AccountProvider extends ChangeNotifier {
       holdings[holdingIndex] = holding.copyWith(
         shares: remainingShares,
         costBasisUsd: remainingCostBasisUsd ?? holding.costBasisUsd,
-        peakProfitPct: _resolveResetPeakProfitPct(
-          holding: holding.copyWith(
-            costBasisUsd: remainingCostBasisUsd ?? holding.costBasisUsd,
-          ),
-          shares: remainingShares,
-        ),
+        peakProfitPct: resetPeakProfit
+            ? _resolveResetPeakProfitPct(
+                holding: holding.copyWith(
+                  costBasisUsd: remainingCostBasisUsd ?? holding.costBasisUsd,
+                ),
+                shares: remainingShares,
+              )
+            : holding.peakProfitPct,
       );
     }
     _stockTrades.insert(0, trade);

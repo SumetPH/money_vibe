@@ -12,6 +12,8 @@ typedef SellHoldingCallback =
       required double sharesSold,
       required double sellPriceUsd,
       required double cashReceivedUsd,
+      required double remainingShares,
+      required bool resetPeakProfit,
       double? remainingCostBasisUsd,
       double? grossProceedsUsd,
       double? brokerFeeUsd,
@@ -60,6 +62,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
   bool _grossEdited = false;
   bool _cashEdited = false;
+  bool _remainingSharesEdited = false;
   bool _isSyncingRemainingHolding = false;
   bool _isSaving = false;
 
@@ -90,7 +93,6 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     _brokerFeeController.addListener(_syncCashReceived);
     _taxFeeController.addListener(_syncCashReceived);
     _exchangeFeeController.addListener(_syncCashReceived);
-    _remainingSharesController.addListener(_syncSharesSoldFromRemaining);
     _remainingTotalCostController.addListener(_syncRemainingCostBasisFromTotal);
     _remainingCostBasisController.addListener(
       _syncRemainingTotalCostFromCostBasis,
@@ -124,29 +126,16 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
   void _syncRemainingHoldingFromSharesSold() {
     if (_isSyncingRemainingHolding) return;
     final sharesSold = double.tryParse(_sharesController.text.trim()) ?? 0;
-    final remainingShares = (widget.holding.shares - sharesSold)
+    final calculatedRemainingShares = (widget.holding.shares - sharesSold)
         .clamp(0.0, widget.holding.shares)
         .toDouble();
+    final remainingShares = _remainingSharesEdited
+        ? double.tryParse(_remainingSharesController.text.trim()) ?? 0
+        : calculatedRemainingShares;
     _setRemainingHoldingValues(
       shares: remainingShares,
       costBasis: widget.holding.costBasisUsd,
-    );
-  }
-
-  void _syncSharesSoldFromRemaining() {
-    if (_isSyncingRemainingHolding) return;
-    final remainingShares =
-        double.tryParse(_remainingSharesController.text.trim()) ?? 0;
-    final sharesSold = widget.holding.shares - remainingShares;
-    _isSyncingRemainingHolding = true;
-    _sharesController.text = formatStockHoldingEditableNumber(
-      sharesSold.clamp(0.0, widget.holding.shares).toDouble(),
-      scale: stockHoldingSharesDecimalPlaces,
-    );
-    _isSyncingRemainingHolding = false;
-    _setRemainingHoldingValues(
-      shares: remainingShares.clamp(0.0, widget.holding.shares).toDouble(),
-      costBasis: widget.holding.costBasisUsd,
+      updateShares: !_remainingSharesEdited,
     );
   }
 
@@ -193,7 +182,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     if (updateTotalCost) {
       _remainingTotalCostController.text = formatStockHoldingEditableNumber(
         shares * costBasis,
-        scale: stockHoldingCostBasisDecimalPlaces,
+        scale: 2,
       );
     }
     if (updateCostBasis) {
@@ -303,10 +292,11 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       hasError = true;
     }
 
-    final expectedRemainingShares = widget.holding.shares - (shares ?? 0);
-    if (remainingShares == null ||
-        (remainingShares - expectedRemainingShares).abs() > 0.0000001) {
-      _remainingSharesError = 'ต้องเท่ากับจำนวนหุ้นคงเหลือ';
+    if (remainingShares == null || remainingShares < 0) {
+      _remainingSharesError = 'ต้องไม่ติดลบ';
+      hasError = true;
+    } else if (remainingShares > widget.holding.shares + 0.0000001) {
+      _remainingSharesError = 'มากกว่าจำนวนที่ถือ';
       hasError = true;
     }
     if (remainingTotalCost == null || remainingTotalCost < 0) {
@@ -322,12 +312,20 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
       return;
     }
 
+    final resetPeakProfit = await _confirmResetPeakProfitIfNeeded(
+      remainingShares: remainingShares!,
+      remainingCostBasisUsd: remainingCostBasis!,
+    );
+    if (resetPeakProfit == null) return;
+
     setState(() => _isSaving = true);
     try {
       await widget.onSell(
         sharesSold: shares!,
         sellPriceUsd: sellPrice!,
         cashReceivedUsd: cashReceived!,
+        remainingShares: remainingShares,
+        resetPeakProfit: resetPeakProfit,
         remainingCostBasisUsd: remainingCostBasis,
         grossProceedsUsd: grossProceeds,
         brokerFeeUsd: brokerFee,
@@ -338,6 +336,57 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<bool?> _confirmResetPeakProfitIfNeeded({
+    required double remainingShares,
+    required double remainingCostBasisUsd,
+  }) async {
+    final holding = widget.holding;
+    if (remainingShares <= 0.0000001 ||
+        !holding.sellPlanEnabled ||
+        holding.peakProfitPct == null) {
+      return false;
+    }
+
+    final basisChanged = holding
+        .copyWith(shares: remainingShares, costBasisUsd: remainingCostBasisUsd)
+        .hasInvestmentBasisChangedFrom(holding);
+    if (!basisChanged) return false;
+
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final primaryColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: backgroundColor,
+        title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
+        content: Text(
+          'จำนวนหุ้นหรือราคาทุนเปลี่ยนจากเดิม ต้องการเริ่มนับ Peak Profit ใหม่จากสถานะล่าสุดหรือคงค่าเดิมไว้?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('คงค่าเดิม', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: primaryColor),
+            child: const Text('รีเซ็ต'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -524,6 +573,10 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 inputFormatters: [
                   _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
                 ],
+                onChanged: (_) {
+                  _remainingSharesEdited = true;
+                  _syncRemainingHoldingFromSharesSold();
+                },
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(
@@ -532,9 +585,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                 hintText: '0.00',
                 isDarkMode: isDarkMode,
                 errorText: _remainingTotalCostError,
-                inputFormatters: [
-                  _decimalInputFormatter(stockHoldingCostBasisDecimalPlaces),
-                ],
+                inputFormatters: [_decimalInputFormatter(2)],
               ),
               _buildDivider(isDarkMode),
               _SellNumberFieldRow(

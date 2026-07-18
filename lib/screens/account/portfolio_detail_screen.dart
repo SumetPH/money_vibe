@@ -668,6 +668,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 required sharesSold,
                 required sellPriceUsd,
                 required cashReceivedUsd,
+                required remainingShares,
+                required resetPeakProfit,
                 remainingCostBasisUsd,
                 grossProceedsUsd,
                 brokerFeeUsd,
@@ -680,6 +682,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   sharesSold: sharesSold,
                   sellPriceUsd: sellPriceUsd,
                   cashReceivedUsd: cashReceivedUsd,
+                  remainingShares: remainingShares,
+                  resetPeakProfit: resetPeakProfit,
                   remainingCostBasisUsd: remainingCostBasisUsd,
                   grossProceedsUsd: grossProceedsUsd,
                   brokerFeeUsd: brokerFeeUsd,
@@ -724,6 +728,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 required cashPaidUsd,
                 required resultingShares,
                 required resultingCostBasisUsd,
+                required resetPeakProfit,
                 grossCostUsd,
                 brokerFeeUsd,
                 exchangeFeeUsd,
@@ -740,18 +745,30 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                       portfolioId: portfolioId,
                       ticker: ticker,
                     );
+                final effectiveSellPlanEnabled =
+                    holding?.sellPlanEnabled ?? sellPlanEnabled;
+                final holdingAfterBuy = baseHolding.copyWith(
+                  ticker: ticker,
+                  shares: resultingShares,
+                  costBasisUsd: resultingCostBasisUsd,
+                  priceUsd: buyPriceUsd,
+                  sellPlanEnabled: effectiveSellPlanEnabled,
+                  takeProfitPct: holding?.takeProfitPct ?? takeProfitPct,
+                  trailingStopPct: holding?.trailingStopPct ?? trailingStopPct,
+                  stopLossPct: holding?.stopLossPct ?? stopLossPct,
+                );
+                final peakProfitPct = switch ((holding, resetPeakProfit)) {
+                  (final existing?, false) => existing.peakProfitPct,
+                  (final existing?, true) =>
+                    holdingAfterBuy.unrealizedPnlPct >= existing.takeProfitPct
+                        ? double.parse(
+                            holdingAfterBuy.unrealizedPnlPct.toStringAsFixed(2),
+                          )
+                        : null,
+                  _ => null,
+                };
                 final updatedHolding = await _enrichHoldingWithProfile(
-                  baseHolding.copyWith(
-                    ticker: ticker,
-                    shares: resultingShares,
-                    costBasisUsd: resultingCostBasisUsd,
-                    priceUsd: buyPriceUsd,
-                    sellPlanEnabled: sellPlanEnabled,
-                    takeProfitPct: takeProfitPct,
-                    trailingStopPct: trailingStopPct,
-                    stopLossPct: stopLossPct,
-                    peakProfitPct: null,
-                  ),
+                  holdingAfterBuy.copyWith(peakProfitPct: peakProfitPct),
                   existing: holding,
                 );
                 await provider.buyHolding(
