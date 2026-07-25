@@ -504,6 +504,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           body: AbsorbPointer(
             absorbing: _isLoading,
             child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 const SizedBox(height: 8),
 
@@ -516,6 +517,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                   child: TextField(
                     controller: _nameController,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
                       hintText: 'ชื่อรายการ',
                       hintStyle: TextStyle(color: textSecondary),
@@ -540,6 +542,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   child: TextField(
                     controller: _amountController,
                     focusNode: _amountFocusNode,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     readOnly: calculatorTextFieldReadOnly,
                     showCursor: true,
                     keyboardType: calculatorTextInputType,
@@ -837,6 +840,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   ),
                   child: TextField(
                     controller: _noteController,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     maxLines: 2,
                     decoration: InputDecoration(
                       hintText: 'โน้ต (ไม่บังคับ)',

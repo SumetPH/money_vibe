@@ -181,10 +181,32 @@ class RecurringTransactionProvider extends ChangeNotifier {
   }
 
   Future<void> reorderRecurring(int oldIndex, int newIndex) async {
-    if (newIndex > oldIndex) newIndex--;
+    final visibleRecurring = recurring.toList();
+    if (oldIndex < 0 ||
+        oldIndex >= visibleRecurring.length ||
+        newIndex < 0 ||
+        newIndex > visibleRecurring.length) {
+      return;
+    }
 
-    final moved = _recurring.removeAt(oldIndex);
-    _recurring.insert(newIndex, moved);
+    if (newIndex > oldIndex) newIndex--;
+    if (newIndex == oldIndex) return;
+
+    final moved = visibleRecurring.removeAt(oldIndex);
+    visibleRecurring.insert(newIndex, moved);
+
+    if (_showHiddenRecurring) {
+      _recurring
+        ..clear()
+        ..addAll(visibleRecurring);
+    } else {
+      var visibleIndex = 0;
+      for (var i = 0; i < _recurring.length; i++) {
+        if (!_recurring[i].isHidden) {
+          _recurring[i] = visibleRecurring[visibleIndex++];
+        }
+      }
+    }
 
     for (var i = 0; i < _recurring.length; i++) {
       _recurring[i] = _recurring[i].copyWith(sortOrder: i * 10);
