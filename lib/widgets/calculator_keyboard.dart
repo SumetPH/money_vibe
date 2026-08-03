@@ -1,21 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_radii.dart';
 import '../providers/settings_provider.dart';
 import '../utils/math_evaluator.dart';
 
 class _CalculatorKey {
   final String label;
   final String value;
-  final int flex;
 
-  const _CalculatorKey(this.label, {String? value, this.flex = 1})
-    : value = value ?? label;
+  const _CalculatorKey(this.label, {String? value}) : value = value ?? label;
 }
 
-class CalculatorKeyboard extends StatelessWidget {
+class CalculatorKeyboard extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onDone;
   final Color actionButtonColor;
@@ -29,32 +27,38 @@ class CalculatorKeyboard extends StatelessWidget {
     this.resultDecimalPlaces = 2,
   });
 
+  @override
+  State<CalculatorKeyboard> createState() => _CalculatorKeyboardState();
+}
+
+class _CalculatorKeyboardState extends State<CalculatorKeyboard> {
+  Timer? _backspaceTimer;
+
   void _handleKeyPress(String key) {
     HapticFeedback.lightImpact();
-    SystemSound.play(SystemSoundType.click);
 
-    final text = controller.text;
-    final selection = controller.selection;
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
 
     // Default to cursor at end if no selection
     int start = selection.isValid ? selection.start : text.length;
     int end = selection.isValid ? selection.end : text.length;
 
     if (key == 'AC') {
-      controller.clear();
+      widget.controller.clear();
       return;
     }
 
     if (key == '⌫') {
       if (start == end && start > 0) {
         final newText = text.substring(0, start - 1) + text.substring(start);
-        controller.value = TextEditingValue(
+        widget.controller.value = TextEditingValue(
           text: newText,
           selection: TextSelection.collapsed(offset: start - 1),
         );
       } else if (start != end) {
         final newText = text.substring(0, start) + text.substring(end);
-        controller.value = TextEditingValue(
+        widget.controller.value = TextEditingValue(
           text: newText,
           selection: TextSelection.collapsed(offset: start),
         );
@@ -74,7 +78,7 @@ class CalculatorKeyboard extends StatelessWidget {
 
     if (key == 'ตกลง') {
       _evaluateExpression();
-      onDone();
+      widget.onDone();
       return;
     }
 
@@ -87,7 +91,7 @@ class CalculatorKeyboard extends StatelessWidget {
           // Replace operator
           final newText =
               text.substring(0, start - 1) + key + text.substring(end);
-          controller.value = TextEditingValue(
+          widget.controller.value = TextEditingValue(
             text: newText,
             selection: TextSelection.collapsed(offset: start),
           );
@@ -101,14 +105,39 @@ class CalculatorKeyboard extends StatelessWidget {
 
     // General character insertion
     final newText = text.substring(0, start) + key + text.substring(end);
-    controller.value = TextEditingValue(
+    widget.controller.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: start + key.length),
     );
   }
 
+  void _startBackspaceAutoRepeat() {
+    _backspaceTimer?.cancel();
+    // After 350ms delay, repeat backspace every 70ms
+    _backspaceTimer = Timer(const Duration(milliseconds: 350), () {
+      _backspaceTimer = Timer.periodic(const Duration(milliseconds: 70), (_) {
+        if (widget.controller.text.isEmpty) {
+          _stopBackspaceAutoRepeat();
+          return;
+        }
+        _handleKeyPress('⌫');
+      });
+    });
+  }
+
+  void _stopBackspaceAutoRepeat() {
+    _backspaceTimer?.cancel();
+    _backspaceTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopBackspaceAutoRepeat();
+    super.dispose();
+  }
+
   void _handlePercent() {
-    final text = controller.text;
+    final text = widget.controller.text;
     if (text.isEmpty) return;
 
     // Find the last number in the expression (after the last operator)
@@ -139,20 +168,20 @@ class CalculatorKeyboard extends StatelessWidget {
         : '';
 
     final newText = prefix + formatted;
-    controller.value = TextEditingValue(
+    widget.controller.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newText.length),
     );
   }
 
   void _evaluateExpression() {
-    final expression = controller.text;
+    final expression = widget.controller.text;
     if (expression.isEmpty) return;
 
     final result = MathEvaluator.evaluate(expression);
     if (result != null) {
       final formatted = _formatResult(result);
-      controller.value = TextEditingValue(
+      widget.controller.value = TextEditingValue(
         text: formatted,
         selection: TextSelection.collapsed(offset: formatted.length),
       );
@@ -165,7 +194,7 @@ class CalculatorKeyboard extends StatelessWidget {
     }
 
     return value
-        .toStringAsFixed(resultDecimalPlaces)
+        .toStringAsFixed(widget.resultDecimalPlaces)
         .replaceFirst(RegExp(r'\.?0+$'), '');
   }
 
@@ -187,70 +216,66 @@ class CalculatorKeyboard extends StatelessWidget {
       child: ExcludeFocus(
         child: Container(
           color: keyboardBg,
-          padding: const EdgeInsets.all(6),
           child: SafeArea(
             top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Row 1
                 _buildRow(
                   const [
-                    _CalculatorKey('AC'),
-                    _CalculatorKey('%'),
                     _CalculatorKey('÷', value: '/'),
-                    _CalculatorKey('⌫'),
+                    _CalculatorKey('AC'),
+                    _CalculatorKey('ตกลง'),
                   ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
                 ),
-                const SizedBox(height: 6),
-                // Row 2
                 _buildRow(
                   const [
-                    _CalculatorKey('7'),
-                    _CalculatorKey('8'),
-                    _CalculatorKey('9'),
+                    _CalculatorKey('+'),
+                    _CalculatorKey('-'),
                     _CalculatorKey('×', value: '*'),
                   ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
                 ),
-                const SizedBox(height: 6),
-                // Row 3
+                _buildRow(
+                  const [
+                    _CalculatorKey('7'),
+                    _CalculatorKey('8'),
+                    _CalculatorKey('9'),
+                  ],
+                  primaryText,
+                  numberKeyBg,
+                  opKeyBg,
+                ),
                 _buildRow(
                   const [
                     _CalculatorKey('4'),
                     _CalculatorKey('5'),
                     _CalculatorKey('6'),
-                    _CalculatorKey('-'),
                   ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
                 ),
-                const SizedBox(height: 6),
-                // Row 4
                 _buildRow(
                   const [
                     _CalculatorKey('1'),
                     _CalculatorKey('2'),
                     _CalculatorKey('3'),
-                    _CalculatorKey('+'),
                   ],
                   primaryText,
                   numberKeyBg,
                   opKeyBg,
                 ),
-                const SizedBox(height: 6),
-                // Row 5
                 _buildRow(
                   const [
-                    _CalculatorKey('0', flex: 2),
                     _CalculatorKey('.'),
-                    _CalculatorKey('ตกลง'),
+                    _CalculatorKey('0'),
+                    _CalculatorKey('⌫'),
                   ],
                   primaryText,
                   numberKeyBg,
@@ -269,56 +294,123 @@ class CalculatorKeyboard extends StatelessWidget {
     List<_CalculatorKey> keys,
     Color textColor,
     Color numBg,
-    Color opBg,
-  ) {
+    Color opBg, {
+    double height = 52,
+  }) {
     return Row(
       children: keys.map((key) {
-        final isOp = {'+', '-', '*', '/', 'AC', '⌫', '%'}.contains(key.value);
+        final isOp = {'+', '-', '*', '/', 'AC', '%'}.contains(key.value);
         final isDone = key.value == 'ตกลง';
 
         Color bg = numBg;
         Color txtColor = textColor;
         if (isDone) {
-          bg = actionButtonColor;
+          bg = widget.actionButtonColor;
           txtColor = Colors.white;
         } else if (isOp) {
           bg = opBg;
         }
 
         return Expanded(
-          flex: key.flex,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: bg,
-                  foregroundColor: txtColor,
-                  elevation: 1,
-                  padding: EdgeInsets.zero,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.medium),
-                  ),
-                ),
-                onPressed: () => _handleKeyPress(key.value),
-                child: key.value == '⌫'
-                    ? Icon(Icons.backspace_outlined, color: textColor, size: 20)
-                    : Text(
-                        key.label,
-                        style: TextStyle(
-                          fontSize: isDone ? 16 : 18,
-                          fontWeight: isDone
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-              ),
+          child: SizedBox(
+            height: height,
+            child: _CalculatorKeyButton(
+              keyInfo: key,
+              backgroundColor: bg,
+              textColor: txtColor,
+              isDone: isDone,
+              onTap: () => _handleKeyPress(key.value),
+              onLongPressStart: key.value == '⌫'
+                  ? _startBackspaceAutoRepeat
+                  : null,
+              onLongPressEnd: key.value == '⌫'
+                  ? _stopBackspaceAutoRepeat
+                  : null,
             ),
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+class _CalculatorKeyButton extends StatefulWidget {
+  final _CalculatorKey keyInfo;
+  final Color backgroundColor;
+  final Color textColor;
+  final bool isDone;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPressStart;
+  final VoidCallback? onLongPressEnd;
+
+  const _CalculatorKeyButton({
+    required this.keyInfo,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.isDone,
+    required this.onTap,
+    this.onLongPressStart,
+    this.onLongPressEnd,
+  });
+
+  @override
+  State<_CalculatorKeyButton> createState() => _CalculatorKeyButtonState();
+}
+
+class _CalculatorKeyButtonState extends State<_CalculatorKeyButton> {
+  void _onTapDown(TapDownDetails details) {
+    widget.onTap();
+    widget.onLongPressStart?.call();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    widget.onLongPressEnd?.call();
+  }
+
+  void _onTapCancel() {
+    widget.onLongPressEnd?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final splashColor = widget.textColor.withValues(alpha: 0.2);
+    final highlightColor = widget.textColor.withValues(alpha: 0.1);
+
+    return Material(
+      color: widget.backgroundColor,
+      child: InkWell(
+        onTapDown: _onTapDown,
+        onTapUp: (details) => _onTapUp(details),
+        onTapCancel: _onTapCancel,
+        onTap: () {}, // Required for InkWell ripple animation
+        splashColor: splashColor,
+        highlightColor: highlightColor,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey.withValues(alpha: 0.2),
+              width: 0.1,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: widget.keyInfo.value == '⌫'
+              ? Icon(
+                  Icons.backspace_outlined,
+                  color: widget.textColor,
+                  size: 20,
+                )
+              : Text(
+                  widget.keyInfo.label,
+                  style: TextStyle(
+                    color: widget.textColor,
+                    fontSize: widget.isDone ? 16 : 18,
+                    fontWeight: widget.isDone
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }
