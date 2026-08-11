@@ -80,9 +80,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     final bgColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -98,7 +95,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   onPressed: () => Scaffold.of(ctx).openDrawer(),
                 ),
               ),
-        title: const Text('บันทึกการเทรด'),
+        title: const Text('บันทึกการลงทุน'),
         actions: _buildAppBarActions(context),
         bottom: TabBar(
           controller: _tabController,
@@ -106,10 +103,10 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: 'สรุป'),
-            Tab(text: 'รายปี'),
-            Tab(text: 'ภาษีไทย'),
+            Tab(text: 'สรุปรายปี'),
+            Tab(text: 'ขาย'),
             Tab(text: 'ซื้อ'),
+            Tab(text: 'ภาษีไทย'),
           ],
         ),
       ),
@@ -119,9 +116,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               .watch<TransactionProvider>()
               .transactions;
           final trades = _filteredTrades(accountProvider.stockTrades);
-          final summary = _TradeSummary.fromTrades(trades);
-          final sellFeeSummary = _FeeSummary.fromTrades(trades);
-          final tradeMonthSections = _groupTradesByMonth(trades);
           final portfolioAccounts = accountProvider.accounts
               .where((account) => account.isPortfolio)
               .toList();
@@ -158,62 +152,20 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               physics: const NeverScrollableScrollPhysics(),
               controller: _tabController,
               children: [
-                CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: _SummaryPanel(
-                        summary: summary,
-                        feeSummary: sellFeeSummary,
-                        isDarkMode: isDarkMode,
-                      ),
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: 16)),
-                    if (trades.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _EmptyTradeState(
-                          isDarkMode: isDarkMode,
-                          textColor: secondaryColor,
-                        ),
-                      )
-                    else
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate((
-                          context,
-                          sectionIndex,
-                        ) {
-                          final section = tradeMonthSections[sectionIndex];
-                          return _TradeMonthSection(
-                            section: section,
-                            isDarkMode: isDarkMode,
-                            portfolioNameOf: (trade) =>
-                                accountProvider
-                                    .findById(trade.portfolioId)
-                                    ?.name ??
-                                'พอร์ตหุ้น',
-                            onEdit: (trade) => _openTradeForm(context, trade),
-                            onDelete: (trade) =>
-                                _confirmDeleteTrade(context, trade),
-                          );
-                        }, childCount: tradeMonthSections.length),
-                      ),
-                    SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ],
-                ),
                 _YearlyTradeTab(
                   trades: accountProvider.stockTrades,
                   selectedYear: _selectedYear,
                   onYearChanged: (year) => setState(() => _selectedYear = year),
                   isDarkMode: isDarkMode,
                 ),
-                _AnnualTaxTab(
-                  trades: accountProvider.stockTrades,
-                  annualReports: accountProvider.portfolioAnnualReports,
-                  selectedYear: _selectedYear,
-                  principalAvailableForYearUsd: principalAvailableForYearUsd,
-                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                _SaleHistoryTab(
+                  trades: trades,
                   isDarkMode: isDarkMode,
+                  portfolioNameOf: (trade) =>
+                      accountProvider.findById(trade.portfolioId)?.name ??
+                      'พอร์ตหุ้น',
+                  onEdit: (trade) => _openTradeForm(context, trade),
+                  onDelete: (trade) => _confirmDeleteTrade(context, trade),
                 ),
                 _PurchaseHistoryTab(
                   purchases: accountProvider.stockPurchases,
@@ -225,6 +177,15 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                       _openPurchaseHistoryForm(context, purchase),
                   onDelete: (purchase) =>
                       _confirmDeletePurchase(context, purchase),
+                ),
+                _AnnualTaxTab(
+                  trades: accountProvider.stockTrades,
+                  annualReports: accountProvider.portfolioAnnualReports,
+                  selectedYear: _selectedYear,
+                  principalAvailableForYearUsd: principalAvailableForYearUsd,
+                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                  isDarkMode: isDarkMode,
                 ),
               ],
             ),
@@ -672,6 +633,62 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('ลบ Trade ${trade.ticker} แล้ว')));
+  }
+}
+
+class _SaleHistoryTab extends StatelessWidget {
+  final List<StockTrade> trades;
+  final bool isDarkMode;
+  final String Function(StockTrade trade) portfolioNameOf;
+  final ValueChanged<StockTrade> onEdit;
+  final ValueChanged<StockTrade> onDelete;
+
+  const _SaleHistoryTab({
+    required this.trades,
+    required this.isDarkMode,
+    required this.portfolioNameOf,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final sections = _groupTradesByMonth(trades);
+    final feeSummary = _FeeSummary.fromTrades(trades);
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+        if (trades.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _EmptyTradeState(
+              isDarkMode: isDarkMode,
+              textColor: textColor,
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _TradeMonthSection(
+                section: sections[index],
+                isDarkMode: isDarkMode,
+                portfolioNameOf: portfolioNameOf,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              ),
+              childCount: sections.length,
+            ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
   }
 }
 
@@ -2336,14 +2353,9 @@ class _FeeSummary {
 
 class _SummaryPanel extends StatelessWidget {
   final _TradeSummary summary;
-  final _FeeSummary? feeSummary;
   final bool isDarkMode;
 
-  const _SummaryPanel({
-    required this.summary,
-    this.feeSummary,
-    required this.isDarkMode,
-  });
+  const _SummaryPanel({required this.summary, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
@@ -2428,15 +2440,6 @@ class _SummaryPanel extends StatelessWidget {
             'Win/Loss ${summary.winCount}/${summary.lossCount}',
             style: TextStyle(fontSize: 12, color: secondaryColor),
           ),
-          const SizedBox(height: 14),
-          if (feeSummary != null) ...[
-            Divider(
-              height: 1,
-              color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-            ),
-            const SizedBox(height: 14),
-            _FeeSummaryBreakdown(summary: feeSummary!, isDarkMode: isDarkMode),
-          ],
         ],
       ),
     );

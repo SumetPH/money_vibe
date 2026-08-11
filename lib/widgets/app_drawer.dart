@@ -161,7 +161,7 @@ class AppDrawer extends StatelessWidget {
                     ),
                     _DrawerItem(
                       icon: Icons.show_chart,
-                      label: 'บันทึกการเทรด',
+                      label: 'บันทึกการลงทุน',
                       selected: currentRoute == '/trade-tracker',
                       onTap: () => _navigate(context, '/trade-tracker'),
                       selectedColor: selectedColor,

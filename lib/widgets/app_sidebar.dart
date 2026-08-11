@@ -58,7 +58,7 @@ class AppSidebar extends StatefulWidget {
     ),
     SidebarItemData(
       icon: Icons.show_chart,
-      label: 'บันทึกการเทรด',
+      label: 'บันทึกการลงทุน',
       route: '/trade-tracker',
     ),
     SidebarItemData(
