@@ -179,6 +179,9 @@ AllocationAnalysis buildAllocationAnalysis({
   required List<PortfolioAllocationTarget> targets,
   double buyAmount = 0,
 }) {
+  final activeTickers = holdings
+      .map((holding) => _normalizeTicker(holding.ticker))
+      .toSet();
   final targetsByTicker = {
     for (final target in targets) _normalizeTicker(target.ticker): target,
   };
@@ -196,9 +199,11 @@ AllocationAnalysis buildAllocationAnalysis({
     totalCurrentValue: totalCurrentValue,
     buyAmount: buyAmount,
   );
-  final targetPercentTotal = targetsByTicker.values
-      .where((target) => target.isEnabled)
-      .fold<double>(0, (sum, target) => sum + target.targetPercent);
+  final targetPercentTotal = targetsByTicker.entries
+      .where(
+        (entry) => activeTickers.contains(entry.key) && entry.value.isEnabled,
+      )
+      .fold<double>(0, (sum, entry) => sum + entry.value.targetPercent);
   final projectedTotal = totalCurrentValue + buyAmount;
 
   final rows = holdings.map((holding) {
