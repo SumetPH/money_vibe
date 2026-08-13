@@ -277,6 +277,53 @@ class BudgetProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> reorderBudgetGroups(int oldIndex, int newIndex) async {
+    final groupedBudgets = <String, List<Budget>>{};
+    final ungroupedBudgets = <Budget>[];
+
+    for (final budget in _budgets) {
+      final groupName = budget.groupName;
+      if (groupName == null || groupName.isEmpty) {
+        ungroupedBudgets.add(budget);
+      } else {
+        (groupedBudgets[groupName] ??= []).add(budget);
+      }
+    }
+
+    final groupNames = groupedBudgets.keys.toList();
+    if (oldIndex < 0 || oldIndex >= groupNames.length) return;
+    if (newIndex > oldIndex) newIndex--;
+    if (newIndex < 0 || newIndex >= groupNames.length) return;
+    if (oldIndex == newIndex) return;
+
+    final movedGroup = groupNames.removeAt(oldIndex);
+    groupNames.insert(newIndex, movedGroup);
+
+    final reorderedBudgets = <Budget>[
+      ...ungroupedBudgets,
+      for (final groupName in groupNames) ...groupedBudgets[groupName]!,
+    ];
+
+    for (var i = 0; i < reorderedBudgets.length; i++) {
+      reorderedBudgets[i] = reorderedBudgets[i].copyWith(sortOrder: i * 10);
+    }
+
+    _budgets
+      ..clear()
+      ..addAll(reorderedBudgets);
+    notifyListeners();
+
+    try {
+      for (final budget in _budgets) {
+        await _db.updateBudgetSortOrder(budget.id, budget.sortOrder);
+      }
+    } catch (e) {
+      debugPrint('BudgetProvider: Error reordering budget groups: $e');
+      await reload();
+      rethrow;
+    }
+  }
+
   bool _isBudgetInGroup(Budget budget, String? groupName) {
     if (groupName == null) {
       return budget.groupName == null || budget.groupName!.isEmpty;

@@ -545,55 +545,76 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       );
     }
 
-    final List<Widget> items = [];
+    final listHeader = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        header,
+        if (ungrouped.isNotEmpty) buildGroupList(ungrouped, null),
+      ],
+    );
 
-    // Ungrouped items (no header)
-    if (ungrouped.isNotEmpty) {
-      items.add(buildGroupList(ungrouped, null));
-    }
+    return ReorderableListView.builder(
+      header: listHeader,
+      buildDefaultDragHandles: false,
+      onReorder: _isReorderMode
+          ? budgetProvider.reorderBudgetGroups
+          : (_, _) {},
+      itemCount: sortedGroups.length,
+      itemBuilder: (context, index) {
+        final entry = sortedGroups[index];
+        final groupBudgets = entry.value;
+        final groupTotal = groupBudgets.fold(0.0, (s, b) => s + b.amount);
+        final groupPct = totalBudget > 0 ? groupTotal / totalBudget * 100 : 0.0;
 
-    // Named group sections
-    for (final entry in sortedGroups) {
-      final groupBudgets = entry.value;
-      final groupTotal = groupBudgets.fold(0.0, (s, b) => s + b.amount);
-      final groupPct = totalBudget > 0 ? groupTotal / totalBudget * 100 : 0.0;
-
-      items.add(
-        GroupHeader(
+        return Column(
           key: ValueKey('group_${entry.key}'),
-          title: entry.key,
-          isDarkMode: isDarkMode,
-          trailing: [
-            Text(
-              formatAmount(groupTotal),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: textPrimary,
-              ),
-            ),
-            SizedBox(
-              width: 52,
-              child: Text(
-                '${groupPct.toStringAsFixed(1)}%',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode
-                      ? AppColors.darkTextPrimary
-                      : AppColors.textSecondary,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GroupHeader(
+              title: entry.key,
+              isDarkMode: isDarkMode,
+              trailing: [
+                Text(
+                  formatAmount(groupTotal),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
                 ),
-              ),
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    '${groupPct.toStringAsFixed(1)}%',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                if (_isReorderMode)
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            buildGroupList(groupBudgets, entry.key),
           ],
-        ),
-      );
-
-      items.add(buildGroupList(groupBudgets, entry.key));
-    }
-
-    return ListView(children: [header, ...items]);
+        );
+      },
+    );
   }
 
   void _openForm(BuildContext context, Budget? budget) {
