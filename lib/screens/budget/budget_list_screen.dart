@@ -172,17 +172,33 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       );
 
     return sortedGroups.map((entry) {
-      final total = entry.value.fold(0.0, (sum, budget) => sum + budget.amount);
-      final spent = entry.value.fold(
-        0.0,
-        (sum, budget) =>
-            sum + _getSpentFromCategoryTotals(budget, spentByCategoryId),
-      );
+      var total = 0.0;
+      var spent = 0.0;
+      var available = 0.0;
+      var overspent = 0.0;
+
+      for (final budget in entry.value) {
+        final budgetSpent = _getSpentFromCategoryTotals(
+          budget,
+          spentByCategoryId,
+        );
+        final remaining = budget.amount - budgetSpent;
+        total += budget.amount;
+        spent += budgetSpent;
+        if (remaining >= 0) {
+          available += remaining;
+        } else {
+          overspent += remaining.abs();
+        }
+      }
+
       return _BudgetGroupSummary(
         name: entry.key,
         percentage: totalBudget > 0 ? (total / totalBudget) * 100 : 0.0,
         total: total,
         spent: spent,
+        available: available,
+        overspent: overspent,
       );
     }).toList();
   }
@@ -245,12 +261,21 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           period,
           accounts,
         );
-        final totalBudget = budgets.fold(0.0, (s, b) => s + b.amount);
-        final totalSpent = budgets.fold(
-          0.0,
-          (s, b) => s + _getSpentFromCategoryTotals(b, spentByCategoryId),
-        );
-        final totalRemaining = totalBudget - totalSpent;
+        var totalBudget = 0.0;
+        var totalSpent = 0.0;
+        var totalAvailable = 0.0;
+        var totalOverspent = 0.0;
+        for (final budget in budgets) {
+          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
+          final remaining = budget.amount - spent;
+          totalBudget += budget.amount;
+          totalSpent += spent;
+          if (remaining >= 0) {
+            totalAvailable += remaining;
+          } else {
+            totalOverspent += remaining.abs();
+          }
+        }
         final overallProgress = totalBudget > 0
             ? (totalSpent / totalBudget)
             : 0.0;
@@ -288,7 +313,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   periodLabel,
                   totalBudget,
                   totalSpent,
-                  totalRemaining,
+                  totalAvailable,
+                  totalOverspent,
                   overallProgress,
                   isDarkMode,
                 ),
@@ -324,7 +350,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         _SummaryHeader(
                           totalBudget: totalBudget,
                           totalSpent: totalSpent,
-                          totalRemaining: totalRemaining,
+                          totalAvailable: totalAvailable,
+                          totalOverspent: totalOverspent,
                           progress: overallProgress,
                           isDarkMode: isDarkMode,
                           surfaceColor: surfaceColor,
@@ -348,17 +375,16 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           ),
           bottomNavigationBar: BottomSummaryBar(
             left: BottomSummaryValue(
-              label: 'ใช้ไปแล้ว',
-              value: formatAmount(totalSpent),
+              label: totalOverspent > 0.001 ? 'เกินงบ' : 'ใช้ไปแล้ว',
+              value: formatAmount(
+                totalOverspent > 0.001 ? totalOverspent : totalSpent,
+              ),
               color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
             ),
             right: BottomSummaryValue(
-              label: totalRemaining >= 0 ? 'คงเหลือ' : 'เกินงบ',
-              value:
-                  '${totalRemaining >= 0 ? '' : '-'}${formatAmount(totalRemaining.abs())}',
-              color: totalRemaining >= 0
-                  ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
-                  : (isDarkMode ? AppColors.darkExpense : AppColors.expense),
+              label: 'ยังใช้ได้',
+              value: formatAmount(totalAvailable),
+              color: isDarkMode ? AppColors.darkIncome : AppColors.income,
             ),
             onAdd: () => _openAddTransactionForm(context),
             isDarkMode: isDarkMode,
@@ -704,7 +730,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     String periodLabel,
     double totalBudget,
     double totalSpent,
-    double totalRemaining,
+    double totalAvailable,
+    double totalOverspent,
     double overallProgress,
     bool isDarkMode,
   ) {
@@ -718,7 +745,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         periodLabel: periodLabel,
         totalBudget: totalBudget,
         totalSpent: totalSpent,
-        totalRemaining: totalRemaining,
+        totalAvailable: totalAvailable,
+        totalOverspent: totalOverspent,
         overallProgress: overallProgress,
         isDarkMode: isDarkMode,
       ),
@@ -919,7 +947,8 @@ class _MonthSelector extends StatelessWidget {
 class _SummaryHeader extends StatelessWidget {
   final double totalBudget;
   final double totalSpent;
-  final double totalRemaining;
+  final double totalAvailable;
+  final double totalOverspent;
   final double progress;
   final bool isDarkMode;
   final Color surfaceColor;
@@ -930,7 +959,8 @@ class _SummaryHeader extends StatelessWidget {
   const _SummaryHeader({
     required this.totalBudget,
     required this.totalSpent,
-    required this.totalRemaining,
+    required this.totalAvailable,
+    required this.totalOverspent,
     required this.progress,
     required this.isDarkMode,
     required this.surfaceColor,
@@ -977,18 +1007,37 @@ class _SummaryHeader extends StatelessWidget {
               Container(width: 1, height: 40, color: dividerColor),
               Expanded(
                 child: _SummaryCell(
-                  label: 'คงเหลือ',
-                  amount: totalRemaining,
-                  color: totalRemaining >= 0
-                      ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
-                      : (isDarkMode
-                            ? AppColors.darkExpense
-                            : AppColors.expense),
+                  label: 'ยังใช้ได้',
+                  amount: totalAvailable,
+                  color: isDarkMode ? AppColors.darkIncome : AppColors.income,
                   textSecondary: textSecondary,
                 ),
               ),
             ],
           ),
+          if (totalOverspent > 0.001) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 16,
+                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'เกินงบรวม ${formatAmount(totalOverspent)}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode
+                        ? AppColors.darkExpense
+                        : AppColors.expense,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           _BudgetProgressBar(
             progress: progress,
@@ -1317,15 +1366,17 @@ class _BudgetGroupSummary {
   final double percentage;
   final double total;
   final double spent;
+  final double available;
+  final double overspent;
 
   const _BudgetGroupSummary({
     required this.name,
     required this.percentage,
     required this.total,
     required this.spent,
+    required this.available,
+    required this.overspent,
   });
-
-  double get remaining => total - spent;
 }
 
 class _BudgetGroupDetailsSheet extends StatelessWidget {
@@ -1333,7 +1384,8 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
   final String periodLabel;
   final double totalBudget;
   final double totalSpent;
-  final double totalRemaining;
+  final double totalAvailable;
+  final double totalOverspent;
   final double overallProgress;
   final bool isDarkMode;
 
@@ -1342,7 +1394,8 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
     required this.periodLabel,
     required this.totalBudget,
     required this.totalSpent,
-    required this.totalRemaining,
+    required this.totalAvailable,
+    required this.totalOverspent,
     required this.overallProgress,
     required this.isDarkMode,
   });
@@ -1415,7 +1468,8 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
           _SummaryHeader(
             totalBudget: totalBudget,
             totalSpent: totalSpent,
-            totalRemaining: totalRemaining,
+            totalAvailable: totalAvailable,
+            totalOverspent: totalOverspent,
             progress: overallProgress,
             isDarkMode: isDarkMode,
             surfaceColor: bgColor,
@@ -1438,13 +1492,6 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                     separatorBuilder: (_, index) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final summary = groupSummaries[index];
-                      final remainingColor = summary.remaining >= 0
-                          ? (isDarkMode
-                                ? AppColors.darkIncome
-                                : AppColors.income)
-                          : (isDarkMode
-                                ? AppColors.darkExpense
-                                : AppColors.expense);
                       final percentageBgColor = isDarkMode
                           ? AppColors.darkSurfaceVariant
                           : AppColors.header.withValues(alpha: 0.12);
@@ -1524,15 +1571,43 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                                 ),
                                 Expanded(
                                   child: _GroupDetailMetric(
-                                    label: 'ยอดคงเหลือ',
-                                    value: formatAmount(summary.remaining),
-                                    valueColor: remainingColor,
+                                    label: 'ยังใช้ได้',
+                                    value: formatAmount(summary.available),
+                                    valueColor: isDarkMode
+                                        ? AppColors.darkIncome
+                                        : AppColors.income,
                                     textSecondary: textSecondary,
                                     alignment: CrossAxisAlignment.end,
                                   ),
                                 ),
                               ],
                             ),
+                            if (summary.overspent > 0.001) ...[
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 16,
+                                    color: isDarkMode
+                                        ? AppColors.darkExpense
+                                        : AppColors.expense,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'เกินงบ ${formatAmount(summary.overspent)}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDarkMode
+                                          ? AppColors.darkExpense
+                                          : AppColors.expense,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       );
