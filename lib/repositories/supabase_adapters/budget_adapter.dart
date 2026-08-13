@@ -77,6 +77,18 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
   }
 
   @override
+  Future<void> updateBudgets(List<Budget> budgets) async {
+    if (budgets.isEmpty) return;
+
+    _requireAuth();
+    repo.log('Updating ${budgets.length} budgets for user: $currentUserId');
+    await client
+        .from('budgets')
+        .upsert(budgets.map(_budgetToSupabase).toList(), onConflict: 'id');
+    await repo.updateSyncLog('budgets');
+  }
+
+  @override
   Future<void> updateBudgetSortOrder(String id, int sortOrder) async {
     _requireAuth();
     repo.log('Updating budget sort order: $id -> $sortOrder');

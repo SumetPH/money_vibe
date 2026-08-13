@@ -196,6 +196,47 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     return '$categoryName ใช้อยู่ในงบ "${error.budgetName}" แล้ว';
   }
 
+  Future<bool> _confirmCategoryTransfer(
+    BuildContext context, {
+    required Category category,
+    required Budget sourceBudget,
+    required bool isDark,
+  }) async {
+    final editedName = _nameController.text.trim();
+    final targetBudgetName = editedName.isNotEmpty
+        ? editedName
+        : widget.budget?.name ?? 'งบปัจจุบัน';
+    final textColor = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+            title: Text('ย้ายหมวดหมู่', style: TextStyle(color: textColor)),
+            content: Text(
+              'หมวดหมู่ "${category.name}" ใช้อยู่ในงบ '
+              '"${sourceBudget.name}"\n\n'
+              'หากยืนยัน หมวดหมู่นี้จะถูกย้ายมาอยู่ในงบ '
+              '"$targetBudgetName" เมื่อบันทึก',
+              style: TextStyle(color: textColor),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('ย้ายมา'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -223,7 +264,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
 
     try {
       if (_isEditing) {
-        await provider.updateBudget(
+        await provider.updateBudgetWithCategoryTransfers(
           widget.budget!.copyWith(
             name: name,
             amount: amount,
@@ -796,7 +837,8 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       final cat = categories[i];
                       final isSelected = _selectedCategoryIds.contains(cat.id);
                       final assignedBudget = assignedBudgets[cat.id];
-                      final isDisabled = assignedBudget != null && !isSelected;
+                      final isDisabled =
+                          assignedBudget != null && !isSelected && !_isEditing;
                       final itemTextColor = isDisabled
                           ? textColor.withValues(alpha: 0.5)
                           : textColor;
@@ -828,7 +870,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         subtitle: assignedBudget == null
                             ? null
                             : Text(
-                                'ใช้อยู่ในงบ: ${assignedBudget.name}',
+                                isSelected
+                                    ? 'จะย้ายมาจากงบ: ${assignedBudget.name}'
+                                    : 'ใช้อยู่ในงบ: ${assignedBudget.name}',
                                 style: TextStyle(
                                   color: isDisabled
                                       ? subtitleColor.withValues(alpha: 0.7)
@@ -848,7 +892,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         enabled: !isDisabled,
                         onTap: isDisabled
                             ? null
-                            : () {
+                            : () async {
+                                if (!isSelected && assignedBudget != null) {
+                                  final confirmed =
+                                      await _confirmCategoryTransfer(
+                                        context,
+                                        category: cat,
+                                        sourceBudget: assignedBudget,
+                                        isDark: isDark,
+                                      );
+                                  if (!confirmed || !mounted) return;
+                                }
+
                                 setModalState(() {
                                   if (isSelected) {
                                     _selectedCategoryIds.remove(cat.id);

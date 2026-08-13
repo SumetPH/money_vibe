@@ -377,6 +377,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _budgetAdapter.updateBudget(budget);
 
   @override
+  Future<void> updateBudgets(List<Budget> budgets) =>
+      _budgetAdapter.updateBudgets(budgets);
+
+  @override
   Future<void> updateBudgetSortOrder(String id, int sortOrder) =>
       _budgetAdapter.updateBudgetSortOrder(id, sortOrder);
 

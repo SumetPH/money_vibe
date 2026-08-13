@@ -151,6 +151,55 @@ class BudgetProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateBudgetWithCategoryTransfers(Budget budget) async {
+    if (budget.type != BudgetType.expense) {
+      return updateBudget(budget);
+    }
+
+    final idx = _budgets.indexWhere((item) => item.id == budget.id);
+    if (idx == -1) return;
+
+    final selectedCategoryIds = budget.categoryIds.toSet();
+    final oldBudgets = List<Budget>.from(_budgets);
+    final changedBudgets = <Budget>[];
+
+    for (var i = 0; i < _budgets.length; i++) {
+      final existingBudget = _budgets[i];
+      if (existingBudget.id == budget.id ||
+          existingBudget.type != BudgetType.expense) {
+        continue;
+      }
+
+      final remainingCategoryIds = existingBudget.categoryIds
+          .where((categoryId) => !selectedCategoryIds.contains(categoryId))
+          .toList();
+      if (remainingCategoryIds.length == existingBudget.categoryIds.length) {
+        continue;
+      }
+
+      final updatedBudget = existingBudget.copyWith(
+        categoryIds: remainingCategoryIds,
+      );
+      _budgets[i] = updatedBudget;
+      changedBudgets.add(updatedBudget);
+    }
+
+    _budgets[idx] = budget;
+    changedBudgets.add(budget);
+    notifyListeners();
+
+    try {
+      await _db.updateBudgets(changedBudgets);
+    } catch (e) {
+      debugPrint('BudgetProvider: Error transferring budget categories: $e');
+      _budgets
+        ..clear()
+        ..addAll(oldBudgets);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> deleteBudget(String id) async {
     final idx = _budgets.indexWhere((b) => b.id == id);
     if (idx == -1) return;

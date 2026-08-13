@@ -105,6 +105,7 @@ abstract class BudgetRepositoryInterface {
   Future<List<Budget>> getBudgets();
   Future<void> insertBudget(Budget budget);
   Future<void> updateBudget(Budget budget);
+  Future<void> updateBudgets(List<Budget> budgets);
   Future<void> updateBudgetSortOrder(String id, int sortOrder);
   Future<void> deleteBudget(String id);
   Future<Set<String>> getExistingBudgetIds();
