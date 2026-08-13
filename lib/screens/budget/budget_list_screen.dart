@@ -389,8 +389,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       (b) => b.groupName != null && b.groupName!.isNotEmpty,
     );
 
-    // ── Reorder mode or no groups → flat ReorderableListView ────────────────
-    if (_isReorderMode || !hasGroups) {
+    // ── No groups → flat ReorderableListView ────────────────────────────────
+    if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
         buildDefaultDragHandles: _isReorderMode,
@@ -466,26 +466,64 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             ),
       );
 
+    Widget buildGroupList(List<Budget> groupBudgets, String? groupName) {
+      return ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        buildDefaultDragHandles: _isReorderMode,
+        onReorder: _isReorderMode
+            ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
+                groupName,
+                oldIndex,
+                newIndex,
+              )
+            : (_, _) {},
+        proxyDecorator: (child, index, animation) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) {
+              final animValue = Curves.easeInOut.transform(animation.value);
+              final elevation = 1 + animValue * 8;
+              final scale = 1 + animValue * 0.02;
+              return Transform.scale(
+                scale: scale,
+                child: Material(
+                  elevation: elevation,
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(8),
+                  child: child,
+                ),
+              );
+            },
+            child: child,
+          );
+        },
+        itemCount: groupBudgets.length,
+        itemBuilder: (context, index) {
+          final budget = groupBudgets[index];
+          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
+          return _BudgetItem(
+            key: ValueKey(budget.id),
+            budget: budget,
+            spent: spent,
+            isReorderMode: _isReorderMode,
+            isDarkMode: isDarkMode,
+            surfaceColor: surfaceColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            dividerColor: dividerColor,
+            onTap: () => _openTransactions(context, budget, period),
+            onTapEdit: () => _openForm(context, budget),
+          );
+        },
+      );
+    }
+
     final List<Widget> items = [];
 
     // Ungrouped items (no header)
-    for (final budget in ungrouped) {
-      final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
-      items.add(
-        _BudgetItem(
-          key: ValueKey(budget.id),
-          budget: budget,
-          spent: spent,
-          isReorderMode: false,
-          isDarkMode: isDarkMode,
-          surfaceColor: surfaceColor,
-          textPrimary: textPrimary,
-          textSecondary: textSecondary,
-          dividerColor: dividerColor,
-          onTap: () => _openTransactions(context, budget, period),
-          onTapEdit: () => _openForm(context, budget),
-        ),
-      );
+    if (ungrouped.isNotEmpty) {
+      items.add(buildGroupList(ungrouped, null));
     }
 
     // Named group sections
@@ -526,24 +564,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         ),
       );
 
-      for (final budget in groupBudgets) {
-        final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
-        items.add(
-          _BudgetItem(
-            key: ValueKey(budget.id),
-            budget: budget,
-            spent: spent,
-            isReorderMode: false,
-            isDarkMode: isDarkMode,
-            surfaceColor: surfaceColor,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-            dividerColor: dividerColor,
-            onTap: () => _openTransactions(context, budget, period),
-            onTapEdit: () => _openForm(context, budget),
-          ),
-        );
-      }
+      items.add(buildGroupList(groupBudgets, entry.key));
     }
 
     return ListView(children: [header, ...items]);

@@ -191,5 +191,49 @@ class BudgetProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> reorderBudgetsInGroup(
+    String? groupName,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final groupBudgets = _budgets
+        .where((budget) => _isBudgetInGroup(budget, groupName))
+        .toList();
+
+    if (oldIndex < 0 || oldIndex >= groupBudgets.length) return;
+    if (newIndex > oldIndex) newIndex--;
+    if (newIndex < 0 || newIndex >= groupBudgets.length) return;
+    if (oldIndex == newIndex) return;
+
+    final moved = groupBudgets.removeAt(oldIndex);
+    groupBudgets.insert(newIndex, moved);
+
+    var groupIndex = 0;
+    for (var i = 0; i < _budgets.length; i++) {
+      if (_isBudgetInGroup(_budgets[i], groupName)) {
+        _budgets[i] = groupBudgets[groupIndex++];
+      }
+      _budgets[i] = _budgets[i].copyWith(sortOrder: i * 10);
+    }
+    notifyListeners();
+
+    try {
+      for (final budget in _budgets) {
+        await _db.updateBudgetSortOrder(budget.id, budget.sortOrder);
+      }
+    } catch (e) {
+      debugPrint('BudgetProvider: Error reordering budgets in group: $e');
+      await reload();
+      rethrow;
+    }
+  }
+
+  bool _isBudgetInGroup(Budget budget, String? groupName) {
+    if (groupName == null) {
+      return budget.groupName == null || budget.groupName!.isEmpty;
+    }
+    return budget.groupName == groupName;
+  }
+
   String generateId() => _uuid.v4();
 }
