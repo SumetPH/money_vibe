@@ -752,6 +752,61 @@ class AccountProvider extends ChangeNotifier {
     await reorderAccounts(actualOldIndex, actualNewIndex);
   }
 
+  Future<void> reorderAccountGroups(int oldIndex, int newIndex) async {
+    final groupedAccounts = <String, List<Account>>{};
+    for (final account in _accounts) {
+      (groupedAccounts[accountTypeDisplayGroup(account.type)] ??= []).add(
+        account,
+      );
+    }
+
+    final visibleGroupNames = <String>[];
+    for (final account in visibleAccounts) {
+      final groupName = accountTypeDisplayGroup(account.type);
+      if (!visibleGroupNames.contains(groupName)) {
+        visibleGroupNames.add(groupName);
+      }
+    }
+
+    if (oldIndex < 0 || oldIndex >= visibleGroupNames.length) return;
+    if (newIndex > oldIndex) newIndex--;
+    if (newIndex < 0 || newIndex >= visibleGroupNames.length) return;
+    if (oldIndex == newIndex) return;
+
+    final movedGroup = visibleGroupNames.removeAt(oldIndex);
+    visibleGroupNames.insert(newIndex, movedGroup);
+
+    final visibleGroups = visibleGroupNames.toSet();
+    final reorderedVisibleGroups = visibleGroupNames.iterator;
+    final allGroupNames = groupedAccounts.keys.map(
+      (groupName) => visibleGroups.contains(groupName)
+          ? (reorderedVisibleGroups..moveNext()).current
+          : groupName,
+    );
+    final reorderedAccounts = [
+      for (final groupName in allGroupNames) ...groupedAccounts[groupName]!,
+    ];
+
+    for (var i = 0; i < reorderedAccounts.length; i++) {
+      reorderedAccounts[i] = reorderedAccounts[i].copyWith(sortOrder: i * 10);
+    }
+
+    _accounts
+      ..clear()
+      ..addAll(reorderedAccounts);
+    notifyListeners();
+
+    try {
+      for (final account in _accounts) {
+        await _db.updateAccountSortOrder(account.id, account.sortOrder);
+      }
+    } catch (e) {
+      debugPrint('AccountProvider: Error reordering account groups: $e');
+      await reload();
+      rethrow;
+    }
+  }
+
   // ── Holdings CRUD ──────────────────────────────────────────────────────────
 
   Future<void> addHolding(StockHolding holding) async {

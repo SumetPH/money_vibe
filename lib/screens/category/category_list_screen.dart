@@ -172,7 +172,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     }
 
     return ReorderableListView.builder(
-      buildDefaultDragHandles: _isReorderMode,
+      buildDefaultDragHandles: false,
       onReorder: _isReorderMode
           ? (oldIndex, newIndex) async {
               await catProvider.reorderCategories(type, oldIndex, newIndex);
@@ -207,6 +207,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
           category: cat,
           total: total,
           isReorderMode: _isReorderMode,
+          reorderIndex: _isReorderMode ? i : null,
           onTap: () => _openTransactions(context, cat),
           onTapEdit: () => _openForm(context, cat),
           isDarkMode: isDarkMode,
@@ -325,6 +326,7 @@ class _CategoryItem extends StatelessWidget {
   final Category category;
   final double total;
   final bool isReorderMode;
+  final int? reorderIndex;
   final VoidCallback onTap;
   final VoidCallback onTapEdit;
   final bool isDarkMode;
@@ -334,6 +336,7 @@ class _CategoryItem extends StatelessWidget {
     required this.category,
     required this.total,
     this.isReorderMode = false,
+    this.reorderIndex,
     required this.onTap,
     required this.onTapEdit,
     required this.isDarkMode,
@@ -367,8 +370,15 @@ class _CategoryItem extends StatelessWidget {
             child: Row(
               children: [
                 // Drag handle (only visible in reorder mode)
-                if (isReorderMode) ...[
-                  Icon(Icons.drag_indicator, color: dividerColor, size: 20),
+                if (reorderIndex != null) ...[
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Icon(
+                      Icons.drag_indicator,
+                      color: dividerColor,
+                      size: 20,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                 ],
                 // Icon

@@ -127,7 +127,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                     ),
                   )
                 : ReorderableListView.builder(
-                    buildDefaultDragHandles: _isReorderMode,
+                    buildDefaultDragHandles: false,
                     onReorder: _isReorderMode
                         ? (oldIndex, newIndex) =>
                               provider.reorderRecurring(oldIndex, newIndex)
@@ -224,6 +224,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                           statusColor: statusColor,
                           typeColor: typeColor,
                           isReorderMode: _isReorderMode,
+                          reorderIndex: _isReorderMode ? i : null,
                           isDarkMode: isDark,
                           surfaceColor: surfaceColor,
                           textPrimary: textPrimary,
@@ -371,6 +372,7 @@ class _RecurringItem extends StatelessWidget {
   final Color? statusColor;
   final Color typeColor;
   final bool isReorderMode;
+  final int? reorderIndex;
   final bool isDarkMode;
   final Color surfaceColor;
   final Color textPrimary;
@@ -388,6 +390,7 @@ class _RecurringItem extends StatelessWidget {
     required this.statusColor,
     required this.typeColor,
     required this.isReorderMode,
+    this.reorderIndex,
     required this.isDarkMode,
     required this.surfaceColor,
     required this.textPrimary,
@@ -411,13 +414,16 @@ class _RecurringItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                if (isReorderMode) ...[
+                if (reorderIndex != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: Icon(
-                      Icons.drag_indicator,
-                      color: dividerColor,
-                      size: 20,
+                    child: ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],

@@ -90,6 +90,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
             final group = accountTypeDisplayGroup(account.type);
             groupedAccounts.putIfAbsent(group, () => []).add(account);
           }
+          final orderedGroups = groupedAccounts.entries.toList();
 
           return SafeArea(
             child: CustomScrollView(
@@ -113,90 +114,113 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     ],
                   ),
                 ),
-                // Each group has its own ReorderableListView
-                for (final group in accountGroupsForAccountList)
-                  if (groupedAccounts.containsKey(group.label) &&
-                      groupedAccounts[group.label]!.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GroupHeader(
-                            title: group.label,
-                            isDarkMode: isDarkMode,
-                            trailing: [
-                              Text(
-                                '${formatAmount(totals.groupTotals[group.label] ?? 0)} บาท',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.getAmountColor(
-                                    totals.groupTotals[group.label] ?? 0,
-                                    isDarkMode,
+                SliverReorderableList(
+                  itemCount: orderedGroups.length,
+                  onReorder: isReorderMode
+                      ? accountProvider.reorderAccountGroups
+                      : (_, _) {},
+                  proxyDecorator: (child, index, animation) => Material(
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : AppColors.surface,
+                    child: child,
+                  ),
+                  itemBuilder: (context, groupIndex) {
+                    final entry = orderedGroups[groupIndex];
+                    return Column(
+                      key: ValueKey('account_group_${entry.key}'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GroupHeader(
+                          title: entry.key,
+                          isDarkMode: isDarkMode,
+                          trailing: [
+                            Text(
+                              '${formatAmount(totals.groupTotals[entry.key] ?? 0)} บาท',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.getAmountColor(
+                                  totals.groupTotals[entry.key] ?? 0,
+                                  isDarkMode,
+                                ),
+                              ),
+                            ),
+                            if (isReorderMode)
+                              ReorderableDragStartListener(
+                                index: groupIndex,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Icon(
+                                    Icons.drag_indicator,
+                                    color: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
+                                    size: 20,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          ReorderableListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            buildDefaultDragHandles: isReorderMode,
-                            itemCount: groupedAccounts[group.label]!.length,
-                            onReorder: isReorderMode
-                                ? (oldIndex, newIndex) {
-                                    accountProvider.reorderAccountsInGroup(
-                                      group.label,
-                                      oldIndex,
-                                      newIndex,
-                                    );
-                                  }
-                                : (_, _) {},
-                            proxyDecorator: (child, index, animation) {
-                              return AnimatedBuilder(
-                                animation: animation,
-                                builder: (context, child) {
-                                  final animValue = Curves.easeInOut.transform(
-                                    animation.value,
+                          ],
+                        ),
+                        ReorderableListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          buildDefaultDragHandles: false,
+                          itemCount: entry.value.length,
+                          onReorder: isReorderMode
+                              ? (oldIndex, newIndex) {
+                                  accountProvider.reorderAccountsInGroup(
+                                    entry.key,
+                                    oldIndex,
+                                    newIndex,
                                   );
-                                  final elevation = 1 + animValue * 8;
-                                  final scale = 1 + animValue * 0.02;
-                                  return Transform.scale(
-                                    scale: scale,
-                                    child: Material(
-                                      elevation: elevation,
-                                      color: isDarkMode
-                                          ? AppColors.darkSurface
-                                          : AppColors.surface,
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: child,
-                              );
-                            },
-                            itemBuilder: (context, index) {
-                              final account =
-                                  groupedAccounts[group.label]![index];
-                              final balance =
-                                  totals.balancesByAccountId[account.id] ?? 0;
+                                }
+                              : (_, _) {},
+                          proxyDecorator: (child, index, animation) {
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (context, child) {
+                                final animValue = Curves.easeInOut.transform(
+                                  animation.value,
+                                );
+                                final elevation = 1 + animValue * 8;
+                                final scale = 1 + animValue * 0.02;
+                                return Transform.scale(
+                                  scale: scale,
+                                  child: Material(
+                                    elevation: elevation,
+                                    color: isDarkMode
+                                        ? AppColors.darkSurface
+                                        : AppColors.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: child,
+                            );
+                          },
+                          itemBuilder: (context, index) {
+                            final account = entry.value[index];
+                            final balance =
+                                totals.balancesByAccountId[account.id] ?? 0;
 
-                              return _AccountItem(
-                                key: ValueKey(account.id),
-                                account: account,
-                                balance: balance,
-                                isReorderMode: isReorderMode,
-                                onTap: () => _openForm(context, account),
-                                onTapEdit: () =>
-                                    _openEditForm(context, account),
-                                isDarkMode: isDarkMode,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                            return _AccountItem(
+                              key: ValueKey(account.id),
+                              account: account,
+                              balance: balance,
+                              isReorderMode: isReorderMode,
+                              reorderIndex: isReorderMode ? index : null,
+                              onTap: () => _openForm(context, account),
+                              onTapEdit: () => _openEditForm(context, account),
+                              isDarkMode: isDarkMode,
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           );
@@ -778,6 +802,7 @@ class _AccountItem extends StatelessWidget {
   final Account account;
   final double balance;
   final bool isReorderMode;
+  final int? reorderIndex;
   final VoidCallback onTap;
   final VoidCallback onTapEdit;
   final bool isDarkMode;
@@ -787,6 +812,7 @@ class _AccountItem extends StatelessWidget {
     required this.account,
     required this.balance,
     this.isReorderMode = false,
+    this.reorderIndex,
     required this.onTap,
     required this.onTapEdit,
     required this.isDarkMode,
@@ -816,8 +842,15 @@ class _AccountItem extends StatelessWidget {
             child: Row(
               children: [
                 // Drag handle (only visible in reorder mode)
-                if (isReorderMode) ...[
-                  Icon(Icons.drag_indicator, color: dividerColor, size: 20),
+                if (reorderIndex != null) ...[
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Icon(
+                      Icons.drag_indicator,
+                      color: dividerColor,
+                      size: 20,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                 ],
                 // Account icon

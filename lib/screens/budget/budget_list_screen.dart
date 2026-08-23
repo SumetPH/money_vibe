@@ -419,7 +419,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
-        buildDefaultDragHandles: _isReorderMode,
+        buildDefaultDragHandles: false,
         onReorder: _isReorderMode
             ? (oldIndex, newIndex) =>
                   budgetProvider.reorderBudgets(oldIndex, newIndex)
@@ -453,6 +453,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             budget: budget,
             spent: spent,
             isReorderMode: _isReorderMode,
+            reorderIndex: _isReorderMode ? i : null,
             isDarkMode: isDarkMode,
             surfaceColor: surfaceColor,
             textPrimary: textPrimary,
@@ -496,7 +497,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       return ReorderableListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        buildDefaultDragHandles: _isReorderMode,
+        buildDefaultDragHandles: false,
         onReorder: _isReorderMode
             ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
                 groupName,
@@ -533,6 +534,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             budget: budget,
             spent: spent,
             isReorderMode: _isReorderMode,
+            reorderIndex: _isReorderMode ? index : null,
             isDarkMode: isDarkMode,
             surfaceColor: surfaceColor,
             textPrimary: textPrimary,
@@ -1117,6 +1119,7 @@ class _BudgetItem extends StatelessWidget {
   final Budget budget;
   final double spent;
   final bool isReorderMode;
+  final int? reorderIndex;
   final bool isDarkMode;
   final Color surfaceColor;
   final Color textPrimary;
@@ -1130,6 +1133,7 @@ class _BudgetItem extends StatelessWidget {
     required this.budget,
     required this.spent,
     required this.isReorderMode,
+    this.reorderIndex,
     required this.isDarkMode,
     required this.surfaceColor,
     required this.textPrimary,
@@ -1168,13 +1172,16 @@ class _BudgetItem extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (isReorderMode) ...[
+                if (reorderIndex != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 2, right: 8),
-                    child: Icon(
-                      Icons.drag_indicator,
-                      color: dividerColor,
-                      size: 20,
+                    child: ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],

@@ -1424,6 +1424,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                     width: double.maxFinite,
                     height: 300,
                     child: ReorderableListView.builder(
+                      buildDefaultDragHandles: false,
                       itemCount: dialogGroups.length,
                       onReorder: (oldIndex, newIndex) {
                         setStateDialog(() {
@@ -1437,9 +1438,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         return ListTile(
                           key: ValueKey(g),
                           title: Text(g, style: TextStyle(color: textColor)),
-                          trailing: Icon(
-                            Icons.drag_handle,
-                            color: dividerColor,
+                          trailing: ReorderableDragStartListener(
+                            index: index,
+                            child: Icon(Icons.drag_handle, color: dividerColor),
                           ),
                         );
                       },
