@@ -89,9 +89,10 @@ class _AppSidebarState extends State<AppSidebar> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.resumed) {
       // Flutter Web can retain an InkWell hover or pressed overlay while its
-      // browser tab is unfocused. Recreate the controls to clear that state.
+      // browser tab is hidden. Clear it before and after the tab becomes active.
       setState(() => _interactionEpoch++);
     }
   }
