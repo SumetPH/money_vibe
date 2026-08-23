@@ -300,9 +300,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final message = e is BudgetCategoryConflictException
-            ? _buildBudgetConflictMessage(e, categoryProvider)
-            : 'เกิดข้อผิดพลาดในการบันทึก: $e';
+        final message = switch (e) {
+          BudgetNameConflictException() =>
+            'มีงบประมาณชื่อ "${e.name}" อยู่แล้ว',
+          BudgetCategoryConflictException() => _buildBudgetConflictMessage(
+            e,
+            categoryProvider,
+          ),
+          _ => 'เกิดข้อผิดพลาดในการบันทึก: $e',
+        };
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message, style: const TextStyle(color: Colors.white)),

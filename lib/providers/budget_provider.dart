@@ -4,6 +4,12 @@ import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
 import '../models/budget.dart';
 
+class BudgetNameConflictException implements Exception {
+  final String name;
+
+  const BudgetNameConflictException(this.name);
+}
+
 class BudgetCategoryConflictException implements Exception {
   final String categoryId;
   final String budgetId;
@@ -120,6 +126,13 @@ class BudgetProvider extends ChangeNotifier {
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   Future<void> addBudget(Budget budget) async {
+    final normalizedName = budget.name.trim().toLowerCase();
+    if (_budgets.any(
+      (existing) => existing.name.trim().toLowerCase() == normalizedName,
+    )) {
+      throw BudgetNameConflictException(budget.name);
+    }
+
     _validateBudgetCategoryAssignments(budget);
 
     final sortOrder = _budgets.isEmpty
