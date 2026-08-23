@@ -17,6 +17,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _darkModeKey = 'dark_mode';
   static const _themeColorKey = 'theme_color';
   static const _budgetStartDayKey = 'budget_start_day';
+  static const _statisticsStartDayKey = 'statistics_start_day';
   static const _netWorthFilterKey = 'net_worth_filter_ids';
 
   String? _finnhubApiKey;
@@ -30,6 +31,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
   int _budgetStartDay = 1;
+  int _statisticsStartDay = 1;
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
@@ -40,6 +42,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
   int get budgetStartDay => _budgetStartDay;
+  int get statisticsStartDay => _statisticsStartDay;
   Set<String>? get netWorthFilterIds =>
       _netWorthFilterIds == null ? null : Set.unmodifiable(_netWorthFilterIds!);
 
@@ -68,6 +71,8 @@ class SettingsProvider extends ChangeNotifier {
     _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
     _themeColor = ThemeColorOption.byId(prefs.getString(_themeColorKey));
     _budgetStartDay = prefs.getInt(_budgetStartDayKey) ?? 1;
+    _statisticsStartDay =
+        prefs.getInt(_statisticsStartDayKey) ?? _budgetStartDay;
     final filterJson = prefs.getString(_netWorthFilterKey);
     if (filterJson != null) {
       final list = jsonDecode(filterJson) as List;
@@ -93,6 +98,13 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_budgetStartDayKey, day);
     _budgetStartDay = day;
+    notifyListeners();
+  }
+
+  Future<void> setStatisticsStartDay(int day) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_statisticsStartDayKey, day);
+    _statisticsStartDay = day;
     notifyListeners();
   }
 

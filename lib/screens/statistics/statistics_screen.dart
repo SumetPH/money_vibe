@@ -149,18 +149,21 @@ class _YearlyBarChart extends StatelessWidget {
             : AppColors.divider;
 
         final accounts = accountProvider.accounts;
-        final statsData = _calculateYearlyStats(
+        final monthlyData = _calculateMonthlyStats(
           txProvider.transactions,
           selectedYear,
           accounts,
+          settingsProvider.statisticsStartDay,
         );
-        final yearlyData = statsData.yearlyData;
-        final monthlyData = statsData.monthlyData;
-        final currentYearData = yearlyData[selectedYear] ?? {};
-
-        final netWorthYear =
-            (currentYearData['income'] ?? 0) -
-            (currentYearData['expense'] ?? 0);
+        final totalIncome = monthlyData.fold<double>(
+          0,
+          (sum, data) => sum + data.income,
+        );
+        final totalExpense = monthlyData.fold<double>(
+          0,
+          (sum, data) => sum + data.expense,
+        );
+        final netWorthYear = totalIncome - totalExpense;
 
         final incomeColor = isDarkMode
             ? AppColors.darkIncome
@@ -178,11 +181,13 @@ class _YearlyBarChart extends StatelessWidget {
               _StatsYearSelector(
                 selectedYear: selectedYear,
                 onYearChanged: onYearChanged,
+                startDay: settingsProvider.statisticsStartDay,
+                onStartDayTap: () => _showStartDayPicker(context),
                 isDarkMode: isDarkMode,
               ),
               _YearlySummaryPanel(
-                income: currentYearData['income'] ?? 0,
-                expense: currentYearData['expense'] ?? 0,
+                income: totalIncome,
+                expense: totalExpense,
                 net: netWorthYear,
                 incomeColor: incomeColor,
                 expenseColor: expenseColor,
@@ -258,12 +263,12 @@ class _YearlyBarChart extends StatelessWidget {
     );
   }
 
-  _YearlyStatsData _calculateYearlyStats(
+  List<_MonthlyData> _calculateMonthlyStats(
     List<AppTransaction> transactions,
     int selectedYear,
     List<Account> accounts,
+    int startDay,
   ) {
-    final data = <int, Map<String, double>>{};
     final monthlyData = List.generate(
       12,
       (index) => _MonthlyData(
@@ -279,26 +284,122 @@ class _YearlyBarChart extends StatelessWidget {
       final isExpense = _isActualExpense(tx, accountTypesById);
       if (!isIncome && !isExpense) continue;
 
-      final year = tx.dateTime.year;
-      data.putIfAbsent(year, () => {'income': 0, 'expense': 0});
+      final cycleStartDay = startDay.clamp(
+        1,
+        DateUtils.getDaysInMonth(tx.dateTime.year, tx.dateTime.month),
+      );
+      final cycleMonth = tx.dateTime.day >= cycleStartDay
+          ? DateTime(tx.dateTime.year, tx.dateTime.month)
+          : DateTime(tx.dateTime.year, tx.dateTime.month - 1);
+      if (cycleMonth.year != selectedYear) continue;
 
+      final monthData = monthlyData[cycleMonth.month - 1];
       if (isIncome) {
-        data[year]!['income'] = (data[year]!['income'] ?? 0) + tx.amount;
+        monthData.income += tx.amount;
       } else if (isExpense) {
-        data[year]!['expense'] = (data[year]!['expense'] ?? 0) + tx.amount;
-      }
-
-      if (year == selectedYear) {
-        final monthIndex = tx.dateTime.month - 1;
-        if (isIncome) {
-          monthlyData[monthIndex].income += tx.amount;
-        } else if (isExpense) {
-          monthlyData[monthIndex].expense += tx.amount;
-        }
+        monthData.expense += tx.amount;
       }
     }
 
-    return _YearlyStatsData(yearlyData: data, monthlyData: monthlyData);
+    return monthlyData;
+  }
+
+  void _showStartDayPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final surfaceColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
+          final textColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final selectedColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
+
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'วันเริ่มต้นรอบสถิติรายเดือน',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                    itemCount: 31,
+                    itemBuilder: (_, index) {
+                      final day = index + 1;
+                      final selected =
+                          settingsProvider.statisticsStartDay == day;
+                      return Material(
+                        color: selected ? selectedColor : surfaceColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: selected
+                              ? BorderSide.none
+                              : BorderSide(color: dividerColor),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            settingsProvider.setStatisticsStartDay(day);
+                            Navigator.pop(context);
+                          },
+                          child: Center(
+                            child: Text(
+                              '$day',
+                              style: TextStyle(
+                                color: selected ? Colors.white : textColor,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildBarChart(
@@ -654,21 +755,18 @@ class _MonthlyData {
   });
 }
 
-class _YearlyStatsData {
-  final Map<int, Map<String, double>> yearlyData;
-  final List<_MonthlyData> monthlyData;
-
-  const _YearlyStatsData({required this.yearlyData, required this.monthlyData});
-}
-
 class _StatsYearSelector extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
+  final int startDay;
+  final VoidCallback onStartDayTap;
   final bool isDarkMode;
 
   const _StatsYearSelector({
     required this.selectedYear,
     required this.onYearChanged,
+    required this.startDay,
+    required this.onStartDayTap,
     required this.isDarkMode,
   });
 
@@ -710,6 +808,29 @@ class _StatsYearSelector extends StatelessWidget {
                 onPressed: () => onYearChanged(selectedYear + 1),
               ),
             ],
+          ),
+          Divider(height: 1, color: dividerColor),
+          InkWell(
+            onTap: onStartDayTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: secondaryColor,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'เริ่มรอบวันที่ $startDay ของแต่ละเดือน',
+                      style: TextStyle(fontSize: 13, color: secondaryColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           Divider(height: 1, color: dividerColor),
         ],
