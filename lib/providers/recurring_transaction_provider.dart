@@ -4,6 +4,7 @@ import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
 import '../services/recurring_notification_service.dart';
 import '../models/recurring_transaction.dart';
+import '../models/transaction.dart';
 
 class RecurringTransactionProvider extends ChangeNotifier {
   final _uuid = const Uuid();
@@ -180,8 +181,14 @@ class RecurringTransactionProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> reorderRecurring(int oldIndex, int newIndex) async {
-    final visibleRecurring = recurring.toList();
+  Future<void> reorderRecurring(
+    TransactionType type,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final visibleRecurring = recurring
+        .where((item) => item.transactionType == type)
+        .toList();
     if (oldIndex < 0 ||
         oldIndex >= visibleRecurring.length ||
         newIndex < 0 ||
@@ -195,19 +202,62 @@ class RecurringTransactionProvider extends ChangeNotifier {
     final moved = visibleRecurring.removeAt(oldIndex);
     visibleRecurring.insert(newIndex, moved);
 
-    if (_showHiddenRecurring) {
-      _recurring
-        ..clear()
-        ..addAll(visibleRecurring);
-    } else {
-      var visibleIndex = 0;
-      for (var i = 0; i < _recurring.length; i++) {
-        if (!_recurring[i].isHidden) {
-          _recurring[i] = visibleRecurring[visibleIndex++];
-        }
+    var visibleIndex = 0;
+    for (var i = 0; i < _recurring.length; i++) {
+      final item = _recurring[i];
+      if (item.transactionType == type &&
+          (_showHiddenRecurring || !item.isHidden)) {
+        _recurring[i] = visibleRecurring[visibleIndex++];
       }
     }
 
+    await _persistRecurringOrder();
+  }
+
+  Future<void> reorderRecurringGroups(int oldIndex, int newIndex) async {
+    final visibleTypes = <TransactionType>[];
+    for (final item in recurring) {
+      if (!visibleTypes.contains(item.transactionType)) {
+        visibleTypes.add(item.transactionType);
+      }
+    }
+    if (oldIndex < 0 ||
+        oldIndex >= visibleTypes.length ||
+        newIndex < 0 ||
+        newIndex > visibleTypes.length) {
+      return;
+    }
+
+    if (newIndex > oldIndex) newIndex--;
+    if (newIndex == oldIndex) return;
+
+    final visibleTypeSet = visibleTypes.toSet();
+    final moved = visibleTypes.removeAt(oldIndex);
+    visibleTypes.insert(newIndex, moved);
+
+    final allTypes = <TransactionType>[];
+    final grouped = <TransactionType, List<RecurringTransaction>>{};
+    for (final item in _recurring) {
+      if (!allTypes.contains(item.transactionType)) {
+        allTypes.add(item.transactionType);
+      }
+      (grouped[item.transactionType] ??= []).add(item);
+    }
+
+    var visibleIndex = 0;
+    for (var i = 0; i < allTypes.length; i++) {
+      if (visibleTypeSet.contains(allTypes[i])) {
+        allTypes[i] = visibleTypes[visibleIndex++];
+      }
+    }
+    _recurring
+      ..clear()
+      ..addAll(allTypes.expand((type) => grouped[type]!));
+
+    await _persistRecurringOrder();
+  }
+
+  Future<void> _persistRecurringOrder() async {
     for (var i = 0; i < _recurring.length; i++) {
       _recurring[i] = _recurring[i].copyWith(sortOrder: i * 10);
     }

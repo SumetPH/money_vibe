@@ -9,6 +9,7 @@ import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/group_header.dart';
 import '../../providers/sync_provider.dart';
 import 'recurring_form_screen.dart';
 
@@ -72,6 +73,10 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
         final list = provider.recurring;
+        final grouped = <TransactionType, List<RecurringTransaction>>{};
+        for (final item in list) {
+          (grouped[item.transactionType] ??= []).add(item);
+        }
         final transactionsById = {
           for (final transaction in transactionProvider.transactions)
             transaction.id: transaction,
@@ -129,117 +134,143 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                 : ReorderableListView.builder(
                     buildDefaultDragHandles: false,
                     onReorder: _isReorderMode
-                        ? (oldIndex, newIndex) =>
-                              provider.reorderRecurring(oldIndex, newIndex)
-                        : (oldIdx, newIdx) {},
-                    proxyDecorator: (child, index, animation) {
-                      return AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, child) {
-                          final animValue = Curves.easeInOut.transform(
-                            animation.value,
-                          );
-                          final elevation = 1 + animValue * 8;
-                          final scale = 1 + animValue * 0.02;
-                          return Transform.scale(
-                            scale: scale,
-                            child: Material(
-                              elevation: elevation,
-                              color: surfaceColor,
-                              borderRadius: BorderRadius.circular(8),
-                              child: child,
+                        ? provider.reorderRecurringGroups
+                        : (_, _) {},
+                    itemCount: grouped.length,
+                    itemBuilder: (_, groupIndex) {
+                      final entry = grouped.entries.elementAt(groupIndex);
+                      return Column(
+                        key: ValueKey('recurring_group_${entry.key.name}'),
+                        children: [
+                          GroupHeader(
+                            title: entry.key.label,
+                            isDarkMode: isDark,
+                            trailing: [
+                              if (_isReorderMode)
+                                ReorderableDragStartListener(
+                                  index: groupIndex,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: Icon(
+                                      Icons.drag_indicator,
+                                      color: dividerColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            onReorder: _isReorderMode
+                                ? (oldIndex, newIndex) =>
+                                      provider.reorderRecurring(
+                                        entry.key,
+                                        oldIndex,
+                                        newIndex,
+                                      )
+                                : (_, _) {},
+                            itemCount: entry.value.length,
+                            itemBuilder: (_, index) => _buildRecurringItem(
+                              context: context,
+                              provider: provider,
+                              recurring: entry.value[index],
+                              transactionsById: transactionsById,
+                              index: index,
+                              isDark: isDark,
+                              surfaceColor: surfaceColor,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              dividerColor: dividerColor,
                             ),
-                          );
-                        },
-                        child: child,
-                      );
-                    },
-                    itemCount: list.length,
-                    itemBuilder: (_, i) {
-                      final r = list[i];
-                      var next = r.nextOccurrence;
-                      final typeColor = _typeColor(r.transactionType, isDark);
-
-                      // Get occurrence status for current month only
-                      final now = DateTime.now();
-                      final firstDayOfMonth = DateTime(now.year, now.month, 1);
-                      final lastDayOfMonth = DateTime(
-                        now.year,
-                        now.month + 1,
-                        0,
-                      );
-
-                      // Generate dates for current month
-                      final monthDates = r
-                          .generateOccurrenceDates(upTo: lastDayOfMonth)
-                          .where(
-                            (d) =>
-                                !d.isBefore(firstDayOfMonth) &&
-                                !d.isAfter(lastDayOfMonth),
-                          )
-                          .toList();
-
-                      // Determine current month status
-                      String? statusLabel;
-                      Color? statusColor;
-                      var displayAmount = r.amount;
-
-                      if (monthDates.isNotEmpty) {
-                        final currentMonthDate = monthDates.first;
-                        final occ = provider.findOccurrence(
-                          r.id,
-                          currentMonthDate,
-                        );
-                        final linkedTransaction = occ?.transactionId != null
-                            ? transactionsById[occ!.transactionId]
-                            : null;
-                        displayAmount = linkedTransaction?.amount ?? r.amount;
-                        final status = occ?.status ?? OccurrenceStatus.pending;
-                        next = status == OccurrenceStatus.pending
-                            ? currentMonthDate
-                            : null;
-                        switch (status) {
-                          case OccurrenceStatus.done:
-                            statusLabel = 'เสร็จแล้ว';
-                            statusColor = isDark
-                                ? AppColors.darkIncome
-                                : AppColors.income;
-                          case OccurrenceStatus.pending:
-                            statusLabel = 'รอดำเนินการ';
-                            statusColor = Colors.grey;
-                          case OccurrenceStatus.skipped:
-                            statusLabel = 'ข้ามแล้ว';
-                            statusColor = Colors.orange;
-                        }
-                      }
-
-                      return Opacity(
-                        key: ValueKey(r.id),
-                        opacity: r.isHidden ? 0.45 : 1.0,
-                        child: _RecurringItem(
-                          recurring: r,
-                          displayAmount: displayAmount,
-                          nextOccurrence: next,
-                          statusLabel: statusLabel,
-                          statusColor: statusColor,
-                          typeColor: typeColor,
-                          isReorderMode: _isReorderMode,
-                          reorderIndex: _isReorderMode ? i : null,
-                          isDarkMode: isDark,
-                          surfaceColor: surfaceColor,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                          dividerColor: dividerColor,
-                          formatDate: _formatDate,
-                          onTap: () => _openDetail(context, r),
-                          onTapEdit: () => _openForm(context, r),
-                        ),
+                          ),
+                        ],
                       );
                     },
                   ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildRecurringItem({
+    required BuildContext context,
+    required RecurringTransactionProvider provider,
+    required RecurringTransaction recurring,
+    required Map<String, AppTransaction> transactionsById,
+    required int index,
+    required bool isDark,
+    required Color surfaceColor,
+    required Color textPrimary,
+    required Color textSecondary,
+    required Color dividerColor,
+  }) {
+    var next = recurring.nextOccurrence;
+    final typeColor = _typeColor(recurring.transactionType, isDark);
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+    final monthDates = recurring
+        .generateOccurrenceDates(upTo: lastDayOfMonth)
+        .where(
+          (date) =>
+              !date.isBefore(firstDayOfMonth) && !date.isAfter(lastDayOfMonth),
+        )
+        .toList();
+
+    String? statusLabel;
+    Color? statusColor;
+    var displayAmount = recurring.amount;
+
+    if (monthDates.isNotEmpty) {
+      final currentMonthDate = monthDates.first;
+      final occurrence = provider.findOccurrence(
+        recurring.id,
+        currentMonthDate,
+      );
+      final linkedTransaction = occurrence?.transactionId != null
+          ? transactionsById[occurrence!.transactionId]
+          : null;
+      displayAmount = linkedTransaction?.amount ?? recurring.amount;
+      final status = occurrence?.status ?? OccurrenceStatus.pending;
+      next = status == OccurrenceStatus.pending ? currentMonthDate : null;
+      switch (status) {
+        case OccurrenceStatus.done:
+          statusLabel = 'เสร็จแล้ว';
+          statusColor = isDark ? AppColors.darkIncome : AppColors.income;
+        case OccurrenceStatus.pending:
+          statusLabel = 'รอดำเนินการ';
+          statusColor = Colors.grey;
+        case OccurrenceStatus.skipped:
+          statusLabel = 'ข้ามแล้ว';
+          statusColor = Colors.orange;
+      }
+    }
+
+    return Opacity(
+      key: ValueKey(recurring.id),
+      opacity: recurring.isHidden ? 0.45 : 1.0,
+      child: _RecurringItem(
+        recurring: recurring,
+        displayAmount: displayAmount,
+        nextOccurrence: next,
+        statusLabel: statusLabel,
+        statusColor: statusColor,
+        typeColor: typeColor,
+        isReorderMode: _isReorderMode,
+        reorderIndex: _isReorderMode ? index : null,
+        isDarkMode: isDark,
+        surfaceColor: surfaceColor,
+        textPrimary: textPrimary,
+        textSecondary: textSecondary,
+        dividerColor: dividerColor,
+        formatDate: _formatDate,
+        onTap: () => _openDetail(context, recurring),
+        onTapEdit: () => _openForm(context, recurring),
+      ),
     );
   }
 
