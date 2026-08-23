@@ -258,6 +258,8 @@ class _SidebarItemTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           hoverColor: hoverColor,
+          highlightColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
