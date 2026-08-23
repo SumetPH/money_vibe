@@ -25,10 +25,20 @@ class BudgetProvider extends ChangeNotifier {
   final DatabaseManager _dbManager = DatabaseManager();
 
   final List<Budget> _budgets = [];
+  bool _showHiddenBudgets = false;
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
+  bool get showHiddenBudgets => _showHiddenBudgets;
   List<Budget> get budgets => List.unmodifiable(_budgets);
+  List<Budget> get visibleBudgets => _showHiddenBudgets
+      ? List.unmodifiable(_budgets)
+      : _budgets.where((budget) => !budget.isHidden).toList();
+
+  void toggleShowHiddenBudgets() {
+    _showHiddenBudgets = !_showHiddenBudgets;
+    notifyListeners();
+  }
 
   Map<String, Budget> expenseCategoryBudgetMap({String? excludingBudgetId}) {
     final categoryMap = <String, Budget>{};
@@ -219,11 +229,39 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   Future<void> reorderBudgets(int oldIndex, int newIndex) async {
+    await _reorderBudgetSubset(visibleBudgets, oldIndex, newIndex);
+  }
+
+  Future<void> _reorderBudgetSubset(
+    List<Budget> subset,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex < 0 || oldIndex >= subset.length) return;
     if (newIndex > oldIndex) newIndex--;
+    if (newIndex < 0 || newIndex >= subset.length || oldIndex == newIndex) {
+      return;
+    }
 
-    final moved = _budgets.removeAt(oldIndex);
-    _budgets.insert(newIndex, moved);
+    final moved = subset[oldIndex];
+    final target = subset[newIndex];
+    final actualOldIndex = _budgets.indexWhere((item) => item.id == moved.id);
+    final actualTargetIndex = _budgets.indexWhere(
+      (item) => item.id == target.id,
+    );
+    if (actualOldIndex == -1 || actualTargetIndex == -1) return;
 
+    final removed = _budgets.removeAt(actualOldIndex);
+    final insertIndex = _budgets.indexWhere((item) => item.id == target.id);
+    _budgets.insert(
+      newIndex > oldIndex ? insertIndex + 1 : insertIndex,
+      removed,
+    );
+
+    await _persistBudgetOrder();
+  }
+
+  Future<void> _persistBudgetOrder() async {
     for (var i = 0; i < _budgets.length; i++) {
       _budgets[i] = _budgets[i].copyWith(sortOrder: i * 10);
     }
@@ -245,47 +283,18 @@ class BudgetProvider extends ChangeNotifier {
     int oldIndex,
     int newIndex,
   ) async {
-    final groupBudgets = _budgets
+    final groupBudgets = visibleBudgets
         .where((budget) => _isBudgetInGroup(budget, groupName))
         .toList();
-
-    if (oldIndex < 0 || oldIndex >= groupBudgets.length) return;
-    if (newIndex > oldIndex) newIndex--;
-    if (newIndex < 0 || newIndex >= groupBudgets.length) return;
-    if (oldIndex == newIndex) return;
-
-    final moved = groupBudgets.removeAt(oldIndex);
-    groupBudgets.insert(newIndex, moved);
-
-    var groupIndex = 0;
-    for (var i = 0; i < _budgets.length; i++) {
-      if (_isBudgetInGroup(_budgets[i], groupName)) {
-        _budgets[i] = groupBudgets[groupIndex++];
-      }
-      _budgets[i] = _budgets[i].copyWith(sortOrder: i * 10);
-    }
-    notifyListeners();
-
-    try {
-      for (final budget in _budgets) {
-        await _db.updateBudgetSortOrder(budget.id, budget.sortOrder);
-      }
-    } catch (e) {
-      debugPrint('BudgetProvider: Error reordering budgets in group: $e');
-      await reload();
-      rethrow;
-    }
+    await _reorderBudgetSubset(groupBudgets, oldIndex, newIndex);
   }
 
   Future<void> reorderBudgetGroups(int oldIndex, int newIndex) async {
     final groupedBudgets = <String, List<Budget>>{};
-    final ungroupedBudgets = <Budget>[];
 
-    for (final budget in _budgets) {
+    for (final budget in visibleBudgets) {
       final groupName = budget.groupName;
-      if (groupName == null || groupName.isEmpty) {
-        ungroupedBudgets.add(budget);
-      } else {
+      if (groupName != null && groupName.isNotEmpty) {
         (groupedBudgets[groupName] ??= []).add(budget);
       }
     }
@@ -296,32 +305,28 @@ class BudgetProvider extends ChangeNotifier {
     if (newIndex < 0 || newIndex >= groupNames.length) return;
     if (oldIndex == newIndex) return;
 
-    final movedGroup = groupNames.removeAt(oldIndex);
-    groupNames.insert(newIndex, movedGroup);
+    final movedGroupName = groupNames[oldIndex];
+    final targetGroupName = groupNames[newIndex];
+    final movedBudgets = _budgets
+        .where((budget) => budget.groupName == movedGroupName)
+        .toList();
+    final movedIds = movedBudgets.map((budget) => budget.id).toSet();
+    _budgets.removeWhere((budget) => movedIds.contains(budget.id));
 
-    final reorderedBudgets = <Budget>[
-      ...ungroupedBudgets,
-      for (final groupName in groupNames) ...groupedBudgets[groupName]!,
+    final targetIndices = <int>[
+      for (var i = 0; i < _budgets.length; i++)
+        if (_budgets[i].groupName == targetGroupName) i,
     ];
-
-    for (var i = 0; i < reorderedBudgets.length; i++) {
-      reorderedBudgets[i] = reorderedBudgets[i].copyWith(sortOrder: i * 10);
-    }
-
-    _budgets
-      ..clear()
-      ..addAll(reorderedBudgets);
-    notifyListeners();
-
-    try {
-      for (final budget in _budgets) {
-        await _db.updateBudgetSortOrder(budget.id, budget.sortOrder);
-      }
-    } catch (e) {
-      debugPrint('BudgetProvider: Error reordering budget groups: $e');
+    if (targetIndices.isEmpty) {
       await reload();
-      rethrow;
+      return;
     }
+    final insertIndex = newIndex > oldIndex
+        ? targetIndices.last + 1
+        : targetIndices.first;
+    _budgets.insertAll(insertIndex, movedBudgets);
+
+    await _persistBudgetOrder();
   }
 
   bool _isBudgetInGroup(Budget budget, String? groupName) {

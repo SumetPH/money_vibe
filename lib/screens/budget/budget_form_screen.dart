@@ -35,6 +35,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   late Color _selectedColor;
   late Set<String> _selectedCategoryIds;
   late BudgetType _selectedType;
+  late bool _isHidden;
   bool _isLoading = false;
 
   bool get _isEditing => widget.budget != null;
@@ -50,6 +51,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     _selectedColor = b?.color ?? AppColors.accountColors.first;
     _selectedCategoryIds = Set<String>.from(b?.categoryIds ?? []);
     _selectedType = b?.type ?? BudgetType.expense;
+    _isHidden = b?.isHidden ?? false;
 
     _amountFocusNode.addListener(_onFocusChange);
     _amountController.addListener(_handleAmountChanged);
@@ -274,6 +276,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             groupName: groupName,
             clearGroupName: groupName == null,
             type: _selectedType,
+            isHidden: _isHidden,
           ),
         );
       } else {
@@ -287,6 +290,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             color: _selectedColor,
             groupName: groupName,
             type: _selectedType,
+            isHidden: _isHidden,
           ),
         );
       }
@@ -760,6 +764,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+                Divider(height: 1, color: dividerColor),
+                Container(
+                  color: surfaceColor,
+                  child: SwitchListTile(
+                    title: Text(
+                      'ซ่อนงบประมาณนี้',
+                      style: TextStyle(fontSize: 16, color: textSecondary),
+                    ),
+                    value: _isHidden,
+                    onChanged: (value) => setState(() => _isHidden = value),
                   ),
                 ),
                 const SizedBox(height: 32),

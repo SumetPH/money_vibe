@@ -461,6 +461,7 @@ class CsvService {
         'sort_order',
         'group_name',
         'budget_type',
+        'is_hidden',
       ],
     ];
 
@@ -475,6 +476,7 @@ class CsvService {
         budget.sortOrder,
         budget.groupName ?? '',
         budget.type.name,
+        budget.isHidden ? 1 : 0,
       ]);
     }
 
@@ -998,6 +1000,9 @@ class CsvService {
           type: row.length > 8
               ? BudgetType.values.byName(row[8]?.toString() ?? 'expense')
               : BudgetType.expense,
+          isHidden:
+              row.length > 9 &&
+              (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
         ),
       );
     }

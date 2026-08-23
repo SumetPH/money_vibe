@@ -254,7 +254,7 @@ class AiFinanceExportService {
     List<AppTransaction> budgetTransactions,
     _DateWindow budgetCycle,
   ) {
-    final budgets = budgetProvider.budgets;
+    final budgets = budgetProvider.visibleBudgets;
 
     lines
       ..add('## Budgets')

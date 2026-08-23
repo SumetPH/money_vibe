@@ -19,6 +19,7 @@ class Budget {
   final int sortOrder;
   final String? groupName;
   final BudgetType type;
+  final bool isHidden;
 
   const Budget({
     required this.id,
@@ -30,6 +31,7 @@ class Budget {
     this.sortOrder = 0,
     this.groupName,
     this.type = BudgetType.expense,
+    this.isHidden = false,
   });
 
   Budget copyWith({
@@ -43,6 +45,7 @@ class Budget {
     String? groupName,
     bool clearGroupName = false,
     BudgetType? type,
+    bool? isHidden,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -54,6 +57,7 @@ class Budget {
       sortOrder: sortOrder ?? this.sortOrder,
       groupName: clearGroupName ? null : (groupName ?? this.groupName),
       type: type ?? this.type,
+      isHidden: isHidden ?? this.isHidden,
     );
   }
 
@@ -68,6 +72,7 @@ class Budget {
       'sort_order': sortOrder,
       'group_name': groupName,
       'budget_type': type.name,
+      'is_hidden': isHidden ? 1 : 0,
     };
   }
 
@@ -161,6 +166,7 @@ class Budget {
       sortOrder: sortOrder,
       groupName: groupName,
       type: type,
+      isHidden: map['is_hidden'] == 1,
     );
   }
 }

@@ -237,7 +237,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final startDay = settingsProvider.budgetStartDay;
         final period = _getBudgetPeriod(startDay);
         final allTx = txProvider.transactions;
-        final budgets = budgetProvider.budgets;
+        final budgets = budgetProvider.visibleBudgets;
 
         final bgColor = isDarkMode
             ? AppColors.darkBackground
@@ -654,8 +654,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
+      builder: (_) => Consumer2<SettingsProvider, BudgetProvider>(
+        builder: (context, settingsProvider, budgetProvider, _) {
           final isDark = settingsProvider.isDarkMode;
           final bgColor = isDark ? AppColors.darkSurface : Colors.white;
           final handleColor = isDark
@@ -734,6 +734,25 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         onChanged: (v) {
                           setStateModal(() => _isReorderMode = v);
                           setState(() => _isReorderMode = v);
+                        },
+                      ),
+                    ),
+                    Divider(height: 1, color: dividerColor),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Icon(
+                        Icons.visibility_outlined,
+                        color: textColor,
+                      ),
+                      title: Text(
+                        'แสดงงบประมาณที่ซ่อน',
+                        style: TextStyle(color: textColor),
+                      ),
+                      trailing: Switch(
+                        value: budgetProvider.showHiddenBudgets,
+                        onChanged: (_) {
+                          budgetProvider.toggleShowHiddenBudgets();
+                          setStateModal(() {});
                         },
                       ),
                     ),
@@ -1206,18 +1225,41 @@ class _BudgetItem extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    budget.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: textPrimary,
-                                    ),
+                                Text(
+                                  budget.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textPrimary,
                                   ),
                                 ),
+                                if (budget.isHidden) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? Colors.white.withValues(alpha: 0.1)
+                                          : Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'ซ่อนอยู่',
+                                      style: TextStyle(
+                                        color: textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 6),

@@ -31,6 +31,7 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
       'sort_order': budget.sortOrder,
       'group_name': budget.groupName,
       'budget_type': budget.type.name,
+      'is_hidden': budget.isHidden ? 1 : 0,
     };
   }
 
