@@ -79,6 +79,7 @@ class AiFinanceExportService {
         _appendAccounts(lines, accountProvider, transactions, accounts);
         _appendMonthlyCashflow(
           lines,
+          accountProvider,
           transactionProvider,
           categoryProvider,
           monthTransactions,
@@ -98,6 +99,7 @@ class AiFinanceExportService {
       case AiFinanceExportScope.monthlyCashflow:
         _appendMonthlyCashflow(
           lines,
+          accountProvider,
           transactionProvider,
           categoryProvider,
           monthTransactions,
@@ -183,6 +185,7 @@ class AiFinanceExportService {
 
   void _appendMonthlyCashflow(
     List<String> lines,
+    AccountProvider accountProvider,
     TransactionProvider transactionProvider,
     CategoryProvider categoryProvider,
     List<AppTransaction> monthTransactions,
@@ -190,6 +193,7 @@ class AiFinanceExportService {
     final income = transactionProvider.getTotalIncome(monthTransactions);
     final expense = transactionProvider.getTotalActualExpense(
       monthTransactions,
+      accountProvider.accounts,
     );
     final net = income - expense;
 
@@ -204,7 +208,9 @@ class AiFinanceExportService {
 
     final categoryTotals = <String, double>{};
     for (final tx in monthTransactions) {
-      if (!tx.type.isActualExpense) continue;
+      if (!TransactionProvider.isActualExpense(tx, accountProvider.accounts)) {
+        continue;
+      }
       final categoryName = tx.categoryId == null
           ? 'ไม่ระบุหมวดหมู่'
           : categoryProvider.findById(tx.categoryId!)?.name ??

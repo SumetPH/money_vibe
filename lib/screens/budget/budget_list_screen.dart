@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
 import '../../models/transaction.dart';
+import '../../models/account.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
@@ -95,6 +97,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   Map<String, double> _buildSpentByCategoryId(
     List<AppTransaction> txs,
     DateTimeRange period,
+    List<Account> accounts,
   ) {
     final spentByCategoryId = <String, double>{};
 
@@ -103,7 +106,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           tx.dateTime.isAfter(period.end)) {
         continue;
       }
-      if (!tx.type.isActualExpense) continue;
+      if (!TransactionProvider.isActualExpense(tx, accounts)) continue;
 
       final categoryId = tx.categoryId;
       if (categoryId == null) continue;
@@ -213,6 +216,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   Widget build(BuildContext context) {
     return Consumer3<BudgetProvider, TransactionProvider, SettingsProvider>(
       builder: (context, budgetProvider, txProvider, settingsProvider, _) {
+        final accounts = context.read<AccountProvider>().accounts;
         final isDarkMode = settingsProvider.isDarkMode;
         final startDay = settingsProvider.budgetStartDay;
         final period = _getBudgetPeriod(startDay);
@@ -236,7 +240,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             : AppColors.divider;
 
         // Summary
-        final spentByCategoryId = _buildSpentByCategoryId(allTx, period);
+        final spentByCategoryId = _buildSpentByCategoryId(
+          allTx,
+          period,
+          accounts,
+        );
         var totalBudget = 0.0;
         var totalSpent = 0.0;
         var totalAvailable = 0.0;

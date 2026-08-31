@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
 import '../models/transaction.dart';
+import '../models/account.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final _uuid = const Uuid();
@@ -106,11 +107,32 @@ class TransactionProvider extends ChangeNotifier {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  /// คำนวณรายจ่ายจริง โดยไม่รวมการย้ายหรือชำระเงินต้นของหนี้
-  double getTotalActualExpense(List<AppTransaction> txs) {
+  /// คำนวณรายจ่าย โดยไม่รวมการชำระบัตรเครดิตที่นับตอนรูดแล้ว
+  double getTotalActualExpense(
+    List<AppTransaction> txs,
+    List<Account> accounts,
+  ) {
     return txs
-        .where((t) => t.type.isActualExpense)
+        .where((t) => isActualExpense(t, accounts))
         .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+  static bool isActualExpense(AppTransaction tx, List<Account> accounts) {
+    if (tx.type == TransactionType.expense) return true;
+    if (tx.type == TransactionType.debtTransfer) return true;
+    if (tx.type != TransactionType.debtRepay) return false;
+
+    final toAccount = accounts.firstWhere(
+      (account) => account.id == tx.toAccountId,
+      orElse: () => Account(
+        id: '',
+        name: '',
+        type: AccountType.debt,
+        initialBalance: 0,
+        currency: 'THB',
+      ),
+    );
+    return toAccount.type != AccountType.creditCard;
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────

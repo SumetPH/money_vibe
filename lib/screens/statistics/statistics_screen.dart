@@ -135,6 +135,7 @@ class _YearlyBarChart extends StatelessWidget {
         final monthlyData = _calculateMonthlyStats(
           txProvider.transactions,
           selectedYear,
+          accountProvider.accounts,
           settingsProvider.statisticsStartDay,
         );
         final totalIncome = monthlyData.fold<double>(
@@ -248,6 +249,7 @@ class _YearlyBarChart extends StatelessWidget {
   List<_MonthlyData> _calculateMonthlyStats(
     List<AppTransaction> transactions,
     int selectedYear,
+    List<Account> accounts,
     int startDay,
   ) {
     final monthlyData = List.generate(
@@ -260,7 +262,7 @@ class _YearlyBarChart extends StatelessWidget {
     );
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
-      final isExpense = tx.type.isActualExpense;
+      final isExpense = TransactionProvider.isActualExpense(tx, accounts);
       if (!isIncome && !isExpense) continue;
 
       final cycleStartDay = startDay.clamp(
@@ -1184,7 +1186,7 @@ class _CategoryPieChart extends StatelessWidget {
     List<AppTransaction> transactions,
     List<Category> categories,
     CategoryType type,
-    List<Account> _,
+    List<Account> accounts,
   ) {
     final Map<String, double> categoryAmounts = {};
     final Map<String, List<String>> categoryTransactionIds = {};
@@ -1193,7 +1195,7 @@ class _CategoryPieChart extends StatelessWidget {
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : tx.type.isActualExpense;
+          : TransactionProvider.isActualExpense(tx, accounts);
 
       if (!shouldInclude) continue;
 
