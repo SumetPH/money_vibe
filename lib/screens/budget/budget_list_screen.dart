@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
 import '../../models/transaction.dart';
-import '../../models/account.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
@@ -97,11 +95,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   Map<String, double> _buildSpentByCategoryId(
     List<AppTransaction> txs,
     DateTimeRange period,
-    List<Account> accounts,
   ) {
-    final accountTypesById = {
-      for (final account in accounts) account.id: account.type,
-    };
     final spentByCategoryId = <String, double>{};
 
     for (final tx in txs) {
@@ -109,7 +103,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           tx.dateTime.isAfter(period.end)) {
         continue;
       }
-      if (!_isActualExpense(tx, accountTypesById)) continue;
+      if (!tx.type.isActualExpense) continue;
 
       final categoryId = tx.categoryId;
       if (categoryId == null) continue;
@@ -119,18 +113,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     }
 
     return spentByCategoryId;
-  }
-
-  bool _isActualExpense(
-    AppTransaction tx,
-    Map<String, AccountType> accountTypesById,
-  ) {
-    if (tx.type == TransactionType.expense) return true;
-    if (tx.type == TransactionType.debtTransfer) return true;
-    if (tx.type == TransactionType.debtRepay) {
-      return accountTypesById[tx.toAccountId] != AccountType.creditCard;
-    }
-    return false;
   }
 
   double _getSpentFromCategoryTotals(
@@ -231,8 +213,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   Widget build(BuildContext context) {
     return Consumer3<BudgetProvider, TransactionProvider, SettingsProvider>(
       builder: (context, budgetProvider, txProvider, settingsProvider, _) {
-        final accountProvider = context.read<AccountProvider>();
-        final accounts = accountProvider.accounts;
         final isDarkMode = settingsProvider.isDarkMode;
         final startDay = settingsProvider.budgetStartDay;
         final period = _getBudgetPeriod(startDay);
@@ -256,11 +236,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             : AppColors.divider;
 
         // Summary
-        final spentByCategoryId = _buildSpentByCategoryId(
-          allTx,
-          period,
-          accounts,
-        );
+        final spentByCategoryId = _buildSpentByCategoryId(allTx, period);
         var totalBudget = 0.0;
         var totalSpent = 0.0;
         var totalAvailable = 0.0;

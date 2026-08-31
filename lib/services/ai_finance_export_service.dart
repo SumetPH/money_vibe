@@ -79,7 +79,6 @@ class AiFinanceExportService {
         _appendAccounts(lines, accountProvider, transactions, accounts);
         _appendMonthlyCashflow(
           lines,
-          accountProvider,
           transactionProvider,
           categoryProvider,
           monthTransactions,
@@ -99,7 +98,6 @@ class AiFinanceExportService {
       case AiFinanceExportScope.monthlyCashflow:
         _appendMonthlyCashflow(
           lines,
-          accountProvider,
           transactionProvider,
           categoryProvider,
           monthTransactions,
@@ -185,31 +183,28 @@ class AiFinanceExportService {
 
   void _appendMonthlyCashflow(
     List<String> lines,
-    AccountProvider accountProvider,
     TransactionProvider transactionProvider,
     CategoryProvider categoryProvider,
     List<AppTransaction> monthTransactions,
   ) {
-    final accounts = accountProvider.accounts;
     final income = transactionProvider.getTotalIncome(monthTransactions);
     final expense = transactionProvider.getTotalActualExpense(
       monthTransactions,
-      accounts,
     );
     final net = income - expense;
 
     lines
-      ..add('## Monthly Cashflow')
+      ..add('## Monthly Income and Expenses')
       ..add('')
       ..add('- Income: ${_money(income, 'THB')}')
       ..add('- Actual expense: ${_money(expense, 'THB')}')
-      ..add('- Net cashflow: ${_money(net, 'THB')}')
+      ..add('- Net after actual expenses: ${_money(net, 'THB')}')
       ..add('- Transaction count: ${monthTransactions.length}')
       ..add('');
 
     final categoryTotals = <String, double>{};
     for (final tx in monthTransactions) {
-      if (!TransactionProvider.isActualExpense(tx, accounts)) continue;
+      if (!tx.type.isActualExpense) continue;
       final categoryName = tx.categoryId == null
           ? 'ไม่ระบุหมวดหมู่'
           : categoryProvider.findById(tx.categoryId!)?.name ??

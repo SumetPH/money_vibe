@@ -195,12 +195,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
               bottomNavigationBar: BottomSummaryBar(
                 left: BottomSummaryValue(
-                  label: 'รายรับรวม',
+                  label: 'เงินเข้ารวม',
                   value: formatAmount(listData.totalIncome),
                   color: isDarkMode ? AppColors.darkIncome : AppColors.income,
                 ),
                 right: BottomSummaryValue(
-                  label: 'รายจ่ายรวม',
+                  label: 'เงินออกรวม',
                   value: '-${formatAmount(listData.totalExpense)}',
                   color: AppColors.expense,
                 ),
@@ -328,9 +328,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   ) {
     final accounts = accountProvider.accounts;
     final accountsById = {for (final account in accounts) account.id: account};
-    final accountTypesById = {
-      for (final account in accounts) account.id: account.type,
-    };
     final grouped = <DateTime, _MutableTransactionDateGroup>{};
     var totalIncome = 0.0;
     var totalExpense = 0.0;
@@ -347,11 +344,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
       group.transactions.add(tx);
 
-      final summaryAmount = _getSummaryAmountInThb(
-        tx,
-        accountsById,
-        accountTypesById,
-      );
+      final summaryAmount = _getSummaryAmountInThb(tx, accountsById);
       if (summaryAmount > 0) {
         totalIncome += summaryAmount;
         group.income += summaryAmount;
@@ -383,7 +376,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   double _getSummaryAmountInThb(
     AppTransaction tx,
     Map<String, Account> accountsById,
-    Map<String, AccountType> accountTypesById,
   ) {
     final account = accountsById[tx.accountId];
     final rate = _effectiveRate(account);
@@ -393,7 +385,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           tx.type == TransactionType.increaseBalance) {
         return tx.amount * rate;
       }
-      if (_isActualExpense(tx, accountTypesById) ||
+      if (tx.type == TransactionType.expense ||
+          tx.type == TransactionType.debtRepay ||
           tx.type == TransactionType.decreaseBalance) {
         return -tx.amount * rate;
       }
@@ -432,18 +425,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   double _effectiveRate(Account? account) =>
       (account?.exchangeRate ?? 0) > 0 ? account!.exchangeRate : 1.0;
-
-  bool _isActualExpense(
-    AppTransaction tx,
-    Map<String, AccountType> accountTypesById,
-  ) {
-    if (tx.type == TransactionType.expense) return true;
-    if (tx.type == TransactionType.debtTransfer) return true;
-    if (tx.type == TransactionType.debtRepay) {
-      return accountTypesById[tx.toAccountId] != AccountType.creditCard;
-    }
-    return false;
-  }
 
   void _showPeriodPicker(bool isDarkMode) {
     final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;

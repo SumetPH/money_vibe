@@ -106,22 +106,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 }
 
-Map<String, AccountType> _accountTypesById(List<Account> accounts) => {
-  for (final account in accounts) account.id: account.type,
-};
-
-bool _isActualExpense(
-  AppTransaction tx,
-  Map<String, AccountType> accountTypesById,
-) {
-  if (tx.type == TransactionType.expense) return true;
-  if (tx.type == TransactionType.debtTransfer) return true;
-  if (tx.type == TransactionType.debtRepay) {
-    return accountTypesById[tx.toAccountId] != AccountType.creditCard;
-  }
-  return false;
-}
-
 // ==================== Yearly Bar Chart ====================
 
 class _YearlyBarChart extends StatelessWidget {
@@ -148,11 +132,9 @@ class _YearlyBarChart extends StatelessWidget {
             ? AppColors.darkDivider
             : AppColors.divider;
 
-        final accounts = accountProvider.accounts;
         final monthlyData = _calculateMonthlyStats(
           txProvider.transactions,
           selectedYear,
-          accounts,
           settingsProvider.statisticsStartDay,
         );
         final totalIncome = monthlyData.fold<double>(
@@ -266,7 +248,6 @@ class _YearlyBarChart extends StatelessWidget {
   List<_MonthlyData> _calculateMonthlyStats(
     List<AppTransaction> transactions,
     int selectedYear,
-    List<Account> accounts,
     int startDay,
   ) {
     final monthlyData = List.generate(
@@ -277,11 +258,9 @@ class _YearlyBarChart extends StatelessWidget {
         monthShort: _getMonthShort(index + 1),
       ),
     );
-    final accountTypesById = _accountTypesById(accounts);
-
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
-      final isExpense = _isActualExpense(tx, accountTypesById);
+      final isExpense = tx.type.isActualExpense;
       if (!isIncome && !isExpense) continue;
 
       final cycleStartDay = startDay.clamp(
@@ -1205,17 +1184,16 @@ class _CategoryPieChart extends StatelessWidget {
     List<AppTransaction> transactions,
     List<Category> categories,
     CategoryType type,
-    List<Account> accounts,
+    List<Account> _,
   ) {
     final Map<String, double> categoryAmounts = {};
     final Map<String, List<String>> categoryTransactionIds = {};
-    final accountTypesById = _accountTypesById(accounts);
 
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
       final shouldInclude = type == CategoryType.income
           ? isIncome
-          : _isActualExpense(tx, accountTypesById);
+          : tx.type.isActualExpense;
 
       if (!shouldInclude) continue;
 

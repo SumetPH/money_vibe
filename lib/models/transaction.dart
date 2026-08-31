@@ -15,6 +15,8 @@ enum TransactionType {
       this == TransactionType.debtRepay ||
       this == TransactionType.debtTransfer;
 
+  bool get isActualExpense => this == TransactionType.expense;
+
   bool get isTransferLike =>
       this == TransactionType.transfer || this == TransactionType.debtTransfer;
 
