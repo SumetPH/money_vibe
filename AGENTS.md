@@ -67,3 +67,17 @@
 
 1. `dart format .`
 2. `flutter analyze`
+
+## Agent skills
+
+### Issue tracker
+
+ติดตาม issues เป็น Local Markdown ใต้ `.scratch/` ดูรายละเอียดที่ `docs/agents/issue-tracker.md`
+
+### Triage labels
+
+ใช้ triage labels มาตรฐานทั้งห้ารายการ ดูรายละเอียดที่ `docs/agents/triage-labels.md`
+
+### Domain docs
+
+ใช้โครงสร้าง domain docs แบบ single-context ดูรายละเอียดที่ `docs/agents/domain.md`
