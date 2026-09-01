@@ -8,7 +8,6 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/group_header.dart';
 import '../../main.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
@@ -593,13 +592,6 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           padding: EdgeInsets.zero,
                           children: [
                             for (var i = 0; i < upcoming.length; i++) ...[
-                              if (i == 0 ||
-                                  upcoming[i - 1].month != upcoming[i].month ||
-                                  upcoming[i - 1].year != upcoming[i].year)
-                                GroupHeader(
-                                  title: _formatMonthYear(upcoming[i]),
-                                  isDarkMode: isDark,
-                                ),
                               Builder(
                                 builder: (context) {
                                   final date = upcoming[i];
