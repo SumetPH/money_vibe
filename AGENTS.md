@@ -72,12 +72,12 @@
 
 ### Issue tracker
 
-Issues live as local Markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues and specs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Uses the default five canonical triage labels. See `docs/agents/triage-labels.md`.
+Uses the five default canonical triage labels. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Uses a single-context layout. See `docs/agents/domain.md`.
+Uses a single-context domain-doc layout. See `docs/agents/domain.md`.

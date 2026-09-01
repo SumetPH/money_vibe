@@ -8,6 +8,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/group_header.dart';
 import '../../main.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
@@ -339,14 +340,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
         };
 
         final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
+        final firstDayOfCurrentMonth = DateTime(now.year, now.month);
 
-        // Separate upcoming (today or future) and past
+        // Keep the whole current month actionable; older months are history.
         final upcoming = occurrenceDates
-            .where((d) => !d.isBefore(today))
+            .where((d) => !d.isBefore(firstDayOfCurrentMonth))
             .toList();
         final past = occurrenceDates
-            .where((d) => d.isBefore(today))
+            .where((d) => d.isBefore(firstDayOfCurrentMonth))
             .toList()
             .reversed
             .toList();
@@ -588,42 +589,57 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           message: 'ไม่มีรายการที่จะเกิดขึ้น',
                           isDark: isDark,
                         )
-                      : ListView.builder(
+                      : ListView(
                           padding: EdgeInsets.zero,
-                          itemCount: upcoming.length,
-                          itemBuilder: (context, i) {
-                            final date = upcoming[i];
-                            final occ = occurrencesByDay[_dayKey(date)];
-                            final linkedTx = occ?.transactionId != null
-                                ? transactionsById[occ!.transactionId]
-                                : null;
-                            return _OccurrenceItem(
-                              date: date,
-                              occurrence: occ,
-                              linkedTransaction: linkedTx,
-                              recurring: recurring,
-                              isDark: isDark,
-                              surfaceColor: surfaceColor,
-                              textPrimary: textPrimary,
-                              textSecondary: textSecondary,
-                              dividerColor: dividerColor,
-                              typeColor: typeColor,
-                              formatDate: _formatDateLong,
-                              onCreateTap: () =>
-                                  _createTransaction(context, date, isDark),
-                              onSkipTap: () =>
-                                  _skipOccurrence(context, date, isDark),
-                              onUndoTap: () =>
-                                  _undoOccurrence(context, date, isDark),
-                              onEditTap: linkedTx != null
-                                  ? () => _editTransaction(
+                          children: [
+                            for (var i = 0; i < upcoming.length; i++) ...[
+                              if (i == 0 ||
+                                  upcoming[i - 1].month != upcoming[i].month ||
+                                  upcoming[i - 1].year != upcoming[i].year)
+                                GroupHeader(
+                                  title: _formatMonthYear(upcoming[i]),
+                                  isDarkMode: isDark,
+                                ),
+                              Builder(
+                                builder: (context) {
+                                  final date = upcoming[i];
+                                  final occ = occurrencesByDay[_dayKey(date)];
+                                  final linkedTx = occ?.transactionId != null
+                                      ? transactionsById[occ!.transactionId]
+                                      : null;
+                                  return _OccurrenceItem(
+                                    date: date,
+                                    occurrence: occ,
+                                    linkedTransaction: linkedTx,
+                                    recurring: recurring,
+                                    isDark: isDark,
+                                    surfaceColor: surfaceColor,
+                                    textPrimary: textPrimary,
+                                    textSecondary: textSecondary,
+                                    dividerColor: dividerColor,
+                                    typeColor: typeColor,
+                                    formatDate: _formatDateLong,
+                                    onCreateTap: () => _createTransaction(
                                       context,
-                                      linkedTx,
                                       date,
-                                    )
-                                  : null,
-                            );
-                          },
+                                      isDark,
+                                    ),
+                                    onSkipTap: () =>
+                                        _skipOccurrence(context, date, isDark),
+                                    onUndoTap: () =>
+                                        _undoOccurrence(context, date, isDark),
+                                    onEditTap: linkedTx != null
+                                        ? () => _editTransaction(
+                                            context,
+                                            linkedTx,
+                                            date,
+                                          )
+                                        : null,
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
                         ),
                   // ── Past tab ─────────────────────────────────────────────
                   past.isEmpty
