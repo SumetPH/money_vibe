@@ -1420,9 +1420,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
           );
         }
 
-        final currentNetWorth = netWorthData.last.netWorth;
-        final startNetWorth = netWorthData.first.netWorth;
-        final change = currentNetWorth - startNetWorth;
+        final startNetWorth = filteredNetWorthData.first.netWorth;
+        final endNetWorth = filteredNetWorthData.last.netWorth;
+        final showsPeriodComparison =
+            _selectedFilter != _NetWorthPeriodFilter.all;
+        final change = endNetWorth - startNetWorth;
         final changePercent = startNetWorth != 0
             ? (change / startNetWorth.abs()) * 100
             : 0;
@@ -1440,68 +1442,118 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ทรัพย์สินสุทธิปัจจุบัน',
+                      showsPeriodComparison
+                          ? 'ทรัพย์สินสุทธิในช่วง ${_selectedFilter.label}'
+                          : 'ทรัพย์สินสุทธิปัจจุบัน',
                       style: TextStyle(fontSize: 14, color: secondaryTextColor),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      formatAmount(currentNetWorth),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: currentNetWorth >= 0
-                            ? (isDarkMode
-                                  ? AppColors.darkIncome
-                                  : AppColors.income)
-                            : (isDarkMode
-                                  ? AppColors.darkExpense
-                                  : AppColors.expense),
+                    if (!showsPeriodComparison)
+                      Text(
+                        formatAmount(endNetWorth),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: endNetWorth >= 0
+                              ? (isDarkMode
+                                    ? AppColors.darkIncome
+                                    : AppColors.income)
+                              : (isDarkMode
+                                    ? AppColors.darkExpense
+                                    : AppColors.expense),
+                        ),
+                      )
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ต้นช่วง',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                Text(
+                                  formatAmount(startNetWorth),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward, color: secondaryTextColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'ปลายช่วง',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                Text(
+                                  formatAmount(endNetWorth),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: endNetWorth >= 0
+                                        ? (isDarkMode
+                                              ? AppColors.darkIncome
+                                              : AppColors.income)
+                                        : (isDarkMode
+                                              ? AppColors.darkExpense
+                                              : AppColors.expense),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: change >= 0
-                                ? (isDarkMode
-                                          ? AppColors.darkIncome
-                                          : AppColors.income)
-                                      .withValues(alpha: 0.1)
-                                : (isDarkMode
-                                          ? AppColors.darkExpense
-                                          : AppColors.expense)
-                                      .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                change >= 0
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                                color: change >= 0
-                                    ? (isDarkMode
-                                          ? AppColors.darkIncome
-                                          : AppColors.income)
-                                    : (isDarkMode
-                                          ? AppColors.darkExpense
-                                          : AppColors.expense),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${change >= 0 ? "+" : ""}${formatAmount(change)}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                    if (showsPeriodComparison) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: change >= 0
+                                  ? (isDarkMode
+                                            ? AppColors.darkIncome
+                                            : AppColors.income)
+                                        .withValues(alpha: 0.1)
+                                  : (isDarkMode
+                                            ? AppColors.darkExpense
+                                            : AppColors.expense)
+                                        .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  change >= 0
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
                                   color: change >= 0
                                       ? (isDarkMode
                                             ? AppColors.darkIncome
@@ -1509,21 +1561,37 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                       : (isDarkMode
                                             ? AppColors.darkExpense
                                             : AppColors.expense),
+                                  size: 16,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${change >= 0 ? "+" : ""}${formatAmount(change)}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: change >= 0
+                                        ? (isDarkMode
+                                              ? AppColors.darkIncome
+                                              : AppColors.income)
+                                        : (isDarkMode
+                                              ? AppColors.darkExpense
+                                              : AppColors.expense),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${changePercent >= 0 ? "+" : ""}${changePercent.toStringAsFixed(1)}%)',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: secondaryTextColor,
+                          const SizedBox(width: 8),
+                          Text(
+                            '(${changePercent >= 0 ? "+" : ""}${changePercent.toStringAsFixed(1)}%)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: secondaryTextColor,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     Divider(
                       height: 1,

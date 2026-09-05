@@ -2,6 +2,20 @@
 
 แนวทางนี้ใช้เป็นกติกากลางสำหรับ Agent และ Developer ในโปรเจกต์ Money Vibe โดยเน้นให้สอดคล้องกับโค้ดและรูปแบบ UI ที่ใช้อยู่จริงในปัจจุบัน
 
+## Agent skills
+
+### Issue tracker
+
+ติดตาม issues เป็น Local Markdown ใต้ `.scratch/` ดูรายละเอียดที่ `docs/agents/issue-tracker.md`
+
+### Triage labels
+
+ใช้ triage labels มาตรฐานทั้งห้ารายการ ดูรายละเอียดที่ `docs/agents/triage-labels.md`
+
+### Domain docs
+
+ใช้โครงสร้าง domain docs แบบ single-context ดูรายละเอียดที่ `docs/agents/domain.md`
+
 ## การสื่อสาร
 
 - หากงานหรือ skill มีขั้นตอนโต้ตอบ ถามคำถาม หรืออธิบายความคืบหน้า ให้สื่อสารเป็นภาษาไทย
@@ -67,17 +81,3 @@
 ต้องรันคำสั่งต่อไปนี้เสมอเมื่อมีการแก้โค้ด:
 
 1. `dart format .`
-
-## Agent skills
-
-### Issue tracker
-
-ติดตาม issues เป็น Local Markdown ใต้ `.scratch/` ดูรายละเอียดที่ `docs/agents/issue-tracker.md`
-
-### Triage labels
-
-ใช้ triage labels มาตรฐานทั้งห้ารายการ ดูรายละเอียดที่ `docs/agents/triage-labels.md`
-
-### Domain docs
-
-ใช้โครงสร้าง domain docs แบบ single-context ดูรายละเอียดที่ `docs/agents/domain.md`
