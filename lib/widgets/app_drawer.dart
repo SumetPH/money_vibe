@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../providers/settings_provider.dart';
+import '../services/reinstall_reminder_service.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -229,8 +230,43 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reinstallReminder = context.watch<ReinstallReminderService>();
+    final showReinstallBadge =
+        icon == Icons.settings_outlined &&
+        (reinstallReminder.needsWarningBadge ||
+            reinstallReminder.needsExpiredBadge);
+
     return ListTile(
-      leading: Icon(icon, color: selected ? selectedColor : unselectedColor),
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(icon, color: selected ? selectedColor : unselectedColor),
+          if (showReinstallBadge)
+            Positioned(
+              right: -6,
+              top: -6,
+              child: Container(
+                width: 14,
+                height: 14,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.expense,
+                  shape: BoxShape.circle,
+                ),
+                child: reinstallReminder.needsExpiredBadge
+                    ? const Text(
+                        '!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+        ],
+      ),
       title: Text(
         label,
         style: TextStyle(

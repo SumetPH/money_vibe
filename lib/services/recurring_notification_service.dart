@@ -18,6 +18,7 @@ class RecurringNotificationService {
   static const _channelId = 'recurring_due_channel';
   static const _channelName = 'Recurring Due Reminders';
   static const _channelDescription = 'Notifications for recurring due items';
+  static const _reinstallNotificationId = 713740101;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -216,6 +217,43 @@ class RecurringNotificationService {
 
     await init();
     await _plugin.cancel(_notificationIdFor(recurringId));
+  }
+
+  Future<bool> scheduleReinstallReminder(DateTime deadline) async {
+    if (kIsWeb) return false;
+
+    await init();
+    await cancelReinstallReminder();
+
+    if (!deadline.isAfter(DateTime.now()) || !await requestPermissions()) {
+      return false;
+    }
+
+    await _plugin.zonedSchedule(
+      _reinstallNotificationId,
+      'ถึงเวลาติดตั้ง Money Vibe ใหม่',
+      'เวอร์ชันนี้ใช้งานครบ 7 วันแล้ว กรุณาติดตั้ง build ล่าสุด',
+      tz.TZDateTime.from(deadline, tz.local),
+      NotificationDetails(
+        android: const AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: _channelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+    return true;
+  }
+
+  Future<void> cancelReinstallReminder() async {
+    if (kIsWeb) return;
+
+    await init();
+    await _plugin.cancel(_reinstallNotificationId);
   }
 
   Future<bool> requestPermissions() async {

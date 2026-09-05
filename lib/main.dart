@@ -29,6 +29,7 @@ import 'screens/transaction/transaction_list_screen.dart';
 import 'services/database_manager.dart';
 import 'services/debug_bootstrap_service.dart';
 import 'services/recurring_notification_service.dart';
+import 'services/reinstall_reminder_service.dart';
 import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -60,6 +61,7 @@ void main() async {
   }
 
   final settingsProvider = SettingsProvider();
+  final reinstallReminderService = ReinstallReminderService.instance;
   final accountProvider = AccountProvider(settingsProvider: settingsProvider);
   final budgetProvider = BudgetProvider();
   final categoryProvider = CategoryProvider();
@@ -82,7 +84,6 @@ void main() async {
     await Future.wait([
       _initProvider('Settings', settingsProvider.loadSettings),
     ]);
-
     // Initialize AuthProvider หลังจาก DatabaseManager (Supabase) พร้อมแล้ว
     if (dbManager.isConfigured) {
       await _initProvider('Auth', authProvider.init);
@@ -100,6 +101,11 @@ void main() async {
       ]);
     }
 
+    await _initProvider(
+      'Reinstall reminder',
+      reinstallReminderService.initialize,
+    );
+
     debugPrint('Main: All providers initialized successfully');
   } catch (e, stackTrace) {
     debugPrint('Main: Fatal error during initialization: $e');
@@ -116,6 +122,7 @@ void main() async {
       transactionProvider: transactionProvider,
       settingsProvider: settingsProvider,
       recurringProvider: recurringProvider,
+      reinstallReminderService: reinstallReminderService,
       llmProvider: llmProvider,
       syncProvider: syncProvider,
     ),
@@ -145,6 +152,7 @@ class MyApp extends StatefulWidget {
   final TransactionProvider transactionProvider;
   final SettingsProvider settingsProvider;
   final RecurringTransactionProvider recurringProvider;
+  final ReinstallReminderService reinstallReminderService;
   final LlmProvider llmProvider;
   final SyncProvider syncProvider;
 
@@ -157,6 +165,7 @@ class MyApp extends StatefulWidget {
     required this.transactionProvider,
     required this.settingsProvider,
     required this.recurringProvider,
+    required this.reinstallReminderService,
     required this.llmProvider,
     required this.syncProvider,
   });
@@ -313,6 +322,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider.value(value: widget.transactionProvider),
         ChangeNotifierProvider.value(value: widget.settingsProvider),
         ChangeNotifierProvider.value(value: widget.recurringProvider),
+        ChangeNotifierProvider.value(value: widget.reinstallReminderService),
         ChangeNotifierProvider.value(value: _databaseManager),
         ChangeNotifierProvider.value(value: widget.llmProvider),
         ChangeNotifierProvider.value(value: widget.syncProvider),

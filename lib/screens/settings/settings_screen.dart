@@ -14,6 +14,7 @@ import '../../providers/recurring_transaction_provider.dart';
 
 import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
+import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/theme_color_option.dart';
 import '../../widgets/app_drawer.dart';
@@ -52,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final reinstallReminder = context.watch<ReinstallReminderService>();
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -398,6 +400,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 Divider(color: dividerColor),
+
+                if (reinstallReminder.isSupported &&
+                    reinstallReminder.state != null) ...[
+                  _buildSectionHeader('การติดตั้ง', textColor),
+                  ListTile(
+                    leading: Icon(
+                      reinstallReminder.needsExpiredBadge
+                          ? Icons.error_outline
+                          : Icons.timer_outlined,
+                      color: reinstallReminder.needsExpiredBadge
+                          ? AppColors.expense
+                          : secondaryTextColor,
+                    ),
+                    title: Text(
+                      'สถานะการติดตั้ง',
+                      style: TextStyle(color: textColor),
+                    ),
+                    subtitle: Text(
+                      reinstallReminder.needsExpiredBadge
+                          ? 'หมดอายุแล้ว กรุณาติดตั้งใหม่'
+                          : 'เหลือ ${reinstallReminder.remainingLabel}',
+                      style: TextStyle(color: secondaryTextColor),
+                    ),
+                  ),
+                  Divider(color: dividerColor),
+                  SwitchListTile(
+                    secondary: Icon(
+                      Icons.notifications_outlined,
+                      color: secondaryTextColor,
+                    ),
+                    title: Text(
+                      'แจ้งเตือนติดตั้งใหม่',
+                      style: TextStyle(color: textColor),
+                    ),
+                    subtitle: Text(
+                      reinstallReminder.notificationEnabled
+                          ? 'แจ้งเตือนเมื่อครบ 7 วัน'
+                          : 'ปิดการแจ้งเตือนแล้ว',
+                      style: TextStyle(color: secondaryTextColor),
+                    ),
+                    value: reinstallReminder.notificationEnabled,
+                    onChanged: reinstallReminder.setNotificationEnabled,
+                  ),
+                  Divider(color: dividerColor),
+                ],
 
                 // About Section
                 _buildSectionHeader('เกี่ยวกับ', textColor),
