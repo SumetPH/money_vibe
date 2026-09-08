@@ -689,10 +689,7 @@ class _TransactionItem extends StatelessWidget {
                       ),
                       Text(
                         _buildSubLabel(category?.name, note),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: textSecondaryColor,
-                        ),
+                        style: TextStyle(fontSize: 14, color: textPrimaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

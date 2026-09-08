@@ -104,7 +104,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         label: 'ยอดรวม',
                         amount: totals.netWorth,
                         icon: Icons.account_balance_wallet,
-                        iconColor: const Color(0xFFFFB300),
+                        iconColor: isDarkMode
+                            ? AppColors.darkFabYellow
+                            : AppColors.fabYellow,
                         isTopLevel: true,
                         isDarkMode: isDarkMode,
                         accounts: allAccounts,
@@ -451,101 +453,106 @@ class _AccountListScreenState extends State<AccountListScreen> {
             : AppColors.divider;
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: handleColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'สรุปภาพรวมการเงิน',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                _SummaryRow(
-                  label: 'ยอดสุทธิ',
-                  amount: netWorth,
-                  isDarkMode: isDarkMode,
-                  fontSize: 20,
-                  isBold: true,
-                ),
-                const SizedBox(height: 16),
-                Divider(color: dividerColor),
-                const SizedBox(height: 16),
-
-                // Main Summary
-                _SummaryRow(
-                  label: 'ทรัพย์สินรวม',
-                  amount: totalAssets,
-                  isDarkMode: isDarkMode,
-                  fontSize: 16,
-                ),
-                const SizedBox(height: 12),
-                _SummaryRow(
-                  label: 'หนี้สินรวม',
-                  amount: totalLiabilities,
-                  isDarkMode: isDarkMode,
-                  fontSize: 16,
-                ),
-                const SizedBox(height: 16),
-                Divider(color: dividerColor),
-                const SizedBox(height: 16),
-
-                // Breakdown Header
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'รายละเอียดแยกตามกลุ่ม',
+                  const SizedBox(height: 20),
+                  Text(
+                    'สรุปภาพรวมการเงิน',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: textSecondary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textPrimary,
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
-                // Group breakdown
-                ...accountGroupsForSummary.map((group) {
-                  final total = groupTotals[group.label] ?? 0;
-                  if (total == 0) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          group.label,
-                          style: TextStyle(color: textPrimary, fontSize: 15),
-                        ),
-                        Text(
-                          '${formatAmount(total)} บาท',
-                          style: TextStyle(
-                            color: AppColors.getAmountColor(total, isDarkMode),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
+                  _SummaryRow(
+                    label: 'ยอดสุทธิ',
+                    amount: netWorth,
+                    isDarkMode: isDarkMode,
+                    fontSize: 20,
+                    isBold: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(color: dividerColor),
+                  const SizedBox(height: 16),
+
+                  // Main Summary
+                  _SummaryRow(
+                    label: 'ทรัพย์สินรวม',
+                    amount: totalAssets,
+                    isDarkMode: isDarkMode,
+                    fontSize: 16,
+                  ),
+                  const SizedBox(height: 12),
+                  _SummaryRow(
+                    label: 'หนี้สินรวม',
+                    amount: totalLiabilities,
+                    isDarkMode: isDarkMode,
+                    fontSize: 16,
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(color: dividerColor),
+                  const SizedBox(height: 16),
+
+                  // Breakdown Header
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'รายละเอียดแยกตามกลุ่ม',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                      ),
                     ),
-                  );
-                }),
-                const SizedBox(height: 20),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Group breakdown
+                  ...accountGroupsForSummary.map((group) {
+                    final total = groupTotals[group.label] ?? 0;
+                    if (total == 0) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            group.label,
+                            style: TextStyle(color: textPrimary, fontSize: 15),
+                          ),
+                          Text(
+                            '${formatAmount(total)} บาท',
+                            style: TextStyle(
+                              color: AppColors.getAmountColor(
+                                total,
+                                isDarkMode,
+                              ),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
@@ -736,6 +743,9 @@ class _TotalRow extends StatelessWidget {
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final accentColor = isDarkMode
+              ? AppColors.darkFabYellow
+              : AppColors.fabYellow;
 
           return SafeArea(
             child: Column(
@@ -762,7 +772,7 @@ class _TotalRow extends StatelessWidget {
                       ? Text(
                           '${filterIds!.length}/${accounts.length}',
                           style: TextStyle(
-                            color: const Color(0xFFFFB300),
+                            color: accentColor,
                             fontWeight: FontWeight.w600,
                           ),
                         )
@@ -1024,6 +1034,9 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final accentColor = isDarkMode
+        ? AppColors.darkFabYellow
+        : AppColors.fabYellow;
 
     final allIds = widget.accounts.map((a) => a.id).toSet();
     final isAllSelected = _selected.containsAll(allIds);
@@ -1090,7 +1103,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                             ),
                             child: Text(
                               isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
-                              style: const TextStyle(color: Color(0xFFFFB300)),
+                              style: TextStyle(color: accentColor),
                             ),
                           ),
                         ),
@@ -1168,7 +1181,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                               ],
                             ],
                           ),
-                          activeColor: const Color(0xFFFFB300),
+                          activeColor: accentColor,
                           checkColor: Colors.black,
                           controlAffinity: ListTileControlAffinity.trailing,
                         ),
@@ -1184,7 +1197,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFB300),
+                    backgroundColor: accentColor,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -1203,7 +1216,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                     await widget.onSave(saveValue);
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text(
+                  child: Text(
                     'บันทึก',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),

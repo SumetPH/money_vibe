@@ -682,10 +682,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ? 'ยอดโยก'
                   : 'จำนวน',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 16),
@@ -744,8 +744,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(width: 16),
@@ -807,8 +807,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(width: 16),
@@ -1151,8 +1151,8 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -1206,16 +1206,16 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
                     color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                     size: 20,
                   ),
                 ],
@@ -1237,8 +1237,8 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -1292,16 +1292,16 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
                     color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                     size: 20,
                   ),
                 ],
@@ -1323,8 +1323,8 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -1363,16 +1363,16 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           color: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
                   Icon(
                     Icons.arrow_drop_down,
                     color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                     size: 20,
                   ),
                 ],
@@ -1483,8 +1483,8 @@ class _AccountCategorySelector extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               color: isDarkMode
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.textSecondary,
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -1592,8 +1592,8 @@ class _AccountCategorySelector extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDarkMode
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.textSecondary,
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.textPrimary,
                               ),
                             ),
                           ),
@@ -1641,10 +1641,10 @@ class _FieldRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
           ),
@@ -1661,14 +1661,14 @@ class _FieldRow extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
           Icon(
             icon,
             color: isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary,
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
             size: 20,
           ),
         ],
@@ -1705,10 +1705,10 @@ class _CategorySelectionRow extends StatelessWidget {
               child: Text(
                 'หมวดหมู่',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
@@ -1735,14 +1735,14 @@ class _CategorySelectionRow extends StatelessWidget {
                     child: Text(
                       selectedCategory?.name ?? 'เลือกหมวดหมู่',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: isDarkMode
                             ? (selectedCategory != null
                                   ? AppColors.darkTextPrimary
-                                  : AppColors.darkTextSecondary)
+                                  : AppColors.darkTextPrimary)
                             : (selectedCategory != null
                                   ? AppColors.textPrimary
-                                  : AppColors.textSecondary),
+                                  : AppColors.textPrimary),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1753,8 +1753,8 @@ class _CategorySelectionRow extends StatelessWidget {
             Icon(
               Icons.chevron_right,
               color: isDarkMode
-                  ? AppColors.darkTextSecondary
-                  : AppColors.textSecondary,
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
               size: 20,
             ),
           ],
@@ -1786,17 +1786,17 @@ class _DateTimeRow extends StatelessWidget {
             Text(
               'วันและเวลา',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
             const Spacer(),
             Text(
               _formatThaiDateTime(dateTime),
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
@@ -1806,8 +1806,8 @@ class _DateTimeRow extends StatelessWidget {
             Icon(
               Icons.calendar_today_outlined,
               color: isDarkMode
-                  ? AppColors.darkTextSecondary
-                  : AppColors.textSecondary,
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
               size: 18,
             ),
           ],
