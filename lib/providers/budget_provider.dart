@@ -154,6 +154,63 @@ class BudgetProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> addBudgetWithCategoryTransfers(Budget budget) async {
+    if (budget.type != BudgetType.expense) {
+      return addBudget(budget);
+    }
+
+    final normalizedName = budget.name.trim().toLowerCase();
+    if (_budgets.any(
+      (existing) => existing.name.trim().toLowerCase() == normalizedName,
+    )) {
+      throw BudgetNameConflictException(budget.name);
+    }
+
+    final sortOrder = _budgets.isEmpty
+        ? 0
+        : (_budgets.map((b) => b.sortOrder).reduce((a, b) => a > b ? a : b) +
+              10);
+    final b = budget.copyWith(sortOrder: sortOrder);
+    final selectedCategoryIds = b.categoryIds.toSet();
+    final oldBudgets = List<Budget>.from(_budgets);
+    final changedBudgets = <Budget>[];
+
+    for (var i = 0; i < _budgets.length; i++) {
+      final existingBudget = _budgets[i];
+      if (existingBudget.type != BudgetType.expense) continue;
+
+      final remainingCategoryIds = existingBudget.categoryIds
+          .where((categoryId) => !selectedCategoryIds.contains(categoryId))
+          .toList();
+      if (remainingCategoryIds.length == existingBudget.categoryIds.length) {
+        continue;
+      }
+
+      final updatedBudget = existingBudget.copyWith(
+        categoryIds: remainingCategoryIds,
+      );
+      _budgets[i] = updatedBudget;
+      changedBudgets.add(updatedBudget);
+    }
+
+    _budgets.add(b);
+    changedBudgets.add(b);
+    notifyListeners();
+
+    try {
+      await _db.updateBudgets(changedBudgets);
+    } catch (e) {
+      debugPrint(
+        'BudgetProvider: Error adding budget with category transfers: $e',
+      );
+      _budgets
+        ..clear()
+        ..addAll(oldBudgets);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> updateBudget(Budget budget) async {
     final idx = _budgets.indexWhere((b) => b.id == budget.id);
     if (idx == -1) return;

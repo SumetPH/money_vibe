@@ -280,7 +280,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           ),
         );
       } else {
-        await provider.addBudget(
+        await provider.addBudgetWithCategoryTransfers(
           Budget(
             id: provider.generateId(),
             name: name,
@@ -859,11 +859,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       final cat = categories[i];
                       final isSelected = _selectedCategoryIds.contains(cat.id);
                       final assignedBudget = assignedBudgets[cat.id];
-                      final isDisabled =
-                          assignedBudget != null && !isSelected && !_isEditing;
-                      final itemTextColor = isDisabled
-                          ? textColor.withValues(alpha: 0.5)
-                          : textColor;
                       final subtitleColor = isDark
                           ? AppColors.darkTextSecondary
                           : AppColors.textSecondary;
@@ -872,22 +867,14 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: cat.color.withValues(
-                              alpha: isDisabled ? 0.08 : 0.15,
-                            ),
+                            color: cat.color.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            cat.icon,
-                            color: isDisabled
-                                ? cat.color.withValues(alpha: 0.45)
-                                : cat.color,
-                            size: 18,
-                          ),
+                          child: Icon(cat.icon, color: cat.color, size: 18),
                         ),
                         title: Text(
                           cat.name,
-                          style: TextStyle(color: itemTextColor),
+                          style: TextStyle(color: textColor),
                         ),
                         subtitle: assignedBudget == null
                             ? null
@@ -895,46 +882,34 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                                 isSelected
                                     ? 'จะย้ายมาจากงบ: ${assignedBudget.name}'
                                     : 'ใช้อยู่ในงบ: ${assignedBudget.name}',
-                                style: TextStyle(
-                                  color: isDisabled
-                                      ? subtitleColor.withValues(alpha: 0.7)
-                                      : subtitleColor,
-                                ),
+                                style: TextStyle(color: subtitleColor),
                               ),
                         trailing: Icon(
                           isSelected
                               ? Icons.check_box
                               : Icons.check_box_outline_blank,
-                          color: isSelected
-                              ? selectedColor
-                              : isDisabled
-                              ? dividerColor.withValues(alpha: 0.65)
-                              : dividerColor,
+                          color: isSelected ? selectedColor : dividerColor,
                         ),
-                        enabled: !isDisabled,
-                        onTap: isDisabled
-                            ? null
-                            : () async {
-                                if (!isSelected && assignedBudget != null) {
-                                  final confirmed =
-                                      await _confirmCategoryTransfer(
-                                        context,
-                                        category: cat,
-                                        sourceBudget: assignedBudget,
-                                        isDark: isDark,
-                                      );
-                                  if (!confirmed || !mounted) return;
-                                }
+                        onTap: () async {
+                          if (!isSelected && assignedBudget != null) {
+                            final confirmed = await _confirmCategoryTransfer(
+                              context,
+                              category: cat,
+                              sourceBudget: assignedBudget,
+                              isDark: isDark,
+                            );
+                            if (!confirmed || !mounted) return;
+                          }
 
-                                setModalState(() {
-                                  if (isSelected) {
-                                    _selectedCategoryIds.remove(cat.id);
-                                  } else {
-                                    _selectedCategoryIds.add(cat.id);
-                                  }
-                                });
-                                setState(() {});
-                              },
+                          setModalState(() {
+                            if (isSelected) {
+                              _selectedCategoryIds.remove(cat.id);
+                            } else {
+                              _selectedCategoryIds.add(cat.id);
+                            }
+                          });
+                          setState(() {});
+                        },
                       );
                     },
                   ),
