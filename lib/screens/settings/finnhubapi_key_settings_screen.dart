@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../theme/app_colors.dart';
 
 class FinnhubApiKeySettingsScreen extends StatefulWidget {
   const FinnhubApiKeySettingsScreen({super.key});
@@ -42,7 +43,7 @@ class _FinnhubApiKeySettingsScreenState
           content: Text(
             apiKey.isEmpty ? 'ลบ API key แล้ว' : 'บันทึก API key แล้ว',
           ),
-          backgroundColor: apiKey.isEmpty ? Colors.orange : Colors.green,
+          backgroundColor: apiKey.isEmpty ? Colors.orange : AppColors.income,
         ),
       );
     }
@@ -50,6 +51,10 @@ class _FinnhubApiKeySettingsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Finnhub API Key')),
       body: SafeArea(
@@ -69,7 +74,7 @@ class _FinnhubApiKeySettingsScreenState
                         children: [
                           Icon(
                             _isConfigured ? Icons.check_circle : Icons.warning,
-                            color: _isConfigured ? Colors.green : Colors.orange,
+                            color: _isConfigured ? incomeColor : Colors.orange,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -81,7 +86,7 @@ class _FinnhubApiKeySettingsScreenState
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: _isConfigured
-                                  ? Colors.green
+                                  ? incomeColor
                                   : Colors.orange,
                             ),
                           ),
@@ -143,7 +148,7 @@ class _FinnhubApiKeySettingsScreenState
                           label: const Text('ลบ API Key'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            foregroundColor: Colors.red,
+                            foregroundColor: expenseColor,
                           ),
                         ),
                     ],

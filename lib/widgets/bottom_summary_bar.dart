@@ -98,7 +98,7 @@ class _BottomSummaryText extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: value.color,
+            color: AppColors.darkTextPrimary,
           ),
         ),
       ],

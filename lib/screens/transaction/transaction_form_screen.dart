@@ -982,12 +982,18 @@ class _TypeSelector extends StatelessWidget {
 
   const _TypeSelector({required this.selectedType, required this.onChanged});
 
-  (IconData, Color) _getTypeStyle(TransactionType type) {
+  (IconData, Color) _getTypeStyle(TransactionType type, bool isDarkMode) {
     switch (type) {
       case TransactionType.income:
-        return (Icons.arrow_downward, Colors.green);
+        return (
+          Icons.arrow_downward,
+          isDarkMode ? AppColors.darkIncome : AppColors.income,
+        );
       case TransactionType.expense:
-        return (Icons.arrow_upward, Colors.red);
+        return (
+          Icons.arrow_upward,
+          isDarkMode ? AppColors.darkExpense : AppColors.expense,
+        );
       case TransactionType.transfer:
         return (Icons.swap_horiz, Colors.blue);
       case TransactionType.debtRepay:
@@ -995,9 +1001,15 @@ class _TypeSelector extends StatelessWidget {
       case TransactionType.debtTransfer:
         return (Icons.account_tree, AppColors.debtTransfer);
       case TransactionType.increaseBalance:
-        return (Icons.add, AppColors.income);
+        return (
+          Icons.add,
+          isDarkMode ? AppColors.darkIncome : AppColors.income,
+        );
       case TransactionType.decreaseBalance:
-        return (Icons.remove, AppColors.expense);
+        return (
+          Icons.remove,
+          isDarkMode ? AppColors.darkExpense : AppColors.expense,
+        );
     }
   }
 
@@ -1046,7 +1058,7 @@ class _TypeSelector extends StatelessWidget {
                     Divider(height: 1, color: dividerColor),
                 itemBuilder: (context, index) {
                   final type = TransactionType.values[index];
-                  final (icon, color) = _getTypeStyle(type);
+                  final (icon, color) = _getTypeStyle(type, isDarkMode);
                   return ListTile(
                     leading: Icon(icon, color: color),
                     title: Text(type.label),

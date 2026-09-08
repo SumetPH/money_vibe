@@ -87,7 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.income,
         ),
       );
     } else if (!success && mounted) {
@@ -95,7 +95,7 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.error ?? 'เกิดข้อผิดพลาด'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.expense,
         ),
       );
     }
@@ -520,7 +520,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('กรุณากรอกอีเมลให้ถูกต้อง'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.expense,
                   ),
                 );
                 return;
@@ -538,7 +538,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           ? 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยัง $email แล้ว'
                           : 'ไม่สามารถส่งลิงก์ได้ กรุณาลองใหม่อีกครั้ง',
                     ),
-                    backgroundColor: success ? Colors.green : Colors.red,
+                    backgroundColor: success
+                        ? AppColors.income
+                        : AppColors.expense,
                   ),
                 );
               }

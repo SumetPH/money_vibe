@@ -1296,7 +1296,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                     leading: const Icon(Icons.delete_outline),
                     title: Text(
                       'ลบรูปที่อัปโหลด',
-                      style: TextStyle(color: AppColors.expense),
+                      style: TextStyle(
+                        color: isDarkMode
+                            ? AppColors.darkExpense
+                            : AppColors.expense,
+                      ),
                     ),
                     onTap: () {
                       setState(() {

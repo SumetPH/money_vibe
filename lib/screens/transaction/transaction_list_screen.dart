@@ -202,7 +202,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 right: BottomSummaryValue(
                   label: 'เงินออกรวม',
                   value: '-${formatAmount(listData.totalExpense)}',
-                  color: AppColors.expense,
+                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
                 ),
                 onAdd: () => _openForm(context, null),
                 isDarkMode: isDarkMode,

@@ -46,12 +46,18 @@ class SetupScreen extends StatelessWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: AppColors.expense.withAlpha(26),
+                            color:
+                                (isDarkMode
+                                        ? AppColors.darkExpense
+                                        : AppColors.expense)
+                                    .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             Icons.cloud_off_outlined,
-                            color: AppColors.expense,
+                            color: isDarkMode
+                                ? AppColors.darkExpense
+                                : AppColors.expense,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -82,13 +88,19 @@ class SetupScreen extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.expense.withAlpha(18),
+                          color:
+                              (isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense)
+                                  .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           dbManager.error!,
                           style: TextStyle(
-                            color: AppColors.expense,
+                            color: isDarkMode
+                                ? AppColors.darkExpense
+                                : AppColors.expense,
                             fontSize: 13,
                           ),
                         ),

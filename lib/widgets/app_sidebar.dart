@@ -160,10 +160,12 @@ class _AppSidebarState extends State<AppSidebar> with WidgetsBindingObserver {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'การเงินส่วนบุคคล',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),

@@ -338,7 +338,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                           onPrevMonth: _prevMonth,
                           onNextMonth: _nextMonth,
                           surfaceColor: surfaceColor,
-                          textSecondary: textSecondary,
+                          textPrimary: textPrimary,
                         ),
                         _SummaryHeader(
                           totalBudget: totalBudget,
@@ -771,14 +771,14 @@ class _MonthSelector extends StatelessWidget {
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
   final Color surfaceColor;
-  final Color textSecondary;
+  final Color textPrimary;
 
   const _MonthSelector({
     required this.selectedMonth,
     required this.onPrevMonth,
     required this.onNextMonth,
     required this.surfaceColor,
-    required this.textSecondary,
+    required this.textPrimary,
   });
 
   String _getPeriodLabel(BuildContext context) {
@@ -826,7 +826,7 @@ class _MonthSelector extends StatelessWidget {
             child: Text(
               _getPeriodLabel(context),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: textSecondary),
+              style: TextStyle(fontSize: 12, color: textPrimary),
             ),
           ),
           IconButton(
@@ -891,7 +891,7 @@ class _SummaryHeader extends StatelessWidget {
                   label: 'งบทั้งหมด',
                   amount: totalBudget,
                   color: textPrimary,
-                  textSecondary: textSecondary,
+                  textPrimary: textPrimary,
                 ),
               ),
               Container(width: 1, height: 40, color: dividerColor),
@@ -900,7 +900,7 @@ class _SummaryHeader extends StatelessWidget {
                   label: 'ใช้ไปแล้ว',
                   amount: totalSpent,
                   color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
-                  textSecondary: textSecondary,
+                  textPrimary: textPrimary,
                 ),
               ),
               Container(width: 1, height: 40, color: dividerColor),
@@ -909,7 +909,7 @@ class _SummaryHeader extends StatelessWidget {
                   label: 'ยังใช้ได้',
                   amount: totalAvailable,
                   color: isDarkMode ? AppColors.darkIncome : AppColors.income,
-                  textSecondary: textSecondary,
+                  textPrimary: textPrimary,
                 ),
               ),
             ],
@@ -960,20 +960,20 @@ class _SummaryCell extends StatelessWidget {
   final String label;
   final double amount;
   final Color color;
-  final Color textSecondary;
+  final Color textPrimary;
 
   const _SummaryCell({
     required this.label,
     required this.amount,
     required this.color,
-    required this.textSecondary,
+    required this.textPrimary,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: textSecondary)),
+        Text(label, style: TextStyle(fontSize: 13, color: textPrimary)),
         const SizedBox(height: 4),
         Text(
           formatAmount(amount),

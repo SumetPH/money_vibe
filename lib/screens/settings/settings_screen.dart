@@ -98,11 +98,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ListTile(
                             leading: Icon(
                               Icons.logout,
-                              color: AppColors.expense,
+                              color: isDarkMode
+                                  ? AppColors.darkExpense
+                                  : AppColors.expense,
                             ),
                             title: Text(
                               'ออกจากระบบ',
-                              style: TextStyle(color: AppColors.expense),
+                              style: TextStyle(
+                                color: isDarkMode
+                                    ? AppColors.darkExpense
+                                    : AppColors.expense,
+                              ),
                             ),
                             onTap: () => _showLogoutDialog(context),
                           ),
@@ -111,10 +117,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     } else {
                       // แสดงเมื่อยังไม่ได้ login
                       return ListTile(
-                        leading: Icon(Icons.login, color: AppColors.income),
+                        leading: Icon(
+                          Icons.login,
+                          color: isDarkMode
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                        ),
                         title: Text(
                           'เข้าสู่ระบบ',
-                          style: TextStyle(color: AppColors.income),
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? AppColors.darkIncome
+                                : AppColors.income,
+                          ),
                         ),
                         subtitle: Text(
                           'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
@@ -432,7 +447,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.error_outline
                           : Icons.timer_outlined,
                       color: reinstallReminder.needsExpiredBadge
-                          ? AppColors.expense
+                          ? (isDarkMode
+                                ? AppColors.darkExpense
+                                : AppColors.expense)
                           : secondaryTextColor,
                     ),
                     title: Text(

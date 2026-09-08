@@ -114,6 +114,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   }
 
   Future<void> _clearData() async {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
     // Read providers first (before any await)
     final accountProvider = context.read<AccountProvider>();
     final budgetProvider = context.read<BudgetProvider>();
@@ -135,7 +138,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: expenseColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -145,7 +148,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                     'ข้อมูลที่จะถูกลบ:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.red.shade800,
+                      color: expenseColor,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -155,7 +158,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                     '• หมวดหมู่ทั้งหมด\n'
                     '• ธุรกรรมทั้งหมด\n'
                     '• หลักทรัพย์ทั้งหมด',
-                    style: TextStyle(color: Colors.red.shade900),
+                    style: TextStyle(color: expenseColor),
                   ),
                 ],
               ),
@@ -165,7 +168,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
               '⚠️ การกระทำนี้ไม่สามารถย้อนกลับได้',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.red.shade800,
+                color: expenseColor,
               ),
             ),
           ],
@@ -177,7 +180,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.expense),
             child: const Text('ล้างข้อมูล'),
           ),
         ],
@@ -205,7 +208,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('ล้างข้อมูลเรียบร้อยแล้ว'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.income,
         ),
       );
     } catch (e) {
@@ -234,6 +237,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -293,7 +298,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: dbManager.isConfigured
-                                        ? AppColors.income
+                                        ? incomeColor
                                         : secondaryTextColor,
                                   ),
                                 ),
@@ -342,15 +347,12 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.expense.withAlpha(18),
+                            color: expenseColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             dbManager.error!,
-                            style: TextStyle(
-                              color: AppColors.expense,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: expenseColor, fontSize: 12),
                           ),
                         ),
                       ],
@@ -394,8 +396,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           _connectionStatus!,
                           style: TextStyle(
                             color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
-                                ? AppColors.income
-                                : AppColors.expense,
+                                ? incomeColor
+                                : expenseColor,
                             fontSize: 12,
                           ),
                         ),
@@ -426,7 +428,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           children: [
                             Icon(
                               Icons.insert_drive_file,
-                              color: AppColors.income,
+                              color: incomeColor,
                               size: 28,
                             ),
                             const SizedBox(width: 12),
@@ -499,15 +501,12 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.expense.withAlpha(26),
+                            color: expenseColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.warning_amber,
-                                color: AppColors.expense,
-                              ),
+                              Icon(Icons.warning_amber, color: expenseColor),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(

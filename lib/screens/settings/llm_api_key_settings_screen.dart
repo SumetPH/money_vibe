@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../theme/app_colors.dart';
 
 class LLMApiKeySettingsScreen extends StatefulWidget {
   const LLMApiKeySettingsScreen({super.key});
@@ -54,7 +55,7 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
           content: Text(
             apiKey.isEmpty ? 'ลบ API key แล้ว' : 'บันทึก API key แล้ว',
           ),
-          backgroundColor: apiKey.isEmpty ? Colors.orange : Colors.green,
+          backgroundColor: apiKey.isEmpty ? Colors.orange : AppColors.income,
         ),
       );
     }
@@ -62,6 +63,10 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+
     return Scaffold(
       appBar: AppBar(title: const Text('LLM API Key')),
       body: SafeArea(
@@ -81,7 +86,7 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
                         children: [
                           Icon(
                             _isConfigured ? Icons.check_circle : Icons.warning,
-                            color: _isConfigured ? Colors.green : Colors.orange,
+                            color: _isConfigured ? incomeColor : Colors.orange,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -93,7 +98,7 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: _isConfigured
-                                  ? Colors.green
+                                  ? incomeColor
                                   : Colors.orange,
                             ),
                           ),
@@ -181,7 +186,7 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
                           label: const Text('ลบ API Key'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            foregroundColor: Colors.red,
+                            foregroundColor: expenseColor,
                           ),
                         ),
                     ],

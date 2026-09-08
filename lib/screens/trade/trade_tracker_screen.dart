@@ -944,7 +944,7 @@ class _PurchaseListItem extends StatelessWidget {
                 Text(
                   '+${formatAmount(purchase.costUsd)}',
                   style: TextStyle(
-                    color: AppColors.income,
+                    color: isDarkMode ? AppColors.darkIncome : AppColors.income,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),

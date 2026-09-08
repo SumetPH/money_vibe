@@ -737,7 +737,9 @@ class _SellSummary extends StatelessWidget {
             Text(
               'กำไร/ขาดทุนโดยประมาณ: ${isProfit ? '+' : ''}${formatStockHoldingCostBasis(estimatedPnl)} $currencyCode',
               style: TextStyle(
-                color: isProfit ? AppColors.income : AppColors.expense,
+                color: isProfit
+                    ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
+                    : (isDarkMode ? AppColors.darkExpense : AppColors.expense),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

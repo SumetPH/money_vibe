@@ -318,6 +318,8 @@ class _YearlyBarChart extends StatelessWidget {
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
             tooltipRoundedRadius: 8,
+            getTooltipColor: (_) =>
+                isDarkMode ? AppColors.darkSurface : AppColors.surface,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final data = monthlyData[groupIndex];
               final isIncome = rodIndex == 0;
@@ -462,7 +464,11 @@ class _YearlyBarChart extends StatelessWidget {
                   flex: 2,
                   child: Text(
                     'เดือน',
-                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: secondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -472,7 +478,7 @@ class _YearlyBarChart extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 12,
-                      color: incomeColor,
+                      color: secondaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -484,7 +490,7 @@ class _YearlyBarChart extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 12,
-                      color: expenseColor,
+                      color: secondaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -494,7 +500,11 @@ class _YearlyBarChart extends StatelessWidget {
                   child: Text(
                     'คงเหลือ',
                     textAlign: TextAlign.right,
-                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: secondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -540,6 +550,7 @@ class _YearlyBarChart extends StatelessWidget {
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: d.income > 0
                                   ? incomeColor
                                   : secondaryColor,
@@ -555,6 +566,7 @@ class _YearlyBarChart extends StatelessWidget {
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: d.expense > 0
                                   ? expenseColor
                                   : secondaryColor,
@@ -1794,6 +1806,9 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                   enabled: true,
                                   touchTooltipData: LineTouchTooltipData(
                                     tooltipRoundedRadius: 8,
+                                    getTooltipColor: (_) => isDarkMode
+                                        ? AppColors.darkSurface
+                                        : AppColors.surface,
                                     getTooltipItems: (touchedSpots) {
                                       return touchedSpots.map((spot) {
                                         final data =
@@ -1802,14 +1817,17 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                         return LineTooltipItem(
                                           '${_formatTooltipDate(data.date)}\n',
                                           TextStyle(
-                                            color: Colors.white,
+                                            color: textColor,
                                             fontWeight: FontWeight.bold,
                                           ),
                                           children: [
                                             TextSpan(
                                               text: formatAmount(data.netWorth),
                                               style: TextStyle(
-                                                color: lineColor,
+                                                color: AppColors.amountColor(
+                                                  data.netWorth,
+                                                  isDarkMode: isDarkMode,
+                                                ),
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),

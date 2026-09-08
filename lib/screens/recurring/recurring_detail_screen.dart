@@ -233,7 +233,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkExpense.withValues(alpha: 0.2)
-                      : Colors.red.shade50,
+                      : AppColors.expense.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -245,7 +245,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                         fontWeight: FontWeight.bold,
                         color: isDark
                             ? AppColors.darkExpense
-                            : Colors.red.shade800,
+                            : AppColors.expense,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -254,7 +254,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                       style: TextStyle(
                         color: isDark
                             ? AppColors.darkTextSecondary
-                            : Colors.red.shade900,
+                            : AppColors.expense,
                       ),
                     ),
                   ],
