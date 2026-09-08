@@ -1045,7 +1045,7 @@ class _CategoryPieChart extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       color: isDarkMode
                                           ? AppColors.darkSurface
-                                          : Colors.white,
+                                          : AppColors.surface,
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
                                         color: data.color,
@@ -1616,7 +1616,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                 ?.copyWith(fontSize: 13, color: textColor),
                             dropdownColor: isDarkMode
                                 ? AppColors.darkSurface
-                                : Colors.white,
+                                : AppColors.surface,
                             items: _NetWorthPeriodFilter.values.map((f) {
                               return DropdownMenuItem<_NetWorthPeriodFilter>(
                                 value: f,
@@ -1778,7 +1778,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                               radius: 4,
                                               color: isDarkMode
                                                   ? AppColors.darkSurface
-                                                  : Colors.white,
+                                                  : AppColors.surface,
                                               strokeWidth: 2,
                                               strokeColor: lineColor,
                                             );

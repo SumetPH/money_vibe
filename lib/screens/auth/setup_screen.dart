@@ -14,7 +14,7 @@ class SetupScreen extends StatelessWidget {
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

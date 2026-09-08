@@ -324,7 +324,9 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     if (!basisChanged) return false;
 
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

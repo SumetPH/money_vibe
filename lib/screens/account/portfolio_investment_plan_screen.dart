@@ -236,7 +236,7 @@ class _PortfolioInvestmentPlanScreenState
   Future<bool?> _confirmDcaChange(bool completed) {
     final backgroundColor = widget.isDarkMode
         ? AppColors.darkSurface
-        : Colors.white;
+        : AppColors.surface;
     final textColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

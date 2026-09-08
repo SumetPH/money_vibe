@@ -350,7 +350,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final isDarkMode = settingsProvider.isDarkMode;
           final dialogBgColor = isDarkMode
               ? AppColors.darkSurface
-              : Colors.white;
+              : AppColors.surface;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -909,7 +909,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1046,7 +1046,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     showModalBottomSheet(
       context: context,
       useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1139,7 +1139,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1262,7 +1262,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     // First, show a menu to choose between icons or custom image
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1403,7 +1403,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     showModalBottomSheet(
       context: context,
       useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1512,7 +1512,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     showModalBottomSheet(
       context: context,
       useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

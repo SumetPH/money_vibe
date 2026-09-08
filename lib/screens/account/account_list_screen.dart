@@ -315,12 +315,14 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<AccountProvider, SettingsProvider>(
         builder: (context, accountProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final showHiddenAccounts = accountProvider.showHiddenAccounts;
-          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -430,7 +432,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -721,11 +723,13 @@ class _TotalRow extends StatelessWidget {
   void _showTotalMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -782,7 +786,7 @@ class _TotalRow extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
@@ -930,7 +934,7 @@ class _AccountItem extends StatelessWidget {
   }
 
   void _showAccountMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
     showModalBottomSheet(
       backgroundColor: bgColor,
@@ -1009,7 +1013,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final handleColor = isDarkMode
         ? AppColors.darkDivider
         : Colors.grey.shade300;

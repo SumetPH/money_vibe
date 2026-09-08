@@ -6,10 +6,20 @@ import 'theme_color_option.dart';
 
 class AppTheme {
   static ThemeData lightTheme(ThemeColorOption themeColor) => ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: themeColor.lightAccent,
-      brightness: Brightness.light,
-    ),
+    colorScheme:
+        ColorScheme.fromSeed(
+          seedColor: themeColor.lightAccent,
+          brightness: Brightness.light,
+        ).copyWith(
+          surface: AppColors.surface,
+          surfaceDim: AppColors.background,
+          surfaceBright: AppColors.surface,
+          surfaceContainerLowest: AppColors.background,
+          surfaceContainerLow: AppColors.surface,
+          surfaceContainer: AppColors.surface,
+          surfaceContainerHigh: AppColors.sectionHeader,
+          surfaceContainerHighest: AppColors.sectionHeader,
+        ),
     scaffoldBackgroundColor: AppColors.background,
     appBarTheme: AppBarTheme(
       backgroundColor: themeColor.lightHeader,
@@ -25,7 +35,7 @@ class AppTheme {
     ),
     iconTheme: const IconThemeData(color: AppColors.textPrimary),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       selectedItemColor: themeColor.lightAccent,
       unselectedItemColor: AppColors.textSecondary,
       elevation: 8,
@@ -65,6 +75,14 @@ class AppTheme {
       modalBackgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       dragHandleColor: AppColors.divider,
+    ),
+    dialogTheme: const DialogThemeData(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+    ),
+    popupMenuTheme: const PopupMenuThemeData(
+      color: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: themeColor.lightFab,

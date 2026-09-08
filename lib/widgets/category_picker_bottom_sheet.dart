@@ -27,7 +27,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

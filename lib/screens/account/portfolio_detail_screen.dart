@@ -468,7 +468,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       text: acc.exchangeRate.toStringAsFixed(2),
     );
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final dialogBgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final dialogBgColor = isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -553,7 +555,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       text: acc.cashBalance.toStringAsFixed(2),
     );
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final dialogBgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final dialogBgColor = isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -914,7 +918,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
 
   void _showMenuSheet(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1299,7 +1303,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               alignment: Alignment.centerLeft,
               child: PopupMenuButton<String>(
                 initialValue: sortType,
-                color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                 padding: EdgeInsets.zero,
                 tooltip: 'เปลี่ยนรูปแบบการเรียง',
                 onSelected: (val) => _setGroupSortType(groupName, val),
@@ -1399,7 +1403,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     bool isDarkMode,
   ) {
     final dialogGroups = List<String>.from(currentGroups);
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

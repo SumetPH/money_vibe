@@ -423,7 +423,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     if (!basisChanged) return true;
 
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -471,7 +473,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     if (widget.onDelete == null) return;
 
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

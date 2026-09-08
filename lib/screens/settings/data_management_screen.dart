@@ -226,7 +226,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -546,7 +546,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                   decoration: BoxDecoration(
                     color: isDarkMode
                         ? AppColors.darkSurface.withAlpha(128)
-                        : Colors.grey.shade100,
+                        : AppColors.sectionHeader,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(

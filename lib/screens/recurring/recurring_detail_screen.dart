@@ -157,7 +157,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
   }
 
   void _skipOccurrence(BuildContext context, DateTime dueDate, bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -207,7 +207,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
         ? transactionsById[occ!.transactionId]
         : null;
 
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

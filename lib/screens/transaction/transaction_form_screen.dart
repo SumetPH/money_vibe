@@ -460,7 +460,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   void _delete() {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1010,7 +1010,7 @@ class _TypeSelector extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       clipBehavior: Clip.antiAlias,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

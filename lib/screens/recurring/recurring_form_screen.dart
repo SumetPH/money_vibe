@@ -348,7 +348,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         builder: (context, sp, _) {
           final isDark = sp.isDarkMode;
           return AlertDialog(
-            backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
             title: Text(
               'ลบรายการประจำ',
               style: TextStyle(
@@ -886,7 +886,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   // ── Pickers ────────────────────────────────────────────────────────────────
 
   void _pickType(bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textColor = isDark
         ? AppColors.darkTextPrimary
@@ -896,7 +896,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -989,7 +989,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   }
 
   void _pickCategory(List<Category> categories, bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textColor = isDark
         ? AppColors.darkTextPrimary
@@ -999,7 +999,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -1082,7 +1082,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   }
 
   void _pickDayOfMonth(bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textPrimary = isDark
         ? AppColors.darkTextPrimary
@@ -1091,7 +1091,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -1199,7 +1199,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     required bool isEnd,
   }) async {
     final isDark = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1370,7 +1370,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       initialTime: _notificationTime,
       builder: (context, child) {
         final actionColor = isDark ? AppColors.darkIncome : AppColors.header;
-        final pickerBg = isDark ? AppColors.darkSurface : Colors.white;
+        final pickerBg = isDark ? AppColors.darkSurface : AppColors.surface;
         final textColor = isDark
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
@@ -1446,7 +1446,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.6,
@@ -1519,7 +1519,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.5,

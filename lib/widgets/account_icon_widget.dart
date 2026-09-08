@@ -64,7 +64,7 @@ class AccountIconWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : Colors.white,
+        color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: BoxShape.circle,
       ),
       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),

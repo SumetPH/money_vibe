@@ -316,7 +316,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
   }
 
   void _openListMenu(BuildContext context) {
-    final bgColor = widget.isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = widget.isDarkMode
+        ? AppColors.darkSurface
+        : AppColors.surface;
     final textColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -434,7 +436,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
   void _showDeleteConfirmation(BuildContext context) {
     final dialogBgColor = widget.isDarkMode
         ? AppColors.darkSurface
-        : Colors.white;
+        : AppColors.surface;
     final textColor = widget.isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -637,7 +639,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
           color: expenseColor,
           shape: BoxShape.circle,
           border: Border.all(
-            color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+            color: widget.isDarkMode
+                ? AppColors.darkSurface
+                : AppColors.surface,
             width: 1.5,
           ),
           boxShadow: [
@@ -675,7 +679,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
               color: expenseColor,
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+                color: widget.isDarkMode
+                    ? AppColors.darkSurface
+                    : AppColors.surface,
                 width: 1.5,
               ),
               boxShadow: [
@@ -708,7 +714,9 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
             color: incomeColor,
             shape: BoxShape.circle,
             border: Border.all(
-              color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+              color: widget.isDarkMode
+                  ? AppColors.darkSurface
+                  : AppColors.surface,
               width: 1.5,
             ),
             boxShadow: [
@@ -738,7 +746,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         color: Colors.blue.shade400,
         shape: BoxShape.circle,
         border: Border.all(
-          color: widget.isDarkMode ? AppColors.darkSurface : Colors.white,
+          color: widget.isDarkMode ? AppColors.darkSurface : AppColors.surface,
           width: 1.5,
         ),
         boxShadow: [

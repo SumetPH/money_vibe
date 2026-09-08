@@ -330,7 +330,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
         builder: (context, sp, _) {
           final isDark = sp.isDarkMode;
           return AlertDialog(
-            backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
             title: Text(
               'ลบงบประมาณ',
               style: TextStyle(
@@ -806,7 +806,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => StatefulBuilder(
         builder: (context, setModalState) {
           final handleColor = isDark

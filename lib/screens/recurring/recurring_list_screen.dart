@@ -281,11 +281,11 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<SettingsProvider, RecurringTransactionProvider>(
         builder: (context, sp, rtp, _) {
           final isDk = sp.isDarkMode;
-          final bgColor = isDk ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDk ? AppColors.darkSurface : AppColors.surface;
           final handleColor = isDk
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -553,7 +553,7 @@ class _RecurringItem extends StatelessWidget {
   }
 
   void _showRecurringMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
     showModalBottomSheet(
       context: context,

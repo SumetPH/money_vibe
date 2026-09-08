@@ -253,11 +253,13 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -445,7 +447,7 @@ class _CategoryItem extends StatelessWidget {
   }
 
   void _showCategoryMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
     showModalBottomSheet(
       context: context,

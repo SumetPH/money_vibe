@@ -125,7 +125,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           final isDarkMode = settingsProvider.isDarkMode;
           final dialogBgColor = isDarkMode
               ? AppColors.darkSurface
-              : Colors.white;
+              : AppColors.surface;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -464,7 +464,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -472,7 +472,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
           final handleColor = isDarkMode
               ? AppColors.darkDivider
               : Colors.grey.shade300;

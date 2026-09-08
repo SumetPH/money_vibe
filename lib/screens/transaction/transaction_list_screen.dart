@@ -428,7 +428,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   void _showPeriodPicker(bool isDarkMode) {
     final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

@@ -678,7 +678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showLogoutDialog(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;

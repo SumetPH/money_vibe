@@ -646,11 +646,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   void _showMenuBottomSheet(BuildContext context, bool isDarkMode) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<SettingsProvider, BudgetProvider>(
         builder: (context, settingsProvider, budgetProvider, _) {
           final isDark = settingsProvider.isDarkMode;
-          final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+          final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
           final handleColor = isDark
               ? AppColors.darkDivider
               : Colors.grey.shade300;
@@ -749,7 +749,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => _BudgetGroupDetailsSheet(
         groupSummaries: groupSummaries,
         periodLabel: periodLabel,
@@ -1241,7 +1241,7 @@ class _BudgetItem extends StatelessWidget {
   }
 
   void _showBudgetMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
     showModalBottomSheet(
       context: context,
@@ -1329,7 +1329,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final handleColor = isDarkMode
         ? AppColors.darkDivider
         : Colors.grey.shade300;
