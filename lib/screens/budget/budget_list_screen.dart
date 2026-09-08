@@ -13,6 +13,7 @@ import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
+import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
 import 'budget_form_screen.dart';
@@ -46,7 +47,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      final startDay = context.read<SettingsProvider>().budgetStartDay;
+      final startDay = context.read<SettingsProvider>().monthlyCycleStartDay;
       _selectedMonth = _currentCycleMonth(startDay);
     }
   }
@@ -54,12 +55,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   /// คำนวณว่าวันนี้อยู่ใน cycle ของเดือนไหน
   /// ถ้า startDay=15 และวันนี้=1 มี.ค. → อยู่ใน cycle ก.พ. (15 ก.พ.–14 มี.ค.)
   DateTime _currentCycleMonth(int startDay) {
-    final now = DateTime.now();
-    if (now.day >= startDay) {
-      return DateTime(now.year, now.month);
-    } else {
-      return DateTime(now.year, now.month - 1);
-    }
+    return monthlyCycleMonth(DateTime.now(), startDay);
   }
 
   void _prevMonth() => setState(
@@ -77,21 +73,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   );
 
   DateTimeRange _getBudgetPeriod(int startDay) {
-    final y = _selectedMonth.year;
-    final m = _selectedMonth.month;
-    final clampedStart = startDay.clamp(1, DateUtils.getDaysInMonth(y, m));
-    final start = DateTime(y, m, clampedStart);
-    final nextMonth = DateTime(y, m + 1, 1);
-    final clampedEnd = clampedStart.clamp(
-      1,
-      DateUtils.getDaysInMonth(nextMonth.year, nextMonth.month),
+    final period = monthlyCyclePeriod(_selectedMonth, startDay);
+    return DateTimeRange(
+      start: period.start,
+      end: period.endExclusive.subtract(const Duration(microseconds: 1)),
     );
-    final end = DateTime(
-      nextMonth.year,
-      nextMonth.month,
-      clampedEnd,
-    ).subtract(const Duration(seconds: 1));
-    return DateTimeRange(start: start, end: end);
   }
 
   Map<String, double> _buildSpentByCategoryId(
@@ -218,7 +204,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       builder: (context, budgetProvider, txProvider, settingsProvider, _) {
         final accounts = context.read<AccountProvider>().accounts;
         final isDarkMode = settingsProvider.isDarkMode;
-        final startDay = settingsProvider.budgetStartDay;
+        final startDay = settingsProvider.monthlyCycleStartDay;
         final period = _getBudgetPeriod(startDay);
         final allTx = txProvider.transactions;
         final budgets = budgetProvider.visibleBudgets;
@@ -683,31 +669,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     Divider(height: 1, color: dividerColor),
                     ListTile(
                       tileColor: bgColor,
-                      leading: Icon(
-                        Icons.calendar_today_outlined,
-                        color: textColor,
-                      ),
-                      title: Text(
-                        'ตั้งค่ารอบงบประมาณ',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        'เริ่มนับวันที่ ${settingsProvider.budgetStartDay} ของเดือน',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showStartDayPicker(context, settingsProvider);
-                      },
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
                       leading: Icon(Icons.reorder, color: textColor),
                       title: Text(
                         'จัดเรียงลำดับ',
@@ -778,110 +739,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       ),
     );
   }
-
-  void _showStartDayPicker(
-    BuildContext context,
-    SettingsProvider settingsProvider,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, sp, _) {
-          final isDark = sp.isDarkMode;
-          final bgColor = isDark ? AppColors.darkSurface : Colors.white;
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
-          final textPrimary = isDark
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final selectedColor = isDark
-              ? AppColors.darkIncome
-              : AppColors.header;
-
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'วันเริ่มต้นรอบงบประมาณ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 1,
-                        ),
-                    itemCount: 31,
-                    itemBuilder: (_, i) {
-                      final day = i + 1;
-                      final selected = sp.budgetStartDay == day;
-                      return Material(
-                        color: selected ? selectedColor : bgColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: selected
-                              ? BorderSide.none
-                              : BorderSide(
-                                  color: isDark
-                                      ? AppColors.darkDivider
-                                      : AppColors.divider,
-                                ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            sp.setBudgetStartDay(day);
-                            Navigator.pop(context);
-                          },
-                          child: Center(
-                            child: Text(
-                              '$day',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                                color: selected ? Colors.white : textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 }
 
 // ── Month Selector ─────────────────────────────────────────────────────────────
@@ -920,16 +777,12 @@ class _MonthSelector extends StatelessWidget {
       'พ.ย.',
       'ธ.ค.',
     ];
-    final startDay = context.read<SettingsProvider>().budgetStartDay;
-    final y = selectedMonth.year;
-    final m = selectedMonth.month;
-    final clampedStart = startDay.clamp(1, DateUtils.getDaysInMonth(y, m));
-    final nextMonth = DateTime(y, m + 1, clampedStart - 1);
-
-    final clampedEnd = nextMonth.day;
-    final startMonth = thaiMonths[m - 1];
-    final endMonth = thaiMonths[nextMonth.month - 1];
-    return '$clampedStart $startMonth - $clampedEnd $endMonth $y';
+    final startDay = context.read<SettingsProvider>().monthlyCycleStartDay;
+    final period = monthlyCyclePeriod(selectedMonth, startDay);
+    final end = period.endExclusive.subtract(const Duration(days: 1));
+    final startMonth = thaiMonths[period.start.month - 1];
+    final endMonth = thaiMonths[end.month - 1];
+    return '${period.start.day} $startMonth - ${end.day} $endMonth ${selectedMonth.year}';
   }
 
   @override

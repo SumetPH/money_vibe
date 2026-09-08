@@ -9,6 +9,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/monthly_cycle.dart';
 import '../../widgets/app_drawer.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
@@ -136,7 +137,7 @@ class _YearlyBarChart extends StatelessWidget {
           txProvider.transactions,
           selectedYear,
           accountProvider.accounts,
-          settingsProvider.statisticsStartDay,
+          settingsProvider.monthlyCycleStartDay,
         );
         final totalIncome = monthlyData.fold<double>(
           0,
@@ -164,8 +165,7 @@ class _YearlyBarChart extends StatelessWidget {
               _StatsYearSelector(
                 selectedYear: selectedYear,
                 onYearChanged: onYearChanged,
-                startDay: settingsProvider.statisticsStartDay,
-                onStartDayTap: () => _showStartDayPicker(context),
+                startDay: settingsProvider.monthlyCycleStartDay,
                 isDarkMode: isDarkMode,
               ),
               _YearlySummaryPanel(
@@ -231,6 +231,7 @@ class _YearlyBarChart extends StatelessWidget {
                 ),
               ),
               _buildMonthlyList(
+                context,
                 monthlyData,
                 incomeColor,
                 expenseColor,
@@ -265,13 +266,7 @@ class _YearlyBarChart extends StatelessWidget {
       final isExpense = TransactionProvider.isActualExpense(tx, accounts);
       if (!isIncome && !isExpense) continue;
 
-      final cycleStartDay = startDay.clamp(
-        1,
-        DateUtils.getDaysInMonth(tx.dateTime.year, tx.dateTime.month),
-      );
-      final cycleMonth = tx.dateTime.day >= cycleStartDay
-          ? DateTime(tx.dateTime.year, tx.dateTime.month)
-          : DateTime(tx.dateTime.year, tx.dateTime.month - 1);
+      final cycleMonth = monthlyCycleMonth(tx.dateTime, startDay);
       if (cycleMonth.year != selectedYear) continue;
 
       final monthData = monthlyData[cycleMonth.month - 1];
@@ -280,107 +275,10 @@ class _YearlyBarChart extends StatelessWidget {
       } else if (isExpense) {
         monthData.expense += tx.amount;
       }
+      monthData.transactionIds.add(tx.id);
     }
 
     return monthlyData;
-  }
-
-  void _showStartDayPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final surfaceColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
-          final textColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final dividerColor = isDarkMode
-              ? AppColors.darkDivider
-              : AppColors.divider;
-          final selectedColor = isDarkMode
-              ? AppColors.darkIncome
-              : AppColors.header;
-
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: dividerColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'วันเริ่มต้นรอบสถิติรายเดือน',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                    itemCount: 31,
-                    itemBuilder: (_, index) {
-                      final day = index + 1;
-                      final selected =
-                          settingsProvider.statisticsStartDay == day;
-                      return Material(
-                        color: selected ? selectedColor : surfaceColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: selected
-                              ? BorderSide.none
-                              : BorderSide(color: dividerColor),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            settingsProvider.setStatisticsStartDay(day);
-                            Navigator.pop(context);
-                          },
-                          child: Center(
-                            child: Text(
-                              '$day',
-                              style: TextStyle(
-                                color: selected ? Colors.white : textColor,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
   }
 
   Widget _buildBarChart(
@@ -532,6 +430,7 @@ class _YearlyBarChart extends StatelessWidget {
   }
 
   Widget _buildMonthlyList(
+    BuildContext context,
     List<_MonthlyData> monthlyData,
     Color incomeColor,
     Color expenseColor,
@@ -604,67 +503,74 @@ class _YearlyBarChart extends StatelessWidget {
             final netColor = net >= 0 ? incomeColor : expenseColor;
             return Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          d.monthShort,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                InkWell(
+                  onTap: hasData
+                      ? () => _openMonthTransactions(context, d)
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            d.monthShort,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData && d.income > 0
-                              ? formatAmount(d.income)
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: d.income > 0 ? incomeColor : secondaryColor,
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData && d.income > 0
+                                ? formatAmount(d.income)
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: d.income > 0
+                                  ? incomeColor
+                                  : secondaryColor,
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData && d.expense > 0
-                              ? formatAmount(d.expense)
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: d.expense > 0
-                                ? expenseColor
-                                : secondaryColor,
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData && d.expense > 0
+                                ? formatAmount(d.expense)
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: d.expense > 0
+                                  ? expenseColor
+                                  : secondaryColor,
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData
-                              ? '${net >= 0 ? "+" : ""}${formatAmount(net)}'
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: hasData ? netColor : secondaryColor,
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData
+                                ? '${net >= 0 ? "+" : ""}${formatAmount(net)}'
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: hasData ? netColor : secondaryColor,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 if (i < 11) Divider(height: 1, color: dividerColor),
@@ -672,6 +578,18 @@ class _YearlyBarChart extends StatelessWidget {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  void _openMonthTransactions(BuildContext context, _MonthlyData data) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionListScreen(
+          transactionIds: data.transactionIds,
+          title: '${data.monthName} $selectedYear',
+        ),
       ),
     );
   }
@@ -728,6 +646,7 @@ class _MonthlyData {
   final String monthShort;
   double income = 0;
   double expense = 0;
+  final List<String> transactionIds = [];
 
   _MonthlyData({
     required this.month,
@@ -740,14 +659,12 @@ class _StatsYearSelector extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
   final int startDay;
-  final VoidCallback onStartDayTap;
   final bool isDarkMode;
 
   const _StatsYearSelector({
     required this.selectedYear,
     required this.onYearChanged,
     required this.startDay,
-    required this.onStartDayTap,
     required this.isDarkMode,
   });
 
@@ -791,26 +708,23 @@ class _StatsYearSelector extends StatelessWidget {
             ],
           ),
           Divider(height: 1, color: dividerColor),
-          InkWell(
-            onTap: onStartDayTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 18,
-                    color: secondaryColor,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                  color: secondaryColor,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'เริ่มรอบวันที่ $startDay ของแต่ละเดือน',
+                    style: TextStyle(fontSize: 13, color: secondaryColor),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'เริ่มรอบวันที่ $startDay ของแต่ละเดือน',
-                      style: TextStyle(fontSize: 13, color: secondaryColor),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Divider(height: 1, color: dividerColor),

@@ -212,6 +212,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Divider(color: dividerColor),
 
+                _buildSectionHeader('รอบคำนวณ', textColor),
+                ListTile(
+                  leading: Icon(
+                    Icons.calendar_today_outlined,
+                    color: secondaryTextColor,
+                  ),
+                  title: Text(
+                    'วันเริ่มรอบรายเดือน',
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณและสถิติรายปี',
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: secondaryTextColor,
+                  ),
+                  onTap: _showMonthlyCycleStartDaySheet,
+                ),
+                Divider(color: dividerColor),
+
                 // API Section
                 _buildSectionHeader('API', textColor),
 
@@ -558,6 +580,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               );
             },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMonthlyCycleStartDaySheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final settings = ctx.watch<SettingsProvider>();
+        final isDarkMode = settings.isDarkMode;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+        final surfaceColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final selectedColor = isDarkMode
+            ? AppColors.darkIncome
+            : AppColors.header;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'วันเริ่มรอบรายเดือน',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                  ),
+                  itemCount: 31,
+                  itemBuilder: (_, index) {
+                    final day = index + 1;
+                    final selected = settings.monthlyCycleStartDay == day;
+                    return Material(
+                      color: selected ? selectedColor : surfaceColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: selected
+                            ? BorderSide.none
+                            : BorderSide(color: dividerColor),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          settings.setMonthlyCycleStartDay(day);
+                          Navigator.pop(ctx);
+                        },
+                        child: Center(
+                          child: Text(
+                            '$day',
+                            style: TextStyle(
+                              color: selected ? Colors.white : textColor,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },

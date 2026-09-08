@@ -8,6 +8,7 @@ import '../providers/budget_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../utils/monthly_cycle.dart';
 
 enum AiFinanceExportScope {
   overview('ภาพรวมทั้งหมด'),
@@ -50,7 +51,7 @@ class AiFinanceExportService {
         .toList();
     final budgetCycle = _currentBudgetCycle(
       generatedAt,
-      settingsProvider.budgetStartDay,
+      settingsProvider.monthlyCycleStartDay,
     );
     final budgetTransactions = transactions
         .where(
@@ -68,7 +69,7 @@ class AiFinanceExportService {
       '- Period: ${_monthFormatter.format(monthStart)}',
       '- Budget cycle: ${_dateFormatter.format(budgetCycle.start)} to '
           '${_dateFormatter.format(budgetCycle.endInclusive)} '
-          '(starts day ${settingsProvider.budgetStartDay})',
+          '(starts day ${settingsProvider.monthlyCycleStartDay})',
       '- Privacy: transaction notes and raw IDs are excluded',
       '',
     ];
@@ -378,26 +379,11 @@ class AiFinanceExportService {
   }
 
   _DateWindow _currentBudgetCycle(DateTime now, int startDay) {
-    final cycleMonth = now.day >= startDay
-        ? DateTime(now.year, now.month)
-        : DateTime(now.year, now.month - 1);
-    final start = _budgetCycleStart(
-      cycleMonth.year,
-      cycleMonth.month,
+    final period = monthlyCyclePeriod(
+      monthlyCycleMonth(now, startDay),
       startDay,
     );
-    final nextCycleMonth = DateTime(cycleMonth.year, cycleMonth.month + 1);
-    final endExclusive = _budgetCycleStart(
-      nextCycleMonth.year,
-      nextCycleMonth.month,
-      startDay,
-    );
-    return _DateWindow(start: start, endExclusive: endExclusive);
-  }
-
-  DateTime _budgetCycleStart(int year, int month, int startDay) {
-    final lastDay = DateTime(year, month + 1, 0).day;
-    return DateTime(year, month, startDay.clamp(1, lastDay));
+    return _DateWindow(start: period.start, endExclusive: period.endExclusive);
   }
 
   String _cell(String value) {
