@@ -24,7 +24,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _selectedYear = DateTime.now().year;
+  int? _selectedYear;
 
   @override
   void initState() {
@@ -42,6 +42,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
+        final selectedYear =
+            _selectedYear ??
+            monthlyCycleReportingMonth(
+              DateTime.now(),
+              settingsProvider.monthlyCycleStartDay,
+            ).year;
         final isDarkMode = settingsProvider.isDarkMode;
         final headerColor = AppColors.headerFor(
           isDarkMode,
@@ -91,7 +97,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 children: [
                   _NetWorthLineChart(),
                   _YearlyBarChart(
-                    selectedYear: _selectedYear,
+                    selectedYear: selectedYear,
                     onYearChanged: (year) =>
                         setState(() => _selectedYear = year),
                   ),
@@ -266,7 +272,7 @@ class _YearlyBarChart extends StatelessWidget {
       final isExpense = TransactionProvider.isActualExpense(tx, accounts);
       if (!isIncome && !isExpense) continue;
 
-      final cycleMonth = monthlyCycleMonth(tx.dateTime, startDay);
+      final cycleMonth = monthlyCycleReportingMonth(tx.dateTime, startDay);
       if (cycleMonth.year != selectedYear) continue;
 
       final monthData = monthlyData[cycleMonth.month - 1];
@@ -668,6 +674,30 @@ class _StatsYearSelector extends StatelessWidget {
     required this.isDarkMode,
   });
 
+  String _getYearPeriodLabel() {
+    const thaiMonths = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+    final start = monthlyCyclePeriod(DateTime(selectedYear, 1), startDay).start;
+    final end = monthlyCyclePeriod(
+      DateTime(selectedYear, 12),
+      startDay,
+    ).endExclusive.subtract(const Duration(days: 1));
+    return 'รอบ ${start.day} ${thaiMonths[start.month - 1]} ${start.year} - '
+        '${end.day} ${thaiMonths[end.month - 1]} ${end.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final textColor = isDarkMode
@@ -720,7 +750,7 @@ class _StatsYearSelector extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'เริ่มรอบวันที่ $startDay ของแต่ละเดือน',
+                    _getYearPeriodLabel(),
                     style: TextStyle(fontSize: 13, color: secondaryColor),
                   ),
                 ),

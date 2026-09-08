@@ -589,6 +589,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showMonthlyCycleStartDaySheet() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (ctx) {
         final settings = ctx.watch<SettingsProvider>();
@@ -605,12 +607,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final selectedColor = isDarkMode
             ? AppColors.darkIncome
             : AppColors.header;
+        final sheetHeight = (MediaQuery.sizeOf(ctx).height * 0.8)
+            .clamp(0.0, 480.0)
+            .toDouble();
 
-        return SafeArea(
+        return SizedBox(
+          height: sheetHeight,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'วันเริ่มรอบรายเดือน',
@@ -621,46 +626,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                  ),
-                  itemCount: 31,
-                  itemBuilder: (_, index) {
-                    final day = index + 1;
-                    final selected = settings.monthlyCycleStartDay == day;
-                    return Material(
-                      color: selected ? selectedColor : surfaceColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: selected
-                            ? BorderSide.none
-                            : BorderSide(color: dividerColor),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          settings.setMonthlyCycleStartDay(day);
-                          Navigator.pop(ctx);
-                        },
-                        child: Center(
-                          child: Text(
-                            '$day',
-                            style: TextStyle(
-                              color: selected ? Colors.white : textColor,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.normal,
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                    itemCount: 31,
+                    itemBuilder: (_, index) {
+                      final day = index + 1;
+                      final selected = settings.monthlyCycleStartDay == day;
+                      return Material(
+                        color: selected ? selectedColor : surfaceColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: selected
+                              ? BorderSide.none
+                              : BorderSide(color: dividerColor),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            settings.setMonthlyCycleStartDay(day);
+                            Navigator.pop(ctx);
+                          },
+                          child: Center(
+                            child: Text(
+                              '$day',
+                              style: TextStyle(
+                                color: selected ? Colors.white : textColor,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

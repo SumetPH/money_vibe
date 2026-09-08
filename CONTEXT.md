@@ -9,7 +9,7 @@
 - **Current net worth**: The combined value of included assets and liabilities at the user's current local time; it is the single value shown when all reporting periods are selected, with a zero baseline.
 - **Period net worth**: The opening and closing net-worth values represented by the first and last visible points in the selected reporting period.
 - **Net worth change**: The difference and percentage change between the first and last net-worth points visible in the selected reporting period.
-- **Monthly financial cycle**: The period used by budgets and yearly statistics. It starts on the configured day in its named month and ends immediately before the next cycle. If a month lacks that day, its cycle starts on the month's final day.
+- **Monthly financial cycle**: The period used by budgets and yearly statistics, named for the month in which it ends. With a start day of 21, September runs from 21 August through 20 September. If a month lacks the configured start day, its cycle starts on the month's final day.
 - **Monthly cycle start day**: The single application setting that determines every monthly financial cycle.
 
 ## Reinstall reminders

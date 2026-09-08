@@ -380,7 +380,7 @@ class AiFinanceExportService {
 
   _DateWindow _currentBudgetCycle(DateTime now, int startDay) {
     final period = monthlyCyclePeriod(
-      monthlyCycleMonth(now, startDay),
+      monthlyCycleReportingMonth(now, startDay),
       startDay,
     );
     return _DateWindow(start: period.start, endExclusive: period.endExclusive);

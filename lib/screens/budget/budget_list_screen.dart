@@ -28,7 +28,7 @@ class BudgetListScreen extends StatefulWidget {
 class _BudgetListScreenState extends State<BudgetListScreen> {
   bool _isReorderMode = false;
   late DateTime _selectedMonth;
-  bool _initialized = false;
+  int? _cycleStartDay;
 
   @override
   void initState() {
@@ -45,17 +45,19 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      _initialized = true;
-      final startDay = context.read<SettingsProvider>().monthlyCycleStartDay;
+    final startDay = Provider.of<SettingsProvider>(
+      context,
+    ).monthlyCycleStartDay;
+    if (_cycleStartDay != startDay) {
+      _cycleStartDay = startDay;
       _selectedMonth = _currentCycleMonth(startDay);
     }
   }
 
   /// คำนวณว่าวันนี้อยู่ใน cycle ของเดือนไหน
-  /// ถ้า startDay=15 และวันนี้=1 มี.ค. → อยู่ใน cycle ก.พ. (15 ก.พ.–14 มี.ค.)
+  /// ถ้า startDay=15 และวันนี้=1 มี.ค. → รอบเดือน มี.ค. (15 ก.พ.–14 มี.ค.)
   DateTime _currentCycleMonth(int startDay) {
-    return monthlyCycleMonth(DateTime.now(), startDay);
+    return monthlyCycleReportingMonth(DateTime.now(), startDay);
   }
 
   void _prevMonth() => setState(
@@ -198,6 +200,25 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     return '$startLabel - $endLabel';
   }
 
+  String _formatBudgetTitle() {
+    const thaiMonths = [
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
+    ];
+    return '${thaiMonths[_selectedMonth.month - 1]} '
+        '${_selectedMonth.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer3<BudgetProvider, TransactionProvider, SettingsProvider>(
@@ -272,7 +293,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
-            title: const Text('งบประมาณ'),
+            title: Text(
+              _formatBudgetTitle(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.list_alt_outlined),
@@ -312,9 +337,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                           selectedMonth: _selectedMonth,
                           onPrevMonth: _prevMonth,
                           onNextMonth: _nextMonth,
-                          isDarkMode: isDarkMode,
                           surfaceColor: surfaceColor,
-                          textPrimary: textPrimary,
                           textSecondary: textSecondary,
                         ),
                         _SummaryHeader(
@@ -747,18 +770,14 @@ class _MonthSelector extends StatelessWidget {
   final DateTime selectedMonth;
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
-  final bool isDarkMode;
   final Color surfaceColor;
-  final Color textPrimary;
   final Color textSecondary;
 
   const _MonthSelector({
     required this.selectedMonth,
     required this.onPrevMonth,
     required this.onNextMonth,
-    required this.isDarkMode,
     required this.surfaceColor,
-    required this.textPrimary,
     required this.textSecondary,
   });
 
@@ -782,7 +801,11 @@ class _MonthSelector extends StatelessWidget {
     final end = period.endExclusive.subtract(const Duration(days: 1));
     final startMonth = thaiMonths[period.start.month - 1];
     final endMonth = thaiMonths[end.month - 1];
-    return '${period.start.day} $startMonth - ${end.day} $endMonth ${selectedMonth.year}';
+    final startYear = period.start.year == end.year
+        ? ''
+        : ' ${period.start.year}';
+    return '${period.start.day} $startMonth$startYear - '
+        '${end.day} $endMonth ${end.year}';
   }
 
   @override
@@ -799,16 +822,13 @@ class _MonthSelector extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
-          const SizedBox(width: 8),
-          Text(
-            _getPeriodLabel(context),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
+          Expanded(
+            child: Text(
+              _getPeriodLabel(context),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: textSecondary),
             ),
           ),
-          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.chevron_right, size: 22),
             onPressed: onNextMonth,
