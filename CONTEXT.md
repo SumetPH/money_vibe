@@ -16,3 +16,9 @@
 - **Reinstall reminder**: A one-time local notification issued when a reinstall deadline is reached. _Avoid_: expiry notification
 - **Reinstall reminder setting**: The user preference that permits the reinstall reminder without hiding the reinstall deadline or its in-app status. _Avoid_: expiry setting
 - **Installation status**: The in-app representation of the time remaining until, or passage of, a reinstall deadline. _Avoid_: expiration status
+
+## iOS installation
+
+- **Target iOS app**: The app identified by the Bundle ID of the current Xcode Runner target; test-target identifiers are separate apps.
+- **Wireless install target**: A physical iPhone that Flutter reports through its wireless-device filter; simulators and wired devices are excluded.
+- **App provisioning profile**: A signing profile whose application identifier exactly matches the target Team ID and Bundle ID; profiles for other apps or teams are unrelated.
