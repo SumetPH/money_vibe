@@ -5,8 +5,8 @@ import 'theme_color_option.dart';
 class AppColors {
   // Light mode colors
   static const Color header = Color(0xFF393E46);
-  static const Color income = Color(0xFF276F2D);
-  static const Color expense = Color(0xFFBD2424);
+  static const Color income = Color(0xFF388E3C);
+  static const Color expense = Color(0xFFD32F2F);
   static const Color transfer = Color(0xFF2196F3);
   static const Color debtTransfer = Color(0xFFFB8C00);
   static const Color debtRepay = Color(0xFFFB8C00);
