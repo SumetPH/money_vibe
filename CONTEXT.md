@@ -12,7 +12,7 @@
 
 ## Reinstall reminders
 
-- **Reinstall deadline**: The local-time instant seven days after the first app launch for an installed build. _Avoid_: expiry date, install date
+- **Reinstall deadline**: The local-time instant five days after the first app launch following each installation, including reinstalling the same or an older version. _Avoid_: expiry date, install date
 - **Reinstall reminder**: A one-time local notification issued when a reinstall deadline is reached. _Avoid_: expiry notification
 - **Reinstall reminder setting**: The user preference that permits the reinstall reminder without hiding the reinstall deadline or its in-app status. _Avoid_: expiry setting
 - **Installation status**: The in-app representation of the time remaining until, or passage of, a reinstall deadline. _Avoid_: expiration status

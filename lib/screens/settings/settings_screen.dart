@@ -436,7 +436,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     subtitle: Text(
                       reinstallReminder.notificationEnabled
-                          ? 'แจ้งเตือนเมื่อครบ 7 วัน'
+                          ? 'แจ้งเตือนเมื่อครบ 5 วัน'
                           : 'ปิดการแจ้งเตือนแล้ว',
                       style: TextStyle(color: secondaryTextColor),
                     ),

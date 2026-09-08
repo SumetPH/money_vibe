@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'recurring_notification_service.dart';
@@ -9,7 +9,7 @@ import 'recurring_notification_service.dart';
 enum ReinstallStatus { active, warning, expired }
 
 class ReinstallReminderState {
-  static const duration = Duration(days: 7);
+  static const duration = Duration(days: 5);
 
   final DateTime firstLaunch;
   final DateTime deadline;
@@ -42,7 +42,7 @@ class ReinstallReminderService extends ChangeNotifier {
 
   static final instance = ReinstallReminderService._();
 
-  static const _buildNumberKey = 'reinstall_reminder_build_number';
+  static const _installationIdKey = 'reinstall_reminder_installation_id';
   static const _firstLaunchKey = 'reinstall_reminder_first_launch';
   static const _notificationEnabledKey =
       'reinstall_reminder_notification_enabled';
@@ -61,13 +61,13 @@ class ReinstallReminderService extends ChangeNotifier {
   String? get remainingLabel => _state?.remainingLabelAt(DateTime.now());
 
   static ReinstallReminderState resolveState({
-    required String buildNumber,
-    required String? storedBuildNumber,
+    required String installationId,
+    required String? storedInstallationId,
     required DateTime? storedFirstLaunch,
     required DateTime now,
   }) {
     final firstLaunch =
-        storedBuildNumber == buildNumber && storedFirstLaunch != null
+        storedInstallationId == installationId && storedFirstLaunch != null
         ? storedFirstLaunch
         : now;
     return ReinstallReminderState(
@@ -86,13 +86,18 @@ class ReinstallReminderService extends ChangeNotifier {
     _isSupported = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     if (!_isSupported) return;
 
-    final packageInfo = await PackageInfo.fromPlatform();
+    final installationId = await const MethodChannel(
+      'money_vibe/installation',
+    ).invokeMethod<String>('getInstallationId');
+    if (installationId == null || installationId.isEmpty) {
+      throw StateError('iOS installation identity is unavailable');
+    }
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final storedFirstLaunch = prefs.getString(_firstLaunchKey);
     _state = resolveState(
-      buildNumber: packageInfo.buildNumber,
-      storedBuildNumber: prefs.getString(_buildNumberKey),
+      installationId: installationId,
+      storedInstallationId: prefs.getString(_installationIdKey),
       storedFirstLaunch: storedFirstLaunch == null
           ? null
           : DateTime.tryParse(storedFirstLaunch),
@@ -100,15 +105,13 @@ class ReinstallReminderService extends ChangeNotifier {
     );
     _notificationEnabled = prefs.getBool(_notificationEnabledKey) ?? true;
 
-    await prefs.setString(_buildNumberKey, packageInfo.buildNumber);
+    await prefs.setString(_installationIdKey, installationId);
     await prefs.setString(
       _firstLaunchKey,
       _state!.firstLaunch.toIso8601String(),
     );
 
-    if (_notificationEnabled) {
-      await _scheduleReminder();
-    }
+    await _scheduleReminder();
     _refreshTimer ??= Timer.periodic(
       const Duration(minutes: 1),
       (_) => notifyListeners(),
@@ -140,6 +143,7 @@ class ReinstallReminderService extends ChangeNotifier {
           state: state,
           now: now,
         )) {
+      await RecurringNotificationService.instance.cancelReinstallReminder();
       return;
     }
     await RecurringNotificationService.instance.scheduleReinstallReminder(

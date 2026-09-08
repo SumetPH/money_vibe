@@ -14,5 +14,17 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    let installationChannel = FlutterMethodChannel(
+      name: "money_vibe/installation",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    installationChannel.setMethodCallHandler { call, result in
+      guard call.method == "getInstallationId" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      // ponytail: bundle relocation identifies installs; verify with the IPA installer in use.
+      result(Bundle.main.bundleURL.resolvingSymlinksInPath().path)
+    }
   }
 }

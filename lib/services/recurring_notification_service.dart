@@ -232,7 +232,7 @@ class RecurringNotificationService {
     await _plugin.zonedSchedule(
       _reinstallNotificationId,
       'ถึงเวลาติดตั้ง Money Vibe ใหม่',
-      'เวอร์ชันนี้ใช้งานครบ 7 วันแล้ว กรุณาติดตั้ง build ล่าสุด',
+      'ติดตั้งแอปครั้งนี้ครบ 5 วันแล้ว กรุณาติดตั้ง Money Vibe ใหม่',
       tz.TZDateTime.from(deadline, tz.local),
       NotificationDetails(
         android: const AndroidNotificationDetails(
