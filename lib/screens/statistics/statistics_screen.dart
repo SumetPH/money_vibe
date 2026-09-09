@@ -222,8 +222,9 @@ class _YearlyBarChart extends StatelessWidget {
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              Container(
+                height: 28.0,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -763,7 +764,11 @@ class _StatsYearSelector extends StatelessWidget {
                 Expanded(
                   child: Text(
                     _getYearPeriodLabel(),
-                    style: TextStyle(fontSize: 13, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: secondaryColor,
+                    ),
                   ),
                 ),
               ],
@@ -884,7 +889,11 @@ class _StatSummaryMetric extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 11, color: secondaryColor),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: secondaryColor,
+          ),
         ),
         const SizedBox(height: 3),
         Text(
@@ -1097,14 +1106,18 @@ class _CategoryPieChart extends StatelessWidget {
                     ),
                   ),
 
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Text(
-                      'แยกตามหมวดหมู่',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
+                  Container(
+                    height: 28.0,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'แยกตามหมวดหมู่',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
                       ),
                     ),
                   ),
@@ -1401,7 +1414,11 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                       showsPeriodComparison
                           ? 'ทรัพย์สินสุทธิในช่วง ${_selectedFilter.label}'
                           : 'ทรัพย์สินสุทธิปัจจุบัน',
-                      style: TextStyle(fontSize: 14, color: secondaryTextColor),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryTextColor,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     if (!showsPeriodComparison)
@@ -1569,6 +1586,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                         'รวมบัญชีที่ซ่อนจาก Net Worth',
                         style: TextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -1610,6 +1628,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                     : 'ตั้งแต่ ${_formatDate(filteredNetWorthData.first.date)} - ${_formatDate(filteredNetWorthData.last.date)}',
                                 style: TextStyle(
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                   color: secondaryTextColor,
                                 ),
                               ),
@@ -1637,6 +1656,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         fontSize: 13,
+                                        fontWeight: FontWeight.w600,
                                         color: textColor,
                                       ),
                                 ),

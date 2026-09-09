@@ -423,6 +423,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: textSecondary,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
@@ -473,6 +474,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               'ทุกวันที่ ',
                               style: TextStyle(
                                 fontSize: 14,
+                                fontWeight: FontWeight.w600,
                                 color: textSecondary,
                               ),
                             ),
@@ -495,6 +497,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               'เริ่ม ',
                               style: TextStyle(
                                 fontSize: 14,
+                                fontWeight: FontWeight.w600,
                                 color: textSecondary,
                               ),
                             ),
@@ -996,7 +999,14 @@ class _DetailRow extends StatelessWidget {
           child: Icon(icon, size: 14, color: iconColor),
         ),
         const SizedBox(width: 8),
-        Text('$label: ', style: TextStyle(fontSize: 14, color: textSecondary)),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 14,
+            color: textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         Text(
           value,
           style: TextStyle(
@@ -1204,7 +1214,11 @@ class _RemainingSummary extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '$actionWordแล้ว',
-                      style: TextStyle(fontSize: 13, color: textSecondary),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                      ),
                     ),
                   ],
                 ),

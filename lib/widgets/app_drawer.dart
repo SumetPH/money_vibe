@@ -21,7 +21,7 @@ class AppDrawer extends StatelessWidget {
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
         final selectedColor = AppColors.accentFor(isDarkMode, themeColor);
-        final selectedTileColor = drawerHeaderColor.withValues(alpha: 0.08);
+        final selectedTileColor = drawerHeaderColor.withValues(alpha: 0.04);
 
         return Drawer(
           child: Column(

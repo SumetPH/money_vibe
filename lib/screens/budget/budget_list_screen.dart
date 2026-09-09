@@ -574,7 +574,9 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: textPrimary,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textSecondary,
                   ),
                 ),
                 SizedBox(

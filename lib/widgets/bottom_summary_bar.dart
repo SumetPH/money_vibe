@@ -25,7 +25,6 @@ class BottomSummaryBar extends StatelessWidget {
     final themeColor = context.watch<SettingsProvider>().themeColor;
     final headerColor = AppColors.headerFor(isDarkMode, themeColor);
     final fabColor = AppColors.fabFor(isDarkMode, themeColor);
-    final onFabColor = AppColors.onFabFor(isDarkMode, themeColor);
 
     return Container(
       color: headerColor,
@@ -45,11 +44,7 @@ class BottomSummaryBar extends StatelessWidget {
                 child: SizedBox(
                   width: 50,
                   height: 50,
-                  child: Icon(
-                    Icons.add,
-                    color: addIconColor ?? onFabColor,
-                    size: 28,
-                  ),
+                  child: Icon(Icons.add, color: headerColor, size: 32),
                 ),
               ),
             ),

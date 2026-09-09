@@ -331,7 +331,11 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _formatBillDateRange(bill),
-                      style: TextStyle(fontSize: 15, color: textSecondaryColor),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondaryColor,
+                      ),
                     ),
                     if (bill.isOpen) ...[
                       const SizedBox(height: 4),
@@ -339,6 +343,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                         _formatStatementHint(bill),
                         style: TextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           color: textSecondaryColor,
                         ),
                       ),
@@ -354,6 +359,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                                 'ยอดที่ต้องชำระ',
                                 style: TextStyle(
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                   color: textSecondaryColor,
                                 ),
                               ),
@@ -376,6 +382,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                                 'ชำระแล้ว',
                                 style: TextStyle(
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                   color: textSecondaryColor,
                                 ),
                               ),
@@ -406,6 +413,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                                 : 'ชำระเกิน',
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: textSecondaryColor,
                             ),
                           ),
@@ -439,6 +447,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                                 : 'ยอดชำระเกินยกมา',
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: textSecondaryColor,
                             ),
                           ),

@@ -243,7 +243,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
           statusColor = isDark ? AppColors.darkIncome : AppColors.income;
         case OccurrenceStatus.pending:
           statusLabel = 'รอดำเนินการ';
-          statusColor = Colors.grey;
+          statusColor = Colors.blueGrey;
         case OccurrenceStatus.skipped:
           statusLabel = 'ข้ามแล้ว';
           statusColor = Colors.orange;
@@ -492,6 +492,7 @@ class _RecurringItem extends StatelessWidget {
                             'ทุกวันที่ ${recurring.dayOfMonth == 0 ? 'สิ้นเดือน' : recurring.dayOfMonth}',
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: textSecondary,
                             ),
                           ),
@@ -501,7 +502,11 @@ class _RecurringItem extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           'ครั้งถัดไป: ${formatDate(nextOccurrence!)}',
-                          style: TextStyle(fontSize: 13, color: textSecondary),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ],

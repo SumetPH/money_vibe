@@ -38,7 +38,7 @@ class ThemeColorOption {
     label: 'Classic',
     lightHeader: Color(0xFF393E46),
     lightAccent: Color(0xFF393E46),
-    lightFab: Color(0xFFFB8C00),
+    lightFab: Color(0xFFFFB74D),
     lightOnFab: Colors.white,
     darkHeader: Color(0xFF2C333A),
     darkAccent: Color(0xFF66BB6A),

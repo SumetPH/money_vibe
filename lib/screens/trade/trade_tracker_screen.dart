@@ -664,7 +664,6 @@ class _SaleHistoryTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
         if (trades.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -719,7 +718,6 @@ class _PurchaseHistoryTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
         if (purchases.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -1100,14 +1098,18 @@ class _YearlyTradeTab extends StatelessWidget {
           )
         else ...[
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text(
-                'รายเดือน',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+            child: Container(
+              height: 28.0,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'รายเดือน',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -1598,7 +1600,11 @@ class _AnnualTaxSummaryPanel extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${formatAmount(annualTaxSummary.taxableUsd)} USD',
-                    style: TextStyle(color: secondaryColor, fontSize: 13),
+                    style: TextStyle(
+                      color: secondaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -2103,7 +2109,11 @@ class _MonthlyTradeTable extends StatelessWidget {
                   flex: 2,
                   child: Text(
                     'เดือน',
-                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: secondaryColor,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -2111,7 +2121,11 @@ class _MonthlyTradeTable extends StatelessWidget {
                   child: Text(
                     'จำนวน',
                     textAlign: TextAlign.right,
-                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: secondaryColor,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -2121,7 +2135,7 @@ class _MonthlyTradeTable extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 12,
-                      color: profitColor,
+                      color: secondaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2133,7 +2147,7 @@ class _MonthlyTradeTable extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 12,
-                      color: lossColor,
+                      color: secondaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2143,7 +2157,11 @@ class _MonthlyTradeTable extends StatelessWidget {
                   child: Text(
                     'สุทธิ',
                     textAlign: TextAlign.right,
-                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: secondaryColor,
+                    ),
                   ),
                 ),
               ],
@@ -2438,7 +2456,11 @@ class _SummaryPanel extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Win/Loss ${summary.winCount}/${summary.lossCount}',
-            style: TextStyle(fontSize: 12, color: secondaryColor),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: secondaryColor,
+            ),
           ),
         ],
       ),
@@ -2561,7 +2583,11 @@ class _SummaryMetric extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 11, color: secondaryColor),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: secondaryColor,
+          ),
         ),
         const SizedBox(height: 3),
         Text(

@@ -10,10 +10,10 @@ class AppColors {
   static const Color transfer = Color(0xFF2196F3);
   static const Color debtTransfer = Color(0xFFFB8C00);
   static const Color debtRepay = Color(0xFFFB8C00);
-  static const Color background = Color(0xFFD5E0E4);
-  static const Color surface = Color(0xFFE9EEF0);
+  static const Color background = Color(0xFFE4E7E8);
+  static const Color surface = Color(0xFFECEFF1);
   static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textSecondary = Color(0xFF1C4351);
   static const Color divider = Color(0xFFBCC9CE);
   static const Color fabYellow = Color(0xFFFB8C00);
   static const Color sectionHeader = Color(0xFFDDE5E8);

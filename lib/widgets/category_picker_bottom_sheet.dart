@@ -99,6 +99,8 @@ class CategoryPickerBottomSheet extends StatelessWidget {
                   title: Text(
                     cat.name,
                     style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w600,
                       color: isDarkMode
                           ? AppColors.darkTextPrimary
                           : AppColors.textPrimary,
