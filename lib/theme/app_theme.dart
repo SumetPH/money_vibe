@@ -75,6 +75,7 @@ class AppTheme {
       modalBackgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       dragHandleColor: AppColors.divider,
+      dragHandleSize: Size(36, 4),
     ),
     dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.surface,
@@ -180,6 +181,7 @@ class AppTheme {
         modalBackgroundColor: darkSurface,
         surfaceTintColor: Colors.transparent,
         dragHandleColor: darkDivider,
+        dragHandleSize: const Size(36, 4),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: themeColor.darkFab,

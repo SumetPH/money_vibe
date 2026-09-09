@@ -12,6 +12,7 @@ import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
@@ -887,25 +888,23 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
   void _pickType(bool isDark) {
     final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
-        maxChildSize: 0.8,
+        maxChildSize: 0.85,
         expand: false,
         builder: (_, sc) => Column(
           children: [
-            _Handle(color: handleColor),
+            const AppModalBottomSheetHeader(title: 'เลือกประเภทรายการ'),
             Expanded(
               child: ListView(
                 controller: sc,
@@ -990,37 +989,23 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
   void _pickCategory(List<Category> categories, bool isDark) {
     final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
-        maxChildSize: 0.9,
+        maxChildSize: 0.85,
         expand: false,
         builder: (_, sc) => Column(
           children: [
-            _Handle(color: handleColor),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                'เลือกหมวดหมู่',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textColor,
-                ),
-              ),
-            ),
-            Divider(height: 1, color: dividerColor),
+            const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),
             // Clear option
             ListTile(
               tileColor: bgColor,
@@ -1083,35 +1068,22 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
   void _pickDayOfMonth(bool isDark) {
     final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final handleColor = isDark ? AppColors.darkDivider : Colors.grey.shade300;
     final textPrimary = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
-        maxChildSize: 0.8,
+        maxChildSize: 0.85,
         expand: false,
         builder: (_, sc) => Column(
           children: [
-            _Handle(color: handleColor),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                'วันที่ในเดือน',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textPrimary,
-                ),
-              ),
-            ),
+            const AppModalBottomSheetHeader(title: 'วันที่ในเดือน'),
             Expanded(
               child: GridView.builder(
                 controller: sc,
@@ -1207,25 +1179,14 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
     int selectedYear = initialDate.year;
 
-    return showModalBottomSheet<DateTime>(
+    return showAppModalBottomSheet<DateTime>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: bgColor,
       builder: (_) => StatefulBuilder(
         builder: (ctx, setModalState) => SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
               // Header with year navigator
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -1437,38 +1398,21 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
   void _pickIcon(bool isDark) {
     final bgColor = isDark ? AppColors.darkBackground : AppColors.background;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
     final textSecondary = isDark
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
-        maxChildSize: 0.9,
+        maxChildSize: 0.85,
         expand: false,
         builder: (_, sc) => Column(
           children: [
-            _Handle(
-              color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'เลือกไอคอน',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textPrimary,
-                ),
-              ),
-            ),
+            const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
             Expanded(
               child: GridView.builder(
                 controller: sc,
@@ -1513,35 +1457,17 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   }
 
   void _pickColor(bool isDark) {
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
+        initialChildSize: 0.85,
         minChildSize: 0.3,
-        maxChildSize: 0.8,
+        maxChildSize: 0.85,
         expand: false,
         builder: (_, sc) => Column(
           children: [
-            _Handle(
-              color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'เลือกสี',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: textPrimary,
-                ),
-              ),
-            ),
+            const AppModalBottomSheetHeader(title: 'เลือกสี'),
             Expanded(
               child: GridView.builder(
                 controller: sc,
@@ -1657,24 +1583,6 @@ class _RowTile extends StatelessWidget {
             Icon(Icons.chevron_right, color: textSecondary, size: 18),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Handle extends StatelessWidget {
-  final Color color;
-  const _Handle({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 4,
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(2),
       ),
     );
   }

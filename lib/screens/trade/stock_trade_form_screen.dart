@@ -8,8 +8,8 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 
 typedef SaveStockTradeCallback = Future<void> Function(StockTrade trade);
 typedef FetchStockProfileCallback =
@@ -380,7 +380,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       body: AbsorbPointer(
         absorbing: _isSaving,
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
           children: [
             Container(
               color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
@@ -653,70 +652,44 @@ Future<String?> _showPortfolioPickerSheet({
   required String? selectedPortfolioId,
   required bool isDarkMode,
 }) {
-  final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
   final textColor = isDarkMode
       ? AppColors.darkTextPrimary
       : AppColors.textPrimary;
   final secondaryColor = isDarkMode
       ? AppColors.darkTextSecondary
       : AppColors.textSecondary;
-  final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-  return showModalBottomSheet<String>(
+  return showAppModalBottomSheet<String>(
     context: context,
-    backgroundColor: surfaceColor,
-    clipBehavior: Clip.antiAlias,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
-    ),
     builder: (sheetContext) {
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: dividerColor,
-                    borderRadius: BorderRadius.circular(AppRadii.tiny),
-                  ),
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppModalBottomSheetHeader(title: 'เลือกพอร์ต'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                children: portfolios
+                    .map(
+                      (portfolio) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          portfolio.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: textColor),
+                        ),
+                        trailing: portfolio.id == selectedPortfolioId
+                            ? Icon(Icons.check, color: secondaryColor)
+                            : null,
+                        onTap: () => Navigator.pop(sheetContext, portfolio.id),
+                      ),
+                    )
+                    .toList(),
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  'เลือกพอร์ต',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...portfolios.map(
-                (portfolio) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    portfolio.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: textColor),
-                  ),
-                  trailing: portfolio.id == selectedPortfolioId
-                      ? Icon(Icons.check, color: secondaryColor)
-                      : null,
-                  onTap: () => Navigator.pop(sheetContext, portfolio.id),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     },

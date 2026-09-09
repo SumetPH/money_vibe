@@ -13,6 +13,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
 import '../../widgets/calculator_keyboard.dart';
@@ -683,7 +684,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   : 'จำนวน',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
@@ -744,7 +744,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 'จำนวนที่ได้รับ',
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
@@ -808,7 +807,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 'ยอดคงเหลือ',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
@@ -821,7 +819,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
                     color: isDarkMode
                         ? AppColors.darkTextPrimary
                         : AppColors.textPrimary,
@@ -1028,14 +1025,9 @@ class _TypeSelector extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      clipBehavior: Clip.antiAlias,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.85,
         minChildSize: 0.3,
@@ -1043,22 +1035,7 @@ class _TypeSelector extends StatelessWidget {
         expand: false,
         builder: (_, scrollController) => Column(
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'เลือกประเภทรายการ',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
+            const AppModalBottomSheetHeader(title: 'เลือกประเภทรายการ'),
             Expanded(
               child: ListView.separated(
                 controller: scrollController,
@@ -1074,7 +1051,6 @@ class _TypeSelector extends StatelessWidget {
                     title: Text(
                       type.label,
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
                         fontSize: 16,
                         color: isDarkMode
                             ? AppColors.darkTextPrimary
@@ -1169,7 +1145,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'หนี้สิน',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
                         color: isDarkMode
                             ? AppColors.darkTextPrimary
                             : AppColors.textPrimary,
@@ -1225,7 +1200,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         'เลือกบัญชีหนี้สิน',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
                           color: isDarkMode
                               ? AppColors.darkTextPrimary
                               : AppColors.textPrimary,
@@ -1257,7 +1231,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'บัญชี',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
                         color: isDarkMode
                             ? AppColors.darkTextPrimary
                             : AppColors.textPrimary,
@@ -1280,7 +1253,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                             selectedAccount!.name,
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
                               color: isDarkMode
                                   ? AppColors.darkTextPrimary
                                   : AppColors.textPrimary,
@@ -1296,7 +1268,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                             ),
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
                               color: AppColors.getAmountColor(
                                 accountProvider.getBalance(
                                   selectedAccount!.id,
@@ -1314,7 +1285,7 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       child: Text(
                         'เลือกบัญชี',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           color: isDarkMode
                               ? AppColors.darkTextPrimary
                               : AppColors.textPrimary,
@@ -1346,7 +1317,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                       'หมวดหมู่',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
                         color: isDarkMode
                             ? AppColors.darkTextPrimary
                             : AppColors.textPrimary,
@@ -1387,7 +1357,6 @@ class _DebtRepayAccountSection extends StatelessWidget {
                         'เลือกหมวดหมู่ (ปล่อยว่างได้)',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
                           color: isDarkMode
                               ? AppColors.darkTextPrimary
                               : AppColors.textPrimary,
@@ -1481,7 +1450,6 @@ class _AccountCategorySelector extends StatelessWidget {
                               selectedAccount!.name,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
                                 color: isDarkMode
                                     ? AppColors.darkTextPrimary
                                     : AppColors.textPrimary,
@@ -1492,7 +1460,6 @@ class _AccountCategorySelector extends StatelessWidget {
                               formatAmount(balance),
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
                                 color: AppColors.getAmountColor(
                                   balance,
                                   isDarkMode,
@@ -1510,7 +1477,6 @@ class _AccountCategorySelector extends StatelessWidget {
                             'เลือกบัญชี',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
                               color: isDarkMode
                                   ? AppColors.darkTextPrimary
                                   : AppColors.textPrimary,
@@ -1561,7 +1527,6 @@ class _AccountCategorySelector extends StatelessWidget {
                                 selectedToAccount!.name,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
                                   color: isDarkMode
                                       ? AppColors.darkTextPrimary
                                       : AppColors.textPrimary,
@@ -1572,7 +1537,6 @@ class _AccountCategorySelector extends StatelessWidget {
                                 formatAmount(toBalance),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
                                   color: AppColors.getAmountColor(
                                     toBalance,
                                     isDarkMode,
@@ -1605,7 +1569,6 @@ class _AccountCategorySelector extends StatelessWidget {
                             selectedCategory!.name,
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
                               color: isDarkMode
                                   ? AppColors.darkTextPrimary
                                   : AppColors.textPrimary,
@@ -1623,7 +1586,6 @@ class _AccountCategorySelector extends StatelessWidget {
                                   : 'เลือกหมวดหมู่',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
                                 color: isDarkMode
                                     ? AppColors.darkTextPrimary
                                     : AppColors.textPrimary,
@@ -1675,7 +1637,6 @@ class _FieldRow extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
@@ -1740,7 +1701,6 @@ class _CategorySelectionRow extends StatelessWidget {
                 'หมวดหมู่',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
@@ -1771,7 +1731,6 @@ class _CategorySelectionRow extends StatelessWidget {
                       selectedCategory?.name ?? 'เลือกหมวดหมู่',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
                         color: isDarkMode
                             ? (selectedCategory != null
                                   ? AppColors.darkTextPrimary
@@ -1823,7 +1782,6 @@ class _DateTimeRow extends StatelessWidget {
               'วันและเวลา',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
@@ -1834,7 +1792,6 @@ class _DateTimeRow extends StatelessWidget {
               _formatThaiDateTime(dateTime),
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,

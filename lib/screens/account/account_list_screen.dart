@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
@@ -313,11 +314,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
   }
 
   void _showAppMenu(BuildContext context) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<AccountProvider, SettingsProvider>(
         builder: (context, accountProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -325,9 +323,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
           final bgColor = isDarkMode
               ? AppColors.darkSurface
               : AppColors.surface;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -341,16 +336,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: handleColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     ListTile(
                       tileColor: bgColor,
                       leading: const Icon(Icons.add_circle_outline),
@@ -432,16 +417,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
         .fold(0.0, (sum, group) => sum + (groupTotals[group.label] ?? 0));
     final netWorth = totalAssets + totalLiabilities;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
       builder: (context) {
-        final handleColor = isDarkMode
-            ? AppColors.darkDivider
-            : Colors.grey.shade300;
         final textPrimary = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
@@ -459,25 +438,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'สรุปภาพรวมการเงิน',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  const AppModalBottomSheetHeader(title: 'สรุปภาพรวมการเงิน'),
+                  const SizedBox(height: 16),
 
                   _SummaryRow(
                     label: 'ยอดสุทธิ',
@@ -728,18 +690,14 @@ class _TotalRow extends StatelessWidget {
   }
 
   void _showTotalMenu(BuildContext context) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode
               ? AppColors.darkSurface
               : AppColors.surface;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -751,16 +709,6 @@ class _TotalRow extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.filter_list, color: textColor),
@@ -794,14 +742,9 @@ class _TotalRow extends StatelessWidget {
     BuildContext context,
     SettingsProvider settingsProvider,
   ) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       isScrollControlled: true,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => _NetWorthFilterSheet(
         accounts: accounts,
         filterIds: filterIds,
@@ -946,15 +889,11 @@ class _AccountItem extends StatelessWidget {
   void _showAccountMenu(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
-    showModalBottomSheet(
-      backgroundColor: bgColor,
+    showAppModalBottomSheet(
       context: context,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -963,16 +902,6 @@ class _AccountItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.edit_outlined, color: textColor),
@@ -1024,9 +953,6 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final handleColor = isDarkMode
-        ? AppColors.darkDivider
-        : Colors.grey.shade300;
     final textPrimary = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1049,25 +975,15 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
+        initialChildSize: 0.85,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
         builder: (_, scrollController) => Column(
           children: [
             Container(
               color: bgColor,
-              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Column(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,

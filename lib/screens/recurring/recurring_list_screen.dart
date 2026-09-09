@@ -9,6 +9,7 @@ import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/group_header.dart';
 import '../../providers/sync_provider.dart';
 import 'recurring_form_screen.dart';
@@ -279,16 +280,12 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
     bool isDark,
     // RecurringTransactionProvider provider,
   ) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<SettingsProvider, RecurringTransactionProvider>(
         builder: (context, sp, rtp, _) {
           final isDk = sp.isDarkMode;
           final bgColor = isDk ? AppColors.darkSurface : AppColors.surface;
-          final handleColor = isDk
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDk
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -300,15 +297,6 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: handleColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                     ListTile(
                       tileColor: bgColor,
                       leading: Icon(Icons.add, color: textColor),
@@ -560,15 +548,11 @@ class _RecurringItem extends StatelessWidget {
   void _showRecurringMenu(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: bgColor,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDark = settingsProvider.isDarkMode;
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -577,16 +561,6 @@ class _RecurringItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.edit_outlined, color: textColor),

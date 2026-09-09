@@ -60,7 +60,11 @@ class AppDrawer extends StatelessWidget {
                       ),
                       const Text(
                         'การเงินส่วนบุคคล',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -116,6 +120,21 @@ class AppDrawer extends StatelessWidget {
                           : AppColors.divider,
                     ),
                     _DrawerItem(
+                      icon: Icons.pie_chart_outline,
+                      label: 'สถิติ',
+                      selected: currentRoute == '/statistics',
+                      onTap: () => _navigate(context, '/statistics'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    Divider(
+                      color: isDarkMode
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
+                    ),
+                    _DrawerItem(
                       icon: Icons.repeat,
                       label: 'รายการประจำ',
                       selected: currentRoute == '/recurring',
@@ -135,21 +154,6 @@ class AppDrawer extends StatelessWidget {
                       label: 'หมวดหมู่',
                       selected: currentRoute == '/categories',
                       onTap: () => _navigate(context, '/categories'),
-                      selectedColor: selectedColor,
-                      unselectedColor: drawerItemSecondaryColor,
-                      selectedTileColor: selectedTileColor,
-                      isDarkMode: isDarkMode,
-                    ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
-                    _DrawerItem(
-                      icon: Icons.pie_chart_outline,
-                      label: 'สถิติ',
-                      selected: currentRoute == '/statistics',
-                      onTap: () => _navigate(context, '/statistics'),
                       selectedColor: selectedColor,
                       unselectedColor: drawerItemSecondaryColor,
                       selectedTileColor: selectedTileColor,
@@ -275,7 +279,8 @@ class _DrawerItem extends StatelessWidget {
               : (isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary),
-          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          // fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          fontWeight: FontWeight.w600,
         ),
       ),
       selected: selected,

@@ -7,6 +7,7 @@ import '../providers/transaction_provider.dart';
 import '../theme/app_colors.dart';
 import '../main.dart';
 import 'account_icon_widget.dart';
+import 'app_modal_bottom_sheet.dart';
 import 'group_header.dart';
 
 /// วิดเจ็ตเลือกบัญชีแบบ Bottom Sheet (Deep Module)
@@ -34,15 +35,9 @@ class AccountPickerBottomSheet extends StatelessWidget {
     List<Account>? accountsOverride,
     bool isDebtOnly = false,
   }) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    return showModalBottomSheet<String>(
+    return showAppModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => AccountPickerBottomSheet(
         title: title,
         selectedAccountId: selectedAccountId,
@@ -94,28 +89,7 @@ class AccountPickerBottomSheet extends StatelessWidget {
       expand: false,
       builder: (_, scrollController) => Column(
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
+          AppModalBottomSheetHeader(title: title),
           Expanded(
             child: ListView.builder(
               controller: scrollController,

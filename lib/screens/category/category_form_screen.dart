@@ -5,6 +5,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -459,62 +460,30 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }
 
   void _pickParent(BuildContext context, List<Category> candidates) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode
               ? AppColors.darkSurface
               : AppColors.surface;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
-          final dividerColor = isDarkMode
-              ? AppColors.darkDivider
-              : AppColors.divider;
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
 
           return DraggableScrollableSheet(
-            initialChildSize: 0.5,
+            initialChildSize: 0.85,
             minChildSize: 0.3,
-            maxChildSize: 0.8,
+            maxChildSize: 0.85,
             expand: false,
             builder: (_, scrollController) => Column(
               children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'เลือกหมวดหมู่หลัก',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Divider(color: dividerColor),
+                const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่หลัก'),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
@@ -592,17 +561,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }
 
   void _pickIcon() {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode
               ? AppColors.darkBackground
               : AppColors.background;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
           final textSecondaryColor = isDarkMode
               ? AppColors.darkTextSecondary
               : AppColors.textSecondary;
@@ -611,17 +578,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'เลือกไอคอน',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: textPrimaryColor,
-                    ),
-                  ),
-                ),
+                const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
                 Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
@@ -672,77 +629,55 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }
 
   void _pickColor() {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'เลือกสี',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: textPrimaryColor,
+      isScrollControlled: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppModalBottomSheetHeader(title: 'เลือกสี'),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                ),
+                itemCount: AppColors.accountColors.length,
+                itemBuilder: (_, i) {
+                  final color = AppColors.accountColors[i];
+                  final selected =
+                      color.toARGB32() == _selectedColor.toARGB32();
+                  return Material(
+                    color: color,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: selected
+                          ? const BorderSide(color: Colors.black45, width: 2)
+                          : BorderSide.none,
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
-                    itemCount: AppColors.accountColors.length,
-                    itemBuilder: (_, i) {
-                      final color = AppColors.accountColors[i];
-                      final selected =
-                          color.toARGB32() == _selectedColor.toARGB32();
-                      return Material(
-                        color: color,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: selected
-                              ? const BorderSide(
-                                  color: Colors.black45,
-                                  width: 2,
-                                )
-                              : BorderSide.none,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            setState(() => _selectedColor = color);
-                            Navigator.pop(context);
-                          },
-                          child: selected
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _selectedColor = color);
+                        Navigator.pop(context);
+                      },
+                      child: selected
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
+                          : null,
+                    ),
+                  );
+                },
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }

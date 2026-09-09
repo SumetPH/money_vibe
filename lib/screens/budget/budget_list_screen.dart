@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
 import '../../utils/monthly_cycle.dart';
@@ -646,16 +647,12 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   }
 
   void _showMenuBottomSheet(BuildContext context, bool isDarkMode) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer2<SettingsProvider, BudgetProvider>(
         builder: (context, settingsProvider, budgetProvider, _) {
           final isDark = settingsProvider.isDarkMode;
           final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -669,15 +666,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: handleColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                     ListTile(
                       tileColor: bgColor,
                       leading: Icon(Icons.add, color: textColor),
@@ -747,11 +735,9 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     double overallProgress,
     bool isDarkMode,
   ) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => _BudgetGroupDetailsSheet(
         groupSummaries: groupSummaries,
         periodLabel: periodLabel,
@@ -828,7 +814,11 @@ class _MonthSelector extends StatelessWidget {
             child: Text(
               _getPeriodLabel(context),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: textPrimary),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textPrimary,
+              ),
             ),
           ),
           IconButton(
@@ -975,7 +965,14 @@ class _SummaryCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: textPrimary)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           formatAmount(amount),
@@ -1245,15 +1242,11 @@ class _BudgetItem extends StatelessWidget {
   void _showBudgetMenu(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: bgColor,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDark = settingsProvider.isDarkMode;
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -1262,16 +1255,6 @@ class _BudgetItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.edit_outlined, color: textColor),
@@ -1332,9 +1315,6 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final handleColor = isDarkMode
-        ? AppColors.darkDivider
-        : Colors.grey.shade300;
     final textPrimary = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1347,15 +1327,6 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
       height: MediaQuery.sizeOf(context).height,
       child: Column(
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: handleColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 12, 12),
             child: Row(
@@ -1363,7 +1334,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         'รายละเอียดกลุ่มงบประมาณ',
@@ -1378,16 +1349,12 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                         periodLabel,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: textSecondary,
                         ),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: textSecondary),
-                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
@@ -1573,7 +1540,7 @@ class _GroupDetailMetric extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             color: textSecondary,
           ),
         ),

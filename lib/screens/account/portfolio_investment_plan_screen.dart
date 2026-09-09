@@ -9,6 +9,7 @@ import '../../models/investment_plan.dart';
 import '../../models/stock_holding.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 
 class PortfolioInvestmentPlanScreen extends StatefulWidget {
   final Account account;
@@ -460,22 +461,13 @@ class _PortfolioInvestmentPlanScreenState
     final secondaryColor = widget.isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final surfaceColor = widget.isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
     final dividerColor = widget.isDarkMode
         ? AppColors.darkDivider
         : AppColors.divider;
 
-    await showModalBottomSheet<void>(
+    await showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: surfaceColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -488,15 +480,6 @@ class _PortfolioInvestmentPlanScreenState
                 heightFactor: 0.72,
                 child: Column(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(top: 10, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: dividerColor,
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                      ),
-                    ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 8, 12),
                       child: Row(

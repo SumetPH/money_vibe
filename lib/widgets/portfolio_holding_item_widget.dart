@@ -4,6 +4,7 @@ import '../models/stock_holding.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../main.dart';
+import 'app_modal_bottom_sheet.dart';
 
 /// วิดเจ็ตแสดงข้อมูลหุ้นถือครองแต่ละตัวในพอร์ต (Deep Module)
 /// ควบรวมตรรกะคำนวณกำไร/ขาดทุน Trailing Stop และเมนูย่อยเบ็ดเสร็จในตัวเอง
@@ -325,33 +326,13 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
     final expenseColor = widget.isDarkMode
         ? AppColors.darkExpense
         : AppColors.expense;
-    final handleColor = widget.isDarkMode
-        ? AppColors.darkDivider
-        : Colors.grey.shade300;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: bgColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: handleColor,
-                borderRadius: BorderRadius.circular(AppRadii.tiny),
-              ),
-            ),
-            const SizedBox(height: 12),
             ListTile(
               leading: Icon(Icons.edit_outlined, color: textColor),
               title: Text(

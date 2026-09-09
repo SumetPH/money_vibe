@@ -16,6 +16,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
@@ -488,23 +489,14 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
         .accounts
         .where((account) => account.type == AccountType.portfolio)
         .toList();
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     var selectedPortfolioId = _portfolioId;
     var selectedPnlFilter = _pnlFilter;
 
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
-      backgroundColor: surfaceColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -515,18 +507,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: dividerColor,
-                          borderRadius: BorderRadius.circular(AppRadii.tiny),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Text(
                       'ตัวกรองรายการขาย',
                       style: TextStyle(
@@ -961,7 +941,6 @@ class _PurchaseListItem extends StatelessWidget {
   }
 
   void _showActionSheet(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -970,30 +949,14 @@ class _PurchaseListItem extends StatelessWidget {
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
-      backgroundColor: surfaceColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: dividerColor,
-                  borderRadius: BorderRadius.circular(AppRadii.tiny),
-                ),
-              ),
-              const SizedBox(height: 16),
               Row(
                 children: [
                   Icon(Icons.add_shopping_cart_outlined, color: textColor),
@@ -2798,73 +2761,49 @@ Future<Object?> _showPortfolioPickerSheet({
   required bool isDarkMode,
   required bool includeAllOption,
 }) {
-  final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
   final textColor = isDarkMode
       ? AppColors.darkTextPrimary
       : AppColors.textPrimary;
   final secondaryColor = isDarkMode
       ? AppColors.darkTextSecondary
       : AppColors.textSecondary;
-  final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-  return showModalBottomSheet<Object?>(
+  return showAppModalBottomSheet<Object?>(
     context: context,
-    backgroundColor: surfaceColor,
-    clipBehavior: Clip.antiAlias,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
-    ),
     builder: (sheetContext) {
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: dividerColor,
-                    borderRadius: BorderRadius.circular(AppRadii.tiny),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppModalBottomSheetHeader(title: 'เลือกพอร์ต'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                children: [
+                  if (includeAllOption)
+                    _PortfolioPickerTile(
+                      title: 'ทุกพอร์ต',
+                      selected: selectedPortfolioId == null,
+                      textColor: textColor,
+                      secondaryColor: secondaryColor,
+                      onTap: () => Navigator.pop(
+                        sheetContext,
+                        _PortfolioPickerAll.value,
+                      ),
+                    ),
+                  ...portfolios.map(
+                    (portfolio) => _PortfolioPickerTile(
+                      title: portfolio.name,
+                      selected: portfolio.id == selectedPortfolioId,
+                      textColor: textColor,
+                      secondaryColor: secondaryColor,
+                      onTap: () => Navigator.pop(sheetContext, portfolio.id),
+                    ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  'เลือกพอร์ต',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (includeAllOption)
-                _PortfolioPickerTile(
-                  title: 'ทุกพอร์ต',
-                  selected: selectedPortfolioId == null,
-                  textColor: textColor,
-                  secondaryColor: secondaryColor,
-                  onTap: () =>
-                      Navigator.pop(sheetContext, _PortfolioPickerAll.value),
-                ),
-              ...portfolios.map(
-                (portfolio) => _PortfolioPickerTile(
-                  title: portfolio.name,
-                  selected: portfolio.id == selectedPortfolioId,
-                  textColor: textColor,
-                  secondaryColor: secondaryColor,
-                  onTap: () => Navigator.pop(sheetContext, portfolio.id),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     },
@@ -3176,7 +3115,6 @@ class _TradeListItem extends StatelessWidget {
   }
 
   void _showActionSheet(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -3190,16 +3128,9 @@ class _TradeListItem extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.header;
 
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: surfaceColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
-        ),
-      ),
       builder: (sheetContext) {
         return SafeArea(
           child: SingleChildScrollView(
@@ -3209,18 +3140,6 @@ class _TradeListItem extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: dividerColor,
-                        borderRadius: BorderRadius.circular(AppRadii.tiny),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Container(

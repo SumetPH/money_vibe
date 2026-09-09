@@ -16,6 +16,7 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
 import '../../main.dart';
@@ -922,18 +923,10 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final handleColor = isDarkMode
-        ? AppColors.darkDivider
-        : Colors.grey.shade300;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: bgColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateModal) {
@@ -941,16 +934,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   ListTile(
                     leading: Icon(
                       Icons.add_shopping_cart_outlined,

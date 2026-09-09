@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../providers/sync_provider.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
@@ -249,20 +250,14 @@ class _CategoryListScreenState extends State<CategoryListScreen>
   }
 
   void _showMenuBottomSheet(BuildContext context) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final bgColor = isDarkMode
               ? AppColors.darkSurface
               : AppColors.surface;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -276,15 +271,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: handleColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                     ListTile(
                       tileColor: bgColor,
                       leading: Icon(Icons.add, color: textColor),
@@ -449,15 +435,11 @@ class _CategoryItem extends StatelessWidget {
   void _showCategoryMenu(BuildContext context) {
     final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: bgColor,
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDark = settingsProvider.isDarkMode;
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -466,16 +448,6 @@ class _CategoryItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 ListTile(
                   tileColor: bgColor,
                   leading: Icon(Icons.edit_outlined, color: textColor),

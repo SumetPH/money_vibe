@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
 
@@ -803,15 +804,11 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       excludingBudgetId: widget.budget?.id,
     );
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       builder: (_) => StatefulBuilder(
         builder: (context, setModalState) {
-          final handleColor = isDark
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -823,32 +820,13 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               : AppColors.header;
 
           return DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.4,
-            maxChildSize: 0.9,
+            initialChildSize: 0.85,
+            minChildSize: 0.3,
+            maxChildSize: 0.85,
             expand: false,
             builder: (_, sc) => Column(
               children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'เลือกหมวดหมู่',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Divider(color: dividerColor),
+                const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),
                 Expanded(
                   child: ListView.separated(
                     controller: sc,
@@ -936,15 +914,13 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }
 
   void _pickIcon(bool isDark) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) {
         final bgColor = isDark
             ? AppColors.darkBackground
             : AppColors.background;
-        final textPrimary = isDark
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
         final textSecondary = isDark
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
@@ -953,17 +929,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'เลือกไอคอน',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: textPrimary,
-                  ),
-                ),
-              ),
+              const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),
@@ -1010,28 +976,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }
 
   void _pickColor(bool isDark) {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) {
-        final textPrimary = isDark
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'เลือกสี',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: textPrimary,
-                  ),
-                ),
-              ),
+              const AppModalBottomSheetHeader(title: 'เลือกสี'),
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),

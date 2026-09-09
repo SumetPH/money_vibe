@@ -11,6 +11,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/bottom_summary_bar.dart';
 import '../../widgets/group_header.dart';
@@ -427,21 +428,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       (account?.exchangeRate ?? 0) > 0 ? account!.exchangeRate : 1.0;
 
   void _showPeriodPicker(bool isDarkMode) {
-    final handleColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final checkColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: bgColor,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -450,18 +444,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 12),
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
@@ -689,7 +671,11 @@ class _TransactionItem extends StatelessWidget {
                       ),
                       Text(
                         _buildSubLabel(category?.name, note),
-                        style: TextStyle(fontSize: 14, color: textPrimaryColor),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimaryColor,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

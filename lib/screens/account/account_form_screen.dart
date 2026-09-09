@@ -10,6 +10,7 @@ import '../../services/account_icon_storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../main.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
@@ -905,15 +906,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickStatementDay() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -929,9 +923,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
 
           return SafeArea(
             child: Container(
@@ -939,27 +930,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'เลือกวันสรุปยอด',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: textPrimaryColor,
-                      ),
-                    ),
-                  ),
+                  const AppModalBottomSheetHeader(title: 'เลือกวันสรุปยอด'),
                   Expanded(
                     child: GridView.builder(
                       padding: const EdgeInsets.all(16),
@@ -1040,91 +1011,55 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickAccountType() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final mediaQuery = MediaQuery.of(context);
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => MediaQuery(
-        data: mediaQuery,
-        child: Consumer<SettingsProvider>(
-          builder: (context, settingsProvider, _) {
-            final surfaceColor = isDarkMode
-                ? AppColors.darkSurface
-                : AppColors.surface;
-            final textPrimaryColor = isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary;
-            final headerColor = isDarkMode
-                ? AppColors.darkIncome
-                : AppColors.header;
-            final handleColor = isDarkMode
-                ? AppColors.darkDivider
-                : Colors.grey.shade300;
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final surfaceColor = isDarkMode
+              ? AppColors.darkSurface
+              : AppColors.surface;
+          final textPrimaryColor = isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary;
+          final headerColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.header;
 
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'เลือกชนิดบัญชี',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: textPrimaryColor,
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'เลือกชนิดบัญชี'),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    ...AccountType.values.map(
+                      (type) => ListTile(
+                        tileColor: surfaceColor,
+                        title: Text(
+                          type.label,
+                          style: TextStyle(color: textPrimaryColor),
+                        ),
+                        trailing: _selectedType == type
+                            ? Icon(Icons.check, color: headerColor)
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            _applyAccountTypeDefaults(type);
+                            _initialBalanceController.clear();
+                          });
+                          Navigator.pop(context);
+                        },
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      children: [
-                        ...AccountType.values.map(
-                          (type) => ListTile(
-                            tileColor: surfaceColor,
-                            title: Text(
-                              type.label,
-                              style: TextStyle(color: textPrimaryColor),
-                            ),
-                            trailing: _selectedType == type
-                                ? Icon(Icons.check, color: headerColor)
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                _applyAccountTypeDefaults(type);
-                                _initialBalanceController.clear();
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            );
-          },
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1136,15 +1071,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   void _pickCurrency() {
     if (_selectedType.isPortfolio) return;
 
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
@@ -1160,13 +1089,10 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
 
           return DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.4,
+            initialChildSize: 0.85,
+            minChildSize: 0.3,
             maxChildSize: 0.85,
             expand: false,
             builder: (context, scrollController) => SafeArea(
@@ -1174,33 +1100,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 controller: scrollController,
                 slivers: [
                   SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 12),
-                        Center(
-                          child: Container(
-                            width: 36,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: handleColor,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            'เลือกสกุลเงิน',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: textPrimaryColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: AppModalBottomSheetHeader(title: 'เลือกสกุลเงิน'),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((_, i) {
@@ -1257,22 +1157,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _pickIcon() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     // First, show a menu to choose between icons or custom image
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final handleColor = isDarkMode
-              ? AppColors.darkDivider
-              : Colors.grey.shade300;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
@@ -1281,16 +1171,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: handleColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
                   ListTile(
                     leading: const Icon(Icons.delete_outline),
@@ -1401,212 +1281,114 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   void _showIconGrid() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final mediaQuery = MediaQuery.of(context);
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => MediaQuery(
-        data: mediaQuery,
-        child: Consumer<SettingsProvider>(
-          builder: (context, settingsProvider, _) {
-            final isDarkMode = settingsProvider.isDarkMode;
-            final bgColor = isDarkMode
-                ? AppColors.darkBackground
-                : AppColors.background;
-            final textPrimaryColor = isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary;
-            final textSecondaryColor = isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary;
-            final handleColor = isDarkMode
-                ? AppColors.darkDivider
-                : Colors.grey.shade300;
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          final isDarkMode = settingsProvider.isDarkMode;
+          final bgColor = isDarkMode
+              ? AppColors.darkBackground
+              : AppColors.background;
+          final textSecondaryColor = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
 
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
                   ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'เลือกไอคอน',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: textPrimaryColor,
+                  itemCount: AppColors.accountIcons.length,
+                  itemBuilder: (_, i) {
+                    final icon = AppColors.accountIcons[i];
+                    final selected = icon == _selectedIcon;
+                    return Material(
+                      color: selected
+                          ? _selectedColor.withValues(alpha: 0.2)
+                          : bgColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: selected
+                            ? BorderSide(color: _selectedColor, width: 2)
+                            : BorderSide.none,
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: AppColors.accountIcons.length,
-                      itemBuilder: (_, i) {
-                        final icon = AppColors.accountIcons[i];
-                        final selected = icon == _selectedIcon;
-                        return Material(
-                          color: selected
-                              ? _selectedColor.withValues(alpha: 0.2)
-                              : bgColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: selected
-                                ? BorderSide(color: _selectedColor, width: 2)
-                                : BorderSide.none,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedIcon = icon;
-                                _selectedIconUrl = '';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Icon(
-                              icon,
-                              color: selected
-                                  ? _selectedColor
-                                  : textSecondaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedIcon = icon;
+                            _selectedIconUrl = '';
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Icon(
+                          icon,
+                          color: selected ? _selectedColor : textSecondaryColor,
+                          size: 24,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
-        ),
+            ],
+          );
+        },
       ),
     );
   }
 
   void _pickColor() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final mediaQuery = MediaQuery.of(context);
-
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      useSafeArea: false,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => MediaQuery(
-        data: mediaQuery,
-        child: Consumer<SettingsProvider>(
-          builder: (context, settingsProvider, _) {
-            final isDarkMode = settingsProvider.isDarkMode;
-            final textPrimaryColor = isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary;
-            final handleColor = isDarkMode
-                ? AppColors.darkDivider
-                : Colors.grey.shade300;
-
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: handleColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'เลือกสี',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: textPrimaryColor,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: AppColors.accountColors.length,
-                      itemBuilder: (_, i) {
-                        final color = AppColors.accountColors[i];
-                        final selected =
-                            color.toARGB32() == _selectedColor.toARGB32();
-                        return Material(
-                          color: color,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: selected
-                                ? const BorderSide(
-                                    color: Colors.black45,
-                                    width: 2,
-                                  )
-                                : BorderSide.none,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _selectedColor = color);
-                              Navigator.pop(context);
-                            },
-                            child: selected
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 20,
-                                  )
-                                : null,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppModalBottomSheetHeader(title: 'เลือกสี'),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
               ),
-            );
-          },
-        ),
+              itemCount: AppColors.accountColors.length,
+              itemBuilder: (_, i) {
+                final color = AppColors.accountColors[i];
+                final selected = color.toARGB32() == _selectedColor.toARGB32();
+                return Material(
+                  color: color,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: selected
+                        ? const BorderSide(color: Colors.black45, width: 2)
+                        : BorderSide.none,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() => _selectedColor = color);
+                      Navigator.pop(context);
+                    },
+                    child: selected
+                        ? const Icon(Icons.check, color: Colors.white, size: 20)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

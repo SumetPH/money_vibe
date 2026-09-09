@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/category.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
+import 'app_modal_bottom_sheet.dart';
 
 /// วิดเจ็ตเลือกหมวดหมู่แบบ Bottom Sheet (Deep Module)
 /// จัดการดึงข้อมูลและแสดงผลหมวดหมู่ด้วยตัวเอง
@@ -23,15 +24,9 @@ class CategoryPickerBottomSheet extends StatelessWidget {
     String? selectedCategoryId,
     required List<Category> categories,
   }) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    return showModalBottomSheet<String>(
+    return showAppModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => CategoryPickerBottomSheet(
         selectedCategoryId: selectedCategoryId,
         categories: categories,
@@ -54,28 +49,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
       expand: false,
       builder: (_, scrollController) => Column(
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkDivider : Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'เลือกหมวดหมู่',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
+          const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),
           Expanded(
             child: ListView.separated(
               controller: scrollController,
@@ -99,8 +73,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
                   title: Text(
                     cat.name,
                     style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16.0,
                       color: isDarkMode
                           ? AppColors.darkTextPrimary
                           : AppColors.textPrimary,

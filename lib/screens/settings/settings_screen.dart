@@ -18,6 +18,7 @@ import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/theme_color_option.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
 import 'llm_api_key_settings_screen.dart';
@@ -519,15 +520,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showThemeColorSheet() {
-    final currentSettings = context.read<SettingsProvider>();
-    final sheetColor = currentSettings.isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
-      backgroundColor: sheetColor,
-      showDragHandle: true,
       builder: (ctx) {
         final settings = ctx.watch<SettingsProvider>();
         final isDarkMode = settings.isDarkMode;
@@ -551,17 +545,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : Divider(color: dividerColor, height: 1),
             itemBuilder: (context, index) {
               if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Text(
-                    'สีธีม',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
+                return const AppModalBottomSheetHeader(title: 'สีธีม');
               }
 
               final option = ThemeColorOption.values[index - 1];
@@ -604,11 +588,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showMonthlyCycleStartDaySheet() {
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (ctx) {
         final settings = ctx.watch<SettingsProvider>();
         final isDarkMode = settings.isDarkMode;
@@ -630,20 +612,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         return SizedBox(
           height: sheetHeight,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              children: [
-                Text(
-                  'วันเริ่มรอบรายเดือน',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
+          child: Column(
+            children: [
+              const AppModalBottomSheetHeader(title: 'วันเริ่มรอบรายเดือน'),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   child: GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -685,8 +659,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -762,9 +736,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showAiFinanceExportSheet() async {
-    final scope = await showModalBottomSheet<AiFinanceExportScope>(
+    final scope = await showAppModalBottomSheet<AiFinanceExportScope>(
       context: context,
-      showDragHandle: true,
       builder: (ctx) {
         final isDarkMode = ctx.watch<SettingsProvider>().isDarkMode;
         final textColor = isDarkMode
@@ -779,25 +752,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const AppModalBottomSheetHeader(title: 'คัดลอกข้อมูลสำหรับ AI'),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'คัดลอกข้อมูลสำหรับ AI',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ข้อมูลที่คัดลอกจะเป็นสรุป Markdown และไม่รวมหมายเหตุของธุรกรรม',
-                      style: TextStyle(color: secondaryTextColor, fontSize: 13),
-                    ),
-                  ],
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Text(
+                  'ข้อมูลที่คัดลอกจะเป็นสรุป Markdown และไม่รวมหมายเหตุของธุรกรรม',
+                  style: TextStyle(color: secondaryTextColor, fontSize: 13),
                 ),
               ),
               _buildExportScopeTile(
