@@ -403,10 +403,8 @@ class _CalculatorKeyButtonState extends State<_CalculatorKeyButton> {
                   widget.keyInfo.label,
                   style: TextStyle(
                     color: widget.textColor,
-                    fontSize: widget.isDone ? 16 : 18,
-                    fontWeight: widget.isDone
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
         ),
