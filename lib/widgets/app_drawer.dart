@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../providers/settings_provider.dart';
 import '../services/reinstall_reminder_service.dart';
 
@@ -16,64 +17,94 @@ class AppDrawer extends StatelessWidget {
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
         final themeColor = settingsProvider.themeColor;
-        final drawerHeaderColor = AppColors.headerFor(isDarkMode, themeColor);
+        final drawerColor = isDarkMode
+            ? AppColors.darkBackground
+            : AppColors.background;
         final drawerItemSecondaryColor = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
         final selectedColor = AppColors.accentFor(isDarkMode, themeColor);
-        final selectedTileColor = drawerHeaderColor.withValues(alpha: 0.04);
+        final selectedTileColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
 
         return Drawer(
+          width: MediaQuery.sizeOf(context).width * 0.78,
+          backgroundColor: drawerColor,
+          shape: const RoundedRectangleBorder(),
           child: Column(
             children: [
-              DrawerHeader(
-                decoration: BoxDecoration(color: drawerHeaderColor),
-                margin: EdgeInsets.zero,
-                padding: const EdgeInsets.all(20),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
+              Container(
+                color: drawerColor,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: selectedTileColor,
+                            borderRadius: BorderRadius.circular(
+                              AppRadii.xLarge,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: selectedColor,
+                            size: 26,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.white,
-                          size: 26,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Money Vibe',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'กระเป๋าของคุณ',
+                                style: TextStyle(
+                                  color: drawerItemSecondaryColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Money Vibe',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Text(
-                        'การเงินส่วนบุคคล',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Divider(height: 1, color: dividerColor),
+              ),
               Expanded(
                 child: ListView(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
                   children: [
+                    _DrawerSectionLabel(
+                      label: 'ภาพรวม',
+                      color: drawerItemSecondaryColor,
+                    ),
                     _DrawerItem(
                       icon: Icons.account_balance_wallet,
                       label: 'บัญชี',
@@ -84,13 +115,8 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
                     _DrawerItem(
-                      icon: Icons.receipt_long,
+                      icon: Icons.receipt_long_outlined,
                       label: 'รายการ',
                       selected: currentRoute == '/transactions',
                       onTap: () => _navigate(context, '/transactions'),
@@ -99,13 +125,12 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
+                    _DrawerSectionLabel(
+                      label: 'วางแผน',
+                      color: drawerItemSecondaryColor,
                     ),
                     _DrawerItem(
-                      icon: Icons.account_balance_outlined,
+                      icon: Icons.savings_outlined,
                       label: 'งบประมาณ',
                       selected: currentRoute == '/budgets',
                       onTap: () => _navigate(context, '/budgets'),
@@ -114,28 +139,8 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
                     _DrawerItem(
-                      icon: Icons.pie_chart_outline,
-                      label: 'สถิติ',
-                      selected: currentRoute == '/statistics',
-                      onTap: () => _navigate(context, '/statistics'),
-                      selectedColor: selectedColor,
-                      unselectedColor: drawerItemSecondaryColor,
-                      selectedTileColor: selectedTileColor,
-                      isDarkMode: isDarkMode,
-                    ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
-                    _DrawerItem(
-                      icon: Icons.repeat,
+                      icon: Icons.sync_alt,
                       label: 'รายการประจำ',
                       selected: currentRoute == '/recurring',
                       onTap: () => _navigate(context, '/recurring'),
@@ -144,10 +149,33 @@ class AppDrawer extends StatelessWidget {
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
                     ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
+                    _DrawerSectionLabel(
+                      label: 'ข้อมูลเชิงลึก',
+                      color: drawerItemSecondaryColor,
+                    ),
+                    _DrawerItem(
+                      icon: Icons.query_stats,
+                      label: 'สถิติ',
+                      selected: currentRoute == '/statistics',
+                      onTap: () => _navigate(context, '/statistics'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    _DrawerItem(
+                      icon: Icons.trending_up,
+                      label: 'บันทึกการลงทุน',
+                      selected: currentRoute == '/trade-tracker',
+                      onTap: () => _navigate(context, '/trade-tracker'),
+                      selectedColor: selectedColor,
+                      unselectedColor: drawerItemSecondaryColor,
+                      selectedTileColor: selectedTileColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    _DrawerSectionLabel(
+                      label: 'จัดการ',
+                      color: drawerItemSecondaryColor,
                     ),
                     _DrawerItem(
                       icon: Icons.category_outlined,
@@ -158,26 +186,6 @@ class AppDrawer extends StatelessWidget {
                       unselectedColor: drawerItemSecondaryColor,
                       selectedTileColor: selectedTileColor,
                       isDarkMode: isDarkMode,
-                    ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
-                    _DrawerItem(
-                      icon: Icons.show_chart,
-                      label: 'บันทึกการลงทุน',
-                      selected: currentRoute == '/trade-tracker',
-                      onTap: () => _navigate(context, '/trade-tracker'),
-                      selectedColor: selectedColor,
-                      unselectedColor: drawerItemSecondaryColor,
-                      selectedTileColor: selectedTileColor,
-                      isDarkMode: isDarkMode,
-                    ),
-                    Divider(
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
                     ),
                     _DrawerItem(
                       icon: Icons.settings_outlined,
@@ -211,6 +219,28 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
+class _DrawerSectionLabel extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _DrawerSectionLabel({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
 class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -237,58 +267,74 @@ class _DrawerItem extends StatelessWidget {
     final reinstallReminder = context.watch<ReinstallReminderService>();
     final showReinstallBadge =
         icon == Icons.settings_outlined && reinstallReminder.needsExpiredBadge;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final iconBackground = selected
+        ? selectedColor.withValues(alpha: 0.18)
+        : (isDarkMode ? AppColors.darkSurface : AppColors.surface);
 
-    return ListTile(
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Icon(icon, color: selected ? selectedColor : unselectedColor),
-          if (showReinstallBadge)
-            Positioned(
-              right: -6,
-              top: -6,
-              child: Container(
-                width: 14,
-                height: 14,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: AppColors.expense,
-                  shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: ListTile(
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: iconBackground,
+            borderRadius: BorderRadius.circular(AppRadii.large),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Icon(icon, color: selected ? selectedColor : unselectedColor),
+              if (showReinstallBadge)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.expense,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Text(
+                      '!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-                child: reinstallReminder.needsExpiredBadge
-                    ? const Text(
-                        '!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-        ],
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          color: selected
-              ? selectedColor
-              : (isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary),
-          // fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-          fontWeight: FontWeight.w600,
+            ],
+          ),
         ),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+        trailing: selected
+            ? null
+            : Icon(Icons.chevron_right, size: 18, color: unselectedColor),
+        selected: selected,
+        selectedTileColor: selectedTileColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        mouseCursor: SystemMouseCursors.click,
+        visualDensity: VisualDensity.comfortable,
+        minLeadingWidth: 42,
+        onTap: onTap,
       ),
-      selected: selected,
-      selectedTileColor: selectedTileColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      mouseCursor: SystemMouseCursors.click,
-      visualDensity: VisualDensity.comfortable,
-      minLeadingWidth: 24,
-      onTap: onTap,
     );
   }
 }
