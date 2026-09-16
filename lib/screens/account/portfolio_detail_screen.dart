@@ -1413,9 +1413,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                     child: ReorderableListView.builder(
                       buildDefaultDragHandles: false,
                       itemCount: dialogGroups.length,
-                      onReorder: (oldIndex, newIndex) {
+                      onReorderItem: (oldIndex, newIndex) {
                         setStateDialog(() {
-                          if (newIndex > oldIndex) newIndex -= 1;
                           final item = dialogGroups.removeAt(oldIndex);
                           dialogGroups.insert(newIndex, item);
                         });

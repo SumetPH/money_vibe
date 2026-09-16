@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 enum AccountGroup {
   investment(
     'เงินลงทุน / เงินออม',
@@ -182,7 +184,7 @@ class Account {
       initialBalance: (m['initial_balance'] as num).toDouble(),
       currency: m['currency'] as String,
       startDate: DateTime.parse(m['start_date'] as String),
-      icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
+      icon: AppColors.iconFromCodePoint(m['icon']),
       iconUrl: m['icon_url'] as String? ?? '',
       color: Color(m['color'] as int),
       excludeFromNetWorth: m['exclude_from_net_worth'] == 1,

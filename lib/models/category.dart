@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 enum CategoryType { expense, income }
 
 class Category {
@@ -38,7 +40,7 @@ class Category {
     id: m['id'] as String,
     name: m['name'] as String,
     type: CategoryType.values.firstWhere((e) => e.name == m['type'] as String),
-    icon: IconData(m['icon'] as int, fontFamily: 'MaterialIcons'),
+    icon: AppColors.iconFromCodePoint(m['icon']),
     color: Color(m['color'] as int),
     parentId: m['parent_id'] as String?,
     note: m['note'] as String?,

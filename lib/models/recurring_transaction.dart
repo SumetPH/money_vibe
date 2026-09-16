@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
 import 'transaction.dart';
 
 enum OccurrenceStatus { pending, done, skipped }
@@ -117,7 +119,7 @@ class RecurringTransaction {
     IconData icon;
     final iconRaw = map['icon'];
     if (iconRaw is int) {
-      icon = IconData(iconRaw, fontFamily: 'MaterialIcons');
+      icon = AppColors.iconFromCodePoint(iconRaw);
     } else {
       icon = Icons.repeat;
     }

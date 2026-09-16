@@ -13,12 +13,13 @@ import '../models/recurring_transaction.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
 import '../services/database_manager.dart';
+import '../theme/app_colors.dart';
 import '../utils/csv_file_io.dart';
 
 // Helper functions for IconData and Color
 IconData _parseIcon(dynamic value) {
   if (value is int) {
-    return IconData(value, fontFamily: 'MaterialIcons');
+    return AppColors.iconFromCodePoint(value);
   }
   return const IconData(0xe8a6, fontFamily: 'MaterialIcons');
 }

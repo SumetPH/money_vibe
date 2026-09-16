@@ -414,7 +414,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       return ReorderableListView.builder(
         header: header,
         buildDefaultDragHandles: false,
-        onReorder: _isReorderMode
+        onReorderItem: _isReorderMode
             ? (oldIndex, newIndex) =>
                   budgetProvider.reorderBudgets(oldIndex, newIndex)
             : (a, b) {},
@@ -492,7 +492,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         buildDefaultDragHandles: false,
-        onReorder: _isReorderMode
+        onReorderItem: _isReorderMode
             ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
                 groupName,
                 oldIndex,
@@ -552,7 +552,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     return ReorderableListView.builder(
       header: listHeader,
       buildDefaultDragHandles: false,
-      onReorder: _isReorderMode
+      onReorderItem: _isReorderMode
           ? budgetProvider.reorderBudgetGroups
           : (_, _) {},
       itemCount: sortedGroups.length,

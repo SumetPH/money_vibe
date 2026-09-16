@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/auth_provider.dart';
 
-/// Applies fixed local values for debug web runs via --dart-define.
+/// Applies fixed local values for debug runs via --dart-define.
 class DebugBootstrapService {
   static final DebugBootstrapService instance = DebugBootstrapService._();
 
@@ -32,7 +32,7 @@ class DebugBootstrapService {
 
   DebugBootstrapService._();
 
-  bool get isEnabled => kDebugMode && kIsWeb && _enabled;
+  bool get isEnabled => kDebugMode && _enabled;
 
   Future<void> primeLocalState() async {
     if (!isEnabled) return;

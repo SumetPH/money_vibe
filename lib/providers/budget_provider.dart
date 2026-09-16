@@ -308,7 +308,6 @@ class BudgetProvider extends ChangeNotifier {
     int newIndex,
   ) async {
     if (oldIndex < 0 || oldIndex >= subset.length) return;
-    if (newIndex > oldIndex) newIndex--;
     if (newIndex < 0 || newIndex >= subset.length || oldIndex == newIndex) {
       return;
     }
@@ -371,7 +370,6 @@ class BudgetProvider extends ChangeNotifier {
 
     final groupNames = groupedBudgets.keys.toList();
     if (oldIndex < 0 || oldIndex >= groupNames.length) return;
-    if (newIndex > oldIndex) newIndex--;
     if (newIndex < 0 || newIndex >= groupNames.length) return;
     if (oldIndex == newIndex) return;
 

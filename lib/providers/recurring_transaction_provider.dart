@@ -196,7 +196,6 @@ class RecurringTransactionProvider extends ChangeNotifier {
       return;
     }
 
-    if (newIndex > oldIndex) newIndex--;
     if (newIndex == oldIndex) return;
 
     final moved = visibleRecurring.removeAt(oldIndex);
@@ -228,7 +227,6 @@ class RecurringTransactionProvider extends ChangeNotifier {
       return;
     }
 
-    if (newIndex > oldIndex) newIndex--;
     if (newIndex == oldIndex) return;
 
     final visibleTypeSet = visibleTypes.toSet();

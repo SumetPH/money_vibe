@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 enum BudgetType {
   expense('รายจ่าย'),
   savings('ออม / ลงทุน');
@@ -113,7 +115,7 @@ class Budget {
     IconData icon;
     final iconRaw = map['icon'];
     if (iconRaw is int) {
-      icon = IconData(iconRaw, fontFamily: 'MaterialIcons');
+      icon = AppColors.iconFromCodePoint(iconRaw);
     } else if (iconRaw is String && iconRaw.isNotEmpty) {
       // UUID string - use default icon
       icon = const IconData(0xe8a6, fontFamily: 'MaterialIcons');

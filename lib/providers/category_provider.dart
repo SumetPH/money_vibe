@@ -178,11 +178,6 @@ class CategoryProvider extends ChangeNotifier {
       return;
     }
 
-    // Adjust newIndex for the remove-then-insert operation
-    if (newIndex > oldIndex) {
-      newIndex--;
-    }
-
     // Remove and re-insert
     final movedCategory = typeCategories.removeAt(oldIndex);
     typeCategories.insert(newIndex, movedCategory);

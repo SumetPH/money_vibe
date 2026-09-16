@@ -119,7 +119,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 ),
                 SliverReorderableList(
                   itemCount: orderedGroups.length,
-                  onReorder: isReorderMode
+                  onReorderItem: isReorderMode
                       ? accountProvider.reorderAccountGroups
                       : (_, _) {},
                   proxyDecorator: (child, index, animation) => Material(
@@ -170,7 +170,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           buildDefaultDragHandles: false,
                           itemCount: entry.value.length,
-                          onReorder: isReorderMode
+                          onReorderItem: isReorderMode
                               ? (oldIndex, newIndex) {
                                   accountProvider.reorderAccountsInGroup(
                                     entry.key,

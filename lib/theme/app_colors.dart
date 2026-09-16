@@ -121,4 +121,10 @@ class AppColors {
     Icons.music_note,
     Icons.fitness_center,
   ];
+
+  static IconData iconFromCodePoint(Object? codePoint) =>
+      accountIcons.firstWhere(
+        (icon) => icon.codePoint == codePoint,
+        orElse: () => Icons.crop_landscape_sharp,
+      );
 }

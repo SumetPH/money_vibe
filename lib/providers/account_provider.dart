@@ -716,11 +716,6 @@ class AccountProvider extends ChangeNotifier {
     if (groupAccounts.isEmpty) return;
     if (oldIndex < 0 || oldIndex >= groupAccounts.length) return;
 
-    // Adjust newIndex for ReorderableListView behavior
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-
     // Clamp to valid range
     if (newIndex < 0) newIndex = 0;
     if (newIndex >= groupAccounts.length) newIndex = groupAccounts.length - 1;
@@ -769,7 +764,6 @@ class AccountProvider extends ChangeNotifier {
     }
 
     if (oldIndex < 0 || oldIndex >= visibleGroupNames.length) return;
-    if (newIndex > oldIndex) newIndex--;
     if (newIndex < 0 || newIndex >= visibleGroupNames.length) return;
     if (oldIndex == newIndex) return;
 

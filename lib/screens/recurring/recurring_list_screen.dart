@@ -134,7 +134,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   )
                 : ReorderableListView.builder(
                     buildDefaultDragHandles: false,
-                    onReorder: _isReorderMode
+                    onReorderItem: _isReorderMode
                         ? provider.reorderRecurringGroups
                         : (_, _) {},
                     itemCount: grouped.length,
@@ -165,7 +165,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             buildDefaultDragHandles: false,
-                            onReorder: _isReorderMode
+                            onReorderItem: _isReorderMode
                                 ? (oldIndex, newIndex) =>
                                       provider.reorderRecurring(
                                         entry.key,

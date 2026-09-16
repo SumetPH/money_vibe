@@ -174,7 +174,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
     return ReorderableListView.builder(
       buildDefaultDragHandles: false,
-      onReorder: _isReorderMode
+      onReorderItem: _isReorderMode
           ? (oldIndex, newIndex) async {
               await catProvider.reorderCategories(type, oldIndex, newIndex);
             }
