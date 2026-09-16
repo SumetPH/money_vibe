@@ -289,50 +289,37 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ? null
               : const AppDrawer(currentRoute: '/budgets'),
           appBar: AppBar(
+            automaticallyImplyLeading: false,
+            toolbarHeight: 104,
             backgroundColor: bgColor,
+            foregroundColor: textPrimary,
             elevation: 0,
             scrolledUnderElevation: 0,
-            centerTitle: true,
-            leadingWidth: _isReorderMode ? 0 : 76,
-            leading: _isReorderMode
-                ? const SizedBox.shrink()
-                : isLargeScreen
-                ? null
-                : Center(
-                    child: Material(
-                      color: surfaceColor,
-                      shape: const CircleBorder(),
-                      clipBehavior: Clip.antiAlias,
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.pie_chart_outline_rounded,
-                          size: 20,
-                        ),
-                        color: textPrimary,
-                        tooltip: 'รายละเอียดกลุ่มงบประมาณ',
-                        onPressed: () => _showGroupDetailsBottomSheet(
-                          context,
-                          groupSummaries,
-                          periodLabel,
-                          totalBudget,
-                          totalSpent,
-                          totalAvailable,
-                          totalOverspent,
-                          overallProgress,
-                          isDarkMode,
-                        ),
-                      ),
-                    ),
+            centerTitle: false,
+            titleSpacing: isLargeScreen ? 24 : 16,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _isReorderMode ? 'งบประมาณ' : _formatBudgetTitle(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-            title: Text(
-              _isReorderMode ? 'จัดเรียงงบประมาณ' : _formatBudgetTitle(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: textPrimary,
-              ),
+                ),
+                Text(
+                  _isReorderMode ? 'จัดเรียง' : 'งบประมาณ',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
             actions: [
               if (_isReorderMode)
@@ -375,6 +362,28 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   ),
                 )
               else ...[
+                Material(
+                  color: surfaceColor,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.pie_chart_outline_rounded, size: 20),
+                    color: textPrimary,
+                    tooltip: 'รายละเอียดกลุ่มงบประมาณ',
+                    onPressed: () => _showGroupDetailsBottomSheet(
+                      context,
+                      groupSummaries,
+                      periodLabel,
+                      totalBudget,
+                      totalSpent,
+                      totalAvailable,
+                      totalOverspent,
+                      overallProgress,
+                      isDarkMode,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: Material(
