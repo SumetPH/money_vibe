@@ -55,6 +55,11 @@
 - **Selection**: ใช้ `showAppModalBottomSheet` แทน dropdown หรือ `DropdownButtonFormField` เมื่อเป็นการเลือกค่าจากรายการ
 - **Numeric & Amount Input**: กล่องกรอกตัวเลขแบบ iOS พื้นหลังนุ่มนวล ขอบมน จัดชิดขวา มีหน่วย/สกุลเงินในตัว และมี `onTapOutside` ปิดคีย์บอร์ดเสมอ
 - **Metric Grid & Status Capsule**: ตัวเลขทางการเงิน/บาลานซ์จัดแสดงในตารางกริดโค้งมน และป้ายสถานะใช้แคปซูล (`AppRadii.full`) สี semantic โปร่งแสง 12%
+- **Scaffold Header & App Bar**: พื้นหลังกลืนกับ canvas (`backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.background`, `elevation: 0`, `scrolledUnderElevation: 0`)
+  - *หน้าหลัก (Tab Screens)*: ใช้ iOS Large Title สองระดับ (supertitle `13sp` `textSecondary` + title `30sp` `textPrimary`), `toolbarHeight: 104-112`, `centerTitle: false`
+  - *หน้า Form / Detail*: ใช้ title กึ่งกลาง `18sp`, `leadingWidth: 64`
+  - *ปุ่ม Action / Leading*: ต้องครอบด้วยวงกลมพื้นหลัง surface เสมอ (`Material(color: surface, shape: CircleBorder(), clipBehavior: Clip.antiAlias, child: IconButton(...))`) ห้ามวาง icon ลอย ๆ บนพื้นหลัง
+- **Bottom Navigation**: สำหรับหน้าจอหลักบน mobile (`!isLargeScreen`) ต้องใช้ `AppBottomNavigation` แบบ Floating Capsule เสมอ (ขอบโค้งมน `AppRadii.sheet`, มีขอบเส้นบางและเงาละมุน, มีปุ่ม FAB เพิ่มรายการตรงกลาง และปุ่มเมนูเปิด Drawer) โดยครอบด้วย `Builder` เพื่อให้ `Scaffold.of(context).openDrawer()` ทำงานได้ถูกต้อง
 - การใช้สี income, expense, transfer, debtRepay ควรใช้เพื่อสื่อความหมายของตัวเลขหรือสถานะ ไม่ใช้เพื่อแต่งพื้นหลังจนรก
 - ศึกษาตัวอย่างและรายละเอียดเพิ่มเติมได้ที่ `docs/adr/0001-ios-design-system-and-ui-conventions.md`
 

@@ -1827,15 +1827,6 @@ class _BudgetItemRow extends StatelessWidget {
                       ],
                     ),
                   ],
-
-                  if (!isReorderMode && budget.type != BudgetType.savings) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: textSecondary.withValues(alpha: 0.4),
-                    ),
-                  ],
                 ],
               ),
             ),
