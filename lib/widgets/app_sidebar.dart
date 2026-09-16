@@ -43,6 +43,11 @@ class AppSidebar extends StatefulWidget {
       route: '/budgets',
     ),
     SidebarItemData(
+      icon: Icons.pie_chart_outline,
+      label: 'สถิติ',
+      route: '/statistics',
+    ),
+    SidebarItemData(
       icon: Icons.repeat,
       label: 'รายการประจำ',
       route: '/recurring',
@@ -51,11 +56,6 @@ class AppSidebar extends StatefulWidget {
       icon: Icons.category_outlined,
       label: 'หมวดหมู่',
       route: '/categories',
-    ),
-    SidebarItemData(
-      icon: Icons.pie_chart_outline,
-      label: 'สถิติ',
-      route: '/statistics',
     ),
     SidebarItemData(
       icon: Icons.show_chart,
@@ -278,8 +278,7 @@ class _SidebarItemTile extends StatelessWidget {
                       size: 22,
                     ),
                     if (item.route == '/settings' &&
-                        (reinstallReminder.needsWarningBadge ||
-                            reinstallReminder.needsExpiredBadge))
+                        reinstallReminder.needsExpiredBadge)
                       Positioned(
                         right: -6,
                         top: -6,

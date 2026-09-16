@@ -56,7 +56,6 @@ class ReinstallReminderService extends ChangeNotifier {
   bool get notificationEnabled => _notificationEnabled;
   ReinstallReminderState? get state => _state;
   ReinstallStatus? get status => _state?.statusAt(DateTime.now());
-  bool get needsWarningBadge => status == ReinstallStatus.warning;
   bool get needsExpiredBadge => status == ReinstallStatus.expired;
   String? get remainingLabel => _state?.remainingLabelAt(DateTime.now());
 
@@ -111,11 +110,11 @@ class ReinstallReminderService extends ChangeNotifier {
       _state!.firstLaunch.toIso8601String(),
     );
 
-    await _scheduleReminder();
     _refreshTimer ??= Timer.periodic(
       const Duration(minutes: 1),
       (_) => notifyListeners(),
     );
+    await _scheduleReminder();
     notifyListeners();
   }
 

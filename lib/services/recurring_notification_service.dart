@@ -165,7 +165,12 @@ class RecurringNotificationService {
     if (kIsWeb) return;
 
     await init();
-    await _plugin.cancelAll();
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final notification in pending) {
+      if (notification.payload?.startsWith('recurring:') ?? false) {
+        await _plugin.cancel(notification.id);
+      }
+    }
 
     if (!recurring.any((item) => item.notificationEnabled)) return;
 
@@ -242,7 +247,7 @@ class RecurringNotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(badgeNumber: 1),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );

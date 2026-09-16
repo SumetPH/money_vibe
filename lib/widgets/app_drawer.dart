@@ -236,9 +236,7 @@ class _DrawerItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final reinstallReminder = context.watch<ReinstallReminderService>();
     final showReinstallBadge =
-        icon == Icons.settings_outlined &&
-        (reinstallReminder.needsWarningBadge ||
-            reinstallReminder.needsExpiredBadge);
+        icon == Icons.settings_outlined && reinstallReminder.needsExpiredBadge;
 
     return ListTile(
       leading: Stack(
