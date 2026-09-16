@@ -507,15 +507,8 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'ตัวกรองรายการขาย',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                    const AppModalBottomSheetHeader(title: 'ตัวกรองรายการขาย'),
+                    const SizedBox(height: 16),
                     _FilterBar(
                       portfolios: portfolios,
                       selectedPortfolioId: selectedPortfolioId,

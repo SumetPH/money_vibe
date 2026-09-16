@@ -638,6 +638,11 @@ class _PortfolioInvestmentPlanScreenState
                         vertical: 8,
                       ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      filled: false,
                     ),
                     onChanged: (_) =>
                         _scheduleTargetSave(holding, enabled: row.isEnabled),
@@ -971,11 +976,16 @@ class _PortfolioInvestmentPlanScreenState
                           color: secondaryColor.withValues(alpha: 0.5),
                         ),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 4,
                           vertical: 6,
                         ),
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        filled: false,
                       ),
                       onChanged: (value) {
                         setState(() {

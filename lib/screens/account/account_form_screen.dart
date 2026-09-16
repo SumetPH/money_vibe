@@ -1528,47 +1528,66 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final surfaceColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
           final textPrimaryColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกชนิดบัญชี'),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    ...AccountType.values.map(
-                      (type) => ListTile(
-                        tileColor: surfaceColor,
-                        title: Text(
-                          type.label,
-                          style: TextStyle(color: textPrimaryColor),
-                        ),
-                        trailing: _selectedType == type
-                            ? Icon(Icons.check, color: headerColor)
-                            : null,
-                        onTap: () {
-                          setState(() {
-                            _applyAccountTypeDefaults(type);
-                            _initialBalanceController.clear();
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.75,
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppModalBottomSheetHeader(title: 'เลือกชนิดบัญชี'),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(bottom: 16),
+                      itemCount: AccountType.values.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        indent: 16,
+                        endIndent: 16,
+                        color: dividerColor.withValues(alpha: 0.35),
+                      ),
+                      itemBuilder: (_, i) {
+                        final type = AccountType.values[i];
+                        final isSelected = _selectedType == type;
+                        return ListTile(
+                          title: Text(
+                            type.label,
+                            style: TextStyle(
+                              color: textPrimaryColor,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check, color: headerColor)
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              _applyAccountTypeDefaults(type);
+                              _initialBalanceController.clear();
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -1677,50 +1696,163 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final incomeColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.income;
+          final expenseColor = isDarkMode
+              ? AppColors.darkExpense
+              : AppColors.expense;
 
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
-                  ListTile(
-                    leading: const Icon(Icons.delete_outline),
-                    title: Text(
-                      'ลบรูปที่อัปโหลด',
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? AppColors.darkExpense
-                            : AppColors.expense,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppModalBottomSheetHeader(title: 'รูปและไอคอน'),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: dividerColor.withValues(alpha: 0.35),
+                        width: 1,
                       ),
                     ),
-                    onTap: () {
-                      setState(() {
-                        _selectedIconUrl = '';
-                      });
-                      Navigator.pop(context);
-                    },
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        if (_selectedIconUrl.isNotEmpty && _isUploadedIcon) ...[
+                          ListTile(
+                            leading: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: expenseColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.medium,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                color: expenseColor,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(
+                              'ลบรูปที่อัปโหลด',
+                              style: TextStyle(
+                                color: expenseColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                _selectedIconUrl = '';
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 58,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.3),
+                          ),
+                        ],
+                        ListTile(
+                          leading: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: incomeColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.medium,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.image_outlined,
+                              color: incomeColor,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            'อัปโหลดรูปภาพ',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'เลือกรูปจากคลังภาพในเครื่อง',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pickCustomIcon();
+                          },
+                        ),
+                        Divider(
+                          height: 1,
+                          indent: 58,
+                          endIndent: 16,
+                          color: dividerColor.withValues(alpha: 0.3),
+                        ),
+                        ListTile(
+                          leading: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: textColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.medium,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.grid_view_rounded,
+                              color: textColor,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            'เลือกไอคอน',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'เลือกจากชุดไอคอนมาตรฐาน',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showIconGrid();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ListTile(
-                  leading: const Icon(Icons.image_outlined),
-                  title: Text(
-                    'อัปโหลดรูปภาพ',
-                    style: TextStyle(color: textColor),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickCustomIcon();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.grid_view_outlined),
-                  title: Text('เลือกไอคอน', style: TextStyle(color: textColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showIconGrid();
-                  },
-                ),
-                const SizedBox(height: 8),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -1805,52 +1937,62 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ? AppColors.darkTextSecondary
               : AppColors.textSecondary;
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountIcons.length,
-                  itemBuilder: (_, i) {
-                    final icon = AppColors.accountIcons[i];
-                    final selected = icon == _selectedIcon;
-                    return Material(
-                      color: selected
-                          ? _selectedColor.withValues(alpha: 0.2)
-                          : bgColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: selected
-                            ? BorderSide(color: _selectedColor, width: 2)
-                            : BorderSide.none,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedIcon = icon;
-                            _selectedIconUrl = '';
-                          });
-                          Navigator.pop(context);
-                        },
-                        child: Icon(
-                          icon,
-                          color: selected ? _selectedColor : textSecondaryColor,
-                          size: 24,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.65,
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                      itemCount: AppColors.accountIcons.length,
+                      itemBuilder: (_, i) {
+                        final icon = AppColors.accountIcons[i];
+                        final selected = icon == _selectedIcon;
+                        return Material(
+                          color: selected
+                              ? _selectedColor.withValues(alpha: 0.2)
+                              : bgColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: selected
+                                ? BorderSide(color: _selectedColor, width: 2)
+                                : BorderSide.none,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedIcon = icon;
+                                _selectedIconUrl = '';
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Icon(
+                              icon,
+                              color: selected
+                                  ? _selectedColor
+                                  : textSecondaryColor,
+                              size: 24,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -1861,45 +2003,57 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AppModalBottomSheetHeader(title: 'เลือกสี'),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
-              itemCount: AppColors.accountColors.length,
-              itemBuilder: (_, i) {
-                final color = AppColors.accountColors[i];
-                final selected = color.toARGB32() == _selectedColor.toARGB32();
-                return Material(
-                  color: color,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: selected
-                        ? const BorderSide(color: Colors.black45, width: 2)
-                        : BorderSide.none,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
-                      setState(() => _selectedColor = color);
-                      Navigator.pop(context);
-                    },
-                    child: selected
-                        ? const Icon(Icons.check, color: Colors.white, size: 20)
-                        : null,
-                  ),
-                );
-              },
-            ),
+      builder: (_) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.55,
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'เลือกสี'),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                  ),
+                  itemCount: AppColors.accountColors.length,
+                  itemBuilder: (_, i) {
+                    final color = AppColors.accountColors[i];
+                    final selected =
+                        color.toARGB32() == _selectedColor.toARGB32();
+                    return Material(
+                      color: color,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: selected
+                            ? const BorderSide(color: Colors.black45, width: 2)
+                            : BorderSide.none,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _selectedColor = color);
+                          Navigator.pop(context);
+                        },
+                        child: selected
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 20,
+                              )
+                            : null,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

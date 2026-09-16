@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
@@ -8,6 +9,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
@@ -652,69 +654,185 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       builder: (_) => Consumer2<SettingsProvider, BudgetProvider>(
         builder: (context, settingsProvider, budgetProvider, _) {
           final isDark = settingsProvider.isDarkMode;
-          final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
           final dividerColor = isDark
               ? AppColors.darkDivider
               : AppColors.divider;
+          final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
+          final yellowColor = isDark
+              ? AppColors.darkFabYellow
+              : AppColors.fabYellow;
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
               return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(Icons.add, color: textColor),
-                      title: Text(
-                        'เพิ่มงบประมาณ',
-                        style: TextStyle(color: textColor),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppModalBottomSheetHeader(
+                        title: 'ตัวเลือกงบประมาณ',
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openForm(context, null);
-                      },
-                    ),
-
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(Icons.reorder, color: textColor),
-                      title: Text(
-                        'จัดเรียงลำดับ',
-                        style: TextStyle(color: textColor),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.background,
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          border: Border.all(
+                            color: dividerColor.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: yellowColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: yellowColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'เพิ่มงบประมาณ',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'ตั้งเป้างบประมาณรายจ่ายตามหมวดหมู่',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _openForm(context, null);
+                              },
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: incomeColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.reorder_rounded,
+                                  color: incomeColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'จัดเรียงลำดับ',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'เปิดโหมดลากสลับตำแหน่งงบประมาณ',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: _isReorderMode,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDark
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (v) {
+                                  setStateModal(() => _isReorderMode = v);
+                                  setState(() => _isReorderMode = v);
+                                },
+                              ),
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: textColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.visibility_outlined,
+                                  color: textColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'แสดงงบประมาณที่ซ่อน',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'แสดงงบประมาณที่ถูกตั้งค่าซ่อนไว้',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: budgetProvider.showHiddenBudgets,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDark
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (_) {
+                                  budgetProvider.toggleShowHiddenBudgets();
+                                  setStateModal(() {});
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      trailing: Switch(
-                        value: _isReorderMode,
-                        onChanged: (v) {
-                          setStateModal(() => _isReorderMode = v);
-                          setState(() => _isReorderMode = v);
-                        },
-                      ),
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(
-                        Icons.visibility_outlined,
-                        color: textColor,
-                      ),
-                      title: Text(
-                        'แสดงงบประมาณที่ซ่อน',
-                        style: TextStyle(color: textColor),
-                      ),
-                      trailing: Switch(
-                        value: budgetProvider.showHiddenBudgets,
-                        onChanged: (_) {
-                          budgetProvider.toggleShowHiddenBudgets();
-                          setStateModal(() {});
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -1240,8 +1358,6 @@ class _BudgetItem extends StatelessWidget {
   }
 
   void _showBudgetMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-
     showAppModalBottomSheet(
       context: context,
       builder: (_) => Consumer<SettingsProvider>(
@@ -1250,21 +1366,72 @@ class _BudgetItem extends StatelessWidget {
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final dividerColor = isDark
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
 
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.edit_outlined, color: textColor),
-                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onTapEdit();
-                  },
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppModalBottomSheetHeader(title: budget.name),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: dividerColor.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: incomeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: incomeColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'แก้ไขงบประมาณ',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'เปลี่ยนยอด จำนวนเงิน หรือการตั้งค่าของงบประมาณ',
+                        style: TextStyle(color: textSecondary, fontSize: 12),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: textSecondary.withValues(alpha: 0.6),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onTapEdit();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

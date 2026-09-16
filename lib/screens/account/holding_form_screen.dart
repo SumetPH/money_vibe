@@ -679,6 +679,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                               focusedBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               focusedErrorBorder: InputBorder.none,
+                              filled: false,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 vertical: 14,
@@ -724,6 +725,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                               focusedBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               focusedErrorBorder: InputBorder.none,
+                              filled: false,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 vertical: 14,
@@ -990,6 +992,7 @@ class _HoldingNumberFieldRow extends StatelessWidget {
                     focusedBorder: InputBorder.none,
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
+                    filled: false,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),

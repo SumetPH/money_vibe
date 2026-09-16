@@ -45,19 +45,18 @@
 - ใช้ `Provider` เป็นทางหลักในการเชื่อม UI กับ state
 - หากหน้าจอมี flow เลือกข้อมูลจากรายการ เช่น บัญชี หมวดหมู่ พอร์ต หรือ filter ให้ยึด pattern bottom sheet/list selection ที่มีอยู่ในโปรเจกต์ก่อน
 
-## UI และ Style
+## UI และ Style (ตาม ADR 0001: iOS Design System)
 
-- ทุก screen และ widget ใหม่ต้องรองรับทั้ง light mode และ dark mode
+- ทุก screen และ widget ใหม่ต้องรองรับทั้ง light mode และ dark mode โดยเน้น Dark Mode First
 - ให้ดึงสถานะ theme จาก `SettingsProvider`
-- ใช้ token จาก `lib/theme/app_colors.dart` และ `lib/theme/app_radii.dart` เป็นค่าเริ่มต้น
-- ยอมรับการใช้สีของ Flutter ตรง ๆ ได้เฉพาะกรณีที่เป็นสีมาตรฐานของ theme component หรือมีเหตุผลชัดเจนจากบริบทเดิมของไฟล์
-- รักษา visual language แบบ list-first, surface-first
-- หน้าจอข้อมูลหลักควรอ่านง่าย แบน และแบ่ง section ด้วย spacing, divider, และ surface มากกว่าการ์ดลอยหลายชั้น
-- ใช้ card, shadow หรือ radius ใหญ่เฉพาะจุดที่ต้องการแยกบริบทจริง เช่น dialog, bottom sheet, panel หรือ repeated item บางประเภท
-- พยายามใช้ `showModalBottomSheet` แทน dropdown select หรือ `DropdownButtonFormField` เมื่อเป็นการเลือกค่าจากรายการ โดยให้แสดงเป็น row/list บน surface และมีสถานะ selected ที่ชัดเจน
-- ใช้ dropdown เฉพาะกรณีที่เป็นตัวเลือกสั้นมากจริง ๆ หรือมี pattern เดิมของหน้าจอนั้นที่ชัดเจนอยู่แล้ว
-- การใช้สี income, expense, transfer ควรใช้เพื่อสื่อความหมายของตัวเลขหรือสถานะ ไม่ใช้เพื่อแต่งพื้นหลังจนรก
-- หากไม่แน่ใจเรื่อง pattern ให้เทียบกับหน้าปัจจุบันใน `transaction`, `portfolio`, `trade`, `statistics`, `budget` และ `credit card bill`
+- ใช้ token จาก `lib/theme/app_colors.dart` และ `lib/theme/app_radii.dart` เป็นค่าเริ่มต้น ห้าม hardcode สีเทาหรือ hex ทั่วไป (อนุญาตให้ใช้ alpha บนสีดำ/ขาวเพื่อสร้าง depth แบบ iOS เช่น `.withValues(alpha: 0.05)`)
+- **Inset Grouped Card**: ใช้การ์ดโค้งมน `AppRadii.xLarge` มีระยะขอบข้าง `16` ขอบเส้นบาง (`dividerColor.withValues(alpha: 0.35)`) และหัวข้อ Section นอกการ์ดตัวพิมพ์เล็ก/ใหญ่กึ่งหนา (`12sp`, `letterSpacing: 0.5`)
+- **Toggles**: บังคับใช้ `CupertinoSwitch` พร้อมกำหนด `activeTrackColor` และ `inactiveTrackColor` เสมอ ห้ามใช้ Material `SwitchListTile`
+- **Selection**: ใช้ `showAppModalBottomSheet` แทน dropdown หรือ `DropdownButtonFormField` เมื่อเป็นการเลือกค่าจากรายการ
+- **Numeric & Amount Input**: กล่องกรอกตัวเลขแบบ iOS พื้นหลังนุ่มนวล ขอบมน จัดชิดขวา มีหน่วย/สกุลเงินในตัว และมี `onTapOutside` ปิดคีย์บอร์ดเสมอ
+- **Metric Grid & Status Capsule**: ตัวเลขทางการเงิน/บาลานซ์จัดแสดงในตารางกริดโค้งมน และป้ายสถานะใช้แคปซูล (`AppRadii.full`) สี semantic โปร่งแสง 12%
+- การใช้สี income, expense, transfer, debtRepay ควรใช้เพื่อสื่อความหมายของตัวเลขหรือสถานะ ไม่ใช้เพื่อแต่งพื้นหลังจนรก
+- ศึกษาตัวอย่างและรายละเอียดเพิ่มเติมได้ที่ `docs/adr/0001-ios-design-system-and-ui-conventions.md`
 
 ## Naming และโครงสร้างไฟล์
 
@@ -69,6 +68,7 @@
 
 ## กฎสำหรับ Agent
 
+- **On-Demand Redesign**: เมื่อผู้ใช้ส่ง `@screen` หรือ `@widget` ให้ทำการ redesign UI ตามมาตรฐานใน ADR 0001 โดยต้องรักษา **Zero Business Logic Regression** (ห้ามแก้ logic การคำนวณ, state management `Provider`, repository/database, validation หรือ debounce timer เว้นแต่ผู้ใช้สั่งโดยตรง)
 - แก้เฉพาะส่วนที่เกี่ยวข้องกับงาน หลีกเลี่ยงการรื้อโค้ดส่วนอื่นโดยไม่จำเป็น
 - รักษา type safety ห้ามใช้วิธีลัดอย่าง `as dynamic`
 - ห้าม hard-code API key, secret หรือข้อมูลส่วนตัวลงในโค้ด

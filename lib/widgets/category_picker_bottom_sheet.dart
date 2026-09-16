@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/category.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import 'app_modal_bottom_sheet.dart';
 
 /// วิดเจ็ตเลือกหมวดหมู่แบบ Bottom Sheet (Deep Module)
@@ -54,8 +55,12 @@ class CategoryPickerBottomSheet extends StatelessWidget {
             child: ListView.separated(
               controller: scrollController,
               itemCount: categories.length,
-              separatorBuilder: (context, i) =>
-                  Divider(height: 1, color: dividerColor),
+              separatorBuilder: (context, i) => Divider(
+                height: 1,
+                indent: 68,
+                endIndent: 16,
+                color: dividerColor.withValues(alpha: 0.35),
+              ),
               itemBuilder: (_, i) {
                 final cat = categories[i];
                 final isSelected = selectedCategoryId == cat.id;
@@ -66,7 +71,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: cat.color.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(AppRadii.medium),
                     ),
                     child: Icon(cat.icon, color: cat.color, size: 20),
                   ),
@@ -74,6 +79,9 @@ class CategoryPickerBottomSheet extends StatelessWidget {
                     cat.name,
                     style: TextStyle(
                       fontSize: 16.0,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: isDarkMode
                           ? AppColors.darkTextPrimary
                           : AppColors.textPrimary,

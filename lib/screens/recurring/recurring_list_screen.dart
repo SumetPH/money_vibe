@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -285,65 +287,182 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
       builder: (_) => Consumer2<SettingsProvider, RecurringTransactionProvider>(
         builder: (context, sp, rtp, _) {
           final isDk = sp.isDarkMode;
-          final bgColor = isDk ? AppColors.darkSurface : AppColors.surface;
           final textColor = isDk
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDk
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
           final dividerColor = isDk ? AppColors.darkDivider : AppColors.divider;
+          final incomeColor = isDk ? AppColors.darkIncome : AppColors.income;
+          final yellowColor = isDk
+              ? AppColors.darkFabYellow
+              : AppColors.fabYellow;
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
               return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(Icons.add, color: textColor),
-                      title: Text(
-                        'เพิ่มรายการประจำ',
-                        style: TextStyle(color: textColor),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppModalBottomSheetHeader(
+                        title: 'ตัวเลือกรายการประจำ',
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openForm(context, null);
-                      },
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(Icons.reorder, color: textColor),
-                      title: Text(
-                        'จัดเรียงลำดับ',
-                        style: TextStyle(color: textColor),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDk
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.background,
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          border: Border.all(
+                            color: dividerColor.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: yellowColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: yellowColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'เพิ่มรายการประจำ',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'สร้างรายการรับ จ่าย หรือโอนเงินอัตโนมัติ',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _openForm(context, null);
+                              },
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: incomeColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.reorder_rounded,
+                                  color: incomeColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'จัดเรียงลำดับ',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'เปิดโหมดลากสลับตำแหน่งรายการประจำ',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: _isReorderMode,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDk
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (v) {
+                                  setStateModal(() => _isReorderMode = v);
+                                  setState(() => _isReorderMode = v);
+                                },
+                              ),
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: textColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.visibility_outlined,
+                                  color: textColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'แสดงรายการที่ซ่อน',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'แสดงรายการประจำที่ถูกตั้งค่าซ่อนไว้',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: rtp.showHiddenRecurring,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDk
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (v) {
+                                  rtp.toggleShowHiddenRecurring();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      trailing: Switch(
-                        value: _isReorderMode,
-                        onChanged: (v) {
-                          setStateModal(() => _isReorderMode = v);
-                          setState(() => _isReorderMode = v);
-                        },
-                      ),
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Icon(
-                        Icons.visibility_outlined,
-                        color: textColor,
-                      ),
-                      title: Text(
-                        'แสดงรายการที่ซ่อน',
-                        style: TextStyle(color: textColor),
-                      ),
-                      trailing: Switch(
-                        value: rtp.showHiddenRecurring,
-                        onChanged: (v) {
-                          rtp.toggleShowHiddenRecurring();
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -546,8 +665,6 @@ class _RecurringItem extends StatelessWidget {
   }
 
   void _showRecurringMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-
     showAppModalBottomSheet(
       context: context,
       builder: (_) => Consumer<SettingsProvider>(
@@ -556,21 +673,72 @@ class _RecurringItem extends StatelessWidget {
           final textColor = isDark
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final dividerColor = isDark
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
 
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.edit_outlined, color: textColor),
-                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onTapEdit();
-                  },
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppModalBottomSheetHeader(title: recurring.name),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: dividerColor.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: incomeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: incomeColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'แก้ไขรายการประจำ',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'เปลี่ยนยอด วันที่ หรือเงื่อนไขของรายการ',
+                        style: TextStyle(color: textSecondary, fontSize: 12),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: textSecondary.withValues(alpha: 0.6),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onTapEdit();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

@@ -174,7 +174,12 @@ class AccountPickerBottomSheet extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Divider(height: 1, color: dividerColor),
+                          Divider(
+                            height: 1,
+                            indent: 64,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.35),
+                          ),
                         ],
                       );
                     }),

@@ -987,7 +987,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
 
   void _showMenuSheet(BuildContext context) {
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1005,177 +1004,202 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           builder: (context, setStateModal) {
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildMenuSheetTile(
-                      icon: Icons.add_shopping_cart_rounded,
-                      iconColor: incomeColor,
-                      title: 'ซื้อหุ้นใหม่',
-                      subtitle: 'บันทึกรายการซื้อหุ้นเข้าพอร์ต',
-                      textColor: textColor,
-                      secondaryColor: textSecondary,
-                      bgColor: bgColor,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openHoldingBuyForm(
-                          context,
-                          context.read<AccountProvider>(),
-                          widget.account.id,
-                          null,
-                        );
-                      },
+                    const AppModalBottomSheetHeader(
+                      title: 'ตัวเลือกพอร์ตการลงทุน',
                     ),
-                    Divider(
-                      height: 1,
-                      indent: 64,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
-                    _buildMenuSheetTile(
-                      icon: Icons.add_circle_outline_rounded,
-                      iconColor: textColor,
-                      title: 'เพิ่มหุ้นเป็นยอดตั้งต้น',
-                      subtitle: 'เพิ่มข้อมูลหุ้นเดิมที่มีอยู่แล้วเข้าพอร์ต',
-                      textColor: textColor,
-                      secondaryColor: textSecondary,
-                      bgColor: bgColor,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openHoldingForm(
-                          context,
-                          context.read<AccountProvider>(),
-                          widget.account.id,
-                          null,
-                        );
-                      },
-                    ),
-                    if (widget.account.isUsPortfolio) ...[
-                      Divider(
-                        height: 1,
-                        indent: 64,
-                        endIndent: 16,
-                        color: dividerColor.withValues(alpha: 0.3),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.background,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                        border: Border.all(
+                          color: dividerColor.withValues(alpha: 0.35),
+                          width: 1,
+                        ),
                       ),
-                      _buildMenuSheetTile(
-                        icon: Icons.edit_document,
-                        iconColor: textColor,
-                        title: 'ปรับรายงานประจำปี',
-                        subtitle: 'นำเข้าและตรวจทานรายงาน Broker สหรัฐฯ',
-                        textColor: textColor,
-                        secondaryColor: textSecondary,
-                        bgColor: bgColor,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BrokerReportListScreen(
-                                portfolioId: widget.account.id,
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        children: [
+                          _buildMenuSheetTile(
+                            icon: Icons.add_shopping_cart_rounded,
+                            iconColor: incomeColor,
+                            title: 'ซื้อหุ้นใหม่',
+                            subtitle: 'บันทึกรายการซื้อหุ้นเข้าพอร์ต',
+                            textColor: textColor,
+                            secondaryColor: textSecondary,
+                            bgColor: Colors.transparent,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _openHoldingBuyForm(
+                                context,
+                                context.read<AccountProvider>(),
+                                widget.account.id,
+                                null,
+                              );
+                            },
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 64,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.3),
+                          ),
+                          _buildMenuSheetTile(
+                            icon: Icons.add_circle_outline_rounded,
+                            iconColor: textColor,
+                            title: 'เพิ่มหุ้นเป็นยอดตั้งต้น',
+                            subtitle:
+                                'เพิ่มข้อมูลหุ้นเดิมที่มีอยู่แล้วเข้าพอร์ต',
+                            textColor: textColor,
+                            secondaryColor: textSecondary,
+                            bgColor: Colors.transparent,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _openHoldingForm(
+                                context,
+                                context.read<AccountProvider>(),
+                                widget.account.id,
+                                null,
+                              );
+                            },
+                          ),
+                          if (widget.account.isUsPortfolio) ...[
+                            Divider(
+                              height: 1,
+                              indent: 64,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            _buildMenuSheetTile(
+                              icon: Icons.edit_document,
+                              iconColor: textColor,
+                              title: 'ปรับรายงานประจำปี',
+                              subtitle: 'นำเข้าและตรวจทานรายงาน Broker สหรัฐฯ',
+                              textColor: textColor,
+                              secondaryColor: textSecondary,
+                              bgColor: Colors.transparent,
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BrokerReportListScreen(
+                                      portfolioId: widget.account.id,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          Divider(
+                            height: 1,
+                            indent: 64,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.3),
+                          ),
+                          _buildMenuSheetTile(
+                            icon: Icons.auto_awesome_rounded,
+                            iconColor: isDarkMode
+                                ? AppColors.darkFabYellow
+                                : AppColors.fabYellow,
+                            title: 'วิเคราะห์พอร์ต',
+                            subtitle: 'ตรวจสอบการกระจายความเสี่ยงและผลตอบแทน',
+                            textColor: textColor,
+                            secondaryColor: textSecondary,
+                            bgColor: Colors.transparent,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PortfolioAnalyzeScreen(
+                                    accountId: widget.account.id,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 64,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.3),
+                          ),
+                          _buildMenuSheetTile(
+                            icon: Icons.account_tree_outlined,
+                            iconColor: textColor,
+                            title: 'จัดลำดับกลุ่ม',
+                            subtitle: 'ลากและสลับลำดับการแสดงผลของกลุ่มพอร์ต',
+                            textColor: textColor,
+                            secondaryColor: textSecondary,
+                            bgColor: Colors.transparent,
+                            onTap: () {
+                              final holdings = context
+                                  .read<AccountProvider>()
+                                  .getHoldings(widget.account.id);
+                              Navigator.pop(context);
+                              _showGroupReorderDialog(
+                                this.context,
+                                _currentPortfolioGroupKeys(holdings),
+                                isDarkMode,
+                              );
+                            },
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 64,
+                            endIndent: 16,
+                            color: dividerColor.withValues(alpha: 0.3),
+                          ),
+                          ListTile(
+                            tileColor: Colors.transparent,
+                            leading: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: textColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.reorder_rounded,
+                                color: textColor,
+                                size: 20,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                    Divider(
-                      height: 1,
-                      indent: 64,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
-                    _buildMenuSheetTile(
-                      icon: Icons.auto_awesome_rounded,
-                      iconColor: isDarkMode
-                          ? AppColors.darkFabYellow
-                          : AppColors.fabYellow,
-                      title: 'วิเคราะห์พอร์ต',
-                      subtitle: 'ตรวจสอบการกระจายความเสี่ยงและผลตอบแทน',
-                      textColor: textColor,
-                      secondaryColor: textSecondary,
-                      bgColor: bgColor,
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PortfolioAnalyzeScreen(
-                              accountId: widget.account.id,
+                            title: Text(
+                              'โหมดจัดเรียงลำดับหุ้น',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'แสดงปุ่มลากเพื่อสลับลำดับหุ้นในแต่ละกลุ่ม',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textSecondary,
+                              ),
+                            ),
+                            trailing: CupertinoSwitch(
+                              value: _isReorderMode,
+                              activeTrackColor: incomeColor,
+                              inactiveTrackColor: isDarkMode
+                                  ? const Color(0xFF39393D)
+                                  : const Color(0xFFE9E9EA),
+                              onChanged: (value) {
+                                setStateModal(() => _isReorderMode = value);
+                                setState(() => _isReorderMode = value);
+                              },
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    Divider(
-                      height: 1,
-                      indent: 64,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
-                    _buildMenuSheetTile(
-                      icon: Icons.account_tree_outlined,
-                      iconColor: textColor,
-                      title: 'จัดลำดับกลุ่ม',
-                      subtitle: 'ลากและสลับลำดับการแสดงผลของกลุ่มพอร์ต',
-                      textColor: textColor,
-                      secondaryColor: textSecondary,
-                      bgColor: bgColor,
-                      onTap: () {
-                        final holdings = context
-                            .read<AccountProvider>()
-                            .getHoldings(widget.account.id);
-                        Navigator.pop(context);
-                        _showGroupReorderDialog(
-                          this.context,
-                          _currentPortfolioGroupKeys(holdings),
-                          isDarkMode,
-                        );
-                      },
-                    ),
-                    Divider(
-                      height: 1,
-                      indent: 64,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: textColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.reorder_rounded,
-                          color: textColor,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        'โหมดจัดเรียงลำดับหุ้น',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'แสดงปุ่มลากเพื่อสลับลำดับหุ้นในแต่ละกลุ่ม',
-                        style: TextStyle(fontSize: 12, color: textSecondary),
-                      ),
-                      trailing: CupertinoSwitch(
-                        value: _isReorderMode,
-                        activeTrackColor: incomeColor,
-                        inactiveTrackColor: isDarkMode
-                            ? const Color(0xFF39393D)
-                            : const Color(0xFFE9E9EA),
-                        onChanged: (value) {
-                          setStateModal(() => _isReorderMode = value);
-                          setState(() => _isReorderMode = value);
-                        },
+                        ],
                       ),
                     ),
                   ],

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
@@ -346,66 +347,184 @@ class _AccountListScreenState extends State<AccountListScreen> {
         builder: (context, accountProvider, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
           final showHiddenAccounts = accountProvider.showHiddenAccounts;
-          final bgColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
           final dividerColor = isDarkMode
               ? AppColors.darkDivider
               : AppColors.divider;
+          final incomeColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.income;
+          final yellowColor = isDarkMode
+              ? AppColors.darkFabYellow
+              : AppColors.fabYellow;
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
               return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: const Icon(Icons.add_circle_outline),
-                      title: Text(
-                        'เพิ่มบัญชีใหม่',
-                        style: TextStyle(color: textColor),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppModalBottomSheetHeader(title: 'ตัวเลือกบัญชี'),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.background,
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          border: Border.all(
+                            color: dividerColor.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: yellowColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: yellowColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'เพิ่มบัญชีใหม่',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'สร้างบัญชีเงินสด เงินฝาก บัตร หรือพอร์ต',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _openAddAccountForm(context);
+                              },
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: incomeColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.reorder_rounded,
+                                  color: incomeColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'จัดเรียงลำดับ',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'เปิดโหมดลากสลับตำแหน่งบัญชี',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: _isReorderMode,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDarkMode
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (value) {
+                                  setStateModal(() => _isReorderMode = value);
+                                  setState(() => _isReorderMode = value);
+                                },
+                              ),
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 58,
+                              endIndent: 16,
+                              color: dividerColor.withValues(alpha: 0.3),
+                            ),
+                            ListTile(
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: textColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.medium,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.visibility_outlined,
+                                  color: textColor,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                'แสดงบัญชีที่ซ่อน',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'แสดงบัญชีที่ถูกตั้งค่าซ่อนไว้',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: CupertinoSwitch(
+                                value: showHiddenAccounts,
+                                activeTrackColor: incomeColor,
+                                inactiveTrackColor: isDarkMode
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (value) {
+                                  accountProvider.toggleShowHiddenAccounts();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _openAddAccountForm(context);
-                      },
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: const Icon(Icons.reorder),
-                      title: Text(
-                        'จัดเรียงลำดับ',
-                        style: TextStyle(color: textColor),
-                      ),
-                      trailing: Switch(
-                        value: _isReorderMode,
-                        onChanged: (value) {
-                          setStateModal(() => _isReorderMode = value);
-                          setState(() => _isReorderMode = value);
-                        },
-                      ),
-                    ),
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      tileColor: bgColor,
-                      leading: const Icon(Icons.visibility_outlined),
-                      title: Text(
-                        'แสดงบัญชีที่ซ่อน',
-                        style: TextStyle(color: textColor),
-                      ),
-                      trailing: Switch(
-                        value: showHiddenAccounts,
-                        onChanged: (value) {
-                          accountProvider.toggleShowHiddenAccounts();
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -790,42 +909,83 @@ class _TotalRow extends StatelessWidget {
       builder: (_) => Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
           final accentColor = isDarkMode
               ? AppColors.darkFabYellow
               : AppColors.fabYellow;
 
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.filter_list, color: textColor),
-                  title: Text(
-                    'เลือกบัญชีที่คำนวณ',
-                    style: TextStyle(color: textColor),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppModalBottomSheetHeader(title: 'ยอดเงินสุทธิ'),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: dividerColor.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.filter_list_rounded,
+                          color: accentColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'เลือกบัญชีที่คำนวณ',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'กำหนดว่าบัญชีใดบ้างที่จะนำมาคิดยอดรวม',
+                        style: TextStyle(color: textSecondary, fontSize: 12),
+                      ),
+                      trailing: filterIds != null
+                          ? Text(
+                              '${filterIds!.length}/${accounts.length}',
+                              style: TextStyle(
+                                color: accentColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            )
+                          : null,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showNetWorthFilterSheet(context, settingsProvider);
+                      },
+                    ),
                   ),
-                  trailing: filterIds != null
-                      ? Text(
-                          '${filterIds!.length}/${accounts.length}',
-                          style: TextStyle(
-                            color: accentColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      : null,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showNetWorthFilterSheet(context, settingsProvider);
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -981,8 +1141,6 @@ class _AccountItem extends StatelessWidget {
   }
 
   void _showAccountMenu(BuildContext context) {
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-
     showAppModalBottomSheet(
       context: context,
       builder: (_) => Consumer<SettingsProvider>(
@@ -991,21 +1149,74 @@ class _AccountItem extends StatelessWidget {
           final textColor = isDarkMode
               ? AppColors.darkTextPrimary
               : AppColors.textPrimary;
+          final textSecondary = isDarkMode
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          final dividerColor = isDarkMode
+              ? AppColors.darkDivider
+              : AppColors.divider;
+          final incomeColor = isDarkMode
+              ? AppColors.darkIncome
+              : AppColors.income;
 
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  tileColor: bgColor,
-                  leading: Icon(Icons.edit_outlined, color: textColor),
-                  title: Text('แก้ไข', style: TextStyle(color: textColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onTapEdit();
-                  },
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppModalBottomSheetHeader(title: account.name),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: dividerColor.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: incomeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: incomeColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'แก้ไขข้อมูลบัญชี',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'เปลี่ยนชื่อ ชนิด หรือการตั้งค่าของบัญชี',
+                        style: TextStyle(color: textSecondary, fontSize: 12),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: textSecondary.withValues(alpha: 0.6),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onTapEdit();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -1074,56 +1285,47 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
         maxChildSize: 0.85,
         builder: (_, scrollController) => Column(
           children: [
-            Container(
-              color: bgColor,
-              child: Column(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
                 children: [
-                  Padding(
+                  Expanded(
+                    child: Text(
+                      'เลือกบัญชีที่คำนวณยอดรวม',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    ),
+                  ),
+                  CupertinoButton(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 10,
                       vertical: 4,
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'เลือก account ที่คำนวณยอดรวม',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textPrimary,
-                            ),
-                          ),
-                        ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(6),
-                          onTap: () {
-                            setState(() {
-                              if (isAllSelected) {
-                                _selected.clear();
-                              } else {
-                                _selected = Set.from(allIds);
-                              }
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
-                            ),
-                            child: Text(
-                              isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
-                              style: TextStyle(color: accentColor),
-                            ),
-                          ),
-                        ),
-                      ],
+                    minimumSize: Size.zero,
+                    onPressed: () {
+                      setState(() {
+                        if (isAllSelected) {
+                          _selected.clear();
+                        } else {
+                          _selected = Set.from(allIds);
+                        }
+                      });
+                    },
+                    child: Text(
+                      isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
+                      style: TextStyle(
+                        color: accentColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: dividerColor),
             Expanded(
               child: ListView(
                 controller: scrollController,
