@@ -311,13 +311,13 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                         title: 'ตัวเลือกรายการประจำ',
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: isDk
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.background,
+                      Material(
+                        color: isDk
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.background,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          border: Border.all(
+                          side: BorderSide(
                             color: dividerColor.withValues(alpha: 0.35),
                             width: 1,
                           ),
@@ -689,13 +689,13 @@ class _RecurringItem extends StatelessWidget {
                 children: [
                   AppModalBottomSheetHeader(title: recurring.name),
                   const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.background,
+                  Material(
+                    color: isDark
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.background,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      border: Border.all(
+                      side: BorderSide(
                         color: dividerColor.withValues(alpha: 0.35),
                         width: 1,
                       ),

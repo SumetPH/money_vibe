@@ -341,13 +341,13 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
             children: [
               AppModalBottomSheetHeader(title: widget.holding.ticker),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? AppColors.darkSurfaceVariant
-                      : AppColors.background,
+              Material(
+                color: isDarkMode
+                    ? AppColors.darkSurfaceVariant
+                    : AppColors.background,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  border: Border.all(
+                  side: BorderSide(
                     color: dividerColor.withValues(alpha: 0.35),
                     width: 1,
                   ),

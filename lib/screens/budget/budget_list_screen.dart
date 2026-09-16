@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
@@ -14,8 +14,7 @@ import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/bottom_summary_bar.dart';
-import '../../widgets/group_header.dart';
+import '../../widgets/app_bottom_navigation.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
@@ -58,7 +57,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
   }
 
   /// คำนวณว่าวันนี้อยู่ใน cycle ของเดือนไหน
-  /// ถ้า startDay=15 และวันนี้=1 มี.ค. → รอบเดือน มี.ค. (15 ก.พ.–14 มี.ค.)
   DateTime _currentCycleMonth(int startDay) {
     return monthlyCycleReportingMonth(DateTime.now(), startDay);
   }
@@ -248,8 +246,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final dividerColor = isDarkMode
             ? AppColors.darkDivider
             : AppColors.divider;
+        final incomeColor = isDarkMode
+            ? AppColors.darkIncome
+            : AppColors.income;
 
-        // Summary
+        // Summary calculations
         final spentByCategoryId = _buildSpentByCategoryId(
           allTx,
           period,
@@ -288,60 +289,137 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               ? null
               : const AppDrawer(currentRoute: '/budgets'),
           appBar: AppBar(
-            leading: isLargeScreen
+            backgroundColor: bgColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leadingWidth: _isReorderMode ? 0 : 76,
+            leading: _isReorderMode
+                ? const SizedBox.shrink()
+                : isLargeScreen
                 ? null
-                : Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                : Center(
+                    child: Material(
+                      color: surfaceColor,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.pie_chart_outline_rounded,
+                          size: 20,
+                        ),
+                        color: textPrimary,
+                        tooltip: 'รายละเอียดกลุ่มงบประมาณ',
+                        onPressed: () => _showGroupDetailsBottomSheet(
+                          context,
+                          groupSummaries,
+                          periodLabel,
+                          totalBudget,
+                          totalSpent,
+                          totalAvailable,
+                          totalOverspent,
+                          overallProgress,
+                          isDarkMode,
+                        ),
+                      ),
                     ),
                   ),
             title: Text(
-              _formatBudgetTitle(),
+              _isReorderMode ? 'จัดเรียงงบประมาณ' : _formatBudgetTitle(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: textPrimary,
+              ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.list_alt_outlined),
-                tooltip: 'รายละเอียดกลุ่มงบประมาณ',
-                onPressed: () => _showGroupDetailsBottomSheet(
-                  context,
-                  groupSummaries,
-                  periodLabel,
-                  totalBudget,
-                  totalSpent,
-                  totalAvailable,
-                  totalOverspent,
-                  overallProgress,
-                  isDarkMode,
+              if (_isReorderMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: Material(
+                      color: incomeColor,
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => setState(() => _isReorderMode = false),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'เสร็จสิ้น',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Material(
+                    color: surfaceColor,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                      color: textPrimary,
+                      tooltip: 'ตัวเลือกเพิ่มเติม',
+                      onPressed: () =>
+                          _showMenuBottomSheet(context, isDarkMode),
+                    ),
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () => _showMenuBottomSheet(context, isDarkMode),
-              ),
+              ],
             ],
           ),
           body: SafeArea(
             child: budgets.isEmpty
-                ? Center(
-                    child: Text(
-                      'ยังไม่มีงบประมาณ',
-                      style: TextStyle(color: textSecondary),
-                    ),
+                ? _buildEmptyState(
+                    surfaceColor: surfaceColor,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                    dividerColor: dividerColor,
+                    isDarkMode: isDarkMode,
                   )
                 : _buildBudgetList(
                     context,
                     header: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _MonthSelector(
-                          selectedMonth: _selectedMonth,
-                          onPrevMonth: _prevMonth,
-                          onNextMonth: _nextMonth,
-                          surfaceColor: surfaceColor,
-                          textPrimary: textPrimary,
+                        if (_isReorderMode)
+                          _buildReorderBanner(isDarkMode, incomeColor),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          child: _MonthSelector(
+                            selectedMonth: _selectedMonth,
+                            onPrevMonth: _prevMonth,
+                            onNextMonth: _nextMonth,
+                            surfaceColor: surfaceColor,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                            dividerColor: dividerColor,
+                          ),
                         ),
                         _SummaryHeader(
                           totalBudget: totalBudget,
@@ -355,6 +433,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                           textSecondary: textSecondary,
                           dividerColor: dividerColor,
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
                     budgets: budgets,
@@ -369,27 +448,132 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     dividerColor: dividerColor,
                   ),
           ),
-          bottomNavigationBar: BottomSummaryBar(
-            left: BottomSummaryValue(
-              label: totalOverspent > 0.001 ? 'เกินงบ' : 'ใช้ไปแล้ว',
-              value: formatAmount(
-                totalOverspent > 0.001 ? totalOverspent : totalSpent,
-              ),
-              color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
-            ),
-            right: BottomSummaryValue(
-              label: 'ยังใช้ได้',
-              value: formatAmount(totalAvailable),
-              color: isDarkMode ? AppColors.darkIncome : AppColors.income,
-            ),
-            onAdd: () => _openAddTransactionForm(context),
-            isDarkMode: isDarkMode,
-            addIconColor: isDarkMode
-                ? AppColors.darkSurface
-                : AppColors.surface,
-          ),
+          bottomNavigationBar: isLargeScreen
+              ? null
+              : Builder(
+                  builder: (context) => AppBottomNavigation(
+                    currentRoute: '/budgets',
+                    onAdd: () => _openAddTransactionForm(context),
+                    onOpenDrawer: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
         );
       },
+    );
+  }
+
+  Widget _buildReorderBanner(bool isDarkMode, Color incomeColor) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: incomeColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadii.large),
+        border: Border.all(color: incomeColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, size: 18, color: incomeColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'โหมดจัดเรียงลำดับ: ลากที่ไอคอนจัดเรียงเพื่อสลับตำแหน่งงบประมาณ',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: incomeColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required Color surfaceColor,
+    required Color textPrimary,
+    required Color textSecondary,
+    required Color dividerColor,
+    required bool isDarkMode,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(AppRadii.xLarge),
+            border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color:
+                      (isDarkMode
+                              ? AppColors.darkFabYellow
+                              : AppColors.fabYellow)
+                          .withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.savings_outlined,
+                  size: 32,
+                  color: isDarkMode
+                      ? AppColors.darkFabYellow
+                      : AppColors.fabYellow,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'ยังไม่มีงบประมาณ',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'เริ่มต้นวางแผนการเงินและควบคุมรายจ่าย\nโดยสร้างงบประมาณแรกของคุณ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: isDarkMode
+                      ? AppColors.darkFabYellow
+                      : AppColors.fabYellow,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 11,
+                  ),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text(
+                  'เพิ่มงบประมาณ',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                onPressed: () => _openForm(context, null),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -411,7 +595,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       (b) => b.groupName != null && b.groupName!.isNotEmpty,
     );
 
-    // ── No groups → flat ReorderableListView ────────────────────────────────
+    // ── No groups → flat ReorderableListView in Inset Grouped Card ─────────
     if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
@@ -432,7 +616,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                 child: Material(
                   elevation: elevation,
                   color: surfaceColor,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
                   child: child,
                 ),
               );
@@ -444,12 +628,18 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         itemBuilder: (context, i) {
           final budget = budgets[i];
           final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
-          return _BudgetItem(
+          final isFirst = i == 0;
+          final isLast = i == budgets.length - 1;
+
+          return _BudgetItemCard(
             key: ValueKey(budget.id),
             budget: budget,
             spent: spent,
             isReorderMode: _isReorderMode,
             reorderIndex: _isReorderMode ? i : null,
+            isFirst: isFirst,
+            isLast: isLast,
+            showDivider: !isLast,
             isDarkMode: isDarkMode,
             surfaceColor: surfaceColor,
             textPrimary: textPrimary,
@@ -463,7 +653,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     }
 
     // ── Grouped ListView ────────────────────────────────────────────────────
-    // Partition: null-group first, then named groups ordered by first item's sortOrder
     final Map<String, List<Budget>> namedGroupMap = {};
     final List<Budget> ungrouped = [];
 
@@ -490,64 +679,87 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       );
 
     Widget buildGroupList(List<Budget> groupBudgets, String? groupName) {
-      return ReorderableListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        buildDefaultDragHandles: false,
-        onReorderItem: _isReorderMode
-            ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
-                groupName,
-                oldIndex,
-                newIndex,
-              )
-            : (_, _) {},
-        proxyDecorator: (child, index, animation) {
-          return AnimatedBuilder(
-            animation: animation,
-            builder: (context, child) {
-              final animValue = Curves.easeInOut.transform(animation.value);
-              final elevation = 1 + animValue * 8;
-              final scale = 1 + animValue * 0.02;
-              return Transform.scale(
-                scale: scale,
-                child: Material(
-                  elevation: elevation,
-                  color: surfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                  child: child,
-                ),
-              );
-            },
-            child: child,
-          );
-        },
-        itemCount: groupBudgets.length,
-        itemBuilder: (context, index) {
-          final budget = groupBudgets[index];
-          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
-          return _BudgetItem(
-            key: ValueKey(budget.id),
-            budget: budget,
-            spent: spent,
-            isReorderMode: _isReorderMode,
-            reorderIndex: _isReorderMode ? index : null,
-            isDarkMode: isDarkMode,
-            surfaceColor: surfaceColor,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-            dividerColor: dividerColor,
-            onTap: () => _openTransactions(context, budget, period),
-            onTapEdit: () => _openForm(context, budget),
-          );
-        },
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          border: Border.all(
+            color: dividerColor.withValues(alpha: 0.35),
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          onReorderItem: _isReorderMode
+              ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
+                  groupName,
+                  oldIndex,
+                  newIndex,
+                )
+              : (_, _) {},
+          proxyDecorator: (child, index, animation) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                final animValue = Curves.easeInOut.transform(animation.value);
+                final elevation = 1 + animValue * 8;
+                final scale = 1 + animValue * 0.02;
+                return Transform.scale(
+                  scale: scale,
+                  child: Material(
+                    elevation: elevation,
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
+                    child: child,
+                  ),
+                );
+              },
+              child: child,
+            );
+          },
+          itemCount: groupBudgets.length,
+          itemBuilder: (context, index) {
+            final budget = groupBudgets[index];
+            final spent = _getSpentFromCategoryTotals(
+              budget,
+              spentByCategoryId,
+            );
+            final isLast = index == groupBudgets.length - 1;
+
+            return _BudgetItemRow(
+              key: ValueKey(budget.id),
+              budget: budget,
+              spent: spent,
+              isReorderMode: _isReorderMode,
+              reorderIndex: _isReorderMode ? index : null,
+              showDivider: !isLast,
+              isDarkMode: isDarkMode,
+              surfaceColor: surfaceColor,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              dividerColor: dividerColor,
+              onTap: () => _openTransactions(context, budget, period),
+              onTapEdit: () => _openForm(context, budget),
+            );
+          },
+        ),
       );
     }
 
     final listHeader = Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         header,
-        if (ungrouped.isNotEmpty) buildGroupList(ungrouped, null),
+        if (ungrouped.isNotEmpty) ...[
+          _buildSectionHeader('งบประมาณทั่วไป', textSecondary),
+          buildGroupList(ungrouped, null),
+          const SizedBox(height: 12),
+        ],
       ],
     );
 
@@ -567,53 +779,87 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         return Column(
           key: ValueKey('group_${entry.key}'),
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GroupHeader(
-              title: entry.key,
-              isDarkMode: isDarkMode,
-              trailing: [
-                Text(
-                  formatAmount(groupTotal),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(
-                  width: 52,
-                  child: Text(
-                    '${groupPct.toStringAsFixed(1)}%',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                if (_isReorderMode)
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Icon(
-                        Icons.drag_indicator,
-                        color: dividerColor,
-                        size: 20,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.key.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
-              ],
+                  Text(
+                    formatAmount(groupTotal),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : Colors.black.withValues(alpha: 0.06)),
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                    ),
+                    child: Text(
+                      '${groupPct.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                      ),
+                    ),
+                  ),
+                  if (_isReorderMode)
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          color: dividerColor,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             buildGroupList(groupBudgets, entry.key),
+            const SizedBox(height: 6),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, top: 10, bottom: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 
@@ -680,13 +926,13 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         title: 'ตัวเลือกงบประมาณ',
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.background,
+                      Material(
+                        color: isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.surface,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          border: Border.all(
+                          side: BorderSide(
                             color: dividerColor.withValues(alpha: 0.35),
                             width: 1,
                           ),
@@ -724,6 +970,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                   color: textSecondary,
                                   fontSize: 12,
                                 ),
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right_rounded,
+                                color: textSecondary.withValues(alpha: 0.5),
                               ),
                               onTap: () {
                                 Navigator.pop(context);
@@ -878,6 +1128,8 @@ class _MonthSelector extends StatelessWidget {
   final VoidCallback onNextMonth;
   final Color surfaceColor;
   final Color textPrimary;
+  final Color textSecondary;
+  final Color dividerColor;
 
   const _MonthSelector({
     required this.selectedMonth,
@@ -885,6 +1137,8 @@ class _MonthSelector extends StatelessWidget {
     required this.onNextMonth,
     required this.surfaceColor,
     required this.textPrimary,
+    required this.textSecondary,
+    required this.dividerColor,
   });
 
   String _getPeriodLabel(BuildContext context) {
@@ -917,33 +1171,62 @@ class _MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.full),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left, size: 22),
-            onPressed: onPrevMonth,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-          Expanded(
-            child: Text(
-              _getPeriodLabel(context),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: textPrimary,
-              ),
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.chevron_left_rounded, size: 22),
+              color: textPrimary,
+              onPressed: onPrevMonth,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right, size: 22),
-            onPressed: onNextMonth,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 13,
+                  color: textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _getPeriodLabel(context),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.chevron_right_rounded, size: 22),
+              color: textPrimary,
+              onPressed: onNextMonth,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
           ),
         ],
       ),
@@ -951,7 +1234,7 @@ class _MonthSelector extends StatelessWidget {
   }
 }
 
-// ── Summary Header ──────────────────────────────────────────────────────────
+// ── Summary Header (Inset Grouped Card & Metric Grid) ──────────────────────────
 
 class _SummaryHeader extends StatelessWidget {
   final double totalBudget;
@@ -988,77 +1271,217 @@ class _SummaryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasOverspent = totalOverspent > 0.001;
+    final statusBgColor = hasOverspent
+        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense).withValues(
+            alpha: 0.12,
+          )
+        : progress >= 0.8
+        ? Colors.orange.withValues(alpha: 0.12)
+        : (isDarkMode ? AppColors.darkIncome : AppColors.income).withValues(
+            alpha: 0.12,
+          );
+
+    final statusTextColor = hasOverspent
+        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+        : progress >= 0.8
+        ? Colors.orange
+        : (isDarkMode ? AppColors.darkIncome : AppColors.income);
+
+    final statusLabel = hasOverspent
+        ? 'เกินงบรวม'
+        : progress >= 0.8
+        ? 'ใกล้เต็มงบ'
+        : 'ปกติ';
+
     return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row with Status Capsule
           Row(
             children: [
-              Expanded(
-                child: _SummaryCell(
-                  label: 'งบทั้งหมด',
-                  amount: totalBudget,
+              Text(
+                'สรุปงบประมาณ',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                   color: textPrimary,
-                  textPrimary: textPrimary,
                 ),
               ),
-              Container(width: 1, height: 40, color: dividerColor),
-              Expanded(
-                child: _SummaryCell(
-                  label: 'ใช้ไปแล้ว',
-                  amount: totalSpent,
-                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
-                  textPrimary: textPrimary,
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
                 ),
-              ),
-              Container(width: 1, height: 40, color: dividerColor),
-              Expanded(
-                child: _SummaryCell(
-                  label: 'ยังใช้ได้',
-                  amount: totalAvailable,
-                  color: isDarkMode ? AppColors.darkIncome : AppColors.income,
-                  textPrimary: textPrimary,
+                decoration: BoxDecoration(
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasOverspent
+                          ? Icons.error_outline_rounded
+                          : progress >= 0.8
+                          ? Icons.timelapse_rounded
+                          : Icons.check_circle_outline_rounded,
+                      size: 13,
+                      color: statusTextColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: statusTextColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          if (totalOverspent > 0.001) ...[
-            const SizedBox(height: 10),
-            Row(
+          const SizedBox(height: 14),
+
+          // Structured Metric Grid
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.large),
+            ),
+            child: Row(
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 16,
-                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
+                Expanded(
+                  child: _MetricTile(
+                    label: 'งบทั้งหมด',
+                    value: formatAmount(totalBudget),
+                    textColor: textPrimary,
+                    secondaryColor: textSecondary,
+                  ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'เกินงบรวม ${formatAmount(totalOverspent)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isDarkMode
-                        ? AppColors.darkExpense
-                        : AppColors.expense,
+                Container(
+                  width: 1,
+                  height: 32,
+                  color: dividerColor.withValues(alpha: 0.4),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: _MetricTile(
+                      label: 'ใช้ไปแล้ว',
+                      value: formatAmount(totalSpent),
+                      textColor: isDarkMode
+                          ? AppColors.darkExpense
+                          : AppColors.expense,
+                      secondaryColor: textSecondary,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 32,
+                  color: dividerColor.withValues(alpha: 0.4),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: _MetricTile(
+                      label: 'ยังใช้ได้',
+                      value: formatAmount(totalAvailable),
+                      textColor: isDarkMode
+                          ? AppColors.darkIncome
+                          : AppColors.income,
+                      secondaryColor: textSecondary,
+                    ),
                   ),
                 ),
               ],
             ),
+          ),
+
+          // Overspent alert row if applicable
+          if (hasOverspent) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 15,
+                    color: isDarkMode
+                        ? AppColors.darkExpense
+                        : AppColors.expense,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'เกินงบรวม ${formatAmount(totalOverspent)} บาท',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isDarkMode
+                          ? AppColors.darkExpense
+                          : AppColors.expense,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
+
           const SizedBox(height: 12),
+          // iOS Progress Bar
           _BudgetProgressBar(
             progress: progress,
             color: _progressColor,
             backgroundColor: isDarkMode
-                ? AppColors.darkDivider
-                : AppColors.divider,
+                ? AppColors.darkDivider.withValues(alpha: 0.6)
+                : AppColors.divider.withValues(alpha: 0.6),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${(progress * 100).toStringAsFixed(1)}% ของงบประมาณ',
-            style: TextStyle(fontSize: 13, color: textSecondary),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ใช้ไป ${(progress * 100).toStringAsFixed(1)}% ของงบประมาณ',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: textSecondary,
+                ),
+              ),
+              Text(
+                hasOverspent
+                    ? 'เกินเป้า'
+                    : 'เหลือ ${formatAmount(totalAvailable)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: hasOverspent
+                      ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                      : (isDarkMode ? AppColors.darkIncome : AppColors.income),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1066,53 +1489,58 @@ class _SummaryHeader extends StatelessWidget {
   }
 }
 
-class _SummaryCell extends StatelessWidget {
+class _MetricTile extends StatelessWidget {
   final String label;
-  final double amount;
-  final Color color;
-  final Color textPrimary;
+  final String value;
+  final Color textColor;
+  final Color secondaryColor;
 
-  const _SummaryCell({
+  const _MetricTile({
     required this.label,
-    required this.amount,
-    required this.color,
-    required this.textPrimary,
+    required this.value,
+    required this.textColor,
+    required this.secondaryColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: textPrimary,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: secondaryColor,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
-          formatAmount(amount),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
+          value,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
         ),
       ],
     );
   }
 }
 
-// ── Budget Item ─────────────────────────────────────────────────────────────
+// ── Budget Item Card (For flat list without groups) ──────────────────────────
 
-class _BudgetItem extends StatelessWidget {
+class _BudgetItemCard extends StatelessWidget {
   final Budget budget;
   final double spent;
   final bool isReorderMode;
   final int? reorderIndex;
+  final bool isFirst;
+  final bool isLast;
+  final bool showDivider;
   final bool isDarkMode;
   final Color surfaceColor;
   final Color textPrimary;
@@ -1121,12 +1549,78 @@ class _BudgetItem extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onTapEdit;
 
-  const _BudgetItem({
+  const _BudgetItemCard({
     super.key,
     required this.budget,
     required this.spent,
     required this.isReorderMode,
     this.reorderIndex,
+    required this.isFirst,
+    required this.isLast,
+    required this.showDivider,
+    required this.isDarkMode,
+    required this.surfaceColor,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.dividerColor,
+    required this.onTap,
+    required this.onTapEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: _BudgetItemRow(
+        budget: budget,
+        spent: spent,
+        isReorderMode: isReorderMode,
+        reorderIndex: reorderIndex,
+        showDivider: false,
+        isDarkMode: isDarkMode,
+        surfaceColor: surfaceColor,
+        textPrimary: textPrimary,
+        textSecondary: textSecondary,
+        dividerColor: dividerColor,
+        onTap: onTap,
+        onTapEdit: onTapEdit,
+      ),
+    );
+  }
+}
+
+// ── Budget Item Row (Shared between grouped and flat lists) ───────────────────
+
+class _BudgetItemRow extends StatelessWidget {
+  final Budget budget;
+  final double spent;
+  final bool isReorderMode;
+  final int? reorderIndex;
+  final bool showDivider;
+  final bool isDarkMode;
+  final Color surfaceColor;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color dividerColor;
+  final VoidCallback onTap;
+  final VoidCallback onTapEdit;
+
+  const _BudgetItemRow({
+    super.key,
+    required this.budget,
+    required this.spent,
+    required this.isReorderMode,
+    this.reorderIndex,
+    required this.showDivider,
     required this.isDarkMode,
     required this.surfaceColor,
     required this.textPrimary,
@@ -1137,9 +1631,7 @@ class _BudgetItem extends StatelessWidget {
   });
 
   double get _progress => budget.amount > 0 ? (spent / budget.amount) : 0.0;
-
   double get _remaining => budget.amount - spent;
-
   bool get _isRemainingNeutral => _remaining.abs() <= 0.001;
 
   Color get _progressColor {
@@ -1153,206 +1645,209 @@ class _BudgetItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
-          onTap: isReorderMode || budget.type == BudgetType.savings
-              ? null
-              : onTap,
-          onLongPress: isReorderMode ? null : () => _showBudgetMenu(context),
-          child: Container(
-            color: surfaceColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (reorderIndex != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2, right: 8),
-                    child: ReorderableDragStartListener(
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isReorderMode || budget.type == BudgetType.savings
+                ? null
+                : onTap,
+            onLongPress: isReorderMode ? null : () => _showBudgetMenu(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Reorder Handle if active
+                  if (reorderIndex != null) ...[
+                    ReorderableDragStartListener(
                       index: reorderIndex!,
-                      child: Icon(
-                        Icons.drag_indicator,
-                        color: dividerColor,
-                        size: 20,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          color: dividerColor,
+                          size: 20,
+                        ),
                       ),
                     ),
+                  ],
+
+                  // Squircle Avatar
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: budget.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadii.medium),
+                    ),
+                    child: Icon(budget.icon, color: budget.color, size: 22),
                   ),
-                ],
-                // Icon
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: budget.color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(budget.icon, color: budget.color, size: 20),
-                ),
-                const SizedBox(width: 12),
-                // Info
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 12),
+
+                  // Title & Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  budget.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: textPrimary,
+                            Flexible(
+                              child: Text(
+                                budget.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimary,
+                                ),
+                              ),
+                            ),
+                            if (budget.isHidden) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.small,
                                   ),
                                 ),
-                                if (budget.isHidden) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.1)
-                                          : Colors.black.withValues(
-                                              alpha: 0.05,
-                                            ),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      'ซ่อนอยู่',
-                                      style: TextStyle(
-                                        color: textSecondary,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                child: Text(
+                                  'ซ่อน',
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              formatAmount(budget.amount),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            if (budget.type == BudgetType.expense)
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'ใช้ ${formatAmount(spent)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            ],
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (budget.type == BudgetType.savings) ...[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            (isDarkMode
-                                                    ? AppColors.darkIncome
-                                                    : AppColors.income)
-                                                .withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        'แผน',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDarkMode
-                                              ? AppColors.darkIncome
-                                              : AppColors.income,
-                                        ),
-                                      ),
-                                    ),
-                                  ] else ...[
-                                    Text(
-                                      '${(_progress * 100).toStringAsFixed(0)}%',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: _progressColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    _BudgetProgressBar(
-                                      progress: _progress,
-                                      color: _progressColor,
-                                      backgroundColor: isDarkMode
-                                          ? AppColors.darkDivider
-                                          : AppColors.divider,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: _isRemainingNeutral
-                                            ? textPrimary
-                                            : _remaining > 0
-                                            ? (isDarkMode
-                                                  ? AppColors.darkIncome
-                                                  : AppColors.income)
-                                            : (isDarkMode
-                                                  ? AppColors.darkExpense
-                                                  : AppColors.expense),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 3),
+                        Text(
+                          budget.type == BudgetType.savings
+                              ? 'เป้าหมาย: ${formatAmount(budget.amount)}'
+                              : 'งบ ${formatAmount(budget.amount)} · ใช้ ${formatAmount(spent)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+
+                  // Right side: Savings capsule OR Expense metrics
+                  if (budget.type == BudgetType.savings) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            (isDarkMode
+                                    ? AppColors.darkIncome
+                                    : AppColors.income)
+                                .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadii.full),
+                      ),
+                      child: Text(
+                        'แผนออม',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDarkMode
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${(_progress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: _progressColor,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 50,
+                              child: _BudgetProgressBar(
+                                progress: _progress,
+                                color: _progressColor,
+                                backgroundColor: isDarkMode
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining.abs())}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _isRemainingNeutral
+                                ? textPrimary
+                                : _remaining > 0
+                                ? (isDarkMode
+                                      ? AppColors.darkIncome
+                                      : AppColors.income)
+                                : (isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  if (!isReorderMode && budget.type != BudgetType.savings) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: textSecondary.withValues(alpha: 0.4),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
-        Divider(height: 1, color: dividerColor),
+        if (showDivider)
+          Divider(
+            height: 1,
+            indent: 64,
+            endIndent: 16,
+            color: dividerColor.withValues(alpha: 0.25),
+          ),
       ],
     );
   }
@@ -1382,13 +1877,13 @@ class _BudgetItem extends StatelessWidget {
                 children: [
                   AppModalBottomSheetHeader(title: budget.name),
                   const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.background,
+                  Material(
+                    color: isDark
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.surface,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      border: Border.all(
+                      side: BorderSide(
                         color: dividerColor.withValues(alpha: 0.35),
                         width: 1,
                       ),
@@ -1422,7 +1917,7 @@ class _BudgetItem extends StatelessWidget {
                       ),
                       trailing: Icon(
                         Icons.chevron_right_rounded,
-                        color: textSecondary.withValues(alpha: 0.6),
+                        color: textSecondary.withValues(alpha: 0.5),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -1491,43 +1986,30 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return SizedBox(
-      height: MediaQuery.sizeOf(context).height,
+      height: MediaQuery.sizeOf(context).height * 0.88,
       child: Column(
         children: [
+          AppModalBottomSheetHeader(title: 'รายละเอียดกลุ่มงบประมาณ'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 12, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'รายละเอียดกลุ่มงบประมาณ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        periodLabel,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? AppColors.darkSurfaceVariant
+                    : Colors.black.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(AppRadii.full),
+              ),
+              child: Text(
+                periodLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textSecondary,
                 ),
-              ],
+              ),
             ),
           ),
-          Divider(height: 1, color: dividerColor),
-          const SizedBox(height: 12),
           _SummaryHeader(
             totalBudget: totalBudget,
             totalSpent: totalSpent,
@@ -1540,7 +2022,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
             textSecondary: textSecondary,
             dividerColor: dividerColor,
           ),
-          Divider(height: 1, color: dividerColor),
+          const SizedBox(height: 8),
           Expanded(
             child: groupSummaries.isEmpty
                 ? Center(
@@ -1550,9 +2032,9 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
                     itemCount: groupSummaries.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 12),
+                    separatorBuilder: (_, index) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final summary = groupSummaries[index];
                       final percentageBgColor = isDarkMode
@@ -1563,11 +2045,13 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                           : AppColors.header;
 
                       return Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: bgColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: dividerColor),
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          border: Border.all(
+                            color: dividerColor.withValues(alpha: 0.35),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1578,7 +2062,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                                   child: Text(
                                     summary.name,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: textPrimary,
                                     ),
@@ -1586,22 +2070,19 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                                    horizontal: 9,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: percentageBgColor,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: isDarkMode
-                                        ? Border.all(
-                                            color: AppColors.darkDivider,
-                                          )
-                                        : null,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.full,
+                                    ),
                                   ),
                                   child: Text(
                                     '${summary.percentage.toStringAsFixed(1)}%',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: percentageTextColor,
                                     ),
@@ -1609,7 +2090,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Row(
                               children: [
                                 Expanded(
@@ -1629,7 +2110,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                                         ? AppColors.darkExpense
                                         : AppColors.expense,
                                     textSecondary: textSecondary,
-                                    alignment: CrossAxisAlignment.end,
+                                    alignment: CrossAxisAlignment.center,
                                   ),
                                 ),
                                 Expanded(
@@ -1646,22 +2127,22 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                               ],
                             ),
                             if (summary.overspent > 0.001) ...[
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Icon(
-                                    Icons.error_outline,
-                                    size: 16,
+                                    Icons.error_outline_rounded,
+                                    size: 14,
                                     color: isDarkMode
                                         ? AppColors.darkExpense
                                         : AppColors.expense,
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 4),
                                   Text(
                                     'เกินงบ ${formatAmount(summary.overspent)}',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: isDarkMode
                                           ? AppColors.darkExpense
@@ -1706,16 +2187,16 @@ class _GroupDetailMetric extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
             color: textSecondary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: valueColor,
           ),
@@ -1743,7 +2224,7 @@ class _BudgetProgressBar extends StatelessWidget {
     final overflowProgress = (normalizedProgress - 1.0).clamp(0.0, 1.0);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(AppRadii.full),
       child: SizedBox(
         height: 6,
         child: Stack(

@@ -806,13 +806,13 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                       ),
                       const SizedBox(height: 8),
                       // Grouped menu container
-                      Container(
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.background,
+                      Material(
+                        color: isDarkMode
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.background,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          border: Border.all(
+                          side: BorderSide(
                             color: dividerColor.withValues(alpha: 0.35),
                             width: 1,
                           ),
@@ -1142,13 +1142,13 @@ class _CategoryItem extends StatelessWidget {
                 children: [
                   AppModalBottomSheetHeader(title: category.name),
                   const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.background,
+                  Material(
+                    color: isDark
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.background,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      border: Border.all(
+                      side: BorderSide(
                         color: dividerColor.withValues(alpha: 0.35),
                         width: 1,
                       ),

@@ -38,6 +38,7 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
 6. **Selection Controls & Modal Bottom Sheets**:
    - Use `showAppModalBottomSheet` instead of dropdowns or dropdown form fields.
    - Bottom sheet headers (`AppModalBottomSheetHeader`) use clean spacing (`Padding(fromLTRB(16, 8, 16, 16))`) without hard divider lines for a cleaner modern iOS appearance.
+   - When grouping interactive `ListTile` items in a bottom sheet card, use `Material(color: ..., shape: RoundedRectangleBorder(...), clipBehavior: Clip.antiAlias)` instead of an opaque colored `Container`, so that touch ink splashes render properly on the surface without triggering the Flutter invisible ink warning.
 
 7. **Metric Grid & Status Capsule**:
    - Financial comparisons (percentage, current vs target values, diffs) must use structured 2x3 or 2-column rounded metric tiles (`_MetricTile`).

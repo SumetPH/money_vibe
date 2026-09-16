@@ -27,82 +27,99 @@ class AppBottomNavigation extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final fabColor = AppColors.fabFor(isDarkMode, settingsProvider.themeColor);
     final onFab = AppColors.onFabFor(isDarkMode, settingsProvider.themeColor);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Material(
-        color: surface,
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
+      child: Container(
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(AppRadii.sheet),
+          border: Border.all(
+            color: dividerColor.withValues(alpha: 0.35),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         clipBehavior: Clip.antiAlias,
-        child: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: _item(
-                  icon: Icons.account_balance_wallet,
-                  label: 'บัญชี',
-                  selected: currentRoute == '/accounts',
-                  accent: accent,
-                  inactive: inactive,
-                  onTap: () => _navigate(context, '/accounts'),
+        child: Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _item(
+                    icon: Icons.account_balance_wallet_rounded,
+                    label: 'บัญชี',
+                    selected: currentRoute == '/accounts',
+                    accent: accent,
+                    inactive: inactive,
+                    onTap: () => _navigate(context, '/accounts'),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _item(
-                  icon: Icons.donut_large_outlined,
-                  label: 'แผน',
-                  selected: currentRoute == '/budgets',
-                  accent: accent,
-                  inactive: inactive,
-                  onTap: () => _navigate(context, '/budgets'),
+                Expanded(
+                  child: _item(
+                    icon: Icons.donut_large_rounded,
+                    label: 'แผน',
+                    selected: currentRoute == '/budgets',
+                    accent: accent,
+                    inactive: inactive,
+                    onTap: () => _navigate(context, '/budgets'),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: SizedBox(
-                  height: 64,
-                  child: Center(
-                    child: Material(
-                      color: fabColor,
-                      shape: const CircleBorder(),
-                      clipBehavior: Clip.antiAlias,
-                      child: IconButton(
-                        tooltip: 'เพิ่มรายการ',
-                        onPressed: onAdd,
-                        icon: Icon(Icons.add, color: onFab, size: 32),
-                        constraints: const BoxConstraints.tightFor(
-                          width: 58,
-                          height: 58,
+                Expanded(
+                  child: SizedBox(
+                    height: 60,
+                    child: Center(
+                      child: Material(
+                        color: fabColor,
+                        shape: const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: IconButton(
+                          tooltip: 'เพิ่มรายการ',
+                          onPressed: onAdd,
+                          icon: Icon(Icons.add_rounded, color: onFab, size: 30),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 54,
+                            height: 54,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: _item(
-                  icon: Icons.receipt_long_outlined,
-                  label: 'รายการ',
-                  selected: currentRoute == '/transactions',
-                  accent: accent,
-                  inactive: inactive,
-                  onTap: () => _navigate(context, '/transactions'),
+                Expanded(
+                  child: _item(
+                    icon: Icons.receipt_long_rounded,
+                    label: 'รายการ',
+                    selected: currentRoute == '/transactions',
+                    accent: accent,
+                    inactive: inactive,
+                    onTap: () => _navigate(context, '/transactions'),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _item(
-                  icon: Icons.menu,
-                  label: 'เมนู',
-                  selected: false,
-                  accent: accent,
-                  inactive: inactive,
-                  onTap: onOpenDrawer,
+                Expanded(
+                  child: _item(
+                    icon: Icons.menu_rounded,
+                    label: 'เมนู',
+                    selected: false,
+                    accent: accent,
+                    inactive: inactive,
+                    onTap: onOpenDrawer,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -133,19 +150,20 @@ class AppBottomNavigation extends StatelessWidget {
     final color = selected ? accent : inactive;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.medium),
       child: SizedBox(
-        height: 64,
+        height: 60,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 23),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 color: color,
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
