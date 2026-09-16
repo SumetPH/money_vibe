@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -15,7 +16,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/app_bar_action_button.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
@@ -313,59 +314,60 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      // Summary card
-                      _SummaryCard(
-                        account: acc,
-                        totalValue: totalValue,
-                        holdings: holdings,
-                        onRateTap: () =>
-                            _editExchangeRate(context, provider, acc),
-                        isDarkMode: isDarkMode,
-                      ),
-
-                      // Cash balance row
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Divider(
-                          color: isDarkMode
-                              ? AppColors.darkDivider
-                              : AppColors.divider,
-                        ),
-                      ),
-                      _CashRow(
-                        cashBalance: acc.cashBalance,
-                        exchangeRate: acc.exchangeRate,
-                        currencyCode: acc.currencyCodeLabel,
-                        onTap: () => _editCashBalance(context, provider, acc),
-                        isDarkMode: isDarkMode,
-                      ),
-                    ],
+                  child: _HeroPortfolioSummaryCard(
+                    account: acc,
+                    totalValue: totalValue,
+                    holdings: holdings,
+                    onRateTap: () => _editExchangeRate(context, provider, acc),
+                    onCashTap: () => _editCashBalance(context, provider, acc),
+                    isDarkMode: isDarkMode,
                   ),
                 ),
-                SliverToBoxAdapter(child: const SizedBox(height: 16)),
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _TabBarDelegate(
                     TabBar(
                       indicatorSize: TabBarIndicatorSize.tab,
-                      indicatorColor: isDarkMode
-                          ? AppColors.darkIncome
-                          : AppColors.income,
+                      indicator: BoxDecoration(
+                        color: isDarkMode
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.large),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDarkMode ? 0.2 : 0.05,
+                            ),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      dividerColor: Colors.transparent,
                       labelColor: isDarkMode
-                          ? AppColors.darkIncome
-                          : AppColors.income,
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                       unselectedLabelColor: isDarkMode
                           ? AppColors.darkTextSecondary
                           : AppColors.textSecondary,
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                       tabs: const [
                         Tab(text: 'พอร์ต'),
                         // Tab(text: 'หุ้นทั้งหมด'),
                         Tab(text: 'แผนการลงทุน'),
                       ],
                     ),
-                    isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                    isDarkMode
+                        ? AppColors.darkBackground
+                        : AppColors.background,
                   ),
                 ),
               ];
@@ -431,22 +433,82 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               ? AppColors.darkBackground
               : AppColors.background,
           appBar: AppBar(
-            title: Text(acc.name),
-            actions: [
-              AppBarActionButton(
-                tooltip: 'อัพเดทราคาหุ้น',
-                onPressed: _refreshPrices,
-                isLoading: _isRefreshing,
-                loadingIcon: RotationTransition(
-                  turns: _refreshIconController,
-                  child: const Icon(Icons.refresh),
+            backgroundColor: isDarkMode
+                ? AppColors.darkBackground
+                : AppColors.background,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leadingWidth: 64,
+            leading: Center(
+              child: Material(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  tooltip: 'ย้อนกลับ',
+                  onPressed: () => Navigator.pop(context),
                 ),
-                icon: const Icon(Icons.refresh),
               ),
-
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () => _showMenuSheet(context),
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  acc.name,
+                  style: TextStyle(
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  acc.type.label,
+                  style: TextStyle(
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Material(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: _isRefreshing
+                        ? RotationTransition(
+                            turns: _refreshIconController,
+                            child: const Icon(Icons.refresh_rounded, size: 20),
+                          )
+                        : const Icon(Icons.refresh_rounded, size: 20),
+                    tooltip: 'อัปเดตราคาหุ้น',
+                    onPressed: _isRefreshing ? null : _refreshPrices,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Material(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.more_vert_rounded, size: 20),
+                    tooltip: 'เมนูเพิ่มเติม',
+                    onPressed: () => _showMenuSheet(context),
+                  ),
+                ),
               ),
             ],
           ),
@@ -513,8 +575,14 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         style: TextStyle(fontSize: 14, color: textColor),
                       ),
                     ),
-                    Switch(
+                    CupertinoSwitch(
                       value: autoUpdate,
+                      activeTrackColor: isDarkMode
+                          ? AppColors.darkIncome
+                          : AppColors.income,
+                      inactiveTrackColor: isDarkMode
+                          ? const Color(0xFF39393D)
+                          : const Color(0xFFE9E9EA),
                       onChanged: (v) => setDialogState(() => autoUpdate = v),
                     ),
                   ],
@@ -923,142 +991,242 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
 
     showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateModal) {
             return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.add_shopping_cart_outlined,
-                      color: textColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildMenuSheetTile(
+                      icon: Icons.add_shopping_cart_rounded,
+                      iconColor: incomeColor,
+                      title: 'ซื้อหุ้นใหม่',
+                      subtitle: 'บันทึกรายการซื้อหุ้นเข้าพอร์ต',
+                      textColor: textColor,
+                      secondaryColor: textSecondary,
+                      bgColor: bgColor,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openHoldingBuyForm(
+                          context,
+                          context.read<AccountProvider>(),
+                          widget.account.id,
+                          null,
+                        );
+                      },
                     ),
-                    title: Text(
-                      'ซื้อหุ้นใหม่',
-                      style: TextStyle(color: textColor),
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
                     ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _openHoldingBuyForm(
-                        context,
-                        context.read<AccountProvider>(),
-                        widget.account.id,
-                        null,
-                      );
-                    },
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
-                    leading: Icon(Icons.add_circle_outline, color: textColor),
-                    title: Text(
-                      'เพิ่มหุ้นเป็นยอดตั้งต้น',
-                      style: TextStyle(color: textColor),
+                    _buildMenuSheetTile(
+                      icon: Icons.add_circle_outline_rounded,
+                      iconColor: textColor,
+                      title: 'เพิ่มหุ้นเป็นยอดตั้งต้น',
+                      subtitle: 'เพิ่มข้อมูลหุ้นเดิมที่มีอยู่แล้วเข้าพอร์ต',
+                      textColor: textColor,
+                      secondaryColor: textSecondary,
+                      bgColor: bgColor,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openHoldingForm(
+                          context,
+                          context.read<AccountProvider>(),
+                          widget.account.id,
+                          null,
+                        );
+                      },
                     ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _openHoldingForm(
-                        context,
-                        context.read<AccountProvider>(),
-                        widget.account.id,
-                        null,
-                      );
-                    },
-                  ),
-                  if (widget.account.isUsPortfolio) ...[
-                    Divider(height: 1, color: dividerColor),
-                    ListTile(
-                      leading: Icon(Icons.edit_document, color: textColor),
-                      title: Text(
-                        'ปรับรายงานประจำปี',
-                        style: TextStyle(color: textColor),
+                    if (widget.account.isUsPortfolio) ...[
+                      Divider(
+                        height: 1,
+                        indent: 64,
+                        endIndent: 16,
+                        color: dividerColor.withValues(alpha: 0.3),
                       ),
-                      tileColor: bgColor,
+                      _buildMenuSheetTile(
+                        icon: Icons.edit_document,
+                        iconColor: textColor,
+                        title: 'ปรับรายงานประจำปี',
+                        subtitle: 'นำเข้าและตรวจทานรายงาน Broker สหรัฐฯ',
+                        textColor: textColor,
+                        secondaryColor: textSecondary,
+                        bgColor: bgColor,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BrokerReportListScreen(
+                                portfolioId: widget.account.id,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    _buildMenuSheetTile(
+                      icon: Icons.auto_awesome_rounded,
+                      iconColor: isDarkMode
+                          ? AppColors.darkFabYellow
+                          : AppColors.fabYellow,
+                      title: 'วิเคราะห์พอร์ต',
+                      subtitle: 'ตรวจสอบการกระจายความเสี่ยงและผลตอบแทน',
+                      textColor: textColor,
+                      secondaryColor: textSecondary,
+                      bgColor: bgColor,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => BrokerReportListScreen(
-                              portfolioId: widget.account.id,
+                            builder: (_) => PortfolioAnalyzeScreen(
+                              accountId: widget.account.id,
                             ),
                           ),
                         );
                       },
                     ),
-                  ],
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
-                    leading: Icon(Icons.auto_awesome, color: textColor),
-                    title: Text(
-                      'วิเคราะห์พอร์ต',
-                      style: TextStyle(color: textColor),
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
                     ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PortfolioAnalyzeScreen(
-                            accountId: widget.account.id,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
-                    leading: Icon(
-                      Icons.account_tree_outlined,
-                      color: textColor,
-                    ),
-                    title: Text(
-                      'จัดลำดับกลุ่ม',
-                      style: TextStyle(color: textColor),
-                    ),
-                    tileColor: bgColor,
-                    onTap: () {
-                      final holdings = context
-                          .read<AccountProvider>()
-                          .getHoldings(widget.account.id);
-                      Navigator.pop(context);
-                      _showGroupReorderDialog(
-                        this.context,
-                        _currentPortfolioGroupKeys(holdings),
-                        isDarkMode,
-                      );
-                    },
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                  ListTile(
-                    leading: Icon(Icons.reorder, color: textColor),
-                    title: Text(
-                      'จัดเรียงลำดับ',
-                      style: TextStyle(color: textColor),
-                    ),
-                    tileColor: bgColor,
-                    trailing: Switch(
-                      value: _isReorderMode,
-                      onChanged: (value) {
-                        setStateModal(() => _isReorderMode = value);
-                        setState(() => _isReorderMode = value);
+                    _buildMenuSheetTile(
+                      icon: Icons.account_tree_outlined,
+                      iconColor: textColor,
+                      title: 'จัดลำดับกลุ่ม',
+                      subtitle: 'ลากและสลับลำดับการแสดงผลของกลุ่มพอร์ต',
+                      textColor: textColor,
+                      secondaryColor: textSecondary,
+                      bgColor: bgColor,
+                      onTap: () {
+                        final holdings = context
+                            .read<AccountProvider>()
+                            .getHoldings(widget.account.id);
+                        Navigator.pop(context);
+                        _showGroupReorderDialog(
+                          this.context,
+                          _currentPortfolioGroupKeys(holdings),
+                          isDarkMode,
+                        );
                       },
                     ),
-                  ),
-                ],
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    ListTile(
+                      tileColor: bgColor,
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.reorder_rounded,
+                          color: textColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'โหมดจัดเรียงลำดับหุ้น',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'แสดงปุ่มลากเพื่อสลับลำดับหุ้นในแต่ละกลุ่ม',
+                        style: TextStyle(fontSize: 12, color: textSecondary),
+                      ),
+                      trailing: CupertinoSwitch(
+                        value: _isReorderMode,
+                        activeTrackColor: incomeColor,
+                        inactiveTrackColor: isDarkMode
+                            ? const Color(0xFF39393D)
+                            : const Color(0xFFE9E9EA),
+                        onChanged: (value) {
+                          setStateModal(() => _isReorderMode = value);
+                          setState(() => _isReorderMode = value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildMenuSheetTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required Color textColor,
+    required Color secondaryColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      tileColor: bgColor,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: secondaryColor),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: secondaryColor.withValues(alpha: 0.5),
+      ),
+      onTap: onTap,
     );
   }
 
@@ -1181,43 +1349,80 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         : AppColors.textSecondary;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    final headerBgColor = isDarkMode
-        ? AppColors.darkSectionHeader
-        : AppColors.sectionHeader;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      color: surfaceColor,
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Group Header ──
           Container(
-            color: headerBgColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? AppColors.darkSurfaceVariant.withValues(alpha: 0.4)
+                  : Colors.grey.shade100,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.folder_special, size: 18, color: incomeColor),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: incomeColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Icon(
+                        Icons.folder_special_rounded,
+                        size: 16,
+                        color: incomeColor,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         groupName,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: textColor,
                         ),
                       ),
                     ),
-                    Text(
-                      '${sortedHoldings.length} ตัว',
-                      style: TextStyle(fontSize: 13, color: secondaryColor),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: secondaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadii.full),
+                      ),
+                      child: Text(
+                        '${sortedHoldings.length} ตัว',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: secondaryColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1226,8 +1431,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                       children: [
                         Text(
                           'มูลค่าปัจจุบัน',
-                          style: TextStyle(fontSize: 13, color: secondaryColor),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: secondaryColor,
+                          ),
                         ),
+                        const SizedBox(height: 1),
                         Text(
                           formatAmount(groupValue),
                           style: TextStyle(
@@ -1240,7 +1450,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                           Text(
                             '${formatAmount(groupValueUsd)} $currencyCode',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 11,
                               color: secondaryColor,
                             ),
                           ),
@@ -1251,27 +1461,52 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                       children: [
                         Text(
                           'กำไร/ขาดทุน',
-                          style: TextStyle(fontSize: 13, color: secondaryColor),
-                        ),
-                        Text(
-                          '${groupPnlPct >= 0 ? '+' : ''}${groupPnlPct.toStringAsFixed(2)}%',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: groupPnlUsd >= 0
-                                ? incomeColor
-                                : expenseColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: secondaryColor,
                           ),
                         ),
-                        Text(
-                          '${groupPnlUsd >= 0 ? '+' : ''}${formatAmount(groupPnl)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: groupPnlUsd >= 0
-                                ? incomeColor
-                                : expenseColor,
-                          ),
+                        const SizedBox(height: 1),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${groupPnlUsd >= 0 ? '+' : ''}${formatAmount(groupPnl)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: groupPnlUsd >= 0
+                                    ? incomeColor
+                                    : expenseColor,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    (groupPnlUsd >= 0
+                                            ? incomeColor
+                                            : expenseColor)
+                                        .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${groupPnlPct >= 0 ? '+' : ''}${groupPnlPct.toStringAsFixed(2)}%',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: groupPnlUsd >= 0
+                                      ? incomeColor
+                                      : expenseColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1282,7 +1517,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           ),
           if (groupName != 'ทั่วไป')
             Container(
-              padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: dividerColor.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+              ),
               alignment: Alignment.centerLeft,
               child: PopupMenuButton<String>(
                 initialValue: sortType,
@@ -1350,7 +1593,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               return Column(
                 key: ValueKey(h.id),
                 children: [
-                  Divider(height: 1, color: dividerColor),
+                  if (index > 0 || groupName == 'ทั่วไป')
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.25),
+                    ),
                   PortfolioHoldingItemWidget(
                     holding: h,
                     exchangeRate: acc.exchangeRate,
@@ -1566,9 +1815,9 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate(this.tabBar, this.backgroundColor);
 
   @override
-  double get minExtent => tabBar.preferredSize.height;
+  double get minExtent => tabBar.preferredSize.height + 10;
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get maxExtent => tabBar.preferredSize.height + 10;
 
   @override
   Widget build(
@@ -1576,7 +1825,11 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: backgroundColor, child: tabBar);
+    return Container(
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      child: tabBar,
+    );
   }
 
   @override
@@ -1586,18 +1839,20 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
+class _HeroPortfolioSummaryCard extends StatelessWidget {
   final Account account;
   final double totalValue;
   final List<StockHolding> holdings;
   final VoidCallback onRateTap;
+  final VoidCallback onCashTap;
   final bool isDarkMode;
 
-  const _SummaryCard({
+  const _HeroPortfolioSummaryCard({
     required this.account,
     required this.totalValue,
     required this.holdings,
     required this.onRateTap,
+    required this.onCashTap,
     required this.isDarkMode,
   });
 
@@ -1615,7 +1870,10 @@ class _SummaryCard extends StatelessWidget {
     final displayTotalValue = isUsd ? totalValue * rate : totalValue;
     final pnl = totalCost > 0 ? stocksValue - totalCost : 0.0;
     final pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0.0;
-    final hasCost = totalCost > 0;
+
+    final cashBalanceThb = isUsd
+        ? account.cashBalance * rate
+        : account.cashBalance;
 
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textPrimaryColor = isDarkMode
@@ -1629,138 +1887,147 @@ class _SummaryCard extends StatelessWidget {
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: account.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: AccountIconWidget(
-                        account: account,
-                        size: 24,
-                        isDarkMode: isDarkMode,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'มูลค่ารวม',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textSecondaryColor,
-                            ),
-                          ),
-                          Text(
-                            formatAmount(displayTotalValue),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.getAmountColor(
-                                totalValue,
-                                isDarkMode,
-                              ),
-                            ),
-                          ),
-                          if (isUsd)
-                            Text(
-                              '${formatAmount(totalValueBase)} $currencyCode',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSecondaryColor,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isUsd)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: onRateTap,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'อัตราแลกเปลี่ยน',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: textSecondaryColor,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                '1 USD = ${rate.toStringAsFixed(2)} THB',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimaryColor,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                account.autoUpdateRate
-                                    ? Icons.sync
-                                    : Icons.lock_outline,
-                                size: 12,
-                                color: account.autoUpdateRate
-                                    ? incomeColor
-                                    : textSecondaryColor,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+          // ── 1. Top Section: Account Icon, Total Value, Exchange Rate ──
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: account.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: AccountIconWidget(
+                      account: account,
+                      size: 24,
+                      isDarkMode: isDarkMode,
                     ),
                   ),
                 ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'มูลค่าพอร์ตรวม',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textSecondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatAmount(displayTotalValue),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.getAmountColor(
+                            totalValue,
+                            isDarkMode,
+                          ),
+                        ),
+                      ),
+                      if (isUsd) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${formatAmount(totalValueBase)} $currencyCode',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: textSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isUsd)
+                  Material(
+                    color: dividerColor.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: onRateTap,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '1 USD = ${rate.toStringAsFixed(2)} ฿',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              account.autoUpdateRate
+                                  ? Icons.sync_rounded
+                                  : Icons.lock_outline_rounded,
+                              size: 13,
+                              color: account.autoUpdateRate
+                                  ? incomeColor
+                                  : textSecondaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          if (hasCost) ...[
-            const SizedBox(height: 10),
-            Divider(height: 1, color: dividerColor),
-            const SizedBox(height: 10),
-            Row(
+
+          // ── Divider ──
+          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
+
+          // ── 2. Middle Stats: Cost, Stocks Value, Unrealized PnL ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'ต้นทุนหุ้นรวม',
                         style: TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: textSecondaryColor,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         formatAmount(totalCost),
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: textPrimaryColor,
                         ),
                       ),
@@ -1769,30 +2036,37 @@ class _SummaryCard extends StatelessWidget {
                             ? '${formatAmount(totalCostBase)} $currencyCode'
                             : currencyCode,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           color: textSecondaryColor,
                         ),
                       ),
                     ],
                   ),
                 ),
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: dividerColor.withValues(alpha: 0.25),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'มูลค่าหุ้นรวม',
                         style: TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: textSecondaryColor,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         formatAmount(stocksValue),
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: textPrimaryColor,
                         ),
                       ),
@@ -1801,12 +2075,17 @@ class _SummaryCard extends StatelessWidget {
                             ? '${formatAmount(stocksValueBase)} $currencyCode'
                             : currencyCode,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           color: textSecondaryColor,
                         ),
                       ),
                     ],
                   ),
+                ),
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: dividerColor.withValues(alpha: 0.25),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1817,25 +2096,39 @@ class _SummaryCard extends StatelessWidget {
                         'กำไร/ขาดทุน',
                         style: TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: textSecondaryColor,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}',
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: pnl >= 0 ? incomeColor : expenseColor,
                         ),
                       ),
-                      Text(
-                        '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: pnl >= 0 ? incomeColor : expenseColor,
+                      Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (pnl >= 0 ? incomeColor : expenseColor)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: pnl >= 0 ? incomeColor : expenseColor,
+                          ),
                         ),
                       ),
                     ],
@@ -1843,84 +2136,83 @@ class _SummaryCard extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-        ],
-      ),
-    );
-  }
-}
+          ),
 
-class _CashRow extends StatelessWidget {
-  final double cashBalance;
-  final double exchangeRate;
-  final String currencyCode;
-  final VoidCallback onTap;
-  final bool isDarkMode;
+          // ── Divider ──
+          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
 
-  const _CashRow({
-    required this.cashBalance,
-    required this.exchangeRate,
-    required this.currencyCode,
-    required this.onTap,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isUsd = currencyCode == 'USD';
-    final cashBalanceThb = isUsd ? cashBalance * exchangeRate : cashBalance;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textPrimaryColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: surfaceColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: incomeColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.attach_money, color: incomeColor, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'เงินสด',
-                style: TextStyle(fontSize: 16, color: textPrimaryColor),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  formatAmount(cashBalanceThb),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.getAmountColor(cashBalanceThb, isDarkMode),
-                  ),
+          // ── 3. Bottom Row: Cash in Broker ──
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onCashTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                if (isUsd)
-                  Text(
-                    '${formatAmount(cashBalance)} $currencyCode',
-                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                  ),
-              ],
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: incomeColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: incomeColor,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'เงินสดใน Broker',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimaryColor,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatAmount(cashBalanceThb),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.getAmountColor(
+                              cashBalanceThb,
+                              isDarkMode,
+                            ),
+                          ),
+                        ),
+                        if (isUsd)
+                          Text(
+                            '${formatAmount(account.cashBalance)} $currencyCode',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.chevron_right,
+                      color: textSecondaryColor.withValues(alpha: 0.5),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

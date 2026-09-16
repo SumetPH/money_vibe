@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +9,8 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/account_icon_storage_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../main.dart';
-import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
@@ -412,150 +413,305 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             ? AppColors.darkDivider
             : AppColors.divider;
 
+        final expenseColor = _isDarkMode
+            ? AppColors.darkExpense
+            : AppColors.expense;
+        final fabYellow = _isDarkMode
+            ? AppColors.darkFabYellow
+            : AppColors.fabYellow;
+
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: bgColor,
           appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      _closeKeyboard();
-                      Navigator.pop(context);
-                    },
+            backgroundColor: bgColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leadingWidth: 64,
+            leading: Center(
+              child: Material(
+                color: surfaceColor,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: 'ปิด',
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          _closeKeyboard();
+                          Navigator.pop(context);
+                        },
+                ),
+              ),
             ),
-            title: Text(_isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่'),
+            title: Text(
+              _isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่',
+              style: TextStyle(
+                color: textPrimaryColor,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             actions: [
               if (_isEditing)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: _isLoading ? null : _delete,
-                  tooltip: 'ลบบัญชี',
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Material(
+                    color: surfaceColor,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 20,
+                        color: expenseColor,
+                      ),
+                      onPressed: _isLoading ? null : _delete,
+                      tooltip: 'ลบบัญชี',
+                    ),
+                  ),
                 ),
-              AppBarActionButton(
-                icon: const Icon(Icons.check),
-                tooltip: 'บันทึก',
-                isLoading: _isLoading,
-                onPressed: _save,
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Center(
+                  child: Material(
+                    color: fabYellow,
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: _isLoading ? null : _save,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.black,
+                                  ),
+                                ),
+                              )
+                            : const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'บันทึก',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          body: AbsorbPointer(
-            absorbing: _isLoading,
-            child: ListView(
-              children: [
-                const SizedBox(height: 8),
-                // Name
-                _buildTextField(
-                  controller: _nameController,
-                  hintText: 'ชื่อ',
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                // Account Type
-                _buildPickerRow(
-                  label: 'ชนิดบัญชี',
-                  value: _selectedType.label,
-                  onTap: _pickAccountType,
-                  surfaceColor: surfaceColor,
-                  textPrimaryColor: textPrimaryColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                // Initial Balance / Cash Balance
-                _buildBalanceField(
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                // Exchange Rate & Auto Update (USD only)
-                if (_effectiveSelectedCurrency == 'USD') ...[
-                  _buildSwitchRow(
-                    label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
-                    value: _autoUpdateRate,
-                    onChanged: (v) => setState(() => _autoUpdateRate = v),
+          body: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              _closeKeyboard();
+            },
+            child: AbsorbPointer(
+              absorbing: _isLoading,
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                children: [
+                  // 1. Hero Balance Card
+                  _buildHeroBalanceCard(
                     surfaceColor: surfaceColor,
+                    textPrimaryColor: textPrimaryColor,
                     textSecondaryColor: textSecondaryColor,
+                    dividerColor: dividerColor,
                   ),
-                  _buildDivider(color: dividerColor),
-                  if (!_autoUpdateRate) ...[
-                    _buildExchangeRateField(
+
+                  // 2. ข้อมูลบัญชี
+                  _buildSectionHeader('ข้อมูลบัญชี', textSecondaryColor),
+                  _buildInsetCard(
+                    [
+                      _buildTextFieldRow(
+                        controller: _nameController,
+                        label: 'ชื่อบัญชี',
+                        hintText: 'ระบุชื่อบัญชี',
+                        icon: Icons.edit_note_rounded,
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      _buildIndentedDivider(dividerColor),
+                      _buildPickerRow(
+                        label: 'ชนิดบัญชี',
+                        value: _selectedType.label,
+                        icon: Icons.account_balance_wallet_outlined,
+                        onTap: _pickAccountType,
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      _buildIndentedDivider(dividerColor),
+                      if (_selectedType.isPortfolio)
+                        _buildReadOnlyRow(
+                          label: 'สกุลเงิน',
+                          value: _getCurrencyDisplay(
+                            _effectiveSelectedCurrency,
+                          ),
+                          icon: Icons.paid_outlined,
+                          badge: 'พอร์ต',
+                          textPrimaryColor: textPrimaryColor,
+                          textSecondaryColor: textSecondaryColor,
+                        )
+                      else
+                        _buildPickerRow(
+                          label: 'สกุลเงิน',
+                          value: _getCurrencyDisplay(
+                            _effectiveSelectedCurrency,
+                          ),
+                          icon: Icons.paid_outlined,
+                          onTap: _pickCurrency,
+                          textPrimaryColor: textPrimaryColor,
+                          textSecondaryColor: textSecondaryColor,
+                        ),
+                      _buildIndentedDivider(dividerColor),
+                      _buildPickerRow(
+                        label: 'เริ่มวันที่',
+                        value: _formatThaiDate(_startDate),
+                        icon: Icons.calendar_today_outlined,
+                        onTap: _pickDate,
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ],
+                    surfaceColor: surfaceColor,
+                    dividerColor: dividerColor,
+                  ),
+
+                  // 3. รูปลักษณ์
+                  _buildSectionHeader('รูปลักษณ์', textSecondaryColor),
+                  _buildInsetCard(
+                    [
+                      _buildIconRow(
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      _buildIndentedDivider(dividerColor),
+                      _buildColorRow(
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ],
+                    surfaceColor: surfaceColor,
+                    dividerColor: dividerColor,
+                  ),
+
+                  // 4. พอร์ตการลงทุน (USD only or portfolio)
+                  if (_effectiveSelectedCurrency == 'USD' ||
+                      _selectedType.isPortfolio) ...[
+                    _buildSectionHeader('พอร์ตการลงทุน', textSecondaryColor),
+                    _buildInsetCard(
+                      [
+                        if (_effectiveSelectedCurrency == 'USD') ...[
+                          _buildSwitchRow(
+                            label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
+                            subtitle:
+                                'ดึงอัตราแลกเปลี่ยน USD/THB จากระบบโดยอัตโนมัติ',
+                            value: _autoUpdateRate,
+                            onChanged: (v) =>
+                                setState(() => _autoUpdateRate = v),
+                            textPrimaryColor: textPrimaryColor,
+                            textSecondaryColor: textSecondaryColor,
+                          ),
+                          if (!_autoUpdateRate) ...[
+                            _buildIndentedDivider(dividerColor),
+                            _buildExchangeRateField(
+                              textPrimaryColor: textPrimaryColor,
+                              textSecondaryColor: textSecondaryColor,
+                            ),
+                          ],
+                        ] else
+                          _buildReadOnlyRow(
+                            label: 'อัตราแลกเปลี่ยน',
+                            value: '1.0 (THB)',
+                            icon: Icons.currency_exchange_rounded,
+                            badge: 'สกุลบาท',
+                            textPrimaryColor: textPrimaryColor,
+                            textSecondaryColor: textSecondaryColor,
+                          ),
+                      ],
                       surfaceColor: surfaceColor,
-                      textSecondaryColor: textSecondaryColor,
+                      dividerColor: dividerColor,
                     ),
-                    _buildDivider(color: dividerColor),
                   ],
-                ],
-                // Currency
-                if (_selectedType.isPortfolio)
-                  _buildReadOnlyRow(
-                    label: 'สกุลเงิน',
-                    value: _getCurrencyDisplay(_effectiveSelectedCurrency),
+
+                  // 5. บัตรเครดิต
+                  if (_selectedType == AccountType.creditCard) ...[
+                    _buildSectionHeader('บัตรเครดิต', textSecondaryColor),
+                    _buildInsetCard(
+                      [
+                        _buildStatementDayPicker(
+                          textPrimaryColor: textPrimaryColor,
+                          textSecondaryColor: textSecondaryColor,
+                        ),
+                      ],
+                      surfaceColor: surfaceColor,
+                      dividerColor: dividerColor,
+                    ),
+                  ],
+
+                  // 6. สวิตช์การแสดงผลและคำนวณ
+                  _buildSectionHeader('การแสดงผลและคำนวณ', textSecondaryColor),
+                  _buildInsetCard(
+                    [
+                      _buildSwitchRow(
+                        label: 'ไม่รวมในทรัพย์สินสุทธิ',
+                        subtitle:
+                            'ไม่นำยอดเงินในบัญชีนี้ไปคำนวณในสินทรัพย์สุทธิ (Net Worth)',
+                        value: _excludeFromNetWorth,
+                        onChanged: (v) =>
+                            setState(() => _excludeFromNetWorth = v),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      _buildIndentedDivider(dividerColor),
+                      _buildSwitchRow(
+                        label: 'ซ่อนบัญชีนี้',
+                        subtitle: 'ซ่อนบัญชีนี้จากหน้ารายการบัญชีหลัก',
+                        value: _isHidden,
+                        onChanged: (v) => setState(() => _isHidden = v),
+                        textPrimaryColor: textPrimaryColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ],
                     surfaceColor: surfaceColor,
-                    textPrimaryColor: textPrimaryColor,
-                    textSecondaryColor: textSecondaryColor,
-                  )
-                else
-                  _buildPickerRow(
-                    label: 'สกุลเงิน',
-                    value: _getCurrencyDisplay(_effectiveSelectedCurrency),
-                    onTap: _pickCurrency,
-                    surfaceColor: surfaceColor,
-                    textPrimaryColor: textPrimaryColor,
-                    textSecondaryColor: textSecondaryColor,
+                    dividerColor: dividerColor,
                   ),
-                _buildDivider(color: dividerColor),
-                // Start Date
-                _buildPickerRow(
-                  label: 'เริ่มวันที่',
-                  value: _formatThaiDate(_startDate),
-                  onTap: _pickDate,
-                  surfaceColor: surfaceColor,
-                  textPrimaryColor: textPrimaryColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                // Icon
-                _buildIconRow(
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                // Color
-                _buildColorRow(
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                const SizedBox(height: 8),
-                // Credit Card Statement Day
-                if (_selectedType == AccountType.creditCard) ...[
-                  _buildDivider(color: dividerColor),
-                  _buildStatementDayPicker(
-                    surfaceColor: surfaceColor,
-                    textPrimaryColor: textPrimaryColor,
-                    textSecondaryColor: textSecondaryColor,
-                  ),
+
+                  // 7. Delete card if editing
+                  if (_isEditing)
+                    _buildDeleteCard(
+                      surfaceColor: surfaceColor,
+                      expenseColor: expenseColor,
+                      dividerColor: dividerColor,
+                    ),
                 ],
-                // Switches
-                const SizedBox(height: 8),
-                _buildSwitchRow(
-                  label: 'ไม่รวมในทรัพย์สินสุทธิ',
-                  value: _excludeFromNetWorth,
-                  onChanged: (v) => setState(() => _excludeFromNetWorth = v),
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-                _buildDivider(color: dividerColor),
-                _buildSwitchRow(
-                  label: 'ซ่อนบัญชีนี้',
-                  value: _isHidden,
-                  onChanged: (v) => setState(() => _isHidden = v),
-                  surfaceColor: surfaceColor,
-                  textSecondaryColor: textSecondaryColor,
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -563,125 +719,208 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
+  Widget _buildHeroBalanceCard({
     required Color surfaceColor,
+    required Color textPrimaryColor,
     required Color textSecondaryColor,
-  }) {
-    return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: textSecondaryColor),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          focusedErrorBorder: InputBorder.none,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          filled: false,
-        ),
-        style: TextStyle(fontSize: 16, color: textSecondaryColor),
-      ),
-    );
-  }
-
-  Widget _buildBalanceField({
-    required Color surfaceColor,
-    required Color textSecondaryColor,
+    required Color dividerColor,
   }) {
     final isPortfolio = _selectedType.isPortfolio;
+    final isDebt = _selectedType == AccountType.debt;
+    final currencyText = _effectiveSelectedCurrency == 'USD' ? 'USD' : 'THB';
+
     return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              isPortfolio ? 'เงินสดใน Broker' : 'ยอดเริ่มต้น',
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: _initialBalanceController,
-              focusNode: _amountFocusNode,
-              readOnly: calculatorTextFieldReadOnly,
-              showCursor: true,
-              keyboardType: calculatorTextInputType,
-              inputFormatters: calculatorTextInputFormatters,
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: isPortfolio ? '0' : 'ยอดเริ่มต้น',
-                hintStyle: TextStyle(color: textSecondaryColor),
-                suffixText: _effectiveSelectedCurrency == 'USD' ? 'USD' : 'บาท',
-                suffixStyle: TextStyle(
-                  color: textSecondaryColor,
-                  fontSize: 16,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isPortfolio ? 'เงินสดใน Broker' : 'ยอดเงินเริ่มต้น',
+                style: TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  color: textSecondaryColor,
                 ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                filled: false,
               ),
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: dividerColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                ),
+                child: Text(
+                  currencyText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: textPrimaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _initialBalanceController,
+            focusNode: _amountFocusNode,
+            readOnly: calculatorTextFieldReadOnly,
+            showCursor: true,
+            keyboardType: calculatorTextInputType,
+            inputFormatters: calculatorTextInputFormatters,
+            textAlign: TextAlign.left,
+            decoration: InputDecoration(
+              hintText: '0.00',
+              hintStyle: TextStyle(
+                color: textSecondaryColor.withValues(alpha: 0.5),
+                fontSize: 34,
+                fontWeight: FontWeight.w700,
+              ),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              isDense: true,
+              filled: false,
+            ),
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              color: isDebt
+                  ? (_isDarkMode ? AppColors.darkExpense : AppColors.expense)
+                  : textPrimaryColor,
             ),
           ),
+          if (isDebt) ...[
+            const SizedBox(height: 8),
+            Text(
+              'ระบบจะบันทึกยอดหนี้สินเป็นยอดติดลบในทรัพย์สินสุทธิโดยอัตโนมัติ',
+              style: TextStyle(
+                fontSize: 12,
+                color: _isDarkMode ? AppColors.darkExpense : AppColors.expense,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildExchangeRateField({
+  Widget _buildSectionHeader(String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 20, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+          letterSpacing: -0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsetCard(
+    List<Widget> children, {
     required Color surfaceColor,
-    required Color textSecondaryColor,
+    required Color dividerColor,
   }) {
     return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildIndentedDivider(Color color) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 60,
+      endIndent: 16,
+      color: color.withValues(alpha: 0.3),
+    );
+  }
+
+  Widget _buildTextFieldRow({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    required Color textPrimaryColor,
+    required Color textSecondaryColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: textSecondaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: textSecondaryColor, size: 18),
+          ),
+          const SizedBox(width: 12),
           SizedBox(
-            width: 130,
+            width: 80,
             child: Text(
-              'USD/THB',
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
           ),
           Expanded(
             child: TextField(
-              controller: _exchangeRateController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-              ],
+              controller: controller,
               textAlign: TextAlign.right,
               decoration: InputDecoration(
-                hintText: '1',
-                hintStyle: TextStyle(color: textSecondaryColor),
+                hintText: hintText,
+                hintStyle: TextStyle(
+                  color: textSecondaryColor.withValues(alpha: 0.5),
+                  fontSize: 15,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: false,
               ),
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
           ),
         ],
@@ -692,29 +931,50 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   Widget _buildPickerRow({
     required String label,
     required String value,
+    required IconData icon,
     required VoidCallback onTap,
-    required Color surfaceColor,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
     return InkWell(
       onTap: onTap,
-      child: Container(
-        color: surfaceColor,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: textSecondaryColor, size: 18),
+            ),
+            const SizedBox(width: 12),
             Text(
               label,
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
             const Spacer(),
             Text(
               value,
-              style: TextStyle(fontSize: 16, color: textPrimaryColor),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textSecondaryColor,
+              ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -724,56 +984,116 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   Widget _buildReadOnlyRow({
     required String label,
     required String value,
-    required Color surfaceColor,
+    required IconData icon,
+    String? badge,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Container(
-      color: surfaceColor,
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: textSecondaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: textSecondaryColor, size: 18),
+          ),
+          const SizedBox(width: 12),
           Text(
             label,
-            style: TextStyle(fontSize: 16, color: textSecondaryColor),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: textPrimaryColor,
+            ),
           ),
           const Spacer(),
-          Text(value, style: TextStyle(fontSize: 16, color: textPrimaryColor)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: textSecondaryColor,
+            ),
+          ),
+          if (badge != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadii.full),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: textSecondaryColor,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildIconRow({
-    required Color surfaceColor,
+    required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
     return InkWell(
       onTap: _pickIcon,
-      child: Container(
-        color: surfaceColor,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.palette_outlined,
+                color: textSecondaryColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
             Text(
               'ไอคอน',
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
             const Spacer(),
             if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
               _buildCustomIconPreview()
             else
               Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: _selectedColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 26),
+                child: Icon(_selectedIcon, color: _selectedColor, size: 22),
               ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -790,12 +1110,12 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       borderRadius: BorderRadius.circular(10),
       child: CachedNetworkImage(
         imageUrl: _selectedIconUrl,
-        width: 44,
-        height: 44,
+        width: 36,
+        height: 36,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(
-          width: 44,
-          height: 44,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: _selectedColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
@@ -803,13 +1123,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
         errorWidget: (context, url, error) => Container(
-          width: 44,
-          height: 44,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: _selectedColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(_selectedIcon, color: _selectedColor, size: 26),
+          child: Icon(_selectedIcon, color: _selectedColor, size: 22),
         ),
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
@@ -818,31 +1138,59 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   Widget _buildColorRow({
-    required Color surfaceColor,
+    required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
     return InkWell(
       onTap: _pickColor,
-      child: Container(
-        color: surfaceColor,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.color_lens_outlined,
+                color: textSecondaryColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
             Text(
-              'สี',
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              'สีประจำบัญชี',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
             const Spacer(),
             Container(
-              width: 44,
-              height: 44,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: _selectedColor,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: _selectedColor.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -851,55 +1199,218 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
 
   Widget _buildSwitchRow({
     required String label,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
-    required Color surfaceColor,
+    required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: textPrimaryColor,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                  ),
+                ],
+              ],
             ),
           ),
-          Switch(value: value, onChanged: onChanged),
+          CupertinoSwitch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: _selectedColor,
+            inactiveTrackColor: _isDarkMode
+                ? const Color(0xFF39393D)
+                : const Color(0xFFE9E9EA),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDivider({required Color color}) =>
-      Divider(height: 1, color: color);
+  Widget _buildExchangeRateField({
+    required Color textPrimaryColor,
+    required Color textSecondaryColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: textSecondaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.currency_exchange_rounded,
+              color: textSecondaryColor,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'USD / THB',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: textPrimaryColor,
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: 100,
+            child: TextField(
+              controller: _exchangeRateController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: '1.0',
+                hintStyle: TextStyle(
+                  color: textSecondaryColor.withValues(alpha: 0.5),
+                  fontSize: 15,
+                ),
+                suffixText: ' บาท',
+                suffixStyle: TextStyle(color: textSecondaryColor, fontSize: 14),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                isDense: true,
+                filled: false,
+              ),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: textPrimaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStatementDayPicker({
-    required Color surfaceColor,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
     return InkWell(
       onTap: _pickStatementDay,
-      child: Container(
-        color: surfaceColor,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.credit_card_rounded,
+                color: textSecondaryColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
             Text(
-              'วันสรุปยอด',
-              style: TextStyle(fontSize: 16, color: textSecondaryColor),
+              'วันสรุปยอดบิล',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
             ),
             const Spacer(),
             Text(
-              _statementDay != null ? 'วันที่ $_statementDay' : 'ไม่ระบุ',
-              style: TextStyle(fontSize: 16, color: textPrimaryColor),
+              _statementDay != null ? 'ทุกวันที่ $_statementDay' : 'ไม่ระบุ',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textSecondaryColor,
+              ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: textSecondaryColor, size: 18),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+              size: 18,
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteCard({
+    required Color surfaceColor,
+    required Color expenseColor,
+    required Color dividerColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Material(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          onTap: _isLoading ? null : _delete,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.xLarge),
+              border: Border.all(
+                color: expenseColor.withValues(alpha: 0.25),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.delete_outline_rounded,
+                  color: expenseColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'ลบบัญชีนี้',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: expenseColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
