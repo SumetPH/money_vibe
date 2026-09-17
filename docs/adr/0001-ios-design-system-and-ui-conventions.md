@@ -80,7 +80,7 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
        - Shadow: `BoxShadow(color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08), blurRadius: 16, offset: const Offset(0, 4))`
        - Inset padding: `SafeArea(top: false, minimum: const EdgeInsets.symmetric(vertical: 6))`
    - **Tab & Action Structure**:
-     - Four tab destinations: บัญชี (`/accounts`), แผน (`/budgets`), รายการ (`/transactions`), and เมนู (triggers AppDrawer).
+     - Three Main Tab destinations: บัญชี (`/accounts`), แผน (`/budgets`), and รายการ (`/transactions`). เมนูเปิด AppDrawer as a separate action, not a tab destination. See ADR 0002 for retained tab state and primary-navigation ownership.
      - Central elevated Quick-Add FAB: Dedicated circular action button (`width: 54, height: 54`, `shape: CircleBorder()`, `color: fabColor`, `onFab` icon `Icons.add_rounded, size: 30`) for immediate transaction creation.
    - **Responsive & Scoped Integration**:
      - Show on mobile only (`isLargeScreen ? null : ...` where `isLargeScreen` is width >= 800px).

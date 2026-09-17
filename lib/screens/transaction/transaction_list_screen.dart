@@ -14,10 +14,10 @@ import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_bottom_navigation.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/bottom_summary_bar.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
+  final bool showPrimaryNavigation;
   final String? accountId;
   final List<String>? categoryIds;
   final List<String>? transactionIds;
@@ -27,6 +27,7 @@ class TransactionListScreen extends StatefulWidget {
 
   const TransactionListScreen({
     super.key,
+    this.showPrimaryNavigation = true,
     this.accountId,
     this.categoryIds,
     this.transactionIds,
@@ -47,6 +48,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
+    if (!widget.showPrimaryNavigation) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SyncProvider>().checkAndSync();
@@ -95,7 +97,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
             return Scaffold(
-              drawer: (isLargeScreen || (isFiltered && !isFromAccount))
+              drawer:
+                  (isLargeScreen || !widget.showPrimaryNavigation || isFiltered)
                   ? null
                   : AppDrawer(
                       currentRoute: isFromAccount
@@ -286,34 +289,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               ),
               bottomNavigationBar: isLargeScreen
                   ? null
-                  : (isFromAccount || !isFiltered)
-                  ? Builder(
-                      builder: (context) => AppBottomNavigation(
-                        currentRoute: isFromAccount
-                            ? '/accounts'
-                            : '/transactions',
-                        onAdd: () => _openForm(context, null),
-                        onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-                      ),
-                    )
-                  : BottomSummaryBar(
-                      left: BottomSummaryValue(
-                        label: 'เงินเข้ารวม',
-                        value: formatAmount(summaryData.totalIncome),
-                        color: isDarkMode
-                            ? AppColors.darkIncome
-                            : AppColors.income,
-                      ),
-                      right: BottomSummaryValue(
-                        label: 'เงินออกรวม',
-                        value: '-${formatAmount(summaryData.totalExpense)}',
-                        color: isDarkMode
-                            ? AppColors.darkExpense
-                            : AppColors.expense,
-                      ),
-                      onAdd: () => _openForm(context, null),
-                      isDarkMode: isDarkMode,
-                    ),
+                  : isFiltered
+                  ? AddOnlyBottomBar(onAdd: () => _openForm(context, null))
+                  : null,
             );
           },
     );
@@ -801,7 +779,7 @@ class _CashFlowSummary extends StatelessWidget {
     final net = income - expense;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      // padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.sheet),

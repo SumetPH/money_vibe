@@ -17,15 +17,13 @@ import 'providers/recurring_transaction_provider.dart';
 import 'providers/sync_provider.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
-import 'screens/account/account_list_screen.dart';
-import 'screens/budget/budget_list_screen.dart';
 import 'screens/category/category_list_screen.dart';
+import 'screens/main_tab_screen.dart';
 import 'screens/recurring/recurring_list_screen.dart';
 import 'screens/recurring/recurring_detail_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/statistics/statistics_screen.dart';
 import 'screens/trade/trade_tracker_screen.dart';
-import 'screens/transaction/transaction_list_screen.dart';
 import 'services/database_manager.dart';
 import 'services/debug_bootstrap_service.dart';
 import 'services/recurring_notification_service.dart';
@@ -206,15 +204,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
         GoRoute(
           path: '/accounts',
-          builder: (context, state) => const AccountListScreen(),
+          builder: (context, state) => const MainTabScreen(initialTab: 0),
         ),
         GoRoute(
           path: '/transactions',
-          builder: (context, state) => const TransactionListScreen(),
+          builder: (context, state) => const MainTabScreen(initialTab: 2),
         ),
         GoRoute(
           path: '/budgets',
-          builder: (context, state) => const BudgetListScreen(),
+          builder: (context, state) => const MainTabScreen(initialTab: 1),
         ),
         GoRoute(
           path: '/recurring',

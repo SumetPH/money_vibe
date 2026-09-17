@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
-import '../services/reinstall_reminder_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_color_option.dart';
 
@@ -33,39 +32,14 @@ class AppSidebar extends StatefulWidget {
       route: '/accounts',
     ),
     SidebarItemData(
-      icon: Icons.receipt_long,
-      label: 'รายการ',
-      route: '/transactions',
-    ),
-    SidebarItemData(
       icon: Icons.account_balance_outlined,
       label: 'งบประมาณ',
       route: '/budgets',
     ),
     SidebarItemData(
-      icon: Icons.pie_chart_outline,
-      label: 'สถิติ',
-      route: '/statistics',
-    ),
-    SidebarItemData(
-      icon: Icons.repeat,
-      label: 'รายการประจำ',
-      route: '/recurring',
-    ),
-    SidebarItemData(
-      icon: Icons.category_outlined,
-      label: 'หมวดหมู่',
-      route: '/categories',
-    ),
-    SidebarItemData(
-      icon: Icons.show_chart,
-      label: 'บันทึกการลงทุน',
-      route: '/trade-tracker',
-    ),
-    SidebarItemData(
-      icon: Icons.settings_outlined,
-      label: 'การตั้งค่า',
-      route: '/settings',
+      icon: Icons.receipt_long,
+      label: 'รายการ',
+      route: '/transactions',
     ),
   ];
 
@@ -241,7 +215,6 @@ class _SidebarItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reinstallReminder = context.watch<ReinstallReminderService>();
     final selectedColor = AppColors.accentFor(isDarkMode, themeColor);
     final selectedTileColor = isDarkMode
         ? AppColors.headerFor(isDarkMode, themeColor).withValues(alpha: 0.75)
@@ -269,40 +242,10 @@ class _SidebarItemTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      item.icon,
-                      color: isSelected ? selectedColor : unselectedColor,
-                      size: 22,
-                    ),
-                    if (item.route == '/settings' &&
-                        reinstallReminder.needsExpiredBadge)
-                      Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            color: AppColors.expense,
-                            shape: BoxShape.circle,
-                          ),
-                          child: reinstallReminder.needsExpiredBadge
-                              ? const Text(
-                                  '!',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                  ],
+                Icon(
+                  item.icon,
+                  color: isSelected ? selectedColor : unselectedColor,
+                  size: 22,
                 ),
                 const SizedBox(width: 16),
                 Expanded(

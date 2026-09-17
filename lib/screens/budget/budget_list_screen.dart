@@ -14,14 +14,14 @@ import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/app_bottom_navigation.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
-import '../../screens/transaction/transaction_form_screen.dart';
 import 'budget_form_screen.dart';
 
 class BudgetListScreen extends StatefulWidget {
-  const BudgetListScreen({super.key});
+  final bool showPrimaryNavigation;
+
+  const BudgetListScreen({super.key, this.showPrimaryNavigation = true});
 
   @override
   State<BudgetListScreen> createState() => _BudgetListScreenState();
@@ -37,6 +37,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    if (!widget.showPrimaryNavigation) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SyncProvider>().checkAndSync();
@@ -287,7 +288,9 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           backgroundColor: bgColor,
           drawer: isLargeScreen
               ? null
-              : const AppDrawer(currentRoute: '/budgets'),
+              : widget.showPrimaryNavigation
+              ? const AppDrawer(currentRoute: '/budgets')
+              : null,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             toolbarHeight: 104,
@@ -457,15 +460,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     dividerColor: dividerColor,
                   ),
           ),
-          bottomNavigationBar: isLargeScreen
-              ? null
-              : Builder(
-                  builder: (context) => AppBottomNavigation(
-                    currentRoute: '/budgets',
-                    onAdd: () => _openAddTransactionForm(context),
-                    onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-                  ),
-                ),
+          bottomNavigationBar: null,
         );
       },
     );
@@ -876,13 +871,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => BudgetFormScreen(budget: budget)),
-    );
-  }
-
-  void _openAddTransactionForm(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
     );
   }
 

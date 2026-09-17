@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
@@ -7,13 +6,15 @@ import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 
 class AppBottomNavigation extends StatelessWidget {
-  final String currentRoute;
+  final int selectedIndex;
+  final ValueChanged<int> onSelectTab;
   final VoidCallback onAdd;
   final VoidCallback onOpenDrawer;
 
   const AppBottomNavigation({
     super.key,
-    required this.currentRoute,
+    required this.selectedIndex,
+    required this.onSelectTab,
     required this.onAdd,
     required this.onOpenDrawer,
   });
@@ -61,20 +62,20 @@ class AppBottomNavigation extends StatelessWidget {
                   child: _item(
                     icon: Icons.account_balance_wallet_rounded,
                     label: 'บัญชี',
-                    selected: currentRoute == '/accounts',
+                    selected: selectedIndex == 0,
                     accent: accent,
                     inactive: inactive,
-                    onTap: () => _navigate(context, '/accounts'),
+                    onTap: () => onSelectTab(0),
                   ),
                 ),
                 Expanded(
                   child: _item(
                     icon: Icons.donut_large_rounded,
                     label: 'แผน',
-                    selected: currentRoute == '/budgets',
+                    selected: selectedIndex == 1,
                     accent: accent,
                     inactive: inactive,
-                    onTap: () => _navigate(context, '/budgets'),
+                    onTap: () => onSelectTab(1),
                   ),
                 ),
                 Expanded(
@@ -102,10 +103,10 @@ class AppBottomNavigation extends StatelessWidget {
                   child: _item(
                     icon: Icons.receipt_long_rounded,
                     label: 'รายการ',
-                    selected: currentRoute == '/transactions',
+                    selected: selectedIndex == 2,
                     accent: accent,
                     inactive: inactive,
-                    onTap: () => _navigate(context, '/transactions'),
+                    onTap: () => onSelectTab(2),
                   ),
                 ),
                 Expanded(
@@ -124,19 +125,6 @@ class AppBottomNavigation extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _navigate(BuildContext context, String route) {
-    if (currentRoute == route) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      return;
-    }
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).popUntil((r) => r.isFirst);
-    }
-    context.go(route);
   }
 
   Widget _item({
@@ -167,6 +155,60 @@ class AppBottomNavigation extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class AddOnlyBottomBar extends StatelessWidget {
+  final VoidCallback onAdd;
+
+  const AddOnlyBottomBar({super.key, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
+    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final fabColor = AppColors.fabFor(isDarkMode, settingsProvider.themeColor);
+    final onFab = AppColors.onFabFor(isDarkMode, settingsProvider.themeColor);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(AppRadii.sheet),
+          border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.symmetric(vertical: 6),
+          child: Center(
+            child: Material(
+              color: fabColor,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                tooltip: 'เพิ่มรายการ',
+                onPressed: onAdd,
+                icon: Icon(Icons.add_rounded, color: onFab, size: 30),
+                constraints: const BoxConstraints.tightFor(
+                  width: 54,
+                  height: 54,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

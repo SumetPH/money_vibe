@@ -11,7 +11,6 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/account_icon_widget.dart';
-import '../../widgets/app_bottom_navigation.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
@@ -22,7 +21,9 @@ import '../transaction/transaction_list_screen.dart';
 import '../transaction/transaction_form_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
-  const AccountListScreen({super.key});
+  final bool showPrimaryNavigation;
+
+  const AccountListScreen({super.key, this.showPrimaryNavigation = true});
 
   @override
   State<AccountListScreen> createState() => _AccountListScreenState();
@@ -34,6 +35,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
   @override
   void initState() {
     super.initState();
+    if (!widget.showPrimaryNavigation) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SyncProvider>().checkAndSync();
@@ -51,7 +53,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
     return Scaffold(
-      drawer: isLargeScreen ? null : const AppDrawer(currentRoute: '/accounts'),
+      drawer: isLargeScreen || !widget.showPrimaryNavigation
+          ? null
+          : const AppDrawer(currentRoute: '/accounts'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         toolbarHeight: 104,
@@ -281,15 +285,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
           );
         },
       ),
-      bottomNavigationBar: isLargeScreen
-          ? null
-          : Builder(
-              builder: (context) => AppBottomNavigation(
-                currentRoute: '/accounts',
-                onAdd: () => _openAddTransactionForm(context),
-                onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
+      bottomNavigationBar: null,
     );
   }
 
