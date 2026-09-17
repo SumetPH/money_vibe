@@ -293,7 +293,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               : null,
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            toolbarHeight: 104,
+            toolbarHeight: 100,
             backgroundColor: bgColor,
             foregroundColor: textPrimary,
             elevation: 0,

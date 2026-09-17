@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
+import '../services/reinstall_reminder_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 
@@ -99,6 +100,83 @@ class AppDrawer extends StatelessWidget {
                       textPrimary: textPrimary,
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+
+                _buildSectionTitle('วางแผน', textSecondary),
+                _buildGroupedCard(
+                  surfaceColor: surfaceColor,
+                  dividerColor: dividerColor,
+                  children: [
+                    _DrawerRowItem(
+                      icon: Icons.sync_alt_rounded,
+                      label: 'รายการประจำ',
+                      isSelected: currentRoute == '/recurring',
+                      onTap: () => _navigate(context, '/recurring'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+
+                _buildSectionTitle('ข้อมูลเชิงลึก', textSecondary),
+                _buildGroupedCard(
+                  surfaceColor: surfaceColor,
+                  dividerColor: dividerColor,
+                  children: [
+                    _DrawerRowItem(
+                      icon: Icons.query_stats_rounded,
+                      label: 'สถิติ',
+                      isSelected: currentRoute == '/statistics',
+                      onTap: () => _navigate(context, '/statistics'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildInnerDivider(dividerColor),
+                    _DrawerRowItem(
+                      icon: Icons.trending_up_rounded,
+                      label: 'บันทึกการลงทุน',
+                      isSelected: currentRoute == '/trade-tracker',
+                      onTap: () => _navigate(context, '/trade-tracker'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+
+                _buildSectionTitle('จัดการ', textSecondary),
+                _buildGroupedCard(
+                  surfaceColor: surfaceColor,
+                  dividerColor: dividerColor,
+                  children: [
+                    _DrawerRowItem(
+                      icon: Icons.category_rounded,
+                      label: 'หมวดหมู่',
+                      isSelected: currentRoute == '/categories',
+                      onTap: () => _navigate(context, '/categories'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildInnerDivider(dividerColor),
+                    _DrawerRowItem(
+                      icon: Icons.settings_rounded,
+                      label: 'การตั้งค่า',
+                      isSelected: currentRoute == '/settings',
+                      onTap: () => _navigate(context, '/settings'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                      showBadge: true,
                     ),
                   ],
                 ),
@@ -254,6 +332,7 @@ class _DrawerRowItem extends StatelessWidget {
   final Color textPrimary;
   final Color textSecondary;
   final bool isDarkMode;
+  final bool showBadge;
 
   const _DrawerRowItem({
     required this.icon,
@@ -264,10 +343,13 @@ class _DrawerRowItem extends StatelessWidget {
     required this.textPrimary,
     required this.textSecondary,
     required this.isDarkMode,
+    this.showBadge = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final reinstallReminder = context.watch<ReinstallReminderService>();
+    final hasWarningBadge = showBadge && reinstallReminder.needsExpiredBadge;
     final iconBgColor = isSelected
         ? accent.withValues(alpha: 0.18)
         : (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05);
@@ -282,14 +364,41 @@ class _DrawerRowItem extends StatelessWidget {
         child: Row(
           children: [
             // Icon container with squircle shape
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
+                ),
+                if (hasWarningBadge)
+                  Positioned(
+                    right: -3,
+                    top: -3,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppColors.expense,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 14),
 

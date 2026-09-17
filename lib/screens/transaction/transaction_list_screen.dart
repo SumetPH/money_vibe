@@ -107,7 +107,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
               appBar: AppBar(
                 automaticallyImplyLeading: false,
-                toolbarHeight: 112,
+                toolbarHeight: 100,
                 backgroundColor: isDarkMode
                     ? AppColors.darkBackground
                     : AppColors.background,
@@ -151,7 +151,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
                 actions: [
-                  _HeaderAction(icon: Icons.search, onTap: _showSearchSheet),
+                  _HeaderAction(
+                    icon: Icons.search,
+                    onTap: _showSearchSheet,
+                    isDarkMode: isDarkMode,
+                  ),
                   const SizedBox(width: 12),
                 ],
               ),
@@ -725,15 +729,20 @@ class _HeaderAction extends StatelessWidget {
   final IconData icon;
   final Color? color;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
-  const _HeaderAction({required this.icon, required this.onTap}) : color = null;
+  const _HeaderAction({
+    required this.icon,
+    required this.onTap,
+    required this.isDarkMode,
+  }) : color = null;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 6),
       child: Material(
-        color: Theme.of(context).colorScheme.surface,
+        color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
@@ -779,7 +788,7 @@ class _CashFlowSummary extends StatelessWidget {
     final net = income - expense;
 
     return Container(
-      // padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.sheet),

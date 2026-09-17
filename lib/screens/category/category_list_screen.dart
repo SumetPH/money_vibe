@@ -94,23 +94,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: isLargeScreen ? 24 : 16,
-        leading: isLargeScreen
-            ? null
-            : Builder(
-                builder: (ctx) => Center(
-                  child: Material(
-                    color: surfaceColor,
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      icon: const Icon(Icons.menu_rounded, size: 20),
-                      color: textPrimary,
-                      tooltip: 'เมนู',
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
-                    ),
-                  ),
-                ),
-              ),
+        toolbarHeight: 100,
+        leading: null,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -119,7 +104,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
               'จัดการข้อมูล',
               style: TextStyle(
                 color: textSecondary,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
@@ -128,7 +113,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
               'หมวดหมู่',
               style: TextStyle(
                 color: textPrimary,
-                fontSize: 22,
+                fontSize: 30,
                 fontWeight: FontWeight.w700,
               ),
             ),

@@ -58,7 +58,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
           : const AppDrawer(currentRoute: '/accounts'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        toolbarHeight: 104,
+        toolbarHeight: 100,
         backgroundColor: isDarkMode
             ? AppColors.darkBackground
             : AppColors.background,

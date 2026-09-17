@@ -29,7 +29,7 @@
 
 - **Main Tab**: One of the three primary mobile work areas: accounts, budgets, or transactions. Switching a Main Tab preserves each area's visible state. _Avoid_: Main route, bottom-nav page
 - **Secondary Screen**: A screen opened from a Main Tab or another navigation entry that is not itself a Main Tab. Its bottom action surface may contain only the action applicable to that screen. _Avoid_: Nested tab, sub-tab
-- **Primary Navigation**: The mobile Bottom Navigation, Drawer, and desktop Sidebar expose the same three Main Tabs rather than separate navigation hierarchies. _Avoid_: Drawer-only screen, sidebar-only screen
+- **Primary Navigation**: The mobile Bottom Navigation switches between the three Main Tabs locally, while Drawer and desktop Sidebar expose those tabs alongside Secondary Screen destinations. _Avoid_: route-driven tab switch
 - **Inset Grouped Card**: An iOS-style rounded container card (`AppRadii.xLarge`) with horizontal margins, a subtle border, and an uppercase section title outside the card. _Avoid_: Full-width container, elevated Material card
 - **Selection Bottom Sheet**: A modal bottom sheet displayed via `showAppModalBottomSheet` used to present choices in a vertical list with clear selected state. _Avoid_: Dropdown, DropdownButtonFormField
 - **Status Capsule**: A pill-shaped badge (`AppRadii.full`) with a semantic tint background and bold text to indicate state (e.g. overweight, underweight, balanced). _Avoid_: Chip, raw colored text
