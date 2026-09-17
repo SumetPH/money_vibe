@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
@@ -106,15 +105,6 @@ class AppDrawer extends StatelessWidget {
               ],
             ),
           ),
-
-          // Footer (User account info + Safe area)
-          _buildFooter(
-            context,
-            isDarkMode: isDarkMode,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-            dividerColor: dividerColor,
-          ),
         ],
       ),
     );
@@ -182,11 +172,6 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.close_rounded, color: textSecondary, size: 22),
-              tooltip: 'ปิดเมนู',
-              onPressed: () => Navigator.pop(context),
-            ),
           ],
         ),
       ),
@@ -238,80 +223,6 @@ class AppDrawer extends StatelessWidget {
       indent: 62,
       endIndent: 0,
       color: dividerColor.withValues(alpha: 0.35),
-    );
-  }
-
-  Widget _buildFooter(
-    BuildContext context, {
-    required bool isDarkMode,
-    required Color textPrimary,
-    required Color textSecondary,
-    required Color dividerColor,
-  }) {
-    final authProvider = context.watch<AuthProvider>();
-    final email = authProvider.userEmail;
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: dividerColor.withValues(alpha: 0.35),
-            width: 1,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: (isDarkMode ? Colors.white : Colors.black).withValues(
-                    alpha: 0.08,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 18,
-                  color: textSecondary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      email != null && email.isNotEmpty
-                          ? email.split('@').first
-                          : 'Money Vibe',
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      email ?? 'พร้อมใช้งาน',
-                      style: TextStyle(color: textSecondary, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
