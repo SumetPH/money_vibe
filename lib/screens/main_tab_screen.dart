@@ -8,6 +8,7 @@ import 'account/account_list_screen.dart';
 import 'budget/budget_list_screen.dart';
 import 'transaction/transaction_form_screen.dart';
 import 'transaction/transaction_list_screen.dart';
+import 'statistics/statistics_screen.dart';
 
 class MainTabScreen extends StatefulWidget {
   final int initialTab;
@@ -25,11 +26,12 @@ class _MainTabScreenState extends State<MainTabScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedTab = widget.initialTab.clamp(0, 2);
+    _selectedTab = widget.initialTab.clamp(0, 3);
     _tabs = const [
       AccountListScreen(showPrimaryNavigation: false),
       BudgetListScreen(showPrimaryNavigation: false),
       TransactionListScreen(showPrimaryNavigation: false),
+      StatisticsScreen(showPrimaryNavigation: false),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<SyncProvider>().checkAndSync();
@@ -49,6 +51,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
                 _selectedTab = switch (route) {
                   '/budgets' => 1,
                   '/transactions' => 2,
+                  '/statistics' => 3,
                   _ => 0,
                 };
               }),
@@ -68,7 +71,6 @@ class _MainTabScreenState extends State<MainTabScreen> {
                     builder: (_) => const TransactionFormScreen(),
                   ),
                 ),
-                onOpenDrawer: () => Scaffold.of(context).openDrawer(),
               ),
             ),
     );
@@ -77,6 +79,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
   String _routeForTab(int tab) => switch (tab) {
     1 => '/budgets',
     2 => '/transactions',
+    3 => '/statistics',
     _ => '/accounts',
   };
 }

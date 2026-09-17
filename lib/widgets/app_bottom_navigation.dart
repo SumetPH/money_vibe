@@ -9,14 +9,12 @@ class AppBottomNavigation extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelectTab;
   final VoidCallback onAdd;
-  final VoidCallback onOpenDrawer;
 
   const AppBottomNavigation({
     super.key,
     required this.selectedIndex,
     required this.onSelectTab,
     required this.onAdd,
-    required this.onOpenDrawer,
   });
 
   @override
@@ -111,12 +109,12 @@ class AppBottomNavigation extends StatelessWidget {
                 ),
                 Expanded(
                   child: _item(
-                    icon: Icons.menu_rounded,
-                    label: 'เมนู',
-                    selected: false,
+                    icon: Icons.query_stats_rounded,
+                    label: 'สถิติ',
+                    selected: selectedIndex == 3,
                     accent: accent,
                     inactive: inactive,
-                    onTap: onOpenDrawer,
+                    onTap: () => onSelectTab(3),
                   ),
                 ),
               ],

@@ -15,7 +15,9 @@ import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
-  const StatisticsScreen({super.key});
+  final bool showPrimaryNavigation;
+
+  const StatisticsScreen({super.key, this.showPrimaryNavigation = true});
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -60,11 +62,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
         return Scaffold(
-          drawer: isLargeScreen
+          drawer: isLargeScreen || !widget.showPrimaryNavigation
               ? null
               : const AppDrawer(currentRoute: '/statistics'),
           appBar: AppBar(
-            leading: isLargeScreen
+            leading: isLargeScreen || !widget.showPrimaryNavigation
                 ? null
                 : Builder(
                     builder: (ctx) => IconButton(

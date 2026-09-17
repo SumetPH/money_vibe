@@ -101,6 +101,16 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
+                    _DrawerRowItem(
+                      icon: Icons.query_stats_rounded,
+                      label: 'สถิติ',
+                      isSelected: currentRoute == '/statistics',
+                      onTap: () => _navigate(context, '/statistics'),
+                      accent: accent,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      isDarkMode: isDarkMode,
+                    ),
                   ],
                 ),
 
@@ -127,17 +137,6 @@ class AppDrawer extends StatelessWidget {
                   surfaceColor: surfaceColor,
                   dividerColor: dividerColor,
                   children: [
-                    _DrawerRowItem(
-                      icon: Icons.query_stats_rounded,
-                      label: 'สถิติ',
-                      isSelected: currentRoute == '/statistics',
-                      onTap: () => _navigate(context, '/statistics'),
-                      accent: accent,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
-                      isDarkMode: isDarkMode,
-                    ),
-                    _buildInnerDivider(dividerColor),
                     _DrawerRowItem(
                       icon: Icons.trending_up_rounded,
                       label: 'บันทึกการลงทุน',
@@ -309,7 +308,8 @@ class AppDrawer extends StatelessWidget {
     if (onSelectTab != null &&
         (route == '/accounts' ||
             route == '/budgets' ||
-            route == '/transactions')) {
+            route == '/transactions' ||
+            route == '/statistics')) {
       onSelectTab!(route);
       return;
     }
