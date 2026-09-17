@@ -370,7 +370,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
-                    icon: const Icon(Icons.pie_chart_outline_rounded, size: 20),
+                    icon: const Icon(Icons.pie_chart_outline_rounded),
                     color: textPrimary,
                     tooltip: 'รายละเอียดกลุ่มงบประมาณ',
                     onPressed: () => _showGroupDetailsBottomSheet(
@@ -394,7 +394,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     shape: const CircleBorder(),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
-                      icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                      icon: const Icon(Icons.more_horiz_rounded),
                       color: textPrimary,
                       tooltip: 'ตัวเลือกเพิ่มเติม',
                       onPressed: () =>
