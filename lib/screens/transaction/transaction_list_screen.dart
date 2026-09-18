@@ -566,7 +566,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
       group.transactions.add(tx);
 
-      final summaryAmount = _getSummaryAmountInThb(tx, accountsById);
+      final summaryAmount = _getSummaryAmountInThb(tx, accountsById, accounts);
       if (summaryAmount > 0) {
         totalIncome += summaryAmount;
         group.income += summaryAmount;
@@ -598,6 +598,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   double _getSummaryAmountInThb(
     AppTransaction tx,
     Map<String, Account> accountsById,
+    List<Account> accounts,
   ) {
     final account = accountsById[tx.accountId];
     final rate = _effectiveRate(account);
@@ -607,8 +608,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           tx.type == TransactionType.increaseBalance) {
         return tx.amount * rate;
       }
-      if (tx.type == TransactionType.expense ||
-          tx.type == TransactionType.debtRepay ||
+      if (TransactionProvider.isActualExpense(tx, accounts) ||
           tx.type == TransactionType.decreaseBalance) {
         return -tx.amount * rate;
       }

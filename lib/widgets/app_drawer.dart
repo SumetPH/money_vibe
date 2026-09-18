@@ -101,6 +101,7 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
+                    _buildInnerDivider(dividerColor),
                     _DrawerRowItem(
                       icon: Icons.query_stats_rounded,
                       label: 'สถิติ',

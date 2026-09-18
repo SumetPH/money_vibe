@@ -192,6 +192,7 @@ class AddOnlyBottomBar extends StatelessWidget {
           top: false,
           minimum: const EdgeInsets.symmetric(vertical: 6),
           child: Center(
+            heightFactor: 1,
             child: Material(
               color: fabColor,
               shape: const CircleBorder(),
