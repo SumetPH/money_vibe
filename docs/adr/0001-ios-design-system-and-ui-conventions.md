@@ -20,6 +20,7 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
    - Left: Squircle Icon or Letter Avatar (32-40px, `AppRadii.medium`, background with 12-15% tint).
    - Middle: Title (`15sp`, `FontWeight.w600`, `textPrimary`) and subtitle (`12sp`, `textSecondary`).
    - Right: Trailing control (`CupertinoSwitch`, disclosure arrow, or selected value).
+   - **Transaction-form visual contract**: `TransactionFormScreen` is the reference composition for money-entry forms: segmented type control, prominent amount hero card, then titled inset selection and metadata cards. Recurring forms follow the same hierarchy and primitives; recurrence-only fields (month, notification, visibility, icon, color) extend the metadata cards without introducing a parallel form style.
 
 3. **Toggles**:
    - Always use `CupertinoSwitch` with explicit `activeTrackColor` (`AppColors.income` or accent) and `inactiveTrackColor` (`Color(0xFF39393D)` dark / `Color(0xFFE9E9EA)` light). Never use Material `SwitchListTile`.
@@ -50,7 +51,7 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
      - Two-tier title hierarchy in `AppBar.title`:
        - Eyebrow / Supertitle context: `13sp`, `FontWeight.w600`, `textSecondary` (e.g., 'ภาพรวมการเงิน' or period subtitle).
        - Large Title: `30sp`, `FontWeight.w700`, `textPrimary` (e.g., 'บัญชี', 'ธุรกรรม').
-     - Parameters: `toolbarHeight: 104` to `112`, `centerTitle: false`, `automaticallyImplyLeading: false`, and `titleSpacing: isLargeScreen ? 24 : 16`.
+     - Parameters: `toolbarHeight: 100`, `centerTitle: false`, `automaticallyImplyLeading: false`, and `titleSpacing: isLargeScreen ? 24 : 16`.
    - **Form / Detail Screens (Standard Header)**:
      - Centered title (`centerTitle: true`), `18sp`, `FontWeight.w700`, `textPrimary`.
      - `leadingWidth: 64` with circular surface back or close button.

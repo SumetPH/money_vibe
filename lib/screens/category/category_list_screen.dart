@@ -206,15 +206,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                   isDarkMode: isDarkMode,
                 ),
 
-                // iOS Search Field
-                if (!_isReorderMode)
-                  _buildSearchBar(
-                    surfaceColor: surfaceColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    isDarkMode: isDarkMode,
-                  ),
-
                 // Category List View
                 Expanded(
                   child: TabBarView(
@@ -284,7 +275,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: surfaceColor,
@@ -406,50 +397,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar({
-    required Color surfaceColor,
-    required Color textPrimary,
-    required Color textSecondary,
-    required bool isDarkMode,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-      child: SizedBox(
-        height: 38,
-        child: CupertinoSearchTextField(
-          controller: _searchController,
-          onChanged: (val) => setState(() => _searchQuery = val),
-          onSuffixTap: () {
-            _searchController.clear();
-            setState(() => _searchQuery = '');
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
-          placeholder: 'ค้นหาหมวดหมู่...',
-          placeholderStyle: TextStyle(
-            fontSize: 14,
-            color: textSecondary.withValues(alpha: 0.55),
-            fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
-          ),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: textPrimary,
-            fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
-          ),
-          backgroundColor: isDarkMode
-              ? AppColors.darkSurfaceVariant
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-          prefixInsets: const EdgeInsetsDirectional.fromSTEB(10, 0, 6, 0),
-          suffixInsets: const EdgeInsetsDirectional.fromSTEB(0, 0, 8, 0),
-          itemColor: textSecondary.withValues(alpha: 0.6),
-          itemSize: 18,
         ),
       ),
     );
@@ -1071,20 +1018,6 @@ class _CategoryItem extends StatelessWidget {
                           isDarkMode,
                         ),
                       ),
-                    ),
-                  ],
-
-                  // Trailing Action button
-                  if (!isReorderMode) ...[
-                    const SizedBox(width: 4),
-                    IconButton(
-                      icon: Icon(
-                        Icons.more_horiz_rounded,
-                        size: 20,
-                        color: textSecondaryColor,
-                      ),
-                      tooltip: 'จัดการหมวดหมู่',
-                      onPressed: () => _showCategoryMenu(context),
                     ),
                   ],
                 ],

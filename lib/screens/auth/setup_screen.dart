@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
+import '../../providers/settings_provider.dart';
 
 class SetupScreen extends StatelessWidget {
   const SetupScreen({super.key});
@@ -10,7 +12,7 @@ class SetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dbManager = context.watch<DatabaseManager>();
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
@@ -34,7 +36,12 @@ class SetupScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: surfaceColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.sheet),
+                  border: Border.all(
+                    color:
+                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
+                            .withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -51,7 +58,7 @@ class SetupScreen extends StatelessWidget {
                                         ? AppColors.darkExpense
                                         : AppColors.expense)
                                     .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppRadii.large),
                           ),
                           child: Icon(
                             Icons.cloud_off_outlined,
@@ -93,7 +100,7 @@ class SetupScreen extends StatelessWidget {
                                       ? AppColors.darkExpense
                                       : AppColors.expense)
                                   .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
                         ),
                         child: Text(
                           dbManager.error!,

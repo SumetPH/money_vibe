@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_form_screen.dart';
 
@@ -19,10 +20,6 @@ class BrokerReportListScreen extends StatelessWidget {
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final headerColor = AppColors.headerFor(
-      isDarkMode,
-      settingsProvider.themeColor,
-    );
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -83,22 +80,48 @@ class BrokerReportListScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: headerColor,
+        backgroundColor: backgroundColor,
         foregroundColor: textColor,
         elevation: 0,
-        title: const Text('รายงานประจำปี Broker'),
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        title: const Text(
+          'รายงานประจำปี Broker',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      BrokerReportFormScreen(portfolioId: portfolioId),
-                ),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Material(
+              color: surfaceColor,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                icon: const Icon(Icons.add_rounded, size: 20),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          BrokerReportFormScreen(portfolioId: portfolioId),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
@@ -114,10 +137,17 @@ class BrokerReportListScreen extends StatelessWidget {
               children: [
                 // Summary of all years
                 Container(
-                  color: surfaceColor,
+                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                    border: Border.all(
+                      color: dividerColor.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

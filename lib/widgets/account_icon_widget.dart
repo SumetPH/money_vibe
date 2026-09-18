@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:money_vibe/theme/app_radii.dart';
 import '../models/account.dart';
 import '../theme/app_colors.dart';
 
@@ -26,9 +27,10 @@ class AccountIconWidget extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: account.color.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(AppRadii.large),
         ),
-        child: ClipOval(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.large),
           child: CachedNetworkImage(
             imageUrl: account.iconUrl,
             width: size,
@@ -51,7 +53,7 @@ class AccountIconWidget extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: account.color.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(AppRadii.large),
       ),
       child: Center(
         child: Icon(account.icon, color: account.color, size: size * 0.6),

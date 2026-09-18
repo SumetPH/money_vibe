@@ -1,5 +1,4 @@
-import 'package:flutter/cupertino.dart'
-    show CupertinoSlidingSegmentedControl, CupertinoSwitch;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -30,6 +29,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedTab = 0;
   int? _selectedYear;
+  List<String> tabLable = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +51,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
+        final secondary = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -112,26 +115,50 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(50),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: CupertinoSlidingSegmentedControl<int>(
-                    groupValue: _selectedTab,
-                    backgroundColor: isDarkMode
-                        ? AppColors.darkSurfaceVariant
-                        : AppColors.surface,
-                    thumbColor: isDarkMode
-                        ? AppColors.darkSurface
-                        : AppColors.background,
-                    onValueChanged: (value) {
-                      if (value != null) setState(() => _selectedTab = value);
-                    },
-                    children: {
-                      0: _buildTabLabel('ทรัพย์สิน', textColor),
-                      1: _buildTabLabel('รายปี', textColor),
-                      2: _buildTabLabel('รายจ่าย', textColor),
-                      3: _buildTabLabel('รายรับ', textColor),
-                    },
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Material(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Row(
+                      children: tabLable.map((value) {
+                        final isSelected =
+                            _selectedTab == tabLable.indexOf(value);
+                        return Expanded(
+                          child: Material(
+                            color: isSelected
+                                ? AppColors.darkSurfaceVariant
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppRadii.large),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedTab = tabLable.indexOf(value);
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                child: Text(
+                                  value,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isSelected ? textColor : secondary,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
@@ -155,14 +182,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       },
     );
   }
-
-  Widget _buildTabLabel(String label, Color color) => Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Text(
-      label,
-      style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-    ),
-  );
 }
 
 class _StatisticsInsetCard extends StatelessWidget {
@@ -1510,6 +1529,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             : 0;
 
         return SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 6, bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

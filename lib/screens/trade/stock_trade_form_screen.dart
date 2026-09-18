@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 
@@ -345,10 +347,6 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     final bgColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final headerColor = AppColors.headerFor(
-      isDarkMode,
-      settingsProvider.themeColor,
-    );
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -366,8 +364,28 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text(_isEditing ? 'แก้ไข Trade' : 'เพิ่ม Trade'),
-        backgroundColor: headerColor,
+        backgroundColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Material(
+            color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.close_rounded, size: 20),
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        title: Text(
+          _isEditing ? 'แก้ไข Trade' : 'เพิ่ม Trade',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         actions: [
           AppBarActionButton(
             icon: const Icon(Icons.check),
@@ -380,236 +398,299 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       body: AbsorbPointer(
         absorbing: _isSaving,
         child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 12),
           children: [
-            Container(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              child: InkWell(
-                onTap: () => _pickPortfolio(isDarkMode),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Material(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(
+                    color:
+                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
+                            .withValues(alpha: 0.35),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 140,
-                            child: Text(
-                              'พอร์ต',
-                              style: TextStyle(
-                                color: secondaryColor,
-                                fontSize: 15,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    InkWell(
+                      onTap: () => _pickPortfolio(isDarkMode),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 140,
+                                  child: Text(
+                                    'พอร์ต',
+                                    style: TextStyle(
+                                      color: secondaryColor,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    selectedPortfolio?.name ?? 'เลือกพอร์ต',
+                                    textAlign: TextAlign.right,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: secondaryColor,
+                                ),
+                              ],
+                            ),
+                            if (_portfolioError != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                _portfolioError!,
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              selectedPortfolio?.name ?? 'เลือกพอร์ต',
-                              textAlign: TextAlign.right,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: textColor, fontSize: 16),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            color: secondaryColor,
-                          ),
-                        ],
+                            ],
+                          ],
+                        ),
                       ),
-                      if (_portfolioError != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          _portfolioError!,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: isDarkMode
-                                ? AppColors.darkExpense
-                                : AppColors.expense,
-                            fontSize: 12,
+                    ),
+                    _buildDivider(isDarkMode),
+                    _TradeTextFieldRow(
+                      label: 'Ticker',
+                      controller: _tickerController,
+                      hintText: 'AAPL',
+                      isDarkMode: isDarkMode,
+                      errorText: _tickerError,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                    _buildDivider(isDarkMode),
+                    _TradeTextFieldRow(
+                      label: 'จำนวนขาย',
+                      controller: _sharesController,
+                      hintText: '0',
+                      isDarkMode: isDarkMode,
+                      errorText: _sharesError,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [_decimalInputFormatter(7)],
+                    ),
+                    _buildDivider(isDarkMode),
+                    _TradeTextFieldRow(
+                      label: 'ราคาทุน ($_selectedCurrencyCode)',
+                      controller: _costBasisController,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _costBasisError,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [_decimalInputFormatter(4)],
+                    ),
+                    _buildDivider(isDarkMode),
+                    _TradeTextFieldRow(
+                      label: 'ราคาขาย ($_selectedCurrencyCode)',
+                      controller: _sellPriceController,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _sellPriceError,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [_decimalInputFormatter(4)],
+                    ),
+                    _buildDivider(isDarkMode),
+                    _TradeTextFieldRow(
+                      label: 'เงินสดรับ ($_selectedCurrencyCode)',
+                      controller: _cashReceivedController,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _cashReceivedError,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [_decimalInputFormatter(4)],
+                    ),
+
+                    _buildDivider(isDarkMode),
+                    _AdvancedDetailsSection(
+                      isDarkMode: isDarkMode,
+                      textColor: textColor,
+                      secondaryColor: secondaryColor,
+                      isExpanded: _showAdvancedDetails,
+                      onToggle: () {
+                        setState(() {
+                          _showAdvancedDetails = !_showAdvancedDetails;
+                        });
+                      },
+                      children: [
+                        _TradeTextFieldRow(
+                          label: 'ชื่อหุ้น',
+                          controller: _nameController,
+                          hintText: 'Optional',
+                          isDarkMode: isDarkMode,
+                        ),
+                        _buildDivider(isDarkMode),
+                        _TradeTextFieldRow(
+                          label: 'มูลค่าขายรวม (Gross)',
+                          controller: _grossProceedsController,
+                          hintText: 'Optional',
+                          isDarkMode: isDarkMode,
+                          errorText: _grossProceedsError,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_decimalInputFormatter(4)],
+                        ),
+                        _buildDivider(isDarkMode),
+                        _TradeTextFieldRow(
+                          label: 'ค่าธรรมเนียม Broker',
+                          controller: _brokerFeeController,
+                          hintText: 'Optional',
+                          isDarkMode: isDarkMode,
+                          errorText: _brokerFeeError,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_decimalInputFormatter(4)],
+                        ),
+                        _buildDivider(isDarkMode),
+                        _TradeTextFieldRow(
+                          label: 'SEC / Exchange Fee',
+                          controller: _exchangeFeeController,
+                          hintText: 'Optional',
+                          isDarkMode: isDarkMode,
+                          errorText: _exchangeFeeError,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_decimalInputFormatter(4)],
+                        ),
+                        _buildDivider(isDarkMode),
+                        _TradeTextFieldRow(
+                          label: 'Tax / VAT',
+                          controller: _taxFeeController,
+                          hintText: 'Optional',
+                          isDarkMode: isDarkMode,
+                          errorText: _taxFeeError,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_decimalInputFormatter(4)],
+                        ),
+                        _buildDivider(isDarkMode),
+                        Container(
+                          color: isDarkMode
+                              ? AppColors.darkSurface
+                              : AppColors.surface,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ยึด P/L จาก Broker',
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'หากเปิด จะไม่คำนวณ P/L จาก Average Cost',
+                                      style: TextStyle(
+                                        color: secondaryColor,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              CupertinoSwitch(
+                                value: _useBrokerPnl,
+                                activeTrackColor: isDarkMode
+                                    ? AppColors.darkIncome
+                                    : AppColors.income,
+                                inactiveTrackColor: isDarkMode
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (value) =>
+                                    setState(() => _useBrokerPnl = value),
+                              ),
+                            ],
                           ),
                         ),
+                        if (_useBrokerPnl) ...[
+                          _buildDivider(isDarkMode),
+                          _TradeTextFieldRow(
+                            label: 'Realized P/L ($_selectedCurrencyCode)',
+                            controller: _realizedPnlController,
+                            hintText: '0.00',
+                            isDarkMode: isDarkMode,
+                            errorText: _realizedPnlError,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            inputFormatters: [_decimalInputFormatter(2)],
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'Ticker',
-              controller: _tickerController,
-              hintText: 'AAPL',
-              isDarkMode: isDarkMode,
-              errorText: _tickerError,
-              keyboardType: TextInputType.text,
-              textCapitalization: TextCapitalization.characters,
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'จำนวนขาย',
-              controller: _sharesController,
-              hintText: '0',
-              isDarkMode: isDarkMode,
-              errorText: _sharesError,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [_decimalInputFormatter(7)],
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'ราคาทุน ($_selectedCurrencyCode)',
-              controller: _costBasisController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _costBasisError,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [_decimalInputFormatter(4)],
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'ราคาขาย ($_selectedCurrencyCode)',
-              controller: _sellPriceController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _sellPriceError,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [_decimalInputFormatter(4)],
-            ),
-            _buildDivider(isDarkMode),
-            _TradeTextFieldRow(
-              label: 'เงินสดรับ ($_selectedCurrencyCode)',
-              controller: _cashReceivedController,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              errorText: _cashReceivedError,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [_decimalInputFormatter(4)],
-            ),
-
-            _buildDivider(isDarkMode),
-            _AdvancedDetailsSection(
-              isDarkMode: isDarkMode,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-              isExpanded: _showAdvancedDetails,
-              onToggle: () {
-                setState(() {
-                  _showAdvancedDetails = !_showAdvancedDetails;
-                });
-              },
-              children: [
-                _TradeTextFieldRow(
-                  label: 'ชื่อหุ้น',
-                  controller: _nameController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                ),
-                _buildDivider(isDarkMode),
-                _TradeTextFieldRow(
-                  label: 'มูลค่าขายรวม (Gross)',
-                  controller: _grossProceedsController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                  errorText: _grossProceedsError,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _buildDivider(isDarkMode),
-                _TradeTextFieldRow(
-                  label: 'ค่าธรรมเนียม Broker',
-                  controller: _brokerFeeController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                  errorText: _brokerFeeError,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _buildDivider(isDarkMode),
-                _TradeTextFieldRow(
-                  label: 'SEC / Exchange Fee',
-                  controller: _exchangeFeeController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                  errorText: _exchangeFeeError,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _buildDivider(isDarkMode),
-                _TradeTextFieldRow(
-                  label: 'Tax / VAT',
-                  controller: _taxFeeController,
-                  hintText: 'Optional',
-                  isDarkMode: isDarkMode,
-                  errorText: _taxFeeError,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _buildDivider(isDarkMode),
-                Container(
-                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  child: SwitchListTile(
-                    title: Text(
-                      'ยึด P/L จาก Broker',
-                      style: TextStyle(color: textColor, fontSize: 15),
                     ),
-                    subtitle: Text(
-                      'หากเปิด จะไม่คำนวณ P/L จาก Average Cost',
-                      style: TextStyle(color: secondaryColor, fontSize: 13),
-                    ),
-                    value: _useBrokerPnl,
-                    onChanged: (val) {
-                      setState(() => _useBrokerPnl = val);
-                    },
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Material(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(
+                    color:
+                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
+                            .withValues(alpha: 0.35),
                   ),
                 ),
-                if (_useBrokerPnl) ...[
-                  _buildDivider(isDarkMode),
-                  _TradeTextFieldRow(
-                    label: 'Realized P/L ($_selectedCurrencyCode)',
-                    controller: _realizedPnlController,
-                    hintText: '0.00',
-                    isDarkMode: isDarkMode,
-                    errorText: _realizedPnlError,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    inputFormatters: [_decimalInputFormatter(2)],
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  title: Text('วันที่ขาย', style: TextStyle(color: textColor)),
+                  subtitle: Text(
+                    _formatDate(_soldAt),
+                    style: TextStyle(color: secondaryColor),
                   ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              tileColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              title: Text('วันที่ขาย', style: TextStyle(color: textColor)),
-              subtitle: Text(
-                _formatDate(_soldAt),
-                style: TextStyle(color: secondaryColor),
+                  trailing: Icon(Icons.calendar_today, color: secondaryColor),
+                  onTap: _pickSoldAt,
+                ),
               ),
-              trailing: Icon(Icons.calendar_today, color: secondaryColor),
-              onTap: _pickSoldAt,
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

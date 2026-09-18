@@ -6,6 +6,7 @@ import '../../models/portfolio_annual_report.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_action_button.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
@@ -285,10 +286,6 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final headerColor = AppColors.headerFor(
-      isDarkMode,
-      settingsProvider.themeColor,
-    );
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -307,19 +304,48 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: headerColor,
+        backgroundColor: backgroundColor,
         foregroundColor: textColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.close_rounded, size: 20),
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+            ),
+          ),
+        ),
         title: Text(
           widget.existingReport == null
               ? 'เพิ่มรายงาน Broker'
               : 'แก้ไขรายงาน Broker',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         actions: [
           if (widget.existingReport != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _isSaving ? null : _delete,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Material(
+                color: surfaceColor,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: isDarkMode
+                        ? AppColors.darkExpense
+                        : AppColors.expense,
+                  ),
+                  onPressed: _isSaving ? null : _delete,
+                ),
+              ),
             ),
           AppBarActionButton(
             icon: const Icon(Icons.check),
@@ -345,182 +371,219 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 ),
               ),
 
-              // ปี ค.ศ.
-              Container(
-                color: surfaceColor,
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 18, color: secondaryColor),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _yearController,
-                        style: TextStyle(color: textColor, fontSize: 16),
-                        decoration: InputDecoration(
-                          labelText: 'ปี ค.ศ. (Year)',
-                          labelStyle: TextStyle(color: secondaryColor),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return 'กรุณาระบุปี';
-                          return null;
-                        },
-                        enabled: widget.existingReport == null,
-                      ),
+                child: Material(
+                  color: surfaceColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                    side: BorderSide(
+                      color:
+                          (isDarkMode
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider)
+                              .withValues(alpha: 0.35),
                     ),
-                  ],
-                ),
-              ),
-              _buildDivider(isDarkMode),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(
-                  'เงินทุนเติมเข้า Broker จากรายงานประจำปี',
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-              ),
-              _buildMoneyField(
-                controller: _inflowController,
-                label: 'เงินทุนเติมเข้า Broker (USD)',
-                icon: Icons.download,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-                isRequired: true,
-              ),
-              _buildDivider(isDarkMode),
-              _buildMoneyField(
-                controller: _inflowThbController,
-                label: 'ยอดเงินบาทที่เติมเข้า Broker (THB)',
-                icon: Icons.currency_exchange_outlined,
-                iconColor: incomeColor,
-                amountColor: incomeColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      // ปี ค.ศ.
+                      Container(
+                        color: surfaceColor,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 18,
+                              color: secondaryColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _yearController,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 16,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'ปี ค.ศ. (Year)',
+                                  labelStyle: TextStyle(color: secondaryColor),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                ),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) {
+                                    return 'กรุณาระบุปี';
+                                  }
+                                  return null;
+                                },
+                                enabled: widget.existingReport == null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildDivider(isDarkMode),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(
-                  'เงินโอนกลับไทยจากรายงานประจำปี',
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              _buildMoneyField(
-                controller: _remittedUsdController,
-                label: 'ยอดโอนกลับไทยรวม (USD)',
-                icon: Icons.account_balance_outlined,
-                iconColor: transferColor,
-                amountColor: transferColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-              _buildMoneyField(
-                controller: _remittedThbController,
-                label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
-                icon: Icons.payments_outlined,
-                iconColor: transferColor,
-                amountColor: transferColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(
-                  'เงินปันผลจากรายงานประจำปี',
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              _buildMoneyField(
-                controller: _dividendGrossController,
-                label: 'ปันผลรวม (Gross Dividend USD)',
-                icon: Icons.savings_outlined,
-                iconColor: debtRepayColor,
-                amountColor: debtRepayColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-              _buildMoneyField(
-                controller: _dividendTaxWithheldController,
-                label: 'ภาษีปันผลหัก ณ ที่จ่าย (USD)',
-                icon: Icons.receipt_long_outlined,
-                iconColor: debtRepayColor,
-                amountColor: debtRepayColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-              _buildMoneyField(
-                controller: _dividendNetController,
-                label: 'ปันผลสุทธิ (Net Dividend USD)',
-                icon: Icons.account_balance_wallet_outlined,
-                iconColor: debtRepayColor,
-                amountColor: debtRepayColor,
-                surfaceColor: surfaceColor,
-                secondaryColor: secondaryColor,
-              ),
-              _buildDivider(isDarkMode),
-
-              const SizedBox(height: 24),
-
-              // Note
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.note_outlined, size: 18, color: secondaryColor),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _noteController,
-                        style: TextStyle(color: textColor, fontSize: 16),
-                        decoration: InputDecoration(
-                          labelText: 'บันทึกช่วยจำ (Note)',
-                          labelStyle: TextStyle(color: secondaryColor),
-                          hintText: 'Optional',
-                          hintStyle: TextStyle(color: secondaryColor),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Text(
+                          'เงินทุนเติมเข้า Broker จากรายงานประจำปี',
+                          style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      _buildMoneyField(
+                        controller: _inflowController,
+                        label: 'เงินทุนเติมเข้า Broker (USD)',
+                        icon: Icons.download,
+                        iconColor: incomeColor,
+                        amountColor: incomeColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                        isRequired: true,
+                      ),
+                      _buildDivider(isDarkMode),
+                      _buildMoneyField(
+                        controller: _inflowThbController,
+                        label: 'ยอดเงินบาทที่เติมเข้า Broker (THB)',
+                        icon: Icons.currency_exchange_outlined,
+                        iconColor: incomeColor,
+                        amountColor: incomeColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Text(
+                          'เงินโอนกลับไทยจากรายงานประจำปี',
+                          style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      _buildMoneyField(
+                        controller: _remittedUsdController,
+                        label: 'ยอดโอนกลับไทยรวม (USD)',
+                        icon: Icons.account_balance_outlined,
+                        iconColor: transferColor,
+                        amountColor: transferColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+                      _buildMoneyField(
+                        controller: _remittedThbController,
+                        label: 'ยอดเงินบาทที่ได้รับรวม (THB)',
+                        icon: Icons.payments_outlined,
+                        iconColor: transferColor,
+                        amountColor: transferColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Text(
+                          'เงินปันผลจากรายงานประจำปี',
+                          style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      _buildMoneyField(
+                        controller: _dividendGrossController,
+                        label: 'ปันผลรวม (Gross Dividend USD)',
+                        icon: Icons.savings_outlined,
+                        iconColor: debtRepayColor,
+                        amountColor: debtRepayColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+                      _buildMoneyField(
+                        controller: _dividendTaxWithheldController,
+                        label: 'ภาษีปันผลหัก ณ ที่จ่าย (USD)',
+                        icon: Icons.receipt_long_outlined,
+                        iconColor: debtRepayColor,
+                        amountColor: debtRepayColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+                      _buildMoneyField(
+                        controller: _dividendNetController,
+                        label: 'ปันผลสุทธิ (Net Dividend USD)',
+                        icon: Icons.account_balance_wallet_outlined,
+                        iconColor: debtRepayColor,
+                        amountColor: debtRepayColor,
+                        surfaceColor: surfaceColor,
+                        secondaryColor: secondaryColor,
+                      ),
+                      _buildDivider(isDarkMode),
+
+                      const SizedBox(height: 24),
+
+                      // Note
+                      Container(
+                        color: surfaceColor,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.note_outlined,
+                              size: 18,
+                              color: secondaryColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _noteController,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 16,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'บันทึกช่วยจำ (Note)',
+                                  labelStyle: TextStyle(color: secondaryColor),
+                                  hintText: 'Optional',
+                                  hintStyle: TextStyle(color: secondaryColor),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

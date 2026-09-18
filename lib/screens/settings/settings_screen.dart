@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../theme/theme_color_option.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -43,7 +45,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final isDarkMode = settings.isDarkMode;
-    final themeColor = settings.themeColor;
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
@@ -61,11 +62,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        leading: isLargeScreen ? null : null,
-        backgroundColor: AppColors.headerFor(isDarkMode, themeColor),
-        foregroundColor: Colors.white,
-        title: Text('ตั้งค่า'),
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleSpacing: isLargeScreen ? 24 : 16,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Money Vibe',
+              style: TextStyle(
+                color: secondaryTextColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'ตั้งค่า',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
       drawer: isLargeScreen ? null : const AppDrawer(currentRoute: '/settings'),
       body: Consumer<DatabaseManager>(
@@ -75,441 +101,469 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListView(
               children: [
                 // Account Section
-                _buildSectionHeader('บัญชีผู้ใช้', textColor),
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, _) {
-                    if (authProvider.isLoggedIn) {
-                      // แสดงเมื่อ login แล้ว
-                      return Column(
-                        children: [
-                          ListTile(
-                            leading: Icon(
-                              Icons.person,
+                _buildSectionHeader('บัญชีผู้ใช้', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, _) {
+                          if (authProvider.isLoggedIn) {
+                            // แสดงเมื่อ login แล้ว
+                            return Column(
+                              children: [
+                                ListTile(
+                                  leading: _SettingsIcon(
+                                    icon: Icons.person,
+                                    color: secondaryTextColor,
+                                  ),
+                                  title: Text(
+                                    authProvider.userEmail ?? 'ผู้ใช้',
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                  subtitle: Text(
+                                    'อีเมลปัจจุบัน',
+                                    style: TextStyle(color: secondaryTextColor),
+                                  ),
+                                ),
+                                ListTile(
+                                  leading: _SettingsIcon(
+                                    icon: Icons.logout,
+                                    color: isDarkMode
+                                        ? AppColors.darkExpense
+                                        : AppColors.expense,
+                                  ),
+                                  title: Text(
+                                    'ออกจากระบบ',
+                                    style: TextStyle(
+                                      color: isDarkMode
+                                          ? AppColors.darkExpense
+                                          : AppColors.expense,
+                                    ),
+                                  ),
+                                  onTap: () => _showLogoutDialog(context),
+                                ),
+                              ],
+                            );
+                          } else {
+                            // แสดงเมื่อยังไม่ได้ login
+                            return ListTile(
+                              leading: _SettingsIcon(
+                                icon: Icons.login,
+                                color: isDarkMode
+                                    ? AppColors.darkIncome
+                                    : AppColors.income,
+                              ),
+                              title: Text(
+                                'เข้าสู่ระบบ',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? AppColors.darkIncome
+                                      : AppColors.income,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
+                                style: TextStyle(color: secondaryTextColor),
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: secondaryTextColor,
+                              ),
+                              onTap: () => context.go('/auth'),
+                            );
+                          }
+                        },
+                      ),
+                      Divider(color: dividerColor),
+                      if (!dbManager.isConfigured) ...[
+                        ListTile(
+                          leading: const _SettingsIcon(
+                            icon: Icons.cloud_off,
+                            color: Colors.orange,
+                          ),
+                          title: Text(
+                            'ยังไม่ได้ตั้งค่า Supabase',
+                            style: TextStyle(color: textColor),
+                          ),
+                          subtitle: Text(
+                            'แอปนี้ต้องถูก build พร้อมค่า Supabase',
+                            style: TextStyle(color: secondaryTextColor),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right,
+                            color: secondaryTextColor,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const DataManagementScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                      Divider(color: dividerColor),
+                    ],
+                  ),
+                ),
+
+                // Appearance Section
+                _buildSectionHeader('ลักษณะ', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      Consumer<SettingsProvider>(
+                        builder: (context, settingsProvider, _) {
+                          return _SettingsToggleTile(
+                            icon: Icons.dark_mode_outlined,
+                            title: 'โหมดมืด',
+                            subtitle: 'ใช้ธีมสีเข้ม',
+                            isDarkMode: isDarkMode,
+                            value: settingsProvider.isDarkMode,
+                            onChanged: settingsProvider.setDarkMode,
+                          );
+                        },
+                      ),
+                      Divider(color: dividerColor),
+                      Consumer<SettingsProvider>(
+                        builder: (context, settingsProvider, _) {
+                          return ListTile(
+                            leading: _SettingsIcon(
+                              icon: Icons.palette_outlined,
                               color: secondaryTextColor,
                             ),
                             title: Text(
-                              authProvider.userEmail ?? 'ผู้ใช้',
+                              'สีธีม',
                               style: TextStyle(color: textColor),
                             ),
                             subtitle: Text(
-                              'อีเมลปัจจุบัน',
+                              settingsProvider.themeColor.label,
                               style: TextStyle(color: secondaryTextColor),
                             ),
-                          ),
-                          ListTile(
-                            leading: Icon(
-                              Icons.logout,
-                              color: isDarkMode
-                                  ? AppColors.darkExpense
-                                  : AppColors.expense,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _ThemeColorSwatch(
+                                  option: settingsProvider.themeColor,
+                                  isDarkMode: settingsProvider.isDarkMode,
+                                  selected: false,
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: secondaryTextColor,
+                                ),
+                              ],
                             ),
-                            title: Text(
-                              'ออกจากระบบ',
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? AppColors.darkExpense
-                                    : AppColors.expense,
-                              ),
-                            ),
-                            onTap: () => _showLogoutDialog(context),
-                          ),
-                        ],
-                      );
-                    } else {
-                      // แสดงเมื่อยังไม่ได้ login
-                      return ListTile(
-                        leading: Icon(
-                          Icons.login,
-                          color: isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income,
+                            onTap: _showThemeColorSheet,
+                          );
+                        },
+                      ),
+                      Divider(color: dividerColor),
+                    ],
+                  ),
+                ),
+
+                _buildSectionHeader('รอบคำนวณ', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: _SettingsIcon(
+                          icon: Icons.calendar_today_outlined,
+                          color: secondaryTextColor,
                         ),
                         title: Text(
-                          'เข้าสู่ระบบ',
-                          style: TextStyle(
-                            color: isDarkMode
-                                ? AppColors.darkIncome
-                                : AppColors.income,
-                          ),
+                          'วันเริ่มรอบรายเดือน',
+                          style: TextStyle(color: textColor),
                         ),
                         subtitle: Text(
-                          'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
+                          'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณและสถิติรายปี',
                           style: TextStyle(color: secondaryTextColor),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
                           color: secondaryTextColor,
                         ),
-                        onTap: () => context.go('/auth'),
-                      );
-                    }
-                  },
+                        onTap: _showMonthlyCycleStartDaySheet,
+                      ),
+                      Divider(color: dividerColor),
+                    ],
+                  ),
                 ),
-                Divider(color: dividerColor),
-                if (!dbManager.isConfigured) ...[
-                  ListTile(
-                    leading: Icon(Icons.cloud_off, color: Colors.orange),
-                    title: Text(
-                      'ยังไม่ได้ตั้งค่า Supabase',
-                      style: TextStyle(color: textColor),
-                    ),
-                    subtitle: Text(
-                      'แอปนี้ต้องถูก build พร้อมค่า Supabase',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: secondaryTextColor,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DataManagementScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-                Divider(color: dividerColor),
-
-                // Appearance Section
-                _buildSectionHeader('ลักษณะ', textColor),
-                Consumer<SettingsProvider>(
-                  builder: (context, settingsProvider, _) {
-                    return SwitchListTile(
-                      secondary: Icon(
-                        Icons.dark_mode_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text(
-                        'โหมดมืด',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        'ใช้ธีมสีเข้ม',
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      value: settingsProvider.isDarkMode,
-                      onChanged: (value) {
-                        settingsProvider.setDarkMode(value);
-                      },
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-                Consumer<SettingsProvider>(
-                  builder: (context, settingsProvider, _) {
-                    return ListTile(
-                      leading: Icon(
-                        Icons.palette_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text('สีธีม', style: TextStyle(color: textColor)),
-                      subtitle: Text(
-                        settingsProvider.themeColor.label,
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ThemeColorSwatch(
-                            option: settingsProvider.themeColor,
-                            isDarkMode: settingsProvider.isDarkMode,
-                            selected: false,
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.chevron_right, color: secondaryTextColor),
-                        ],
-                      ),
-                      onTap: _showThemeColorSheet,
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                _buildSectionHeader('รอบคำนวณ', textColor),
-                ListTile(
-                  leading: Icon(
-                    Icons.calendar_today_outlined,
-                    color: secondaryTextColor,
-                  ),
-                  title: Text(
-                    'วันเริ่มรอบรายเดือน',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณและสถิติรายปี',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: _showMonthlyCycleStartDaySheet,
-                ),
-                Divider(color: dividerColor),
 
                 // API Section
-                _buildSectionHeader('API', textColor),
+                _buildSectionHeader('API', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      Consumer<SettingsProvider>(
+                        builder: (context, settings, _) {
+                          return _SettingsToggleTile(
+                            icon: Icons.currency_exchange_outlined,
+                            title: 'อัตราแลกเปลี่ยนจาก Yahoo',
+                            subtitle: settings.useYahooForExchangeRate
+                                ? 'ใช้ Yahoo Finance สำหรับ USD/THB'
+                                : 'ใช้ Frankfurter สำหรับ USD/THB',
+                            isDarkMode: isDarkMode,
+                            value: settings.useYahooForExchangeRate,
+                            onChanged: (value) =>
+                                settings.setExchangeRateSource(
+                                  value
+                                      ? ExchangeRateSource.yahoo
+                                      : ExchangeRateSource.frankfurter,
+                                ),
+                          );
+                        },
+                      ),
+                      Divider(color: dividerColor),
 
-                Consumer<SettingsProvider>(
-                  builder: (context, settings, _) {
-                    return SwitchListTile(
-                      secondary: Icon(
-                        Icons.currency_exchange_outlined,
-                        color: secondaryTextColor,
+                      Consumer<SettingsProvider>(
+                        builder: (context, settings, _) {
+                          return _SettingsToggleTile(
+                            icon: Icons.schedule_outlined,
+                            title: 'ราคา Pre/Post จาก Yahoo',
+                            subtitle: settings.useYahooExtendedHoursPrice
+                                ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
+                                : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
+                            isDarkMode: isDarkMode,
+                            value: settings.useYahooExtendedHoursPrice,
+                            onChanged: (value) =>
+                                settings.setUseYahooExtendedHoursPrice(value),
+                          );
+                        },
                       ),
-                      title: Text(
-                        'อัตราแลกเปลี่ยนจาก Yahoo',
-                        style: TextStyle(color: textColor),
+                      Divider(color: dividerColor),
+
+                      Consumer<SettingsProvider>(
+                        builder: (context, settings, _) {
+                          final finnhubReady = settings.isFinnhubConfigured;
+
+                          return _SettingsToggleTile(
+                            icon: Icons.toggle_on_outlined,
+                            title: 'ราคาจาก Finnhub',
+                            subtitle: finnhubReady
+                                ? settings.useFinnhubForPrices
+                                      ? 'Finnhub API'
+                                      : 'Yahoo Finance'
+                                : 'ยังไม่ได้ตั้งค่า Finnhub API key',
+                            isDarkMode: isDarkMode,
+                            value: settings.useFinnhubForPrices,
+                            onChanged: finnhubReady
+                                ? (value) =>
+                                      settings.setUseFinnhubForPrices(value)
+                                : null,
+                          );
+                        },
                       ),
-                      subtitle: Text(
-                        settings.useYahooForExchangeRate
-                            ? 'ใช้ Yahoo Finance สำหรับ USD/THB'
-                            : 'ใช้ Frankfurter สำหรับ USD/THB',
-                        style: TextStyle(color: secondaryTextColor),
+                      Divider(color: dividerColor),
+
+                      ListTile(
+                        leading: _SettingsIcon(
+                          icon: Icons.api,
+                          color: secondaryTextColor,
+                        ),
+                        title: Text(
+                          'Finnhub API Key',
+                          style: TextStyle(color: textColor),
+                        ),
+                        subtitle: Text(
+                          'ตั้งค่า API key สำหรับดึงราคาหุ้น',
+                          style: TextStyle(color: secondaryTextColor),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: secondaryTextColor,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const FinnhubApiKeySettingsScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      value: settings.useYahooForExchangeRate,
-                      onChanged: (value) => settings.setExchangeRateSource(
-                        value
-                            ? ExchangeRateSource.yahoo
-                            : ExchangeRateSource.frankfurter,
+                      Divider(color: dividerColor),
+
+                      ListTile(
+                        leading: _SettingsIcon(
+                          icon: Icons.auto_awesome,
+                          color: secondaryTextColor,
+                        ),
+                        title: Text(
+                          'LLM API Key',
+                          style: TextStyle(color: textColor),
+                        ),
+                        subtitle: Text(
+                          'ตั้งค่า API key สำหรับ LLM',
+                          style: TextStyle(color: secondaryTextColor),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: secondaryTextColor,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const LLMApiKeySettingsScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                      Divider(color: dividerColor),
+                    ],
+                  ),
                 ),
-                Divider(color: dividerColor),
-
-                Consumer<SettingsProvider>(
-                  builder: (context, settings, _) {
-                    return SwitchListTile(
-                      secondary: Icon(
-                        Icons.schedule_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text(
-                        'ราคา Pre/Post จาก Yahoo',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        settings.useYahooExtendedHoursPrice
-                            ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
-                            : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      value: settings.useYahooExtendedHoursPrice,
-                      onChanged: (value) =>
-                          settings.setUseYahooExtendedHoursPrice(value),
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                Consumer<SettingsProvider>(
-                  builder: (context, settings, _) {
-                    final finnhubReady = settings.isFinnhubConfigured;
-
-                    return SwitchListTile(
-                      secondary: Icon(
-                        Icons.toggle_on_outlined,
-                        color: secondaryTextColor,
-                      ),
-                      title: Text(
-                        'ราคาจาก Finnhub',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        finnhubReady
-                            ? settings.useFinnhubForPrices
-                                  ? 'Finnhub API'
-                                  : 'Yahoo Finance'
-                            : 'ยังไม่ได้ตั้งค่า Finnhub API key',
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      value: settings.useFinnhubForPrices,
-                      onChanged: finnhubReady
-                          ? (value) => settings.setUseFinnhubForPrices(value)
-                          : null,
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                ListTile(
-                  leading: Icon(Icons.api, color: secondaryTextColor),
-                  title: Text(
-                    'Finnhub API Key',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'ตั้งค่า API key สำหรับดึงราคาหุ้น',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const FinnhubApiKeySettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
-
-                ListTile(
-                  leading: Icon(Icons.auto_awesome, color: secondaryTextColor),
-                  title: Text(
-                    'LLM API Key',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'ตั้งค่า API key สำหรับ LLM',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LLMApiKeySettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                Divider(color: dividerColor),
 
                 // Data Management Section
-                _buildSectionHeader('ข้อมูล', textColor),
-                ListTile(
-                  leading: Icon(
-                    Icons.content_copy_outlined,
-                    color: secondaryTextColor,
-                  ),
-                  title: Text(
-                    'คัดลอกข้อมูลสำหรับ AI',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    'สรุปข้อมูลการเงินเป็น Markdown สำหรับใช้กับ LLM',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: _showAiFinanceExportSheet,
-                ),
-                Divider(color: dividerColor),
-                ListTile(
-                  leading: Icon(
-                    Icons.cloud,
-                    color: dbManager.isConfigured ? Colors.blue : Colors.orange,
-                  ),
-                  title: Text(
-                    'จัดการข้อมูล',
-                    style: TextStyle(color: textColor),
-                  ),
-                  subtitle: Text(
-                    dbManager.isConfigured
-                        ? 'ฐานข้อมูล: Supabase (Cloud)'
-                        : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
-                    style: TextStyle(color: secondaryTextColor),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right,
-                    color: secondaryTextColor,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DataManagementScreen(),
+                _buildSectionHeader('ข้อมูล', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: _SettingsIcon(
+                          icon: Icons.content_copy_outlined,
+                          color: secondaryTextColor,
+                        ),
+                        title: Text(
+                          'คัดลอกข้อมูลสำหรับ AI',
+                          style: TextStyle(color: textColor),
+                        ),
+                        subtitle: Text(
+                          'สรุปข้อมูลการเงินเป็น Markdown สำหรับใช้กับ LLM',
+                          style: TextStyle(color: secondaryTextColor),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: secondaryTextColor,
+                        ),
+                        onTap: _showAiFinanceExportSheet,
                       ),
-                    );
-                  },
+                      Divider(color: dividerColor),
+                      ListTile(
+                        leading: _SettingsIcon(
+                          icon: Icons.cloud,
+                          color: dbManager.isConfigured
+                              ? Colors.blue
+                              : Colors.orange,
+                        ),
+                        title: Text(
+                          'จัดการข้อมูล',
+                          style: TextStyle(color: textColor),
+                        ),
+                        subtitle: Text(
+                          dbManager.isConfigured
+                              ? 'ฐานข้อมูล: Supabase (Cloud)'
+                              : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
+                          style: TextStyle(color: secondaryTextColor),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: secondaryTextColor,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const DataManagementScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(color: dividerColor),
+                    ],
+                  ),
                 ),
-                Divider(color: dividerColor),
 
                 if (reinstallReminder.isSupported &&
                     reinstallReminder.state != null) ...[
-                  _buildSectionHeader('การติดตั้ง', textColor),
-                  ListTile(
-                    leading: Icon(
-                      reinstallReminder.needsExpiredBadge
-                          ? Icons.error_outline
-                          : Icons.timer_outlined,
-                      color: reinstallReminder.needsExpiredBadge
-                          ? (isDarkMode
-                                ? AppColors.darkExpense
-                                : AppColors.expense)
-                          : secondaryTextColor,
-                    ),
-                    title: Text(
-                      'สถานะการติดตั้ง',
-                      style: TextStyle(color: textColor),
-                    ),
-                    subtitle: Text(
-                      reinstallReminder.needsExpiredBadge
-                          ? 'หมดอายุแล้ว กรุณาติดตั้งใหม่'
-                          : 'เหลือ ${reinstallReminder.remainingLabel}',
-                      style: TextStyle(color: secondaryTextColor),
+                  _buildSectionHeader('การติดตั้ง', secondaryTextColor),
+                  _SettingsGroup(
+                    isDarkMode: isDarkMode,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: _SettingsIcon(
+                            icon: reinstallReminder.needsExpiredBadge
+                                ? Icons.error_outline
+                                : Icons.timer_outlined,
+                            color: reinstallReminder.needsExpiredBadge
+                                ? (isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense)
+                                : secondaryTextColor,
+                          ),
+                          title: Text(
+                            'สถานะการติดตั้ง',
+                            style: TextStyle(color: textColor),
+                          ),
+                          subtitle: Text(
+                            reinstallReminder.needsExpiredBadge
+                                ? 'หมดอายุแล้ว กรุณาติดตั้งใหม่'
+                                : 'เหลือ ${reinstallReminder.remainingLabel}',
+                            style: TextStyle(color: secondaryTextColor),
+                          ),
+                        ),
+                        Divider(color: dividerColor),
+                        _SettingsToggleTile(
+                          icon: Icons.notifications_outlined,
+                          title: 'แจ้งเตือนติดตั้งใหม่',
+                          subtitle: reinstallReminder.notificationEnabled
+                              ? 'แจ้งเตือนเมื่อครบ 5 วัน'
+                              : 'ปิดการแจ้งเตือนแล้ว',
+                          isDarkMode: isDarkMode,
+                          value: reinstallReminder.notificationEnabled,
+                          onChanged: reinstallReminder.setNotificationEnabled,
+                        ),
+                        Divider(color: dividerColor),
+                      ],
                     ),
                   ),
-                  Divider(color: dividerColor),
-                  SwitchListTile(
-                    secondary: Icon(
-                      Icons.notifications_outlined,
-                      color: secondaryTextColor,
-                    ),
-                    title: Text(
-                      'แจ้งเตือนติดตั้งใหม่',
-                      style: TextStyle(color: textColor),
-                    ),
-                    subtitle: Text(
-                      reinstallReminder.notificationEnabled
-                          ? 'แจ้งเตือนเมื่อครบ 5 วัน'
-                          : 'ปิดการแจ้งเตือนแล้ว',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    value: reinstallReminder.notificationEnabled,
-                    onChanged: reinstallReminder.setNotificationEnabled,
-                  ),
-                  Divider(color: dividerColor),
                 ],
 
                 // About Section
-                _buildSectionHeader('เกี่ยวกับ', textColor),
-                FutureBuilder<PackageInfo>(
-                  future: _packageInfoFuture,
-                  builder: (context, snapshot) {
-                    final versionText = snapshot.hasData
-                        ? _formatVersion(snapshot.data!)
-                        : 'กำลังโหลด...';
+                _buildSectionHeader('เกี่ยวกับ', secondaryTextColor),
+                _SettingsGroup(
+                  isDarkMode: isDarkMode,
+                  child: Column(
+                    children: [
+                      FutureBuilder<PackageInfo>(
+                        future: _packageInfoFuture,
+                        builder: (context, snapshot) {
+                          final versionText = snapshot.hasData
+                              ? _formatVersion(snapshot.data!)
+                              : 'กำลังโหลด...';
 
-                    return ListTile(
-                      leading: Icon(
-                        Icons.info_outline,
-                        color: secondaryTextColor,
+                          return ListTile(
+                            leading: _SettingsIcon(
+                              icon: Icons.info_outline,
+                              color: secondaryTextColor,
+                            ),
+                            title: Text(
+                              'เวอร์ชัน',
+                              style: TextStyle(color: textColor),
+                            ),
+                            subtitle: Text(
+                              versionText,
+                              style: TextStyle(color: secondaryTextColor),
+                            ),
+                          );
+                        },
                       ),
-                      title: Text(
-                        'เวอร์ชัน',
-                        style: TextStyle(color: textColor),
-                      ),
-                      subtitle: Text(
-                        versionText,
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -833,10 +887,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title, Color textColor) {
-    return ListTile(
-      title: Text(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+      child: Text(
         title,
-        style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: textColor,
+        ),
       ),
     );
   }
@@ -853,7 +913,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       tileColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      leading: Icon(icon, color: secondaryTextColor),
+      leading: _SettingsIcon(icon: icon, color: secondaryTextColor),
       title: Text(title, style: TextStyle(color: textColor)),
       subtitle: Text(
         subtitle,
@@ -886,6 +946,7 @@ class _ThemeColorSwatch extends StatelessWidget {
       width: 44,
       height: 28,
       padding: const EdgeInsets.all(3),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurfaceVariant : AppColors.surface,
         borderRadius: BorderRadius.circular(8),
@@ -918,6 +979,124 @@ class _ThemeColorSwatch extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  final bool isDarkMode;
+  final Widget child;
+
+  const _SettingsGroup({required this.isDarkMode, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Material(
+        color: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTileTheme(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 10,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _SettingsIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadii.large),
+      ),
+      child: Icon(icon, color: color, size: 20),
+    );
+  }
+}
+
+class _SettingsToggleTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final bool isDarkMode;
+
+  const _SettingsToggleTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          _SettingsIcon(icon: icon, color: textSecondary),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: textSecondary, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          CupertinoSwitch(
+            value: value,
+            activeTrackColor: isDarkMode
+                ? AppColors.darkIncome
+                : AppColors.income,
+            inactiveTrackColor: isDarkMode
+                ? const Color(0xFF39393D)
+                : const Color(0xFFE9E9EA),
+            onChanged: onChanged,
           ),
         ],
       ),

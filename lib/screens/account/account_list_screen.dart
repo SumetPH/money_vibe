@@ -160,7 +160,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                             color: isDarkMode
                                 ? AppColors.darkTextPrimary
                                 : AppColors.textPrimary,
-                            fontSize: 22,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -827,7 +827,7 @@ class _TotalRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -1066,7 +1066,7 @@ class _AccountItem extends StatelessWidget {
                 // Account icon
                 AccountIconWidget(
                   account: account,
-                  size: 46,
+                  size: 40,
                   isDarkMode: isDarkMode,
                 ),
                 const SizedBox(width: 12),

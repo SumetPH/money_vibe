@@ -808,11 +808,14 @@ class _CashFlowSummary extends StatelessWidget {
                   ),
                 ),
               ),
-              TextButton.icon(
-                onPressed: onSelectPeriod,
-                iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                label: Text(periodLabel),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 32),
+                child: TextButton.icon(
+                  onPressed: onSelectPeriod,
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  label: Text(periodLabel),
+                ),
               ),
             ],
           ),
@@ -845,7 +848,7 @@ class _CashFlowSummary extends StatelessWidget {
                 '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
                 style: TextStyle(
                   color: AppColors.getAmountColor(net, isDarkMode),
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -892,7 +895,7 @@ class _SummaryAmount extends StatelessWidget {
             '฿ ${formatAmount(amount)}',
             style: TextStyle(
               color: color,
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
           ),

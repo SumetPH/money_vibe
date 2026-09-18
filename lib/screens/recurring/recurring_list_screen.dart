@@ -12,9 +12,9 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/group_header.dart';
 import '../../providers/sync_provider.dart';
 import 'recurring_form_screen.dart';
+import 'recurring_section.dart';
 
 class RecurringListScreen extends StatefulWidget {
   const RecurringListScreen({super.key});
@@ -93,19 +93,49 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ? null
               : const AppDrawer(currentRoute: '/recurring'),
           appBar: AppBar(
-            leading: isLargeScreen
-                ? null
-                : Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
-                    ),
+            automaticallyImplyLeading: false,
+            toolbarHeight: 100,
+            backgroundColor: bgColor,
+            foregroundColor: textPrimary,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: false,
+            titleSpacing: isLargeScreen ? 24 : 16,
+            leading: null,
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'การวางแผนการเงิน',
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-            title: const Text('รายการประจำ'),
+                ),
+                Text(
+                  'รายการประจำ',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () => _showMenuBottomSheet(context, isDark),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Material(
+                  color: surfaceColor,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                    onPressed: () => _showMenuBottomSheet(context, isDark),
+                  ),
+                ),
               ),
             ],
           ),
@@ -145,48 +175,45 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                       return Column(
                         key: ValueKey('recurring_group_${entry.key.name}'),
                         children: [
-                          GroupHeader(
+                          RecurringSection(
                             title: entry.key.label,
-                            isDarkMode: isDark,
-                            trailing: [
-                              if (_isReorderMode)
-                                ReorderableDragStartListener(
-                                  index: groupIndex,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 8),
-                                    child: Icon(
-                                      Icons.drag_indicator,
-                                      color: dividerColor,
-                                      size: 20,
+                            trailing: _isReorderMode
+                                ? [
+                                    ReorderableDragStartListener(
+                                      index: groupIndex,
+                                      child: Icon(
+                                        Icons.drag_indicator,
+                                        color: dividerColor,
+                                        size: 20,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          ReorderableListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            buildDefaultDragHandles: false,
-                            onReorderItem: _isReorderMode
-                                ? (oldIndex, newIndex) =>
-                                      provider.reorderRecurring(
-                                        entry.key,
-                                        oldIndex,
-                                        newIndex,
-                                      )
-                                : (_, _) {},
-                            itemCount: entry.value.length,
-                            itemBuilder: (_, index) => _buildRecurringItem(
-                              context: context,
-                              provider: provider,
-                              recurring: entry.value[index],
-                              transactionsById: transactionsById,
-                              index: index,
-                              isDark: isDark,
-                              surfaceColor: surfaceColor,
-                              textPrimary: textPrimary,
-                              textSecondary: textSecondary,
-                              dividerColor: dividerColor,
+                                  ]
+                                : const [],
+                            child: ReorderableListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              buildDefaultDragHandles: false,
+                              onReorderItem: _isReorderMode
+                                  ? (oldIndex, newIndex) =>
+                                        provider.reorderRecurring(
+                                          entry.key,
+                                          oldIndex,
+                                          newIndex,
+                                        )
+                                  : (_, _) {},
+                              itemCount: entry.value.length,
+                              itemBuilder: (_, index) => _buildRecurringItem(
+                                context: context,
+                                provider: provider,
+                                recurring: entry.value[index],
+                                transactionsById: transactionsById,
+                                index: index,
+                                isDark: isDark,
+                                surfaceColor: surfaceColor,
+                                textPrimary: textPrimary,
+                                textSecondary: textSecondary,
+                                dividerColor: dividerColor,
+                              ),
                             ),
                           ),
                         ],
@@ -566,11 +593,11 @@ class _RecurringItem extends StatelessWidget {
                   ),
                 ],
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: recurring.color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
                   ),
                   child: Icon(recurring.icon, color: recurring.color, size: 20),
                 ),
@@ -759,7 +786,7 @@ class _TypeBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppRadii.full),
       ),
       child: Text(
         label,
@@ -785,7 +812,7 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(AppRadii.full),
       ),
       child: Text(
         label,

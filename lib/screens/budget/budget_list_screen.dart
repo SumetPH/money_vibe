@@ -422,7 +422,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         if (_isReorderMode)
                           _buildReorderBanner(isDarkMode, incomeColor),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                           child: _MonthSelector(
                             selectedMonth: _selectedMonth,
                             onPrevMonth: _prevMonth,
@@ -1168,7 +1168,7 @@ class _MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.full),
@@ -1677,7 +1677,7 @@ class _BudgetItemRow extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       color: budget.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppRadii.medium),
+                      borderRadius: BorderRadius.circular(AppRadii.large),
                     ),
                     child: Icon(budget.icon, color: budget.color, size: 22),
                   ),
@@ -1790,7 +1790,7 @@ class _BudgetItemRow extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             SizedBox(
-                              width: 50,
+                              width: 80,
                               child: _BudgetProgressBar(
                                 progress: _progress,
                                 color: _progressColor,

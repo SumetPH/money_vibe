@@ -15,15 +15,12 @@ class GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.background;
     final textColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
     return Container(
-      color: bgColor,
+      // color: bgColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
