@@ -108,6 +108,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               appBar: AppBar(
                 automaticallyImplyLeading: false,
                 toolbarHeight: 100,
+                elevation: 0,
+                scrolledUnderElevation: 0,
                 backgroundColor: isDarkMode
                     ? AppColors.darkBackground
                     : AppColors.background,

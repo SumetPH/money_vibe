@@ -59,6 +59,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: isDarkMode
             ? AppColors.darkBackground
             : AppColors.background,
