@@ -12,7 +12,6 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/app_bottom_navigation.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'transaction_form_screen.dart';
 
@@ -298,11 +297,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                 ],
               ),
-              bottomNavigationBar: isLargeScreen
-                  ? null
-                  : isFiltered
-                  ? AddOnlyBottomBar(onAdd: () => _openForm(context, null))
-                  : null,
             );
           },
     );
