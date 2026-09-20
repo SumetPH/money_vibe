@@ -154,6 +154,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 ),
                 actions: [
                   _HeaderAction(
+                    icon: Icons.add,
+                    onTap: _openAddTransactionForm,
+                    isDarkMode: isDarkMode,
+                  ),
+                  _HeaderAction(
                     icon: Icons.search,
                     onTap: _showSearchSheet,
                     isDarkMode: isDarkMode,
@@ -354,6 +359,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       ),
       _ => _filter.shortLabel,
     };
+  }
+
+  void _openAddTransactionForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
+    );
   }
 
   void _showSearchSheet() {
@@ -748,11 +760,6 @@ class _HeaderAction extends StatelessWidget {
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
-          tooltip: icon == Icons.search
-              ? 'ค้นหา'
-              : icon == Icons.tune
-              ? 'เลือกช่วงเวลา'
-              : 'เมนู',
           onPressed: onTap,
           icon: Icon(icon, color: color),
         ),

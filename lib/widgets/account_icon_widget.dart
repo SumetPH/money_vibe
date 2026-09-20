@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:money_vibe/theme/app_radii.dart';
 import '../models/account.dart';
 import '../theme/app_colors.dart';
 
 /// A widget that displays an account icon.
-/// Shows a cached network image if [account.iconUrl] is set (user-uploaded),
+/// Shows a network image if [account.iconUrl] is set (user-uploaded),
 /// otherwise falls back to the Material [account.icon].
 class AccountIconWidget extends StatelessWidget {
   final Account account;
@@ -31,15 +30,14 @@ class AccountIconWidget extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppRadii.large),
-          child: CachedNetworkImage(
-            imageUrl: account.iconUrl,
+          child: Image.network(
+            account.iconUrl,
             width: size,
             height: size,
             fit: BoxFit.cover,
-            placeholder: (context, url) => _buildLoadingIndicator(),
-            errorWidget: (context, url, error) => _buildIconFallback(),
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : _buildLoadingIndicator(),
+            errorBuilder: (context, error, stackTrace) => _buildIconFallback(),
           ),
         ),
       );
