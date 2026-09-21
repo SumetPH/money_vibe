@@ -35,7 +35,7 @@ class AppBottomNavigation extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: surface,
-          borderRadius: BorderRadius.circular(AppRadii.sheet),
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
           border: Border.all(
             color: dividerColor.withValues(alpha: 0.35),
             width: 1,
@@ -53,7 +53,7 @@ class AppBottomNavigation extends StatelessWidget {
           color: Colors.transparent,
           child: SafeArea(
             top: false,
-            minimum: const EdgeInsets.symmetric(vertical: 6),
+            minimum: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
             child: Row(
               children: [
                 Expanded(
@@ -136,7 +136,7 @@ class AppBottomNavigation extends StatelessWidget {
     final color = selected ? accent : inactive;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadii.medium),
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
       child: SizedBox(
         height: 60,
         child: Column(

@@ -13,6 +13,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/account_icon_widget.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
@@ -178,7 +179,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 slivers: [
                   if (_selectedCycleMonth != null)
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       sliver: SliverToBoxAdapter(
                         child: MonthlyCycleSelector(
                           selectedMonth: _selectedCycleMonth!,
@@ -208,7 +209,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       ),
                     ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     sliver: SliverToBoxAdapter(
                       child: _CashFlowSummary(
                         income: summaryData.totalIncome,
@@ -1264,7 +1265,13 @@ class _TransactionItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildAccountWidget(account, toAccount, tx, textPrimaryColor),
+                  _buildAccountWidget(
+                    account,
+                    toAccount,
+                    tx,
+                    textPrimaryColor,
+                    isDarkMode,
+                  ),
                   if (subLabel.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
@@ -1344,6 +1351,7 @@ class _TransactionItem extends StatelessWidget {
     Account? toAccount,
     AppTransaction tx,
     Color textPrimaryColor,
+    bool isDarkMode,
   ) {
     final style = TextStyle(
       fontSize: 15,
@@ -1352,11 +1360,44 @@ class _TransactionItem extends StatelessWidget {
     );
 
     if (tx.type.usesDestinationAccount) {
-      return Text(
-        '${account?.name ?? '-'} → ${toAccount?.name ?? '-'}',
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (account != null) ...[
+            AccountIconWidget(
+              account: account,
+              size: 16,
+              isDarkMode: isDarkMode,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              account?.name ?? '-',
+              style: style,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text('→', style: style),
+          ),
+          if (toAccount != null) ...[
+            AccountIconWidget(
+              account: toAccount,
+              size: 16,
+              isDarkMode: isDarkMode,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              toAccount?.name ?? '-',
+              style: style,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       );
     }
 
@@ -1367,11 +1408,22 @@ class _TransactionItem extends StatelessWidget {
           : 'ปรับลด ';
     }
 
-    return Text(
-      '$prefix${account?.name ?? '-'}',
-      style: style,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (prefix.isNotEmpty) Text(prefix, style: style),
+        if (account != null) ...[
+          AccountIconWidget(account: account, size: 16, isDarkMode: isDarkMode),
+          const SizedBox(width: 4),
+        ],
+        Flexible(
+          child: Text(
+            account?.name ?? '-',
+            style: style,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

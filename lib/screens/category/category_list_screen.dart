@@ -275,8 +275,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      padding: const EdgeInsets.all(3),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.large),

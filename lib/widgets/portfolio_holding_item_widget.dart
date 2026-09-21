@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/stock_holding.dart';
@@ -244,7 +245,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนต่อหุ้น',
@@ -270,10 +275,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
                       color: sellPlanStatus.backgroundColor,
                       borderRadius: BorderRadius.circular(AppRadii.large),
@@ -333,6 +335,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 
     showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -908,7 +911,7 @@ class _DetailCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -965,7 +968,7 @@ class HoldingThumbnailWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
       color: accentColor.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(AppRadii.medium),
+      borderRadius: BorderRadius.circular(AppRadii.large),
     );
 
     Widget fallback() => Center(
@@ -980,24 +983,37 @@ class HoldingThumbnailWidget extends StatelessWidget {
       ),
     );
 
+    final image = kIsWeb
+        ? Image.network(
+            logoUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallback(),
+            errorBuilder: (context, error, stackTrace) => fallback(),
+          )
+        : CachedNetworkImage(
+            imageUrl: logoUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => fallback(),
+            errorWidget: (context, url, error) => fallback(),
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+          );
+
     final logoContainer = Container(
-      width: 42,
-      height: 42,
+      width: 40,
+      height: 40,
       decoration: decoration,
-      padding: logoUrl.isEmpty ? EdgeInsets.zero : const EdgeInsets.all(6),
       alignment: Alignment.center,
       child: logoUrl.isEmpty
           ? fallback()
           : ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadii.small),
-              child: CachedNetworkImage(
-                imageUrl: logoUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => fallback(),
-                errorWidget: (context, url, error) => fallback(),
-                fadeInDuration: Duration.zero,
-                fadeOutDuration: Duration.zero,
-              ),
+              borderRadius: BorderRadius.circular(AppRadii.large),
+              child: image,
             ),
     );
 

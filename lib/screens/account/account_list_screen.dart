@@ -135,7 +135,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 sliver: SliverToBoxAdapter(
                   child: _TotalRow(
                     label: 'ยอดเงินสุทธิ',

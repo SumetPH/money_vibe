@@ -423,7 +423,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         if (_isReorderMode)
                           _buildReorderBanner(isDarkMode, incomeColor),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: MonthlyCycleSelector(
                             selectedMonth: _selectedMonth,
                             onPrevMonth: _prevMonth,
