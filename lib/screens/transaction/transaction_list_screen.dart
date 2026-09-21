@@ -273,15 +273,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                             viewingAccountId: widget.accountId,
                                           ),
                                           if (entry.key < txs.length - 1)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 70,
-                                              ),
-                                              child: Divider(
-                                                height: 1,
-                                                color: isDarkMode
-                                                    ? AppColors.darkDivider
-                                                    : AppColors.divider,
+                                            Divider(
+                                              height: 1,
+                                              color: AppColors.listDividerFor(
+                                                isDarkMode,
                                               ),
                                             ),
                                         ],

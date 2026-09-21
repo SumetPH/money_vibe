@@ -54,7 +54,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final secondaryTextColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final reinstallReminder = context.watch<ReinstallReminderService>();
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
@@ -126,6 +125,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     style: TextStyle(color: secondaryTextColor),
                                   ),
                                 ),
+                                Divider(
+                                  height: 1,
+                                  color: AppColors.listDividerFor(isDarkMode),
+                                ),
                                 ListTile(
                                   leading: _SettingsIcon(
                                     icon: Icons.logout,
@@ -175,7 +178,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                         },
                       ),
-                      Divider(color: dividerColor),
                       if (!dbManager.isConfigured) ...[
                         ListTile(
                           leading: const _SettingsIcon(
@@ -205,7 +207,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                         ),
                       ],
-                      Divider(color: dividerColor),
                     ],
                   ),
                 ),
@@ -228,7 +229,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
                       Consumer<SettingsProvider>(
                         builder: (context, settingsProvider, _) {
                           return ListTile(
@@ -263,7 +267,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
                     ],
                   ),
                 ),
@@ -292,7 +295,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         onTap: _showMonthlyCycleStartDaySheet,
                       ),
-                      Divider(color: dividerColor),
                     ],
                   ),
                 ),
@@ -322,7 +324,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
 
                       Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
@@ -339,7 +344,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
 
                       Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
@@ -362,7 +370,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
 
                       ListTile(
                         leading: _SettingsIcon(
@@ -391,7 +402,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
 
                       ListTile(
                         leading: _SettingsIcon(
@@ -420,7 +434,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
                     ],
                   ),
                 ),
@@ -450,7 +463,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         onTap: _showAiFinanceExportSheet,
                       ),
-                      Divider(color: dividerColor),
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
                       ListTile(
                         leading: _SettingsIcon(
                           icon: Icons.cloud,
@@ -482,7 +498,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      Divider(color: dividerColor),
                     ],
                   ),
                 ),
@@ -516,7 +531,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: TextStyle(color: secondaryTextColor),
                           ),
                         ),
-                        Divider(color: dividerColor),
+                        Divider(
+                          height: 1,
+                          color: AppColors.listDividerFor(isDarkMode),
+                        ),
                         _SettingsToggleTile(
                           icon: Icons.notifications_outlined,
                           title: 'แจ้งเตือนติดตั้งใหม่',
@@ -527,7 +545,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           value: reinstallReminder.notificationEnabled,
                           onChanged: reinstallReminder.setNotificationEnabled,
                         ),
-                        Divider(color: dividerColor),
                       ],
                     ),
                   ),
@@ -585,10 +602,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final secondaryTextColor = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
-
         return SafeArea(
           child: ListView.separated(
             shrinkWrap: true,
@@ -596,7 +609,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             itemCount: ThemeColorOption.values.length + 1,
             separatorBuilder: (_, index) => index == 0
                 ? const SizedBox(height: 4)
-                : Divider(color: dividerColor, height: 1),
+                : Divider(
+                    height: 1,
+                    color: AppColors.listDividerFor(isDarkMode),
+                  ),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return const AppModalBottomSheetHeader(title: 'สีธีม');
@@ -1080,10 +1096,7 @@ class _SettingsToggleTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: textSecondary, fontSize: 12),
-                ),
+                Text(subtitle, style: TextStyle(color: textSecondary)),
               ],
             ),
           ),

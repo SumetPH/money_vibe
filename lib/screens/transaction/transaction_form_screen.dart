@@ -936,7 +936,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     final textPrimary = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final colorScheme = Theme.of(context).colorScheme;
 
     showAppModalBottomSheet(
@@ -955,9 +954,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 controller: scrollController,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: TransactionType.values.length,
-                separatorBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.only(left: 68),
-                  child: Divider(height: 1, color: dividerColor),
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  color: AppColors.listDividerFor(isDarkMode),
                 ),
                 itemBuilder: (context, index) {
                   final type = TransactionType.values[index];

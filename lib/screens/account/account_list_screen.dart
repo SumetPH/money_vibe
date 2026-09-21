@@ -1130,10 +1130,7 @@ class _AccountItem extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          Padding(
-            padding: const EdgeInsets.only(left: 72),
-            child: Divider(height: 1, color: dividerColor),
-          ),
+          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
       ],
     );
   }

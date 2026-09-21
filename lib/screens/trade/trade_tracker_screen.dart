@@ -834,7 +834,6 @@ class _PurchaseMonthSection extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -870,7 +869,10 @@ class _PurchaseMonthSection extends StatelessWidget {
                         onDelete: () => onDelete(entry.value),
                       ),
                       if (entry.key != section.purchases.length - 1)
-                        Divider(height: 1, color: dividerColor),
+                        Divider(
+                          height: 1,
+                          color: AppColors.listDividerFor(isDarkMode),
+                        ),
                     ],
                   ),
                 )
@@ -1947,7 +1949,6 @@ class _YearSelector extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return _TradeInsetCard(
       isDarkMode: isDarkMode,
@@ -1977,7 +1978,6 @@ class _YearSelector extends StatelessWidget {
               ),
             ],
           ),
-          Divider(height: 1, color: dividerColor),
         ],
       ),
     );
@@ -2087,7 +2087,6 @@ class _TradeMonthSection extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2124,7 +2123,10 @@ class _TradeMonthSection extends StatelessWidget {
                     onDelete: () => onDelete(trade),
                   ),
                   if (index != section.trades.length - 1)
-                    Divider(height: 1, color: dividerColor),
+                    Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
                 ],
               );
             }).toList(),
@@ -2149,7 +2151,6 @@ class _MonthlyTradeTable extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final profitColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final lossColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
@@ -2225,7 +2226,7 @@ class _MonthlyTradeTable extends StatelessWidget {
               ],
             ),
           ),
-          Divider(height: 1, color: dividerColor),
+          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
           ...summaries.asMap().entries.map((entry) {
             final index = entry.key;
             final monthSummary = entry.value;
@@ -2313,7 +2314,10 @@ class _MonthlyTradeTable extends StatelessWidget {
                   ),
                 ),
                 if (index != summaries.length - 1)
-                  Divider(height: 1, color: dividerColor),
+                  Divider(
+                    height: 1,
+                    color: AppColors.listDividerFor(isDarkMode),
+                  ),
               ],
             );
           }),

@@ -40,7 +40,6 @@ class CategoryPickerBottomSheet extends StatelessWidget {
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final colorScheme = Theme.of(context).colorScheme;
 
     return DraggableScrollableSheet(
@@ -57,9 +56,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
               itemCount: categories.length,
               separatorBuilder: (context, i) => Divider(
                 height: 1,
-                indent: 68,
-                endIndent: 16,
-                color: dividerColor.withValues(alpha: 0.35),
+                color: AppColors.listDividerFor(isDarkMode),
               ),
               itemBuilder: (_, i) {
                 final cat = categories[i];

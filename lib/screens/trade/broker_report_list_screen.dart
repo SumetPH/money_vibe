@@ -295,8 +295,10 @@ class BrokerReportListScreen extends StatelessWidget {
                 Expanded(
                   child: ListView.separated(
                     itemCount: reports.length,
-                    separatorBuilder: (context, index) =>
-                        Divider(height: 1, color: dividerColor),
+                    separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
                     itemBuilder: (context, index) {
                       final report = reports[index];
                       return Material(

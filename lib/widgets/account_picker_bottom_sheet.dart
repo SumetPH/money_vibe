@@ -116,9 +116,6 @@ class AccountPickerBottomSheet extends StatelessWidget {
                       final textPrimaryColor = isDarkMode
                           ? AppColors.darkTextPrimary
                           : AppColors.textPrimary;
-                      final dividerColor = isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider;
 
                       return Column(
                         children: [
@@ -176,9 +173,7 @@ class AccountPickerBottomSheet extends StatelessWidget {
                           ),
                           Divider(
                             height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: AppColors.listDividerFor(isDarkMode),
                           ),
                         ],
                       );

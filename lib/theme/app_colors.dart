@@ -25,7 +25,7 @@ class AppColors {
   static const Color darkSurfaceVariant = Color(0xFF2B2D31);
   static const Color darkTextPrimary = Color(0xFFE0E0E0);
   static const Color darkTextSecondary = Color(0xFFBDBDBD);
-  static const Color darkDivider = Color(0xFF4B5058);
+  static const Color darkDivider = Color(0xFF3F444C);
   static const Color darkSectionHeader = Color(0xFF2B2D31);
 
   // Slightly adjusted colors for better visibility on dark backgrounds
@@ -35,6 +35,9 @@ class AppColors {
   static const Color darkDebtRepay = Color(0xFFFFB74D);
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
   static const Color darkFabYellow = Color(0xFFFFB74D);
+
+  static Color listDividerFor(bool isDarkMode) =>
+      isDarkMode ? darkDivider : divider;
 
   static Color amountColor(double amount, {bool isDarkMode = false}) {
     if (amount.abs() < 0.005) {

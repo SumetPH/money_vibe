@@ -1101,9 +1101,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           final textSecondary = isDarkMode
               ? AppColors.darkTextSecondary
               : AppColors.textSecondary;
-          final dividerColor = isDarkMode
-              ? AppColors.darkDivider
-              : AppColors.divider;
           final checkColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.income;
@@ -1126,8 +1123,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                     itemCount: candidates.length + 1,
                     separatorBuilder: (context, index) => Divider(
                       height: 1,
-                      indent: 52,
-                      color: dividerColor.withValues(alpha: 0.3),
+                      color: AppColors.listDividerFor(isDarkMode),
                     ),
                     itemBuilder: (context, index) {
                       if (index == 0) {

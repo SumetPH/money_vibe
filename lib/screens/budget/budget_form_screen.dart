@@ -1552,7 +1552,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     itemCount: categories.length,
                     separatorBuilder: (context, i) => Divider(
                       height: 1,
-                      color: dividerColor.withValues(alpha: 0.3),
+                      color: AppColors.listDividerFor(isDark),
                     ),
                     itemBuilder: (_, i) {
                       final cat = categories[i];

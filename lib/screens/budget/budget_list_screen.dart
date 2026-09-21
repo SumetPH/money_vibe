@@ -1830,12 +1830,7 @@ class _BudgetItemRow extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          Divider(
-            height: 1,
-            indent: 64,
-            endIndent: 16,
-            color: dividerColor.withValues(alpha: 0.25),
-          ),
+          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
       ],
     );
   }

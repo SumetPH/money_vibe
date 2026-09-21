@@ -762,9 +762,7 @@ class _PortfolioInvestmentPlanScreenState
                         itemCount: widget.holdings.length,
                         separatorBuilder: (_, _) => Divider(
                           height: 1,
-                          indent: 64,
-                          endIndent: 16,
-                          color: dividerColor.withValues(alpha: 0.3),
+                          color: AppColors.listDividerFor(widget.isDarkMode),
                         ),
                         itemBuilder: (context, index) {
                           final holding = widget.holdings[index];

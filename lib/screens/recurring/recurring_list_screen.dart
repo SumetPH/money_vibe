@@ -213,6 +213,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                 textPrimary: textPrimary,
                                 textSecondary: textSecondary,
                                 dividerColor: dividerColor,
+                                showDivider: index != entry.value.length - 1,
                               ),
                             ),
                           ),
@@ -237,6 +238,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
     required Color textPrimary,
     required Color textSecondary,
     required Color dividerColor,
+    required bool showDivider,
   }) {
     var next = recurring.nextOccurrence;
     final typeColor = _typeColor(recurring.transactionType, isDark);
@@ -300,6 +302,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
         formatDate: _formatDate,
         onTap: () => _openDetail(context, recurring),
         onTapEdit: () => _openForm(context, recurring),
+        showDivider: showDivider,
       ),
     );
   }
@@ -546,6 +549,7 @@ class _RecurringItem extends StatelessWidget {
   final String Function(DateTime) formatDate;
   final VoidCallback onTap;
   final VoidCallback onTapEdit;
+  final bool showDivider;
 
   const _RecurringItem({
     required this.recurring,
@@ -564,6 +568,7 @@ class _RecurringItem extends StatelessWidget {
     required this.formatDate,
     required this.onTap,
     required this.onTapEdit,
+    required this.showDivider,
   });
 
   @override
@@ -686,7 +691,8 @@ class _RecurringItem extends StatelessWidget {
             ),
           ),
         ),
-        Divider(height: 1, color: dividerColor),
+        if (showDivider)
+          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
       ],
     );
   }

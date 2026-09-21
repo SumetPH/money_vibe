@@ -1620,9 +1620,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   if (index > 0 || groupName == 'ทั่วไป')
                     Divider(
                       height: 1,
-                      indent: 64,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.25),
+                      color: AppColors.listDividerFor(isDarkMode),
                     ),
                   PortfolioHoldingItemWidget(
                     holding: h,

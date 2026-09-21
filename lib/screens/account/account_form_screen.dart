@@ -1534,9 +1534,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           final headerColor = isDarkMode
               ? AppColors.darkIncome
               : AppColors.header;
-          final dividerColor = isDarkMode
-              ? AppColors.darkDivider
-              : AppColors.divider;
 
           return SafeArea(
             child: ConstrainedBox(
@@ -1554,9 +1551,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                       itemCount: AccountType.values.length,
                       separatorBuilder: (_, _) => Divider(
                         height: 1,
-                        indent: 16,
-                        endIndent: 16,
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: AppColors.listDividerFor(isDarkMode),
                       ),
                       itemBuilder: (_, i) {
                         final type = AccountType.values[i];

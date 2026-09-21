@@ -907,8 +907,6 @@ class _CategoryItem extends StatelessWidget {
     final textSecondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
     return Column(
       children: [
         Material(
@@ -1026,12 +1024,7 @@ class _CategoryItem extends StatelessWidget {
           ),
         ),
         if (!isLast)
-          Divider(
-            height: 1,
-            indent: reorderIndex != null ? 80 : 70,
-            endIndent: 16,
-            color: dividerColor.withValues(alpha: 0.3),
-          ),
+          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
       ],
     );
   }

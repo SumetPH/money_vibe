@@ -562,8 +562,6 @@ class _YearlyBarChart extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -621,7 +619,7 @@ class _YearlyBarChart extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, color: dividerColor),
+        Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
         ...monthlyData.asMap().entries.map((entry) {
           final i = entry.key;
           final d = entry.value;
@@ -700,7 +698,8 @@ class _YearlyBarChart extends StatelessWidget {
                   ),
                 ),
               ),
-              if (i < 11) Divider(height: 1, color: dividerColor),
+              if (i < 11)
+                Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
             ],
           );
         }),
@@ -1092,10 +1091,6 @@ class _CategoryPieChart extends StatelessWidget {
         final secondaryColor = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
-
         final categoryData = _calculateCategoryData(
           txProvider.transactions,
           catProvider.categories,
@@ -1257,8 +1252,10 @@ class _CategoryPieChart extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: categoryData.length,
-                    separatorBuilder: (_, _) =>
-                        Divider(height: 1, color: dividerColor),
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
                     itemBuilder: (context, index) {
                       final data = categoryData[index];
                       final percentage = total > 0
@@ -2080,8 +2077,10 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _NetWorthPeriodFilter.values.length,
-                  separatorBuilder: (_, _) =>
-                      Divider(height: 1, color: dividerColor),
+                  separatorBuilder: (_, _) => Divider(
+                    height: 1,
+                    color: AppColors.listDividerFor(isDarkMode),
+                  ),
                   itemBuilder: (_, index) {
                     final filter = _NetWorthPeriodFilter.values[index];
                     final isSelected = filter == _selectedFilter;

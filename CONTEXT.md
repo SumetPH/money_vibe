@@ -35,3 +35,4 @@
 - **Status Capsule**: A pill-shaped badge (`AppRadii.full`) with a semantic tint background and bold text to indicate state (e.g. overweight, underweight, balanced). _Avoid_: Chip, raw colored text
 - **Metric Grid**: A structured 2-column or 2x3 grid of rounded tiles showing related financial figures (e.g. target, current, diff). _Avoid_: Arbitrary Wrap, unaligned text column
 - **Numeric Input Box**: A rounded container housing a right-aligned bold numeric input with an integrated unit/currency label and tap-outside dismiss behavior. _Avoid_: Default underlined TextField
+- **List Row Divider**: A 1px full-width separator between rows in a list, using the theme-aware divider color at full opacity for visible contrast. _Avoid_: Inset divider, per-screen opacity

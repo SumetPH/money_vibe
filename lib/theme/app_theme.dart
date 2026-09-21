@@ -55,7 +55,7 @@ class AppTheme {
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.divider,
-      thickness: 0.5,
+      thickness: 1,
       space: 0,
     ),
     cardTheme: const CardThemeData(
@@ -161,7 +161,7 @@ class AppTheme {
       ),
       dividerTheme: DividerThemeData(
         color: darkDivider,
-        thickness: 0.5,
+        thickness: 1,
         space: 0,
       ),
       cardTheme: CardThemeData(

@@ -1157,7 +1157,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 controller: sc,
                 itemCount: categories.length,
                 separatorBuilder: (context, i) =>
-                    Divider(height: 1, color: dividerColor),
+                    Divider(height: 1, color: AppColors.listDividerFor(isDark)),
                 itemBuilder: (_, i) {
                   final cat = categories[i];
                   final isSelected = _categoryId == cat.id;

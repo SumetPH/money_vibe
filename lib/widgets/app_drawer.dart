@@ -79,7 +79,7 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
-                    _buildInnerDivider(dividerColor),
+                    _buildInnerDivider(isDarkMode),
                     _DrawerRowItem(
                       icon: Icons.donut_large_rounded,
                       label: 'งบประมาณ',
@@ -90,7 +90,7 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
-                    _buildInnerDivider(dividerColor),
+                    _buildInnerDivider(isDarkMode),
                     _DrawerRowItem(
                       icon: Icons.receipt_long_rounded,
                       label: 'รายการ',
@@ -101,7 +101,7 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
-                    _buildInnerDivider(dividerColor),
+                    _buildInnerDivider(isDarkMode),
                     _DrawerRowItem(
                       icon: Icons.query_stats_rounded,
                       label: 'สถิติ',
@@ -166,7 +166,7 @@ class AppDrawer extends StatelessWidget {
                       textSecondary: textSecondary,
                       isDarkMode: isDarkMode,
                     ),
-                    _buildInnerDivider(dividerColor),
+                    _buildInnerDivider(isDarkMode),
                     _DrawerRowItem(
                       icon: Icons.settings_rounded,
                       label: 'การตั้งค่า',
@@ -294,13 +294,12 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildInnerDivider(Color dividerColor) {
+  Widget _buildInnerDivider(bool isDarkMode) {
     return Divider(
       height: 1,
       thickness: 1,
-      indent: 62,
       endIndent: 0,
-      color: dividerColor.withValues(alpha: 0.35),
+      color: AppColors.listDividerFor(isDarkMode),
     );
   }
 
