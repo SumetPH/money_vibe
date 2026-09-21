@@ -14,6 +14,7 @@ import '../../main.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
@@ -423,7 +424,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                           _buildReorderBanner(isDarkMode, incomeColor),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                          child: _MonthSelector(
+                          child: MonthlyCycleSelector(
                             selectedMonth: _selectedMonth,
                             onPrevMonth: _prevMonth,
                             onNextMonth: _nextMonth,
@@ -885,6 +886,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         builder: (_) => TransactionListScreen(
           categoryIds: budget.categoryIds,
           fixedDateRange: period,
+          monthlyCycleMonth: _selectedMonth,
           title: budget.name,
         ),
       ),
@@ -1112,120 +1114,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         totalOverspent: totalOverspent,
         overallProgress: overallProgress,
         isDarkMode: isDarkMode,
-      ),
-    );
-  }
-}
-
-// ── Month Selector ─────────────────────────────────────────────────────────────
-
-class _MonthSelector extends StatelessWidget {
-  final DateTime selectedMonth;
-  final VoidCallback onPrevMonth;
-  final VoidCallback onNextMonth;
-  final Color surfaceColor;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color dividerColor;
-
-  const _MonthSelector({
-    required this.selectedMonth,
-    required this.onPrevMonth,
-    required this.onNextMonth,
-    required this.surfaceColor,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.dividerColor,
-  });
-
-  String _getPeriodLabel(BuildContext context) {
-    const thaiMonths = [
-      'ม.ค.',
-      'ก.พ.',
-      'มี.ค.',
-      'เม.ย.',
-      'พ.ค.',
-      'มิ.ย.',
-      'ก.ค.',
-      'ส.ค.',
-      'ก.ย.',
-      'ต.ค.',
-      'พ.ย.',
-      'ธ.ค.',
-    ];
-    final startDay = context.read<SettingsProvider>().monthlyCycleStartDay;
-    final period = monthlyCyclePeriod(selectedMonth, startDay);
-    final end = period.endExclusive.subtract(const Duration(days: 1));
-    final startMonth = thaiMonths[period.start.month - 1];
-    final endMonth = thaiMonths[end.month - 1];
-    final startYear = period.start.year == end.year
-        ? ''
-        : ' ${period.start.year}';
-    return '${period.start.day} $startMonth$startYear - '
-        '${end.day} $endMonth ${end.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.full),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: const Icon(Icons.chevron_left_rounded, size: 22),
-              color: textPrimary,
-              onPressed: onPrevMonth,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.calendar_today_rounded,
-                  size: 13,
-                  color: textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _getPeriodLabel(context),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: const Icon(Icons.chevron_right_rounded, size: 22),
-              color: textPrimary,
-              onPressed: onNextMonth,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -13,6 +13,8 @@ import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/monthly_cycle_selector.dart';
+import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class TransactionListScreen extends StatefulWidget {
   final List<String>? categoryIds;
   final List<String>? transactionIds;
   final DateTimeRange? fixedDateRange;
+  final DateTime? monthlyCycleMonth;
   final DateTime? creditCardPaymentStartDate;
   final String? title;
 
@@ -31,6 +34,7 @@ class TransactionListScreen extends StatefulWidget {
     this.categoryIds,
     this.transactionIds,
     this.fixedDateRange,
+    this.monthlyCycleMonth,
     this.creditCardPaymentStartDate,
     this.title,
   });
@@ -43,10 +47,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   _PeriodFilter _filter = _PeriodFilter.thisMonth;
   _TransactionTypeFilter _typeFilter = _TransactionTypeFilter.all;
   String _searchQuery = '';
+  DateTime? _selectedCycleMonth;
 
   @override
   void initState() {
     super.initState();
+    _selectedCycleMonth = widget.monthlyCycleMonth;
     if (!widget.showPrimaryNavigation) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -73,7 +79,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             _,
           ) {
             final isDarkMode = settingsProvider.isDarkMode;
-            final allTx = _getFilteredTransactions(txProvider);
+            final allTx = _getFilteredTransactions(
+              txProvider,
+              settingsProvider.monthlyCycleStartDay,
+            );
             final summaryData = _buildTransactionListData(
               allTx,
               accountProvider,
@@ -167,6 +176,37 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               ),
               body: CustomScrollView(
                 slivers: [
+                  if (_selectedCycleMonth != null)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      sliver: SliverToBoxAdapter(
+                        child: MonthlyCycleSelector(
+                          selectedMonth: _selectedCycleMonth!,
+                          onPrevMonth: () => setState(
+                            () => _selectedCycleMonth = DateTime(
+                              _selectedCycleMonth!.year,
+                              _selectedCycleMonth!.month - 1,
+                            ),
+                          ),
+                          onNextMonth: () => setState(
+                            () => _selectedCycleMonth = DateTime(
+                              _selectedCycleMonth!.year,
+                              _selectedCycleMonth!.month + 1,
+                            ),
+                          ),
+                          surfaceColor: isDarkMode
+                              ? AppColors.darkSurface
+                              : AppColors.surface,
+                          textPrimary: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                          textSecondary: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                          dividerColor: AppColors.listDividerFor(isDarkMode),
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
                     sliver: SliverToBoxAdapter(
@@ -175,6 +215,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         expense: summaryData.totalExpense,
                         periodLabel: _periodShortLabel(),
                         isDarkMode: isDarkMode,
+                        hidePeriodSelector: _selectedCycleMonth != null,
                         onSelectPeriod:
                             widget.fixedDateRange == null &&
                                 widget.transactionIds == null
@@ -437,7 +478,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  List<AppTransaction> _getFilteredTransactions(TransactionProvider provider) {
+  List<AppTransaction> _getFilteredTransactions(
+    TransactionProvider provider,
+    int monthlyCycleStartDay,
+  ) {
     final now = DateTime.now();
     final accountId = widget.accountId;
     final transactionIds = widget.transactionIds;
@@ -447,6 +491,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     if (transactionIds != null) {
       transactions = List.of(provider.transactions)
         ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    } else if (_selectedCycleMonth != null) {
+      final period = monthlyCyclePeriod(
+        _selectedCycleMonth!,
+        monthlyCycleStartDay,
+      );
+      transactions = provider.getTransactionsForPeriod(
+        period.start,
+        period.endExclusive.subtract(const Duration(microseconds: 1)),
+      );
     } else if (widget.fixedDateRange != null) {
       // ถ้ามี fixedDateRange (เช่น จากงบประมาณ) ใช้ช่วงนั้นโดยตรง
       transactions = provider.getTransactionsForPeriod(
@@ -762,6 +815,7 @@ class _CashFlowSummary extends StatelessWidget {
   final double expense;
   final String periodLabel;
   final bool isDarkMode;
+  final bool hidePeriodSelector;
   final VoidCallback? onSelectPeriod;
 
   const _CashFlowSummary({
@@ -769,6 +823,7 @@ class _CashFlowSummary extends StatelessWidget {
     required this.expense,
     required this.periodLabel,
     required this.isDarkMode,
+    required this.hidePeriodSelector,
     required this.onSelectPeriod,
   });
 
@@ -806,15 +861,16 @@ class _CashFlowSummary extends StatelessWidget {
                   ),
                 ),
               ),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: 32),
-                child: TextButton.icon(
-                  onPressed: onSelectPeriod,
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                  label: Text(periodLabel),
+              if (!hidePeriodSelector)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 32),
+                  child: TextButton.icon(
+                    onPressed: onSelectPeriod,
+                    iconAlignment: IconAlignment.end,
+                    icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                    label: Text(periodLabel),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
