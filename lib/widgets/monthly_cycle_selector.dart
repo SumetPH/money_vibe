@@ -55,6 +55,7 @@ class MonthlyCycleSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: surfaceColor,
