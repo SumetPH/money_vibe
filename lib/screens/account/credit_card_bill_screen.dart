@@ -185,7 +185,13 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   tooltip: 'ย้อนกลับ',
                   onPressed: () => Navigator.pop(context),
                 ),

@@ -126,100 +126,157 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
           ],
         ),
         actions: _buildAppBarActions(context),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: textPrimary,
-          labelColor: textPrimary,
-          unselectedLabelColor: textSecondary,
-          tabs: const [
-            Tab(text: 'สรุปรายปี'),
-            Tab(text: 'ขาย'),
-            Tab(text: 'ซื้อ'),
-            Tab(text: 'ภาษีไทย'),
-          ],
-        ),
       ),
-      body: Consumer<AccountProvider>(
-        builder: (context, accountProvider, _) {
-          final transactions = context
-              .watch<TransactionProvider>()
-              .transactions;
-          final trades = _filteredTrades(accountProvider.stockTrades);
-          final portfolioAccounts = accountProvider.accounts
-              .where((account) => account.isPortfolio)
-              .toList();
-          final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
-            sum,
-            portfolio,
-          ) {
-            final previousPrincipal = accountProvider.getRemainingPrincipalPool(
-              portfolio.id,
-              transactions,
-              targetYear: _selectedYear - 1,
-            );
-            final currentYearInflow = accountProvider
-                .getPortfolioAnnualReportsForPortfolio(portfolio.id)
-                .where((report) => report.year == _selectedYear)
-                .fold(0.0, (reportSum, report) => reportSum + report.inflowUsd);
-            return sum + previousPrincipal + currentYearInflow;
-          });
-          final principalQuotaRemainingUsd = portfolioAccounts
-              .where((account) => account.isPortfolio)
-              .fold(
-                0.0,
-                (sum, portfolio) =>
-                    sum +
-                    accountProvider.getRemainingPrincipalPool(
-                      portfolio.id,
-                      transactions,
-                      targetYear: _selectedYear,
-                    ),
-              );
-
-          return SafeArea(
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _tabController,
-              children: [
-                _YearlyTradeTab(
-                  trades: accountProvider.stockTrades,
-                  selectedYear: _selectedYear,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
-                  isDarkMode: isDarkMode,
+      body: Column(
+        children: [
+          SizedBox(
+            height: 50,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
                 ),
-                _SaleHistoryTab(
-                  trades: trades,
-                  isDarkMode: isDarkMode,
-                  portfolioNameOf: (trade) =>
-                      accountProvider.findById(trade.portfolioId)?.name ??
-                      'พอร์ตหุ้น',
-                  onEdit: (trade) => _openTradeForm(context, trade),
-                  onDelete: (trade) => _confirmDeleteTrade(context, trade),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: isDarkMode
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.sectionHeader,
+                    borderRadius: BorderRadius.circular(AppRadii.large),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isDarkMode ? 0.2 : 0.05,
+                        ),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  dividerColor: Colors.transparent,
+                  labelColor: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                  unselectedLabelColor: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: const [
+                    Tab(text: 'สรุปรายปี'),
+                    Tab(text: 'ขาย'),
+                    Tab(text: 'ซื้อ'),
+                    Tab(text: 'ภาษีไทย'),
+                  ],
                 ),
-                _PurchaseHistoryTab(
-                  purchases: accountProvider.stockPurchases,
-                  isDarkMode: isDarkMode,
-                  portfolioNameOf: (purchase) =>
-                      accountProvider.findById(purchase.portfolioId)?.name ??
-                      'พอร์ตหุ้น',
-                  onEdit: (purchase) =>
-                      _openPurchaseHistoryForm(context, purchase),
-                  onDelete: (purchase) =>
-                      _confirmDeletePurchase(context, purchase),
-                ),
-                _AnnualTaxTab(
-                  trades: accountProvider.stockTrades,
-                  annualReports: accountProvider.portfolioAnnualReports,
-                  selectedYear: _selectedYear,
-                  principalAvailableForYearUsd: principalAvailableForYearUsd,
-                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
-                  isDarkMode: isDarkMode,
-                ),
-              ],
+              ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: Consumer<AccountProvider>(
+              builder: (context, accountProvider, _) {
+                final transactions = context
+                    .watch<TransactionProvider>()
+                    .transactions;
+                final trades = _filteredTrades(accountProvider.stockTrades);
+                final portfolioAccounts = accountProvider.accounts
+                    .where((account) => account.isPortfolio)
+                    .toList();
+                final principalAvailableForYearUsd = portfolioAccounts.fold(
+                  0.0,
+                  (sum, portfolio) {
+                    final previousPrincipal = accountProvider
+                        .getRemainingPrincipalPool(
+                          portfolio.id,
+                          transactions,
+                          targetYear: _selectedYear - 1,
+                        );
+                    final currentYearInflow = accountProvider
+                        .getPortfolioAnnualReportsForPortfolio(portfolio.id)
+                        .where((report) => report.year == _selectedYear)
+                        .fold(
+                          0.0,
+                          (reportSum, report) => reportSum + report.inflowUsd,
+                        );
+                    return sum + previousPrincipal + currentYearInflow;
+                  },
+                );
+                final principalQuotaRemainingUsd = portfolioAccounts
+                    .where((account) => account.isPortfolio)
+                    .fold(
+                      0.0,
+                      (sum, portfolio) =>
+                          sum +
+                          accountProvider.getRemainingPrincipalPool(
+                            portfolio.id,
+                            transactions,
+                            targetYear: _selectedYear,
+                          ),
+                    );
+
+                return SafeArea(
+                  child: TabBarView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    controller: _tabController,
+                    children: [
+                      _YearlyTradeTab(
+                        trades: accountProvider.stockTrades,
+                        selectedYear: _selectedYear,
+                        onYearChanged: (year) =>
+                            setState(() => _selectedYear = year),
+                        isDarkMode: isDarkMode,
+                      ),
+                      _SaleHistoryTab(
+                        trades: trades,
+                        isDarkMode: isDarkMode,
+                        portfolioNameOf: (trade) =>
+                            accountProvider.findById(trade.portfolioId)?.name ??
+                            'พอร์ตหุ้น',
+                        onEdit: (trade) => _openTradeForm(context, trade),
+                        onDelete: (trade) =>
+                            _confirmDeleteTrade(context, trade),
+                      ),
+                      _PurchaseHistoryTab(
+                        purchases: accountProvider.stockPurchases,
+                        isDarkMode: isDarkMode,
+                        portfolioNameOf: (purchase) =>
+                            accountProvider
+                                .findById(purchase.portfolioId)
+                                ?.name ??
+                            'พอร์ตหุ้น',
+                        onEdit: (purchase) =>
+                            _openPurchaseHistoryForm(context, purchase),
+                        onDelete: (purchase) =>
+                            _confirmDeletePurchase(context, purchase),
+                      ),
+                      _AnnualTaxTab(
+                        trades: accountProvider.stockTrades,
+                        annualReports: accountProvider.portfolioAnnualReports,
+                        selectedYear: _selectedYear,
+                        principalAvailableForYearUsd:
+                            principalAvailableForYearUsd,
+                        principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                        onYearChanged: (year) =>
+                            setState(() => _selectedYear = year),
+                        isDarkMode: isDarkMode,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -283,7 +340,13 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
-          icon: Icon(icon, size: 20),
+          icon: Icon(
+            icon,
+            size: 20,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           tooltip: tooltip,
           onPressed: onPressed,
         ),
@@ -1745,7 +1808,6 @@ class _AnnualPrincipalSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -1759,7 +1821,6 @@ class _AnnualPrincipalSummarySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(height: 1, color: dividerColor),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -1830,7 +1891,6 @@ class _AnnualReportTaxListItem extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return _TradeInsetCard(
       isDarkMode: isDarkMode,
@@ -1888,7 +1948,6 @@ class _AnnualReportTaxListItem extends StatelessWidget {
               ],
             ),
           ),
-          Divider(height: 1, color: dividerColor),
         ],
       ),
     );

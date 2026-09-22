@@ -493,7 +493,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   onPressed: _isLoading
                       ? null
                       : () {
@@ -505,7 +511,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             ),
             title: Text(
               _isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
             ),
             actions: [
               if (_isEditing)

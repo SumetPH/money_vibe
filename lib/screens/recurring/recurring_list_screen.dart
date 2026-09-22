@@ -132,7 +132,13 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
-                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 20,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
                     onPressed: () => _showMenuBottomSheet(context, isDark),
                   ),
                 ),

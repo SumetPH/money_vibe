@@ -54,6 +54,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final secondary = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
+        final selectedSurface = isDarkMode
+            ? AppColors.darkSurfaceVariant
+            : AppColors.sectionHeader;
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -129,7 +132,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         return Expanded(
                           child: Material(
                             color: isSelected
-                                ? AppColors.darkSurfaceVariant
+                                ? selectedSurface
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(AppRadii.large),
                             clipBehavior: Clip.antiAlias,

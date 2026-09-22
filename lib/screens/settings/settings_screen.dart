@@ -118,11 +118,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   title: Text(
                                     authProvider.userEmail ?? 'ผู้ใช้',
-                                    style: TextStyle(color: textColor),
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                   subtitle: Text(
                                     'อีเมลปัจจุบัน',
-                                    style: TextStyle(color: secondaryTextColor),
+                                    style: TextStyle(
+                                      color: secondaryTextColor,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                                 Divider(
@@ -242,11 +248,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             title: Text(
                               'สีธีม',
-                              style: TextStyle(color: textColor),
+                              style: TextStyle(color: textColor, fontSize: 16),
                             ),
                             subtitle: Text(
                               settingsProvider.themeColor.label,
-                              style: TextStyle(color: secondaryTextColor),
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 13,
+                              ),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -283,11 +292,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         title: Text(
                           'วันเริ่มรอบรายเดือน',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
                           'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณและสถิติรายปี',
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
@@ -382,11 +394,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         title: Text(
                           'Finnhub API Key',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
                           'ตั้งค่า API key สำหรับดึงราคาหุ้น',
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
@@ -414,11 +429,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         title: Text(
                           'LLM API Key',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
                           'ตั้งค่า API key สำหรับ LLM',
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
@@ -451,11 +469,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         title: Text(
                           'คัดลอกข้อมูลสำหรับ AI',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
                           'สรุปข้อมูลการเงินเป็น Markdown สำหรับใช้กับ LLM',
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
@@ -476,13 +497,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         title: Text(
                           'จัดการข้อมูล',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
                           dbManager.isConfigured
                               ? 'ฐานข้อมูล: Supabase (Cloud)'
                               : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
-                          style: TextStyle(color: secondaryTextColor),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
                         ),
                         trailing: Icon(
                           Icons.chevron_right,
@@ -570,11 +594,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             title: Text(
                               'เวอร์ชัน',
-                              style: TextStyle(color: textColor),
+                              style: TextStyle(color: textColor, fontSize: 16),
                             ),
                             subtitle: Text(
                               versionText,
-                              style: TextStyle(color: secondaryTextColor),
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 13,
+                              ),
                             ),
                           );
                         },
@@ -1087,16 +1114,12 @@ class _SettingsToggleTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(title, style: TextStyle(color: textPrimary, fontSize: 16)),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: textSecondary)),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: textSecondary, fontSize: 13),
+                ),
               ],
             ),
           ),

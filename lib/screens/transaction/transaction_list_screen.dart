@@ -129,7 +129,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
                 leading: isFiltered
                     ? IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       )
                     : null,
@@ -784,7 +789,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
 class _HeaderAction extends StatelessWidget {
   final IconData icon;
-  final Color? color;
   final VoidCallback onTap;
   final bool isDarkMode;
 
@@ -792,7 +796,7 @@ class _HeaderAction extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.isDarkMode,
-  }) : color = null;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +808,12 @@ class _HeaderAction extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: IconButton(
           onPressed: onTap,
-          icon: Icon(icon, color: color),
+          icon: Icon(
+            icon,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
       ),
     );

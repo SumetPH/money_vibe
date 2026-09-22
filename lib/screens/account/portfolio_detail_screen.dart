@@ -325,14 +325,14 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 SliverPersistentHeader(
-                  pinned: true,
+                  pinned: false,
                   delegate: _TabBarDelegate(
                     TabBar(
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
                         color: isDarkMode
                             ? AppColors.darkSurfaceVariant
-                            : AppColors.surface,
+                            : AppColors.sectionHeader,
                         borderRadius: BorderRadius.circular(AppRadii.large),
                         boxShadow: [
                           BoxShadow(
@@ -365,9 +365,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         Tab(text: 'แผนการลงทุน'),
                       ],
                     ),
-                    isDarkMode
-                        ? AppColors.darkBackground
-                        : AppColors.background,
+                    isDarkMode ? AppColors.darkSurface : AppColors.surface,
                   ),
                 ),
               ];
@@ -446,7 +444,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   tooltip: 'ย้อนกลับ',
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -491,7 +495,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             turns: _refreshIconController,
                             child: const Icon(Icons.refresh_rounded, size: 20),
                           )
-                        : const Icon(Icons.refresh_rounded, size: 20),
+                        : Icon(
+                            Icons.refresh_rounded,
+                            size: 20,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
+                          ),
                     tooltip: 'อัปเดตราคาหุ้น',
                     onPressed: _isRefreshing ? null : _refreshPrices,
                   ),
@@ -504,7 +514,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
-                    icon: const Icon(Icons.more_vert_rounded, size: 20),
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      size: 20,
+                      color: isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
                     tooltip: 'เมนูเพิ่มเติม',
                     onPressed: () => _showMenuSheet(context),
                   ),
@@ -1033,7 +1049,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             subtitle: 'บันทึกรายการซื้อหุ้นเข้าพอร์ต',
                             textColor: textColor,
                             secondaryColor: textSecondary,
-                            bgColor: Colors.transparent,
+                            bgColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
                             onTap: () {
                               Navigator.pop(context);
                               _openHoldingBuyForm(
@@ -1058,7 +1076,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                                 'เพิ่มข้อมูลหุ้นเดิมที่มีอยู่แล้วเข้าพอร์ต',
                             textColor: textColor,
                             secondaryColor: textSecondary,
-                            bgColor: Colors.transparent,
+                            bgColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
                             onTap: () {
                               Navigator.pop(context);
                               _openHoldingForm(
@@ -1083,7 +1103,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               subtitle: 'นำเข้าและตรวจทานรายงาน Broker สหรัฐฯ',
                               textColor: textColor,
                               secondaryColor: textSecondary,
-                              bgColor: Colors.transparent,
+                              bgColor: isDarkMode
+                                  ? AppColors.darkSurface
+                                  : AppColors.surface,
                               onTap: () {
                                 Navigator.pop(context);
                                 Navigator.push(
@@ -1112,7 +1134,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             subtitle: 'ตรวจสอบการกระจายความเสี่ยงและผลตอบแทน',
                             textColor: textColor,
                             secondaryColor: textSecondary,
-                            bgColor: Colors.transparent,
+                            bgColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.push(
@@ -1138,7 +1162,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             subtitle: 'ลากและสลับลำดับการแสดงผลของกลุ่มพอร์ต',
                             textColor: textColor,
                             secondaryColor: textSecondary,
-                            bgColor: Colors.transparent,
+                            bgColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
                             onTap: () {
                               final holdings = context
                                   .read<AccountProvider>()
@@ -1158,7 +1184,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             color: dividerColor.withValues(alpha: 0.3),
                           ),
                           ListTile(
-                            tileColor: Colors.transparent,
+                            tileColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
                             leading: Container(
                               width: 36,
                               height: 36,
@@ -1223,7 +1251,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     required VoidCallback onTap,
   }) {
     return ListTile(
-      tileColor: bgColor,
       leading: Container(
         width: 36,
         height: 36,
@@ -1393,9 +1420,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDarkMode
-                  ? AppColors.darkSurfaceVariant.withValues(alpha: 0.4)
-                  : Colors.grey.shade100,
+              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1734,100 +1759,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       },
     );
   }
-
-  // Widget _buildAllStocksTab(
-  //   BuildContext context,
-  //   AccountProvider provider,
-  //   Account acc,
-  //   List<StockHolding> holdings,
-  //   double totalHoldingsValueUsd,
-  //   bool isDarkMode,
-  // ) {
-  //   final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-  //   final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-  //   if (holdings.isEmpty) {
-  //     return Center(
-  //       child: Text(
-  //         'ยังไม่มีหุ้น กด + เพื่อเพิ่ม',
-  //         style: TextStyle(
-  //           color: isDarkMode
-  //               ? AppColors.darkTextSecondary
-  //               : AppColors.textSecondary,
-  //         ),
-  //       ),
-  //     );
-  //   }
-
-  //   return Container(
-  //     color: surfaceColor,
-  //     child: ListView(
-  //       padding: const EdgeInsets.only(bottom: 80),
-  //       children: [
-  //         ReorderableListView.builder(
-  //           shrinkWrap: true,
-  //           physics: const NeverScrollableScrollPhysics(),
-  //           buildDefaultDragHandles: _isReorderMode,
-  //           itemCount: holdings.length,
-  //           onReorder: _isReorderMode
-  //               ? (oldIndex, newIndex) {
-  //                   provider.reorderHoldings(acc.id, oldIndex, newIndex);
-  //                 }
-  //               : (_, _) {},
-  //           proxyDecorator: (child, index, animation) {
-  //             return AnimatedBuilder(
-  //               animation: animation,
-  //               builder: (context, child) {
-  //                 final animValue = Curves.easeInOut.transform(animation.value);
-  //                 final elevation = 1 + animValue * 8;
-  //                 final scale = 1 + animValue * 0.02;
-  //                 return Transform.scale(
-  //                   scale: scale,
-  //                   child: Material(
-  //                     elevation: elevation,
-  //                     color: isDarkMode
-  //                         ? AppColors.darkSurface
-  //                         : AppColors.surface,
-  //                     borderRadius: BorderRadius.circular(8),
-  //                     child: child,
-  //                   ),
-  //                 );
-  //               },
-  //               child: child,
-  //             );
-  //           },
-  //           itemBuilder: (context, index) {
-  //             final h = holdings[index];
-  //             return Column(
-  //               key: ValueKey(h.id),
-  //               children: [
-  //                 PortfolioHoldingItemWidget(
-  //                   holding: h,
-  //                   exchangeRate: acc.exchangeRate,
-  //                   currencyCode: acc.currencyCodeLabel,
-  //                   totalHoldingsValueUsd: totalHoldingsValueUsd,
-  //                   isReorderMode: _isReorderMode,
-  //                   onEdit: () =>
-  //                       _openHoldingForm(context, provider, acc.id, h),
-  //                   onChangeLogo: () =>
-  //                       _pickAndUploadHoldingLogo(context, provider, h),
-  //                   onClearLogo: h.logoUrl.isNotEmpty
-  //                       ? () => provider.updateHolding(h.copyWith(logoUrl: ''))
-  //                       : null,
-  //                   onSell: () =>
-  //                       _openHoldingSellForm(context, provider, acc.id, h),
-  //                   onDelete: () => provider.deleteHolding(h.id, acc.id),
-  //                   isDarkMode: isDarkMode,
-  //                 ),
-  //                 Divider(height: 1, color: dividerColor),
-  //               ],
-  //             );
-  //           },
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
@@ -1837,9 +1768,9 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate(this.tabBar, this.backgroundColor);
 
   @override
-  double get minExtent => tabBar.preferredSize.height + 10;
+  double get minExtent => 50;
   @override
-  double get maxExtent => tabBar.preferredSize.height + 10;
+  double get maxExtent => 50;
 
   @override
   Widget build(
@@ -1847,10 +1778,16 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: backgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: tabBar,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        ),
+        child: tabBar,
+      ),
     );
   }
 

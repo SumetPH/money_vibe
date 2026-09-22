@@ -317,7 +317,13 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
+              icon: Icon(
+                Icons.close_rounded,
+                size: 20,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
               onPressed: _isSaving ? null : () => Navigator.pop(context),
             ),
           ),
@@ -326,7 +332,13 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
           widget.existingReport == null
               ? 'เพิ่มรายงาน Broker'
               : 'แก้ไขรายงาน Broker',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
         actions: [
           if (widget.existingReport != null)
@@ -348,7 +360,12 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
               ),
             ),
           AppBarActionButton(
-            icon: const Icon(Icons.check),
+            icon: Icon(
+              Icons.check,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
             tooltip: 'บันทึก',
             isLoading: _isSaving,
             onPressed: _save,
@@ -437,7 +454,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       _buildDivider(isDarkMode),
 
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Text(
                           'เงินทุนเติมเข้า Broker จากรายงานประจำปี',
                           style: TextStyle(
@@ -470,7 +487,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       _buildDivider(isDarkMode),
 
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Text(
                           'เงินโอนกลับไทยจากรายงานประจำปี',
                           style: TextStyle(
@@ -502,7 +519,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       _buildDivider(isDarkMode),
 
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Text(
                           'เงินปันผลจากรายงานประจำปี',
                           style: TextStyle(

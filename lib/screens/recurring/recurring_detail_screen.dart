@@ -369,14 +369,26 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
             title: Text(
               recurring.name,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
             ),
             actions: [
               Padding(
@@ -386,7 +398,13 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
                     onPressed: _openForm,
                   ),
                 ),
@@ -601,20 +619,48 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                     ),
                   ),
                 ),
+
+                SliverToBoxAdapter(child: SizedBox(height: 12)),
+
                 // ── Tab bar ──────────────────────────────────────────────────
                 SliverPersistentHeader(
-                  pinned: true,
+                  pinned: false,
                   delegate: _SliverTabBarDelegate(
                     TabBar(
                       controller: _tabController,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.sectionHeader,
+                        borderRadius: BorderRadius.circular(AppRadii.large),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.05,
+                            ),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      dividerColor: Colors.transparent,
                       labelColor: textPrimary,
                       unselectedLabelColor: textSecondary,
-                      indicatorColor: typeColor,
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                       tabs: [
                         Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
                         Tab(text: 'รายการที่ผ่านมา (${past.length})'),
                       ],
                     ),
+                    isDark ? AppColors.darkSurface : AppColors.surface,
                   ),
                 ),
               ],
@@ -1090,14 +1136,15 @@ class _TypeBadge extends StatelessWidget {
 
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
+  final Color backgroundColor;
 
-  _SliverTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
+  _SliverTabBarDelegate(this.tabBar, this.backgroundColor);
 
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get minExtent => 50;
+
+  @override
+  double get maxExtent => 50;
 
   @override
   Widget build(
@@ -1105,15 +1152,23 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: tabBar,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        ),
+        child: tabBar,
+      ),
     );
   }
 
   @override
   bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
-    return false;
+    return tabBar != oldDelegate.tabBar ||
+        backgroundColor != oldDelegate.backgroundColor;
   }
 }
 

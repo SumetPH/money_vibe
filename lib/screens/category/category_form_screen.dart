@@ -472,10 +472,10 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required bool isDarkMode,
   }) {
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.large),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: dividerColor.withValues(alpha: 0.35),
           width: 1,
@@ -515,7 +515,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required Color accentColor,
     required bool isDarkMode,
   }) {
-    final selectedBg = isDarkMode ? AppColors.darkSurfaceVariant : Colors.white;
+    final selectedSurface = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
     final textPrimary = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -527,14 +529,14 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onTypeChanged(type),
-        borderRadius: BorderRadius.circular(AppRadii.medium),
+        borderRadius: BorderRadius.circular(AppRadii.large),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 9),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? selectedBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.medium),
+            color: isSelected ? selectedSurface : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadii.large),
             boxShadow: isSelected
                 ? [
                     BoxShadow(

@@ -435,7 +435,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: Icon(
+                    Icons.close,
+                    size: 20,
+                    color: _isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   tooltip: 'ปิด',
                   onPressed: _isLoading
                       ? null

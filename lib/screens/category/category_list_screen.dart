@@ -276,10 +276,10 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.large),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: dividerColor.withValues(alpha: 0.35),
           width: 1,
@@ -322,7 +322,9 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     required Color accentColor,
     required bool isDarkMode,
   }) {
-    final selectedBg = isDarkMode ? AppColors.darkSurfaceVariant : Colors.white;
+    final selectedSurface = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
     final textPrimary = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -334,14 +336,14 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _selectTab(index),
-        borderRadius: BorderRadius.circular(AppRadii.medium),
+        borderRadius: BorderRadius.circular(AppRadii.large),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? selectedBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.medium),
+            color: isSelected ? selectedSurface : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadii.large),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
@@ -355,44 +357,12 @@ class _CategoryListScreenState extends State<CategoryListScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected
-                      ? accentColor
-                      : accentColor.withValues(alpha: 0.4),
-                ),
-              ),
-              const SizedBox(width: 6),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? textPrimary : textSecondary,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 1.5,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? accentColor.withValues(alpha: 0.15)
-                      : textSecondary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? accentColor : textSecondary,
-                  ),
                 ),
               ),
             ],

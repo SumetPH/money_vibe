@@ -104,6 +104,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
               clipBehavior: Clip.antiAlias,
               child: IconButton(
                 icon: const Icon(Icons.more_horiz),
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
                 onPressed: () => _showAppMenu(context),
               ),
             ),

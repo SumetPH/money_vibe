@@ -607,7 +607,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: Icon(
+                    Icons.close,
+                    size: 20,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   tooltip: 'ปิด',
                   onPressed: _isLoading
                       ? null
