@@ -58,7 +58,7 @@ class MonthlyCycleSelector extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.full),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
       ),
       child: Row(
