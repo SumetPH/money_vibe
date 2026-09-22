@@ -502,6 +502,7 @@ class _InputBar extends StatelessWidget {
                 focusedBorder: InputBorder.none,
                 errorBorder: InputBorder.none,
                 focusedErrorBorder: InputBorder.none,
+                filled: false,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 4,
                   vertical: 8,

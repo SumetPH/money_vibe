@@ -11,6 +11,7 @@ import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
@@ -243,10 +244,28 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.headerFor(isDarkMode, themeColor),
-        foregroundColor: Colors.white,
-        title: const Text('จัดการข้อมูล'),
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        title: const Text(
+          'จัดการข้อมูล',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
       ),
       body: Consumer<DatabaseManager>(
         builder: (context, dbManager, _) {
@@ -618,11 +637,14 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   }
 
   Widget _buildCard({required Color surfaceColor, required Widget child}) {
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(13),

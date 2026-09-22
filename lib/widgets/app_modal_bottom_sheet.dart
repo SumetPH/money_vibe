@@ -9,6 +9,8 @@ Future<T?> showAppModalBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isScrollControlled = false,
+  bool showDragHandle = true,
+  Color? backgroundColor,
 }) {
   final isDarkMode = context.read<SettingsProvider>().isDarkMode;
 
@@ -16,8 +18,11 @@ Future<T?> showAppModalBottomSheet<T>({
     context: context,
     isScrollControlled: isScrollControlled,
     useSafeArea: true,
-    showDragHandle: true,
-    backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+    showDragHandle: showDragHandle,
+    backgroundColor:
+        backgroundColor ??
+        (isDarkMode ? AppColors.darkSurface : AppColors.surface),
+    barrierColor: Colors.black.withValues(alpha: 0.5),
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
@@ -32,17 +37,25 @@ class AppModalBottomSheetHeader extends StatelessWidget {
   const AppModalBottomSheetHeader({super.key, required this.title});
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  Widget build(BuildContext context) {
+    final isDarkMode = context.select<SettingsProvider, bool>(
+      (s) => s.isDarkMode,
+    );
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Text(
+        title,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
         ),
       ),
-      const Divider(height: 1),
-    ],
-  );
+    );
+  }
 }

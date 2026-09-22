@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,7 @@ import '../../models/account.dart';
 import '../../models/stock_purchase.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/app_bar_action_button.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 
 typedef BuyHoldingCallback =
@@ -368,7 +369,6 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         ? AppColors.darkBackground
         : AppColors.background;
     final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final headerColor = AppColors.headerFor(isDarkMode, settings.themeColor);
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -376,253 +376,441 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
+    final accentColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Center(
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: Icon(Icons.close, size: 20, color: textColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              onPressed: _saving ? null : () => Navigator.pop(context),
+            ),
+          ),
+        ),
         title: Text(
           _isHistoryEdit
               ? 'แก้ไขประวัติซื้อ ${_ticker.text}'
               : (_isNewHolding
                     ? 'ซื้อหุ้นใหม่'
                     : 'ซื้อเพิ่ม ${_holding!.ticker}'),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
         ),
-        backgroundColor: headerColor,
         actions: [
-          AppBarActionButton(
-            icon: const Icon(Icons.check),
-            onPressed: _save,
-            tooltip: 'บันทึก',
-            isLoading: _saving,
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton(
+              onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(
+                backgroundColor: accentColor,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                shape: const StadiumBorder(),
+                elevation: 0,
+                minimumSize: const Size(64, 36),
+              ),
+              child: _saving
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(
+                          isDarkMode ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      _isHistoryEdit ? 'บันทึก' : 'ซื้อ',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
           ),
         ],
       ),
       body: AbsorbPointer(
         absorbing: _saving,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 12, bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                color: surfaceColor,
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isNewHolding ? 'หุ้นใหม่' : _holding!.ticker,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 4, bottom: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!_isNewHolding)
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color:
+                            (isDarkMode
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider)
+                                .withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? AppColors.darkSurfaceVariant
+                                : AppColors.sectionHeader,
+                            borderRadius: BorderRadius.circular(AppRadii.large),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            _holding!.ticker.length > 2
+                                ? _holding!.ticker.substring(0, 2)
+                                : _holding!.ticker,
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          if (!_isNewHolding && _holding!.name.isNotEmpty)
-                            Text(
-                              _holding!.name,
-                              style: TextStyle(
-                                color: secondaryColor,
-                                fontSize: 13,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _holding!.ticker,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              if (_holding!.name.isNotEmpty)
+                                Text(
+                                  _holding!.name,
+                                  style: TextStyle(
+                                    color: secondaryColor,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? AppColors.darkSurfaceVariant
+                                : AppColors.sectionHeader,
+                            borderRadius: BorderRadius.circular(AppRadii.full),
+                          ),
+                          child: Text(
+                            'ถือ ${formatStockHoldingShares(_holding!.shares)} หุ้น',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                    if (!_isNewHolding)
-                      Text(
-                        'ถือ ${formatStockHoldingShares(_holding!.shares)} หุ้น',
-                        style: TextStyle(color: secondaryColor, fontSize: 16),
+                  ),
+                _buildSectionHeader('ข้อมูลการซื้อ', secondaryColor),
+                _buildInsetCard(
+                  surfaceColor: surfaceColor,
+                  isDarkMode: isDarkMode,
+                  children: [
+                    if (_isNewHolding) ...[
+                      _BuyPortfolioFieldRow(
+                        account: _selectedPortfolio,
+                        isDarkMode: isDarkMode,
+                        onTap: () => _selectPortfolio(isDarkMode: isDarkMode),
                       ),
+                      _buildCardDivider(isDarkMode),
+                      _BuyTickerFieldRow(
+                        controller: _ticker,
+                        isDarkMode: isDarkMode,
+                      ),
+                      _buildCardDivider(isDarkMode),
+                    ],
+                    _BuyNumberFieldRow(
+                      label: 'จำนวนที่ซื้อ',
+                      controller: _shares,
+                      hintText: '0',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(7)],
+                    ),
+                    _buildCardDivider(isDarkMode),
+                    _BuyNumberFieldRow(
+                      label: 'ราคาซื้อ ($_currencyCode)',
+                      controller: _price,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(4)],
+                    ),
+                    _buildCardDivider(isDarkMode),
+                    _BuyNumberFieldRow(
+                      label: 'มูลค่าหุ้น (Gross $_currencyCode)',
+                      controller: _gross,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      inputFormatters: [_decimalInputFormatter(2)],
+                      onChanged: (_) {
+                        _grossEdited = true;
+                        _syncCashPaid();
+                      },
+                    ),
+                    if (!_isHistoryEdit) ...[
+                      _buildCardDivider(isDarkMode),
+                      _BuyNumberFieldRow(
+                        label: 'ยอดที่จ่าย (Net $_currencyCode)',
+                        controller: _cash,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(2)],
+                        onChanged: (_) {
+                          _cashEdited = true;
+                          _syncResultingHolding();
+                        },
+                      ),
+                    ],
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              if (_isNewHolding) ...[
-                _BuyPortfolioFieldRow(
-                  account: _selectedPortfolio,
-                  isDarkMode: isDarkMode,
-                  onTap: () => _selectPortfolio(isDarkMode: isDarkMode),
-                ),
-                _divider(isDarkMode),
-                _BuyTickerFieldRow(controller: _ticker, isDarkMode: isDarkMode),
-                _divider(isDarkMode),
-              ],
-              _BuyNumberFieldRow(
-                label: 'จำนวนที่ซื้อ',
-                controller: _shares,
-                hintText: '0',
-                isDarkMode: isDarkMode,
-                inputFormatters: [_decimalInputFormatter(7)],
-              ),
-              _divider(isDarkMode),
-              _BuyNumberFieldRow(
-                label: 'ราคาซื้อ ($_currencyCode)',
-                controller: _price,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                inputFormatters: [_decimalInputFormatter(4)],
-              ),
-              _divider(isDarkMode),
-              _BuyNumberFieldRow(
-                label: 'มูลค่าหุ้น (Gross $_currencyCode)',
-                controller: _gross,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                inputFormatters: [_decimalInputFormatter(2)],
-                onChanged: (_) {
-                  _grossEdited = true;
-                  _syncCashPaid();
-                },
-              ),
-
-              if (!_isHistoryEdit) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    'ค่าธรรมเนียม',
-                    style: TextStyle(
-                      color: secondaryColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                _BuyNumberFieldRow(
-                  label: 'ค่าคอมมิชชัน ($_currencyCode)',
-                  controller: _brokerFee,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _divider(isDarkMode),
-                _BuyNumberFieldRow(
-                  label: 'ภาษี (VAT $_currencyCode)',
-                  controller: _taxFee,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                _divider(isDarkMode),
-                _BuyNumberFieldRow(
-                  label: 'ค่าธรรมเนียมอื่นๆ \n(SEC/TAF)',
-                  controller: _exchangeFee,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                const SizedBox(height: 12),
-                _divider(isDarkMode),
-                _BuyNumberFieldRow(
-                  label: 'ยอดที่จ่าย (Net $_currencyCode)',
-                  controller: _cash,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(2)],
-                  onChanged: (_) {
-                    _cashEdited = true;
-                    _syncResultingHolding();
-                  },
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    'หลังการซื้อ',
-                    style: TextStyle(
-                      color: secondaryColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                _BuyNumberFieldRow(
-                  label: 'จำนวนหุ้น',
-                  controller: _resultShares,
-                  hintText: '0',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(7)],
-                  onChanged: (_) {
-                    _resultSharesEdited = true;
-                    _syncCostBasisFromTotal();
-                  },
-                ),
-                _divider(isDarkMode),
-                _BuyNumberFieldRow(
-                  label: 'ต้นทุนรวม ($_currencyCode)',
-                  controller: _resultTotalCost,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(2)],
-                ),
-                _divider(isDarkMode),
-                _BuyNumberFieldRow(
-                  label: 'ต้นทุนต่อหุ้น ($_currencyCode)',
-                  controller: _resultCostBasis,
-                  hintText: '0.0000',
-                  isDarkMode: isDarkMode,
-                  inputFormatters: [_decimalInputFormatter(4)],
-                ),
-                const SizedBox(height: 12),
-                if (_isNewHolding) ...[
-                  Container(
-                    color: surfaceColor,
-                    child: SwitchListTile(
-                      title: Text(
-                        'กำหนดแผนขาย',
-                        style: TextStyle(color: textColor),
+                if (!_isHistoryEdit) ...[
+                  _buildSectionHeader('ค่าธรรมเนียม', secondaryColor),
+                  _buildInsetCard(
+                    surfaceColor: surfaceColor,
+                    isDarkMode: isDarkMode,
+                    children: [
+                      _BuyNumberFieldRow(
+                        label: 'ค่าคอมมิชชัน ($_currencyCode)',
+                        controller: _brokerFee,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(4)],
                       ),
-                      value: _sellPlanEnabled,
-                      onChanged: (value) =>
-                          setState(() => _sellPlanEnabled = value),
-                    ),
+                      _buildCardDivider(isDarkMode),
+                      _BuyNumberFieldRow(
+                        label: 'ภาษี (VAT $_currencyCode)',
+                        controller: _taxFee,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(4)],
+                      ),
+                      _buildCardDivider(isDarkMode),
+                      _BuyNumberFieldRow(
+                        label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
+                        controller: _exchangeFee,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(4)],
+                      ),
+                    ],
                   ),
-                  if (_sellPlanEnabled) ...[
-                    _divider(isDarkMode),
-                    _BuyNumberFieldRow(
-                      label: 'Take Profit (%)',
-                      controller: _takeProfit,
-                      hintText: '0',
-                      isDarkMode: isDarkMode,
-                      inputFormatters: [_decimalInputFormatter(2)],
+                  _buildSectionHeader('หลังการซื้อ', secondaryColor),
+                  _buildInsetCard(
+                    surfaceColor: surfaceColor,
+                    isDarkMode: isDarkMode,
+                    children: [
+                      _BuyNumberFieldRow(
+                        label: 'จำนวนหุ้น',
+                        controller: _resultShares,
+                        hintText: '0',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(7)],
+                        onChanged: (_) {
+                          _resultSharesEdited = true;
+                          _syncCostBasisFromTotal();
+                        },
+                      ),
+                      _buildCardDivider(isDarkMode),
+                      _BuyNumberFieldRow(
+                        label: 'ต้นทุนรวม ($_currencyCode)',
+                        controller: _resultTotalCost,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(2)],
+                      ),
+                      _buildCardDivider(isDarkMode),
+                      _BuyNumberFieldRow(
+                        label: 'ต้นทุนต่อหุ้น ($_currencyCode)',
+                        controller: _resultCostBasis,
+                        hintText: '0.0000',
+                        isDarkMode: isDarkMode,
+                        inputFormatters: [_decimalInputFormatter(4)],
+                      ),
+                    ],
+                  ),
+                  if (_isNewHolding) ...[
+                    _buildSectionHeader(
+                      'แผนการขาย (SELL PLAN)',
+                      secondaryColor,
                     ),
-                    _divider(isDarkMode),
-                    _BuyNumberFieldRow(
-                      label: 'Trailing Stop (%)',
-                      controller: _trailingStop,
-                      hintText: '0',
+                    _buildInsetCard(
+                      surfaceColor: surfaceColor,
                       isDarkMode: isDarkMode,
-                      inputFormatters: [_decimalInputFormatter(2)],
-                    ),
-                    _divider(isDarkMode),
-                    _BuyNumberFieldRow(
-                      label: 'Stop Loss (%)',
-                      controller: _stopLoss,
-                      hintText: '0',
-                      isDarkMode: isDarkMode,
-                      inputFormatters: [_decimalInputFormatter(2)],
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'กำหนดแผนขาย',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss %',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              CupertinoSwitch(
+                                value: _sellPlanEnabled,
+                                activeTrackColor: accentColor,
+                                inactiveTrackColor: isDarkMode
+                                    ? const Color(0xFF39393D)
+                                    : const Color(0xFFE9E9EA),
+                                onChanged: (value) =>
+                                    setState(() => _sellPlanEnabled = value),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_sellPlanEnabled) ...[
+                          _buildCardDivider(isDarkMode),
+                          _BuyNumberFieldRow(
+                            label: 'Take Profit (%)',
+                            controller: _takeProfit,
+                            hintText: '0',
+                            isDarkMode: isDarkMode,
+                            inputFormatters: [_decimalInputFormatter(2)],
+                          ),
+                          _buildCardDivider(isDarkMode),
+                          _BuyNumberFieldRow(
+                            label: 'Trailing Stop (%)',
+                            controller: _trailingStop,
+                            hintText: '0',
+                            isDarkMode: isDarkMode,
+                            inputFormatters: [_decimalInputFormatter(2)],
+                          ),
+                          _buildCardDivider(isDarkMode),
+                          _BuyNumberFieldRow(
+                            label: 'Stop Loss (%)',
+                            controller: _stopLoss,
+                            hintText: '0',
+                            isDarkMode: isDarkMode,
+                            inputFormatters: [_decimalInputFormatter(2)],
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _divider(bool isDarkMode) => Divider(
+  Widget _buildInsetCard({
+    required Color surfaceColor,
+    required bool isDarkMode,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
+              .withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardDivider(bool isDarkMode) => Divider(
     height: 1,
-    color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+    indent: 16,
+    endIndent: 0,
+    color: (isDarkMode ? AppColors.darkDivider : AppColors.divider).withValues(
+      alpha: 0.3,
+    ),
   );
 
   Future<void> _selectPortfolio({required bool isDarkMode}) async {
@@ -694,32 +882,33 @@ class _BuyPortfolioFieldRow extends StatelessWidget {
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    return Material(
-      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 150,
-                child: Text(
-                  'พอร์ต',
-                  style: TextStyle(fontSize: 15, color: labelColor),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 140,
+              child: Text(
+                'พอร์ต',
+                style: TextStyle(fontSize: 15, color: labelColor),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                account?.name ?? 'เลือกพอร์ต',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
                 ),
               ),
-              Expanded(
-                child: Text(
-                  account?.name ?? 'เลือกพอร์ต',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(fontSize: 16, color: textColor),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, color: labelColor),
-            ],
-          ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right, size: 18, color: labelColor),
+          ],
         ),
       ),
     );
@@ -751,20 +940,15 @@ class _BuyNumberFieldRow extends StatelessWidget {
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    return Container(
-      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: SizedBox(
-              width: 150,
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 15, color: labelColor),
-              ),
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 15, color: labelColor),
             ),
           ),
           Expanded(
@@ -778,14 +962,21 @@ class _BuyNumberFieldRow extends StatelessWidget {
               onChanged: onChanged,
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: TextStyle(color: labelColor),
+                hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.6)),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                filled: false,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              style: TextStyle(fontSize: 16, color: textColor),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
         ],
@@ -811,19 +1002,15 @@ class _BuyTickerFieldRow extends StatelessWidget {
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    return Container(
-      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: SizedBox(
-              width: 150,
-              child: Text(
-                'Ticker',
-                style: TextStyle(fontSize: 15, color: labelColor),
-              ),
+          SizedBox(
+            width: 140,
+            child: Text(
+              'Ticker',
+              style: TextStyle(fontSize: 15, color: labelColor),
             ),
           ),
           Expanded(
@@ -833,14 +1020,21 @@ class _BuyTickerFieldRow extends StatelessWidget {
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
                 hintText: 'เช่น AAPL',
-                hintStyle: TextStyle(color: labelColor),
+                hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.6)),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                filled: false,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              style: TextStyle(fontSize: 16, color: textColor),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
           ),
         ],

@@ -10,6 +10,7 @@ import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../settings/data_management_screen.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -127,10 +128,30 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: headerColor,
-        foregroundColor: Colors.white,
-        title: Text(_isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'),
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Navigator.canPop(context)
+            ? Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Material(
+                  color: surfaceColor,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              )
+            : null,
+        title: Text(
+          _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
       ),
       body: AbsorbPointer(
         absorbing: authProvider.isLoading,
@@ -147,7 +168,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     height: 80,
                     decoration: BoxDecoration(
                       color: headerColor,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadii.sheet),
                     ),
                     child: Icon(
                       Icons.account_balance_wallet,
@@ -176,7 +197,14 @@ class _AuthScreenState extends State<AuthScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadii.sheet),
+                      border: Border.all(
+                        color:
+                            (isDarkMode
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider)
+                                .withValues(alpha: 0.35),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: isDarkMode

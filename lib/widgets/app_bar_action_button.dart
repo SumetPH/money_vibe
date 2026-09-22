@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/settings_provider.dart';
+import '../theme/app_colors.dart';
 
 class AppBarActionButton extends StatelessWidget {
   final Widget icon;
@@ -20,20 +24,29 @@ class AppBarActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      onPressed: isLoading && disableWhenLoading ? null : onPressed,
-      icon: isLoading
-          ? loadingIcon ??
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-          : icon,
+    final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: IconButton(
+          tooltip: tooltip,
+          onPressed: isLoading && disableWhenLoading ? null : onPressed,
+          icon: isLoading
+              ? loadingIcon ??
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+              : icon,
+        ),
+      ),
     );
   }
 }

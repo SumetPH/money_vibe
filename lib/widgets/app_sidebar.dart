@@ -33,14 +33,14 @@ class AppSidebar extends StatefulWidget {
       route: '/accounts',
     ),
     SidebarItemData(
-      icon: Icons.receipt_long,
-      label: 'รายการ',
-      route: '/transactions',
-    ),
-    SidebarItemData(
       icon: Icons.account_balance_outlined,
       label: 'งบประมาณ',
       route: '/budgets',
+    ),
+    SidebarItemData(
+      icon: Icons.receipt_long,
+      label: 'รายการ',
+      route: '/transactions',
     ),
     SidebarItemData(
       icon: Icons.pie_chart_outline,
@@ -290,16 +290,14 @@ class _SidebarItemTile extends StatelessWidget {
                             color: AppColors.expense,
                             shape: BoxShape.circle,
                           ),
-                          child: reinstallReminder.needsExpiredBadge
-                              ? const Text(
-                                  '!',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
+                          child: const Text(
+                            '!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                   ],

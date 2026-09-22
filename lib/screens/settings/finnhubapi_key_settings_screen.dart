@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 
 class FinnhubApiKeySettingsScreen extends StatefulWidget {
   const FinnhubApiKeySettingsScreen({super.key});
@@ -54,16 +55,54 @@ class _FinnhubApiKeySettingsScreenState
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final backgroundColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Finnhub API Key')),
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        title: const Text(
+          'Finnhub API Key',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Card(
+              Material(
+                color: surfaceColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+                ),
+                clipBehavior: Clip.antiAlias,
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(

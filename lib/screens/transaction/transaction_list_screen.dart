@@ -1,11 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -13,24 +14,28 @@ import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
-import '../../widgets/bottom_summary_bar.dart';
-import '../../widgets/group_header.dart';
+import '../../widgets/monthly_cycle_selector.dart';
+import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
+  final bool showPrimaryNavigation;
   final String? accountId;
   final List<String>? categoryIds;
   final List<String>? transactionIds;
   final DateTimeRange? fixedDateRange;
+  final DateTime? monthlyCycleMonth;
   final DateTime? creditCardPaymentStartDate;
   final String? title;
 
   const TransactionListScreen({
     super.key,
+    this.showPrimaryNavigation = true,
     this.accountId,
     this.categoryIds,
     this.transactionIds,
     this.fixedDateRange,
+    this.monthlyCycleMonth,
     this.creditCardPaymentStartDate,
     this.title,
   });
@@ -40,11 +45,16 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  _PeriodFilter _filter = _PeriodFilter.thisYear;
+  _PeriodFilter _filter = _PeriodFilter.thisMonth;
+  _TransactionTypeFilter _typeFilter = _TransactionTypeFilter.all;
+  String _searchQuery = '';
+  DateTime? _selectedCycleMonth;
 
   @override
   void initState() {
     super.initState();
+    _selectedCycleMonth = widget.monthlyCycleMonth;
+    if (!widget.showPrimaryNavigation) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SyncProvider>().checkAndSync();
@@ -70,8 +80,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             _,
           ) {
             final isDarkMode = settingsProvider.isDarkMode;
-            final allTx = _getFilteredTransactions(txProvider);
-            final listData = _buildTransactionListData(allTx, accountProvider);
+            final allTx = _getFilteredTransactions(
+              txProvider,
+              settingsProvider.monthlyCycleStartDay,
+            );
+            final summaryData = _buildTransactionListData(
+              allTx,
+              accountProvider,
+            );
+            final visibleTx = allTx
+                .where(_matchesTypeFilter)
+                .where((tx) => _matchesSearch(tx, accountProvider, catProvider))
+                .toList();
+            final listData = _buildTransactionListData(
+              visibleTx,
+              accountProvider,
+            );
             final isFromAccount = widget.accountId != null;
             final isFiltered =
                 isFromAccount ||
@@ -82,138 +106,388 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
             return Scaffold(
-              drawer: (isLargeScreen || isFiltered)
+              drawer:
+                  (isLargeScreen || !widget.showPrimaryNavigation || isFiltered)
                   ? null
-                  : const AppDrawer(currentRoute: '/transactions'),
+                  : AppDrawer(
+                      currentRoute: isFromAccount
+                          ? '/accounts'
+                          : '/transactions',
+                    ),
               appBar: AppBar(
+                automaticallyImplyLeading: false,
+                toolbarHeight: 100,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                backgroundColor: isDarkMode
+                    ? AppColors.darkBackground
+                    : AppColors.background,
+                foregroundColor: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+                centerTitle: false,
+                titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
                 leading: isFiltered
                     ? IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       )
-                    : (isLargeScreen
-                          ? null
-                          : Builder(
-                              builder: (ctx) => IconButton(
-                                icon: const Icon(Icons.menu),
-                                onPressed: () => Scaffold.of(ctx).openDrawer(),
-                              ),
-                            )),
-                title: Text(
-                  widget.title != null
-                      ? '${widget.title} (${NumberFormat('#,###').format(listData.transactions.length)})'
-                      : '${_filter.label} (${NumberFormat('#,###').format(listData.transactions.length)})',
-                  style: const TextStyle(fontSize: 16),
+                    : null,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.title ?? _periodTitle(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'ธุรกรรม',
+                      style: TextStyle(
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
                 actions: [
-                  if (widget.fixedDateRange == null &&
-                      widget.transactionIds == null)
-                    IconButton(
-                      icon: const Icon(Icons.tune),
-                      onPressed: () => _showPeriodPicker(isDarkMode),
-                    ),
+                  _HeaderAction(
+                    icon: Icons.add,
+                    onTap: _openAddTransactionForm,
+                    isDarkMode: isDarkMode,
+                  ),
+                  _HeaderAction(
+                    icon: Icons.search,
+                    onTap: _showSearchSheet,
+                    isDarkMode: isDarkMode,
+                  ),
+                  const SizedBox(width: 12),
                 ],
               ),
-              body: listData.transactions.isEmpty
-                  ? Center(
-                      child: Text(
-                        'ยังไม่มีรายการ',
-                        style: TextStyle(
-                          color: isDarkMode
+              body: CustomScrollView(
+                slivers: [
+                  if (_selectedCycleMonth != null)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: SliverToBoxAdapter(
+                        child: MonthlyCycleSelector(
+                          selectedMonth: _selectedCycleMonth!,
+                          onPrevMonth: () => setState(
+                            () => _selectedCycleMonth = DateTime(
+                              _selectedCycleMonth!.year,
+                              _selectedCycleMonth!.month - 1,
+                            ),
+                          ),
+                          onNextMonth: () => setState(
+                            () => _selectedCycleMonth = DateTime(
+                              _selectedCycleMonth!.year,
+                              _selectedCycleMonth!.month + 1,
+                            ),
+                          ),
+                          surfaceColor: isDarkMode
+                              ? AppColors.darkSurface
+                              : AppColors.surface,
+                          textPrimary: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                          textSecondary: isDarkMode
                               ? AppColors.darkTextSecondary
                               : AppColors.textSecondary,
+                          dividerColor: AppColors.listDividerFor(isDarkMode),
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    sliver: SliverToBoxAdapter(
+                      child: _CashFlowSummary(
+                        income: summaryData.totalIncome,
+                        expense: summaryData.totalExpense,
+                        periodLabel: _periodShortLabel(),
+                        isDarkMode: isDarkMode,
+                        hidePeriodSelector: _selectedCycleMonth != null,
+                        onSelectPeriod:
+                            widget.fixedDateRange == null &&
+                                widget.transactionIds == null
+                            ? () => _showPeriodPicker(isDarkMode)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    sliver: SliverToBoxAdapter(
+                      child: _TransactionTypeTabs(
+                        selected: _typeFilter,
+                        isDarkMode: isDarkMode,
+                        onChanged: (value) =>
+                            setState(() => _typeFilter = value),
+                      ),
+                    ),
+                  ),
+                  if (listData.transactions.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(
+                          _searchQuery.isEmpty
+                              ? 'ยังไม่มีรายการ'
+                              : 'ไม่พบรายการที่ค้นหา',
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 80),
-                      itemCount: listData.groups.length,
-                      itemBuilder: (context, i) {
-                        final group = listData.groups[i];
-                        final txs = group.transactions;
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GroupHeader(
-                              title: _formatDate(group.date),
-                              isDarkMode: isDarkMode,
-                              trailing: [
-                                if (group.income > 0) ...[
-                                  Text(
-                                    '+${formatAmount(group.income)}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDarkMode
-                                          ? AppColors.darkIncome
-                                          : AppColors.income,
-                                    ),
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      sliver: SliverList.builder(
+                        itemCount: listData.groups.length,
+                        itemBuilder: (context, i) {
+                          final group = listData.groups[i];
+                          final txs = group.transactions;
+                          final dailyNet = group.income - group.expense;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _formatDate(group.date),
+                                          style: TextStyle(
+                                            color: isDarkMode
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.textSecondary,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if (dailyNet != 0)
+                                        Text(
+                                          '${dailyNet > 0 ? '+' : '-'}฿ ${formatAmount(dailyNet.abs())}',
+                                          style: TextStyle(
+                                            color: AppColors.getAmountColor(
+                                              dailyNet,
+                                              isDarkMode,
+                                            ),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ],
-                                if (group.income > 0 && group.expense > 0)
-                                  const SizedBox(width: 8),
-                                if (group.expense > 0) ...[
-                                  Text(
-                                    '-${formatAmount(group.expense)}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDarkMode
-                                          ? AppColors.darkExpense
-                                          : AppColors.expense,
-                                    ),
+                                ),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.xLarge,
                                   ),
-                                ],
+                                  child: Column(
+                                    children: txs.asMap().entries.map((entry) {
+                                      final tx = entry.value;
+                                      return Column(
+                                        children: [
+                                          _TransactionItem(
+                                            tx: tx,
+                                            accountProvider: accountProvider,
+                                            catProvider: catProvider,
+                                            onTap: () => _openForm(context, tx),
+                                            isDarkMode: isDarkMode,
+                                            viewingAccountId: widget.accountId,
+                                          ),
+                                          if (entry.key < txs.length - 1)
+                                            Divider(
+                                              height: 1,
+                                              color: AppColors.listDividerFor(
+                                                isDarkMode,
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
                               ],
                             ),
-                            ...txs.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final tx = entry.value;
-                              return Column(
-                                children: [
-                                  _TransactionItem(
-                                    tx: tx,
-                                    accountProvider: accountProvider,
-                                    catProvider: catProvider,
-                                    onTap: () => _openForm(context, tx),
-                                    isDarkMode: isDarkMode,
-                                    viewingAccountId: widget.accountId,
-                                  ),
-                                  if (index < txs.length - 1)
-                                    Divider(
-                                      height: 1,
-                                      color: isDarkMode
-                                          ? AppColors.darkDivider
-                                          : AppColors.divider,
-                                    ),
-                                ],
-                              );
-                            }),
-                          ],
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-              bottomNavigationBar: BottomSummaryBar(
-                left: BottomSummaryValue(
-                  label: 'เงินเข้ารวม',
-                  value: formatAmount(listData.totalIncome),
-                  color: isDarkMode ? AppColors.darkIncome : AppColors.income,
-                ),
-                right: BottomSummaryValue(
-                  label: 'เงินออกรวม',
-                  value: '-${formatAmount(listData.totalExpense)}',
-                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
-                ),
-                onAdd: () => _openForm(context, null),
-                isDarkMode: isDarkMode,
+                ],
               ),
             );
           },
     );
   }
 
-  List<AppTransaction> _getFilteredTransactions(TransactionProvider provider) {
+  bool _matchesTypeFilter(AppTransaction tx) {
+    return switch (_typeFilter) {
+      _TransactionTypeFilter.all => true,
+      _TransactionTypeFilter.income =>
+        tx.type == TransactionType.income || tx.type.isIncreaseBalance,
+      _TransactionTypeFilter.expense =>
+        tx.type.isExpenseLike || tx.type.isDecreaseBalance,
+    };
+  }
+
+  bool _matchesSearch(
+    AppTransaction tx,
+    AccountProvider accountProvider,
+    CategoryProvider categoryProvider,
+  ) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+
+    final values = [
+      accountProvider.findById(tx.accountId)?.name,
+      if (tx.toAccountId != null)
+        accountProvider.findById(tx.toAccountId!)?.name,
+      if (tx.categoryId != null)
+        categoryProvider.findById(tx.categoryId!)?.name,
+      tx.note,
+      tx.type.label,
+    ];
+    return values.any((value) => value?.toLowerCase().contains(query) ?? false);
+  }
+
+  String _periodTitle() {
+    final now = DateTime.now();
+    return switch (_filter) {
+      _PeriodFilter.thisMonth => _formatMonthYear(now),
+      _PeriodFilter.lastMonth => _formatMonthYear(
+        DateTime(now.year, now.month - 1),
+      ),
+      _PeriodFilter.thisYear => 'ปี ${now.year}',
+      _ => _filter.label,
+    };
+  }
+
+  String _periodShortLabel() {
+    final now = DateTime.now();
+    return switch (_filter) {
+      _PeriodFilter.thisMonth => _formatMonthShort(now),
+      _PeriodFilter.lastMonth => _formatMonthShort(
+        DateTime(now.year, now.month - 1),
+      ),
+      _ => _filter.shortLabel,
+    };
+  }
+
+  void _openAddTransactionForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
+    );
+  }
+
+  void _showSearchSheet() {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+
+    showAppModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'ค้นหาธุรกรรม'),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 40,
+                child: CupertinoSearchTextField(
+                  controller: TextEditingController(text: _searchQuery)
+                    ..selection = TextSelection.collapsed(
+                      offset: _searchQuery.length,
+                    ),
+                  autofocus: true,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  onSubmitted: (_) => Navigator.pop(sheetContext),
+                  onSuffixTap: () {
+                    setState(() => _searchQuery = '');
+                    Navigator.pop(sheetContext);
+                  },
+                  placeholder: 'ค้นหาบัญชี หมวดหมู่ หรือโน้ต...',
+                  placeholderStyle: TextStyle(
+                    fontSize: 14,
+                    color: textSecondary.withValues(alpha: 0.55),
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: textPrimary,
+                  ),
+                  backgroundColor: isDarkMode
+                      ? AppColors.darkSurfaceVariant
+                      : AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 0,
+                  ),
+                  prefixInsets: const EdgeInsetsDirectional.fromSTEB(
+                    10,
+                    0,
+                    6,
+                    0,
+                  ),
+                  suffixInsets: const EdgeInsetsDirectional.fromSTEB(
+                    0,
+                    0,
+                    8,
+                    0,
+                  ),
+                  itemColor: textSecondary.withValues(alpha: 0.6),
+                  itemSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<AppTransaction> _getFilteredTransactions(
+    TransactionProvider provider,
+    int monthlyCycleStartDay,
+  ) {
     final now = DateTime.now();
     final accountId = widget.accountId;
     final transactionIds = widget.transactionIds;
@@ -223,6 +497,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     if (transactionIds != null) {
       transactions = List.of(provider.transactions)
         ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    } else if (_selectedCycleMonth != null) {
+      final period = monthlyCyclePeriod(
+        _selectedCycleMonth!,
+        monthlyCycleStartDay,
+      );
+      transactions = provider.getTransactionsForPeriod(
+        period.start,
+        period.endExclusive.subtract(const Duration(microseconds: 1)),
+      );
     } else if (widget.fixedDateRange != null) {
       // ถ้ามี fixedDateRange (เช่น จากงบประมาณ) ใช้ช่วงนั้นโดยตรง
       transactions = provider.getTransactionsForPeriod(
@@ -345,7 +628,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
       group.transactions.add(tx);
 
-      final summaryAmount = _getSummaryAmountInThb(tx, accountsById);
+      final summaryAmount = _getSummaryAmountInThb(tx, accountsById, accounts);
       if (summaryAmount > 0) {
         totalIncome += summaryAmount;
         group.income += summaryAmount;
@@ -377,6 +660,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   double _getSummaryAmountInThb(
     AppTransaction tx,
     Map<String, Account> accountsById,
+    List<Account> accounts,
   ) {
     final account = accountsById[tx.accountId];
     final rate = _effectiveRate(account);
@@ -386,8 +670,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           tx.type == TransactionType.increaseBalance) {
         return tx.amount * rate;
       }
-      if (tx.type == TransactionType.expense ||
-          tx.type == TransactionType.debtRepay ||
+      if (TransactionProvider.isActualExpense(tx, accounts) ||
           tx.type == TransactionType.decreaseBalance) {
         return -tx.amount * rate;
       }
@@ -431,7 +714,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final checkColor = isDarkMode ? AppColors.darkHeader : AppColors.header;
+    final checkColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
 
     showAppModalBottomSheet(
       context: context,
@@ -444,19 +727,30 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const AppModalBottomSheetHeader(title: 'เลือกช่วงเวลา'),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 12),
                   children: _PeriodFilter.values
                       .map(
                         (f) => ListTile(
                           title: Text(
                             f.label,
-                            style: TextStyle(color: textColor),
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 15,
+                              fontWeight: _filter == f
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
                           ),
                           trailing: _filter == f
-                              ? Icon(Icons.check, color: checkColor)
+                              ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: checkColor,
+                                  size: 22,
+                                )
                               : null,
                           onTap: () {
                             setState(() => _filter = f);
@@ -475,9 +769,265 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   void _openForm(BuildContext context, AppTransaction? tx) {
+    final initialTx = (tx == null && widget.accountId != null)
+        ? AppTransaction(
+            id: '',
+            type: TransactionType.expense,
+            amount: 0,
+            accountId: widget.accountId!,
+          )
+        : null;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TransactionFormScreen(transaction: tx)),
+      MaterialPageRoute(
+        builder: (_) =>
+            TransactionFormScreen(transaction: tx, initialValues: initialTx),
+      ),
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isDarkMode;
+
+  const _HeaderAction({
+    required this.icon,
+    required this.onTap,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: Material(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: IconButton(
+          onPressed: onTap,
+          icon: Icon(
+            icon,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CashFlowSummary extends StatelessWidget {
+  final double income;
+  final double expense;
+  final String periodLabel;
+  final bool isDarkMode;
+  final bool hidePeriodSelector;
+  final VoidCallback? onSelectPeriod;
+
+  const _CashFlowSummary({
+    required this.income,
+    required this.expense,
+    required this.periodLabel,
+    required this.isDarkMode,
+    required this.hidePeriodSelector,
+    required this.onSelectPeriod,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final net = income - expense;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(AppRadii.sheet),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'กระแสเงินสด',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (!hidePeriodSelector)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 32),
+                  child: TextButton.icon(
+                    onPressed: onSelectPeriod,
+                    iconAlignment: IconAlignment.end,
+                    icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                    label: Text(periodLabel),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryAmount(
+                  label: 'รายรับ',
+                  amount: income,
+                  color: incomeColor,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _SummaryAmount(
+                  label: 'รายจ่าย',
+                  amount: expense,
+                  color: expenseColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text('สุทธิ', style: TextStyle(color: textSecondary)),
+              const Spacer(),
+              Text(
+                '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
+                style: TextStyle(
+                  color: AppColors.getAmountColor(net, isDarkMode),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryAmount extends StatelessWidget {
+  final String label;
+  final double amount;
+  final Color color;
+
+  const _SummaryAmount({
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 7),
+            Text(label, style: TextStyle(color: color)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '฿ ${formatAmount(amount)}',
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TransactionTypeTabs extends StatelessWidget {
+  final _TransactionTypeFilter selected;
+  final bool isDarkMode;
+  final ValueChanged<_TransactionTypeFilter> onChanged;
+
+  const _TransactionTypeTabs({
+    required this.selected,
+    required this.isDarkMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final selectedSurface = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
+    final primary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+
+    return Material(
+      color: surface,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Row(
+          children: _TransactionTypeFilter.values.map((value) {
+            final isSelected = selected == value;
+            return Expanded(
+              child: Material(
+                color: isSelected ? selectedSurface : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppRadii.large),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => onChanged(value),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      value.label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isSelected ? primary : secondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 }
@@ -530,18 +1080,28 @@ enum _PeriodFilter {
 
   final String label;
   const _PeriodFilter(this.label);
+
+  String get shortLabel => switch (this) {
+    _PeriodFilter.all => 'ทั้งหมด',
+    _PeriodFilter.last30Days => '30 วัน',
+    _PeriodFilter.last90Days => '90 วัน',
+    _PeriodFilter.last180Days => '180 วัน',
+    _PeriodFilter.thisMonth => 'เดือนนี้',
+    _PeriodFilter.lastMonth => 'เดือนก่อน',
+    _PeriodFilter.thisYear => 'ปีนี้',
+  };
 }
 
-String _formatDate(DateTime date) {
-  const thaiDays = [
-    'จันทร์',
-    'อังคาร',
-    'พุธ',
-    'พฤหัสบดี',
-    'ศุกร์',
-    'เสาร์',
-    'อาทิตย์',
-  ];
+enum _TransactionTypeFilter {
+  all('ทั้งหมด'),
+  income('รายรับ'),
+  expense('รายจ่าย');
+
+  final String label;
+  const _TransactionTypeFilter(this.label);
+}
+
+String _formatMonthYear(DateTime date) {
   const thaiMonths = [
     'มกราคม',
     'กุมภาพันธ์',
@@ -556,8 +1116,53 @@ String _formatDate(DateTime date) {
     'พฤศจิกายน',
     'ธันวาคม',
   ];
+  return '${thaiMonths[date.month - 1]} ${date.year}';
+}
+
+String _formatMonthShort(DateTime date) {
+  const thaiMonths = [
+    'ม.ค.',
+    'ก.พ.',
+    'มี.ค.',
+    'เม.ย.',
+    'พ.ค.',
+    'มิ.ย.',
+    'ก.ค.',
+    'ส.ค.',
+    'ก.ย.',
+    'ต.ค.',
+    'พ.ย.',
+    'ธ.ค.',
+  ];
+  return thaiMonths[date.month - 1];
+}
+
+String _formatDate(DateTime date) {
+  const thaiDays = [
+    'จันทร์',
+    'อังคาร',
+    'พุธ',
+    'พฤหัสบดี',
+    'ศุกร์',
+    'เสาร์',
+    'อาทิตย์',
+  ];
+  const thaiMonths = [
+    'ม.ค.',
+    'ก.พ.',
+    'มี.ค.',
+    'เม.ย.',
+    'พ.ค.',
+    'มิ.ย.',
+    'ก.ค.',
+    'ส.ค.',
+    'ก.ย.',
+    'ต.ค.',
+    'พ.ย.',
+    'ธ.ค.',
+  ];
   final dayOfWeek = thaiDays[date.weekday - 1];
-  return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} - $dayOfWeek';
+  return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} · $dayOfWeek';
 }
 
 class _TransactionItem extends StatelessWidget {
@@ -620,116 +1225,94 @@ class _TransactionItem extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final note = tx.note?.trim();
+    final subLabel = _buildSubLabel(category?.name, note);
+    final amountColor =
+        (tx.type == TransactionType.transfer && viewingAccountId == null)
+        ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
+        : (tx.type == TransactionType.debtRepay && viewingAccountId == null)
+        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+        : (tx.type == TransactionType.debtTransfer && viewingAccountId == null)
+        ? (isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer)
+        : AppColors.getAmountColor(displayAmount, isDarkMode);
+    final amountText =
+        (tx.type == TransactionType.transfer && viewingAccountId == null)
+        ? '฿ ${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
+        : '${displayAmount < 0
+              ? '-'
+              : displayAmount > 0
+              ? '+'
+              : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
 
     return InkWell(
       onTap: onTap,
       child: Container(
         color: surfaceColor,
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // Type indicator bar
-              Container(width: 4, color: typeColor),
-              const SizedBox(width: 12),
-              // Category/Type icon
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  tx.type == TransactionType.debtTransfer
-                      ? Icons.account_tree
-                      : tx.type == TransactionType.transfer
-                      ? Icons.swap_horiz
-                      : tx.type == TransactionType.debtRepay
-                      ? Icons.payment
-                      : (category?.icon ?? Icons.receipt),
-                  color: tx.type == TransactionType.debtTransfer
-                      ? typeColor
-                      : (category?.color ?? typeColor),
-                  size: 20,
-                ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: (category?.color ?? typeColor).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(AppRadii.large),
               ),
-              const SizedBox(width: 10),
-              // Info
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildAccountWidget(
-                        account,
-                        toAccount,
-                        tx,
-                        textPrimaryColor,
-                        isDarkMode,
-                      ),
-                      Text(
-                        _buildSubLabel(category?.name, note),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+              child: Icon(
+                tx.type == TransactionType.debtTransfer
+                    ? Icons.account_tree
+                    : tx.type == TransactionType.transfer
+                    ? Icons.swap_horiz
+                    : tx.type == TransactionType.debtRepay
+                    ? Icons.payment
+                    : (category?.icon ?? Icons.receipt),
+                color: category?.color ?? typeColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAccountWidget(
+                    account,
+                    toAccount,
+                    tx,
+                    textPrimaryColor,
+                    isDarkMode,
                   ),
-                ),
-              ),
-              // Time + Amount
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                  if (subLabel.isNotEmpty) ...[
+                    const SizedBox(height: 2),
                     Text(
-                      _formatTime(tx.dateTime),
+                      subLabel,
                       style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                    ),
-                    Text(
-                      (tx.type == TransactionType.transfer &&
-                              viewingAccountId == null)
-                          ? '${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
-                          : '${displayAmount > 0 ? '+' : ''}${formatAmount(displayAmount)}${currency == 'THB' ? '' : ' ${currency ?? ''}'}',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            (tx.type == TransactionType.transfer &&
-                                viewingAccountId == null)
-                            ? (isDarkMode
-                                  ? AppColors.darkTransfer
-                                  : AppColors.transfer)
-                            : (tx.type == TransactionType.debtRepay &&
-                                  viewingAccountId == null)
-                            ? (isDarkMode
-                                  ? AppColors.darkExpense
-                                  : AppColors.expense)
-                            : (tx.type == TransactionType.debtTransfer &&
-                                  viewingAccountId == null)
-                            ? (isDarkMode
-                                  ? AppColors.darkDebtTransfer
-                                  : AppColors.debtTransfer)
-                            : AppColors.getAmountColor(
-                                displayAmount,
-                                isDarkMode,
-                              ),
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  amountText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: amountColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatTime(tx.dateTime),
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

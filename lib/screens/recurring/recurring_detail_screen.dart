@@ -8,9 +8,11 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
+import 'recurring_section.dart';
 
 class RecurringDetailScreen extends StatefulWidget {
   final RecurringTransaction recurring;
@@ -234,7 +236,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                   color: isDark
                       ? AppColors.darkExpense.withValues(alpha: 0.2)
                       : AppColors.expense.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadii.medium),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,11 +356,58 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
         return Scaffold(
           backgroundColor: bgColor,
           appBar: AppBar(
-            title: Text(recurring.name),
+            backgroundColor: bgColor,
+            foregroundColor: textPrimary,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leadingWidth: 64,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Material(
+                color: surfaceColor,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            title: Text(
+              recurring.name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
+            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _openForm,
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Material(
+                  color: surfaceColor,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
+                    onPressed: _openForm,
+                  ),
+                ),
               ),
             ],
           ),
@@ -368,217 +417,250 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
               headerSliverBuilder: (context, innerBoxIsScrolled) => [
                 // ── Header card ──────────────────────────────────────────────
                 SliverToBoxAdapter(
-                  child: Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: recurring.color.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                recurring.icon,
-                                color: recurring.color,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    recurring.name,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: textPrimary,
-                                    ),
+                  child: RecurringSection(
+                    title: 'สรุปรายการประจำ',
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: recurring.color.withValues(
+                                    alpha: 0.15,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      _TypeBadge(
-                                        label: recurring.transactionType.label,
-                                        color: typeColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  recurring.icon,
+                                  color: recurring.color,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      recurring.name,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        color: textPrimary,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        formatAmount(recurring.amount),
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w700,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        _TypeBadge(
+                                          label:
+                                              recurring.transactionType.label,
                                           color: typeColor,
                                         ),
-                                      ),
-                                      Text(
-                                        ' บาท',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: textSecondary,
-                                          fontWeight: FontWeight.w600,
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          formatAmount(recurring.amount),
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                            color: typeColor,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        Text(
+                                          ' บาท',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: textSecondary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Divider(height: 1, color: dividerColor),
-                        const SizedBox(height: 12),
-                        // Details grid
-                        _DetailRow(
-                          label: 'บัญชี',
-                          value: account?.name ?? '-',
-                          icon: account?.icon ?? Icons.account_balance_wallet,
-                          iconColor: account?.color ?? textSecondary,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                        ),
-                        if (toAccount != null) ...[
-                          const SizedBox(height: 6),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Divider(height: 1, color: dividerColor),
+                          const SizedBox(height: 12),
+                          // Details grid
                           _DetailRow(
-                            label: 'บัญชีปลายทาง',
-                            value: toAccount.name,
-                            icon: toAccount.icon,
-                            iconColor: toAccount.color,
+                            label: 'บัญชี',
+                            value: account?.name ?? '-',
+                            icon: account?.icon ?? Icons.account_balance_wallet,
+                            iconColor: account?.color ?? textSecondary,
                             textPrimary: textPrimary,
                             textSecondary: textSecondary,
                           ),
-                        ],
-                        if (category != null) ...[
-                          const SizedBox(height: 6),
-                          _DetailRow(
-                            label: 'หมวดหมู่',
-                            value: category.name,
-                            icon: category.icon,
-                            iconColor: category.color,
-                            textPrimary: textPrimary,
-                            textSecondary: textSecondary,
-                          ),
-                        ],
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Text(
-                              'ทุกวันที่ ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textSecondary,
-                              ),
-                            ),
-                            Text(
-                              recurring.dayOfMonth == 0
-                                  ? 'สิ้นเดือน'
-                                  : '${recurring.dayOfMonth} ของเดือน',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimary,
-                              ),
+                          if (toAccount != null) ...[
+                            const SizedBox(height: 6),
+                            _DetailRow(
+                              label: 'บัญชีปลายทาง',
+                              value: toAccount.name,
+                              icon: toAccount.icon,
+                              iconColor: toAccount.color,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text(
-                              'เริ่ม ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textSecondary,
-                              ),
+                          if (category != null) ...[
+                            const SizedBox(height: 6),
+                            _DetailRow(
+                              label: 'หมวดหมู่',
+                              value: category.name,
+                              icon: category.icon,
+                              iconColor: category.color,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
                             ),
-                            Text(
-                              _formatMonthYear(recurring.startDate),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimary,
-                              ),
-                            ),
-                            if (recurring.endDate != null) ...[
+                          ],
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
                               Text(
-                                '  ถึง  ',
+                                'ทุกวันที่ ',
                                 style: TextStyle(
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                   color: textSecondary,
                                 ),
                               ),
                               Text(
-                                _formatMonthYear(recurring.endDate!),
+                                recurring.dayOfMonth == 0
+                                    ? 'สิ้นเดือน'
+                                    : '${recurring.dayOfMonth} ของเดือน',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: textPrimary,
                                 ),
                               ),
-                            ] else
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
                               Text(
-                                '  (ต่อเนื่อง)',
+                                'เริ่ม ',
                                 style: TextStyle(
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                   color: textSecondary,
                                 ),
                               ),
-                          ],
-                        ),
-                        if (recurring.note != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            recurring.note!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textSecondary,
+                              Text(
+                                _formatMonthYear(recurring.startDate),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimary,
+                                ),
+                              ),
+                              if (recurring.endDate != null) ...[
+                                Text(
+                                  '  ถึง  ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                                Text(
+                                  _formatMonthYear(recurring.endDate!),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                              ] else
+                                Text(
+                                  '  (ต่อเนื่อง)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (recurring.note != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              recurring.note!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: textSecondary,
+                              ),
                             ),
+                          ],
+                          // ── Summary ───────────────────────────────────────────
+                          const SizedBox(height: 12),
+                          Divider(height: 1, color: dividerColor),
+                          const SizedBox(height: 12),
+                          _RemainingSummary(
+                            upcoming: upcoming,
+                            past: past,
+                            recurring: recurring,
+                            occurrencesByDay: occurrencesByDay,
+                            transactionsById: transactionsById,
+                            isDark: isDark,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                            typeColor: typeColor,
+                            hasEndDate: recurring.endDate != null,
                           ),
                         ],
-                        // ── Summary ───────────────────────────────────────────
-                        const SizedBox(height: 12),
-                        Divider(height: 1, color: dividerColor),
-                        const SizedBox(height: 12),
-                        _RemainingSummary(
-                          upcoming: upcoming,
-                          past: past,
-                          recurring: recurring,
-                          occurrencesByDay: occurrencesByDay,
-                          transactionsById: transactionsById,
-                          isDark: isDark,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                          typeColor: typeColor,
-                          hasEndDate: recurring.endDate != null,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
+
+                SliverToBoxAdapter(child: SizedBox(height: 12)),
+
                 // ── Tab bar ──────────────────────────────────────────────────
                 SliverPersistentHeader(
-                  pinned: true,
+                  pinned: false,
                   delegate: _SliverTabBarDelegate(
                     TabBar(
                       controller: _tabController,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.sectionHeader,
+                        borderRadius: BorderRadius.circular(AppRadii.large),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.05,
+                            ),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      dividerColor: Colors.transparent,
                       labelColor: textPrimary,
                       unselectedLabelColor: textSecondary,
-                      indicatorColor: typeColor,
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                       tabs: [
                         Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
                         Tab(text: 'รายการที่ผ่านมา (${past.length})'),
                       ],
                     ),
+                    isDark ? AppColors.darkSurface : AppColors.surface,
                   ),
                 ),
               ],
@@ -755,9 +837,16 @@ class _OccurrenceItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Material(
+        color: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
           color: surfaceColor,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -867,8 +956,7 @@ class _OccurrenceItem extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, color: dividerColor),
-      ],
+      ),
     );
   }
 
@@ -905,7 +993,7 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppRadii.full),
       ),
       child: Text(
         label,
@@ -937,7 +1025,7 @@ class _ActionButton extends StatelessWidget {
     return Material(
       color: color.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadii.medium),
         side: BorderSide(color: color.withValues(alpha: 0.3)),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1032,7 +1120,7 @@ class _TypeBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppRadii.full),
       ),
       child: Text(
         label,
@@ -1048,14 +1136,15 @@ class _TypeBadge extends StatelessWidget {
 
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
+  final Color backgroundColor;
 
-  _SliverTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
+  _SliverTabBarDelegate(this.tabBar, this.backgroundColor);
 
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get minExtent => 50;
+
+  @override
+  double get maxExtent => 50;
 
   @override
   Widget build(
@@ -1063,15 +1152,23 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: tabBar,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        ),
+        child: tabBar,
+      ),
     );
   }
 
   @override
   bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
-    return false;
+    return tabBar != oldDelegate.tabBar ||
+        backgroundColor != oldDelegate.backgroundColor;
   }
 }
 
@@ -1175,7 +1272,7 @@ class _RemainingSummary extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadii.medium),
         border: Border.all(color: typeColor.withValues(alpha: 0.3)),
       ),
       child: Column(

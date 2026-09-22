@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/stock_holding.dart';
@@ -244,7 +245,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
                     Expanded(
                       child: _DetailCell(
                         label: 'ต้นทุนต่อหุ้น',
@@ -270,10 +275,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
                       color: sellPlanStatus.backgroundColor,
                       borderRadius: BorderRadius.circular(AppRadii.large),
@@ -317,98 +319,248 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
   }
 
   void _openListMenu(BuildContext context) {
-    final bgColor = widget.isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = widget.isDarkMode
+    final isDarkMode = widget.isDarkMode;
+    final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final expenseColor = widget.isDarkMode
-        ? AppColors.darkExpense
-        : AppColors.expense;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
+    final accentColor = isDarkMode
+        ? AppColors.darkFabYellow
+        : AppColors.fabYellow;
 
     showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.edit_outlined, color: textColor),
-              title: Text(
-                'แก้ไข ${widget.holding.ticker}',
-                style: TextStyle(color: textColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                widget.onEdit();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.add_shopping_cart_outlined, color: textColor),
-              title: Text(
-                'ซื้อเพิ่ม ${widget.holding.ticker}',
-                style: TextStyle(color: textColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                widget.onBuy();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.sell_outlined, color: textColor),
-              title: Text(
-                'ขาย ${widget.holding.ticker}',
-                style: TextStyle(color: textColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                widget.onSell();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.image_outlined, color: textColor),
-              title: Text(
-                widget.holding.logoUrl.isEmpty
-                    ? 'เพิ่มโลโก้ ${widget.holding.ticker}'
-                    : 'เปลี่ยนโลโก้ ${widget.holding.ticker}',
-                style: TextStyle(color: textColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                widget.onChangeLogo();
-              },
-            ),
-            if (widget.onClearLogo != null)
-              ListTile(
-                leading: Icon(Icons.hide_image_outlined, color: textColor),
-                title: Text(
-                  'ลบโลโก้ ${widget.holding.ticker}',
-                  style: TextStyle(color: textColor),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppModalBottomSheetHeader(title: widget.holding.ticker),
+              const SizedBox(height: 8),
+              Material(
+                color: isDarkMode
+                    ? AppColors.darkSurfaceVariant
+                    : AppColors.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(
+                    color: dividerColor.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
                 ),
-                tileColor: bgColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onClearLogo!();
-                },
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: incomeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: incomeColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'แก้ไข ${widget.holding.ticker}',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onEdit();
+                      },
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 58,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.add_shopping_cart_rounded,
+                          color: accentColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'ซื้อเพิ่ม ${widget.holding.ticker}',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onBuy();
+                      },
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 58,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: expenseColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.sell_rounded,
+                          color: expenseColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'ขาย ${widget.holding.ticker}',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onSell();
+                      },
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 58,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.image_outlined,
+                          color: textColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        widget.holding.logoUrl.isEmpty
+                            ? 'เพิ่มโลโก้ ${widget.holding.ticker}'
+                            : 'เปลี่ยนโลโก้ ${widget.holding.ticker}',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onChangeLogo();
+                      },
+                    ),
+                    if (widget.onClearLogo != null) ...[
+                      Divider(
+                        height: 1,
+                        indent: 58,
+                        endIndent: 16,
+                        color: dividerColor.withValues(alpha: 0.3),
+                      ),
+                      ListTile(
+                        leading: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: textSecondary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppRadii.medium,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.hide_image_outlined,
+                            color: textSecondary,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          'ลบโลโก้ ${widget.holding.ticker}',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.onClearLogo!();
+                        },
+                      ),
+                    ],
+                    Divider(
+                      height: 1,
+                      indent: 58,
+                      endIndent: 16,
+                      color: dividerColor.withValues(alpha: 0.3),
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: expenseColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadii.medium),
+                        ),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: expenseColor,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'ลบ ${widget.holding.ticker}',
+                        style: TextStyle(
+                          color: expenseColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showDeleteConfirmation(context);
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ListTile(
-              leading: Icon(Icons.delete_outline, color: expenseColor),
-              title: Text(
-                'ลบ ${widget.holding.ticker}',
-                style: TextStyle(color: expenseColor),
-              ),
-              tileColor: bgColor,
-              onTap: () {
-                Navigator.pop(context);
-                _showDeleteConfirmation(context);
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -759,7 +911,7 @@ class _DetailCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -816,7 +968,7 @@ class HoldingThumbnailWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
       color: accentColor.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(AppRadii.medium),
+      borderRadius: BorderRadius.circular(AppRadii.large),
     );
 
     Widget fallback() => Center(
@@ -831,24 +983,37 @@ class HoldingThumbnailWidget extends StatelessWidget {
       ),
     );
 
+    final image = kIsWeb
+        ? Image.network(
+            logoUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallback(),
+            errorBuilder: (context, error, stackTrace) => fallback(),
+          )
+        : CachedNetworkImage(
+            imageUrl: logoUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => fallback(),
+            errorWidget: (context, url, error) => fallback(),
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+          );
+
     final logoContainer = Container(
-      width: 42,
-      height: 42,
+      width: 40,
+      height: 40,
       decoration: decoration,
-      padding: logoUrl.isEmpty ? EdgeInsets.zero : const EdgeInsets.all(6),
       alignment: Alignment.center,
       child: logoUrl.isEmpty
           ? fallback()
           : ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadii.small),
-              child: CachedNetworkImage(
-                imageUrl: logoUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => fallback(),
-                errorWidget: (context, url, error) => fallback(),
-                fadeInDuration: Duration.zero,
-                fadeOutDuration: Duration.zero,
-              ),
+              borderRadius: BorderRadius.circular(AppRadii.large),
+              child: image,
             ),
     );
 

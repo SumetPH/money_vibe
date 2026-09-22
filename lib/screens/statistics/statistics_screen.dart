@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -9,34 +10,26 @@ import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
-  const StatisticsScreen({super.key});
+  final bool showPrimaryNavigation;
+
+  const StatisticsScreen({super.key, this.showPrimaryNavigation = true});
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _StatisticsScreenState extends State<StatisticsScreen> {
+  int _selectedTab = 0;
   int? _selectedYear;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  List<String> tabLable = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
 
   @override
   Widget build(BuildContext context) {
@@ -49,66 +42,174 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               settingsProvider.monthlyCycleStartDay,
             ).year;
         final isDarkMode = settingsProvider.isDarkMode;
-        final headerColor = AppColors.headerFor(
-          isDarkMode,
-          settingsProvider.themeColor,
-        );
         final backgroundColor = isDarkMode
             ? AppColors.darkBackground
             : AppColors.background;
+        final surfaceColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondary = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final selectedSurface = isDarkMode
+            ? AppColors.darkSurfaceVariant
+            : AppColors.sectionHeader;
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
         return Scaffold(
-          drawer: isLargeScreen
+          backgroundColor: backgroundColor,
+          drawer: isLargeScreen || !widget.showPrimaryNavigation
               ? null
               : const AppDrawer(currentRoute: '/statistics'),
           appBar: AppBar(
-            leading: isLargeScreen
+            automaticallyImplyLeading: false,
+            leading: isLargeScreen || !widget.showPrimaryNavigation
                 ? null
-                : Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                : Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Material(
+                      color: surfaceColor,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: Builder(
+                        builder: (ctx) => IconButton(
+                          icon: Icon(Icons.menu, color: textColor),
+                          onPressed: () => Scaffold.of(ctx).openDrawer(),
+                        ),
+                      ),
                     ),
                   ),
-            title: const Text('สถิติ'),
-            backgroundColor: headerColor,
-            foregroundColor: Colors.white,
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              tabs: const [
-                Tab(text: 'ทรัพย์สิน'),
-                Tab(text: 'รายปี'),
-                Tab(text: 'รายจ่าย'),
-                Tab(text: 'รายรับ'),
+            leadingWidth: 64,
+            toolbarHeight: 100,
+            titleSpacing: isLargeScreen ? 24 : 16,
+            centerTitle: false,
+            backgroundColor: backgroundColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'การวิเคราะห์การเงิน',
+                  style: TextStyle(
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'สถิติ',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(50),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Material(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Row(
+                      children: tabLable.map((value) {
+                        final isSelected =
+                            _selectedTab == tabLable.indexOf(value);
+                        return Expanded(
+                          child: Material(
+                            color: isSelected
+                                ? selectedSurface
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppRadii.large),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedTab = tabLable.indexOf(value);
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                child: Text(
+                                  value,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isSelected ? textColor : secondary,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           body: SafeArea(
-            child: Container(
-              color: backgroundColor,
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _tabController,
-                children: [
-                  _NetWorthLineChart(),
-                  _YearlyBarChart(
-                    selectedYear: selectedYear,
-                    onYearChanged: (year) =>
-                        setState(() => _selectedYear = year),
-                  ),
-                  _CategoryPieChart(type: CategoryType.expense),
-                  _CategoryPieChart(type: CategoryType.income),
-                ],
-              ),
+            child: IndexedStack(
+              index: _selectedTab,
+              children: [
+                _NetWorthLineChart(),
+                _YearlyBarChart(
+                  selectedYear: selectedYear,
+                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                ),
+                _CategoryPieChart(type: CategoryType.expense),
+                _CategoryPieChart(type: CategoryType.income),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _StatisticsInsetCard extends StatelessWidget {
+  final bool isDarkMode;
+  final Widget child;
+
+  const _StatisticsInsetCard({required this.isDarkMode, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 }
@@ -132,9 +233,6 @@ class _YearlyBarChart extends StatelessWidget {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
-        final surfaceColor = isDarkMode
-            ? AppColors.darkSurface
-            : AppColors.surface;
         final dividerColor = isDarkMode
             ? AppColors.darkDivider
             : AppColors.divider;
@@ -166,87 +264,105 @@ class _YearlyBarChart extends StatelessWidget {
             : expenseColor;
 
         return SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 6, bottom: 16),
           child: Column(
             children: [
-              _StatsYearSelector(
-                selectedYear: selectedYear,
-                onYearChanged: onYearChanged,
-                startDay: settingsProvider.monthlyCycleStartDay,
+              _StatisticsInsetCard(
                 isDarkMode: isDarkMode,
-              ),
-              _YearlySummaryPanel(
-                income: totalIncome,
-                expense: totalExpense,
-                net: netWorthYear,
-                incomeColor: incomeColor,
-                expenseColor: expenseColor,
-                netColor: netWorthYearColor,
-                isDarkMode: isDarkMode,
-              ),
-
-              Container(
-                height: 320,
-                color: surfaceColor,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'รายรับ vs รายจ่าย รายเดือน',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        _LegendItem(color: incomeColor, label: 'รายรับ'),
-                        const SizedBox(width: 16),
-                        _LegendItem(color: expenseColor, label: 'รายจ่าย'),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildBarChart(
-                        monthlyData,
-                        incomeColor,
-                        expenseColor,
-                        isDarkMode,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: dividerColor),
-                  ],
+                child: _StatsYearSelector(
+                  selectedYear: selectedYear,
+                  onYearChanged: onYearChanged,
+                  startDay: settingsProvider.monthlyCycleStartDay,
+                  isDarkMode: isDarkMode,
                 ),
               ),
-
-              Container(
-                height: 28.0,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: _YearlySummaryPanel(
+                  income: totalIncome,
+                  expense: totalExpense,
+                  net: netWorthYear,
+                  incomeColor: incomeColor,
+                  expenseColor: expenseColor,
+                  netColor: netWorthYearColor,
+                  isDarkMode: isDarkMode,
+                ),
+              ),
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: SizedBox(
+                  height: 320,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'รายรับ vs รายจ่าย รายเดือน',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            _LegendItem(
+                              color: incomeColor,
+                              label: 'รายรับ',
+                              textColor: textColor,
+                            ),
+                            const SizedBox(width: 16),
+                            _LegendItem(
+                              color: expenseColor,
+                              label: 'รายจ่าย',
+                              textColor: textColor,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: _buildBarChart(
+                            monthlyData,
+                            incomeColor,
+                            expenseColor,
+                            isDarkMode,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: dividerColor),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 16, 2),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'รายเดือน',
                     style: TextStyle(
                       color: textColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ),
-              _buildMonthlyList(
-                context,
-                monthlyData,
-                incomeColor,
-                expenseColor,
-                textColor,
-                isDarkMode,
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: _buildMonthlyList(
+                  context,
+                  monthlyData,
+                  incomeColor,
+                  expenseColor,
+                  textColor,
+                  isDarkMode,
+                ),
               ),
-
-              const SizedBox(height: 16),
             ],
           ),
         );
@@ -318,7 +434,7 @@ class _YearlyBarChart extends StatelessWidget {
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
-            tooltipRoundedRadius: 8,
+            tooltipRoundedRadius: AppRadii.medium,
             getTooltipColor: (_) =>
                 isDarkMode ? AppColors.darkSurface : AppColors.surface,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -420,7 +536,7 @@ class _YearlyBarChart extends StatelessWidget {
                 color: incomeColor,
                 width: 8,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
+                  top: Radius.circular(AppRadii.small),
                 ),
               ),
               BarChartRodData(
@@ -428,7 +544,7 @@ class _YearlyBarChart extends StatelessWidget {
                 color: expenseColor,
                 width: 8,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
+                  top: Radius.circular(AppRadii.small),
                 ),
               ),
             ],
@@ -449,155 +565,148 @@ class _YearlyBarChart extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Container(
-      color: surfaceColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'เดือน',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'เดือน',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'รายรับ',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'รายรับ',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'รายจ่าย',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'รายจ่าย',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'คงเหลือ',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'คงเหลือ',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Divider(height: 1, color: dividerColor),
-          ...monthlyData.asMap().entries.map((entry) {
-            final i = entry.key;
-            final d = entry.value;
-            final net = d.income - d.expense;
-            final hasData = d.income > 0 || d.expense > 0;
-            final netColor = net >= 0 ? incomeColor : expenseColor;
-            return Column(
-              children: [
-                InkWell(
-                  onTap: hasData
-                      ? () => _openMonthTransactions(context, d)
-                      : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            d.monthShort,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                            ),
+        ),
+        Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
+        ...monthlyData.asMap().entries.map((entry) {
+          final i = entry.key;
+          final d = entry.value;
+          final net = d.income - d.expense;
+          final hasData = d.income > 0 || d.expense > 0;
+          final netColor = net >= 0 ? incomeColor : expenseColor;
+          return Column(
+            children: [
+              InkWell(
+                onTap: hasData
+                    ? () => _openMonthTransactions(context, d)
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          d.monthShort,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
                           ),
                         ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            hasData && d.income > 0
-                                ? formatAmount(d.income)
-                                : '-',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: d.income > 0
-                                  ? incomeColor
-                                  : secondaryColor,
-                            ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          hasData && d.income > 0
+                              ? formatAmount(d.income)
+                              : '-',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: d.income > 0 ? incomeColor : secondaryColor,
                           ),
                         ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            hasData && d.expense > 0
-                                ? formatAmount(d.expense)
-                                : '-',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: d.expense > 0
-                                  ? expenseColor
-                                  : secondaryColor,
-                            ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          hasData && d.expense > 0
+                              ? formatAmount(d.expense)
+                              : '-',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: d.expense > 0
+                                ? expenseColor
+                                : secondaryColor,
                           ),
                         ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            hasData
-                                ? '${net >= 0 ? "+" : ""}${formatAmount(net)}'
-                                : '-',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: hasData ? netColor : secondaryColor,
-                            ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          hasData
+                              ? '${net >= 0 ? "+" : ""}${formatAmount(net)}'
+                              : '-',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: hasData ? netColor : secondaryColor,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                if (i < 11) Divider(height: 1, color: dividerColor),
-              ],
-            );
-          }),
-        ],
-      ),
+              ),
+              if (i < 11)
+                Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
+            ],
+          );
+        }),
+      ],
     );
   }
 
@@ -719,19 +828,20 @@ class _StatsYearSelector extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    return Container(
-      color: surfaceColor,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
       child: Column(
         children: [
           Row(
             children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left, color: secondaryColor),
-                onPressed: () => onYearChanged(selectedYear - 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                child: IconButton(
+                  tooltip: 'ปีก่อนหน้า',
+                  icon: Icon(Icons.chevron_left, color: secondaryColor),
+                  onPressed: () => onYearChanged(selectedYear - 1),
+                ),
               ),
               Expanded(
                 child: Text(
@@ -744,13 +854,17 @@ class _StatsYearSelector extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.chevron_right, color: secondaryColor),
-                onPressed: () => onYearChanged(selectedYear + 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                child: IconButton(
+                  tooltip: 'ปีถัดไป',
+                  icon: Icon(Icons.chevron_right, color: secondaryColor),
+                  onPressed: () => onYearChanged(selectedYear + 1),
+                ),
               ),
             ],
           ),
-          Divider(height: 1, color: dividerColor),
+
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             child: Row(
@@ -774,7 +888,6 @@ class _StatsYearSelector extends StatelessWidget {
               ],
             ),
           ),
-          Divider(height: 1, color: dividerColor),
         ],
       ),
     );
@@ -805,11 +918,8 @@ class _YearlySummaryPanel extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    return Container(
-      color: surfaceColor,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -841,6 +951,7 @@ class _YearlySummaryPanel extends StatelessWidget {
                   label: 'รายรับ',
                   value: formatAmount(income),
                   color: incomeColor,
+                  isDarkMode: isDarkMode,
                 ),
               ),
               Expanded(
@@ -849,12 +960,11 @@ class _YearlySummaryPanel extends StatelessWidget {
                   value: formatAmount(expense),
                   color: expenseColor,
                   alignEnd: true,
+                  isDarkMode: isDarkMode,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: dividerColor),
         ],
       ),
     );
@@ -866,47 +976,59 @@ class _StatSummaryMetric extends StatelessWidget {
   final String value;
   final Color color;
   final bool alignEnd;
+  final bool isDarkMode;
 
   const _StatSummaryMetric({
     required this.label,
     required this.value,
     required this.color,
+    required this.isDarkMode,
     this.alignEnd = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final secondaryColor = DefaultTextStyle.of(
-      context,
-    ).style.color?.withValues(alpha: 0.62);
+    final secondaryColor = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: secondaryColor,
+    return Container(
+      margin: EdgeInsets.only(left: alignEnd ? 6 : 0, right: alignEnd ? 0 : 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurfaceVariant : AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadii.large),
+        border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: alignEnd
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: secondaryColor,
+            ),
           ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: color,
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -914,8 +1036,13 @@ class _StatSummaryMetric extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
+  final Color textColor;
 
-  const _LegendItem({required this.color, required this.label});
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -927,11 +1054,18 @@ class _LegendItem extends StatelessWidget {
           height: 12,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadii.small),
           ),
         ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 13)),
+        Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -952,96 +1086,84 @@ class _CategoryPieChart extends StatelessWidget {
       AccountProvider,
       SettingsProvider
     >(
-      builder:
-          (
-            context,
-            txProvider,
-            catProvider,
-            accountProvider,
-            settingsProvider,
-            _,
-          ) {
-            final isDarkMode = settingsProvider.isDarkMode;
-            final textColor = isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary;
-            final secondaryColor = isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary;
-            final surfaceColor = isDarkMode
-                ? AppColors.darkSurface
-                : AppColors.surface;
-            final dividerColor = isDarkMode
-                ? AppColors.darkDivider
-                : AppColors.divider;
+      builder: (context, txProvider, catProvider, accountProvider, settingsProvider, _) {
+        final isDarkMode = settingsProvider.isDarkMode;
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondaryColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final categoryData = _calculateCategoryData(
+          txProvider.transactions,
+          catProvider.categories,
+          type,
+          accountProvider.accounts,
+        );
 
-            final categoryData = _calculateCategoryData(
-              txProvider.transactions,
-              catProvider.categories,
-              type,
-              accountProvider.accounts,
-            );
+        final total = categoryData.fold<double>(
+          0,
+          (sum, item) => sum + item.amount,
+        );
 
-            final total = categoryData.fold<double>(
-              0,
-              (sum, item) => sum + item.amount,
-            );
+        final color = type == CategoryType.income
+            ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
+            : (isDarkMode ? AppColors.darkExpense : AppColors.expense);
 
-            final color = type == CategoryType.income
-                ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
-                : (isDarkMode ? AppColors.darkExpense : AppColors.expense);
+        if (categoryData.isEmpty) {
+          return Center(
+            child: Text(
+              'ไม่มีข้อมูล${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}',
+              style: TextStyle(
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
+            ),
+          );
+        }
 
-            if (categoryData.isEmpty) {
-              return Center(
-                child: Text(
-                  'ไม่มีข้อมูล${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}',
-                  style: TextStyle(
-                    color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 6, bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: secondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        formatAmount(total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }
+              ),
 
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: secondaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          formatAmount(total),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: color,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Divider(height: 1, color: dividerColor),
-                      ],
-                    ),
-                  ),
-
-                  Container(
-                    height: 220,
-                    color: surfaceColor,
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: SizedBox(
+                  height: 220,
+                  child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                     child: PieChart(
                       PieChartData(
@@ -1067,7 +1189,9 @@ class _CategoryPieChart extends StatelessWidget {
                                       color: isDarkMode
                                           ? AppColors.darkSurface
                                           : AppColors.surface,
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.small,
+                                      ),
                                       border: Border.all(
                                         color: data.color,
                                         width: 1,
@@ -1105,49 +1229,55 @@ class _CategoryPieChart extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  Container(
-                    height: 28.0,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'แยกตามหมวดหมู่',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: categoryData.length,
-                      separatorBuilder: (_, _) =>
-                          Divider(height: 1, color: dividerColor),
-                      itemBuilder: (context, index) {
-                        final data = categoryData[index];
-                        final percentage = total > 0
-                            ? (data.amount / total) * 100
-                            : 0.0;
-                        return _CategoryListItem(
-                          data: data,
-                          percentage: percentage.toDouble(),
-                          isDarkMode: isDarkMode,
-                          onTap: () => _openCategoryTransactions(context, data),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
-            );
-          },
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 16, 2),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'แยกตามหมวดหมู่',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ),
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: categoryData.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
+                    itemBuilder: (context, index) {
+                      final data = categoryData[index];
+                      final percentage = total > 0
+                          ? (data.amount / total) * 100
+                          : 0.0;
+                      return _CategoryListItem(
+                        data: data,
+                        percentage: percentage.toDouble(),
+                        isDarkMode: isDarkMode,
+                        onTap: () => _openCategoryTransactions(context, data),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1187,7 +1317,7 @@ class _CategoryPieChart extends StatelessWidget {
             id: entry.key,
             name: 'ไม่ระบุหมวดหมู่',
             icon: Icons.help_outline,
-            color: Colors.grey,
+            color: AppColors.textSecondary,
             type: type,
           );
 
@@ -1269,7 +1399,7 @@ class _CategoryListItem extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: data.color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.large),
               ),
               child: Icon(data.icon, color: data.color, size: 20),
             ),
@@ -1290,7 +1420,7 @@ class _CategoryListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppRadii.small),
                     child: LinearProgressIndicator(
                       value: percentage / 100,
                       backgroundColor: isDarkMode
@@ -1399,149 +1529,142 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             : 0;
 
         return SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 6, bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Summary Card
-              Container(
-                width: double.infinity,
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      showsPeriodComparison
-                          ? 'ทรัพย์สินสุทธิในช่วง ${_selectedFilter.label}'
-                          : 'ทรัพย์สินสุทธิปัจจุบัน',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (!showsPeriodComparison)
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: Container(
+                  width: double.infinity,
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        formatAmount(endNetWorth),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        showsPeriodComparison
+                            ? 'ทรัพย์สินสุทธิในช่วง ${_selectedFilter.label}'
+                            : 'ทรัพย์สินสุทธิปัจจุบัน',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: endNetWorth >= 0
-                              ? (isDarkMode
-                                    ? AppColors.darkIncome
-                                    : AppColors.income)
-                              : (isDarkMode
-                                    ? AppColors.darkExpense
-                                    : AppColors.expense),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: secondaryTextColor,
                         ),
-                      )
-                    else
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ต้นช่วง',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: secondaryTextColor,
-                                  ),
-                                ),
-                                Text(
-                                  formatAmount(startNetWorth),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: textColor,
-                                  ),
-                                ),
-                              ],
-                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (!showsPeriodComparison)
+                        Text(
+                          formatAmount(endNetWorth),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: endNetWorth >= 0
+                                ? (isDarkMode
+                                      ? AppColors.darkIncome
+                                      : AppColors.income)
+                                : (isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense),
                           ),
-                          Icon(Icons.arrow_forward, color: secondaryTextColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'ปลายช่วง',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: secondaryTextColor,
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ต้นช่วง',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: secondaryTextColor,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  formatAmount(endNetWorth),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: endNetWorth >= 0
-                                        ? (isDarkMode
+                                  Text(
+                                    formatAmount(startNetWorth),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward,
+                              color: secondaryTextColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'ปลายช่วง',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: secondaryTextColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    formatAmount(endNetWorth),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      color: endNetWorth >= 0
+                                          ? (isDarkMode
+                                                ? AppColors.darkIncome
+                                                : AppColors.income)
+                                          : (isDarkMode
+                                                ? AppColors.darkExpense
+                                                : AppColors.expense),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (showsPeriodComparison) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: change >= 0
+                                    ? (isDarkMode
                                               ? AppColors.darkIncome
                                               : AppColors.income)
-                                        : (isDarkMode
+                                          .withValues(alpha: 0.1)
+                                    : (isDarkMode
                                               ? AppColors.darkExpense
-                                              : AppColors.expense),
-                                  ),
+                                              : AppColors.expense)
+                                          .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.small,
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (showsPeriodComparison) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: change >= 0
-                                  ? (isDarkMode
-                                            ? AppColors.darkIncome
-                                            : AppColors.income)
-                                        .withValues(alpha: 0.1)
-                                  : (isDarkMode
-                                            ? AppColors.darkExpense
-                                            : AppColors.expense)
-                                        .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  change >= 0
-                                      ? Icons.arrow_upward
-                                      : Icons.arrow_downward,
-                                  color: change >= 0
-                                      ? (isDarkMode
-                                            ? AppColors.darkIncome
-                                            : AppColors.income)
-                                      : (isDarkMode
-                                            ? AppColors.darkExpense
-                                            : AppColors.expense),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${change >= 0 ? "+" : ""}${formatAmount(change)}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    change >= 0
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
                                     color: change >= 0
                                         ? (isDarkMode
                                               ? AppColors.darkIncome
@@ -1549,320 +1672,367 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                                         : (isDarkMode
                                               ? AppColors.darkExpense
                                               : AppColors.expense),
+                                    size: 16,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '(${changePercent >= 0 ? "+" : ""}${changePercent.toStringAsFixed(1)}%)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: secondaryTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    Divider(
-                      height: 1,
-                      color: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'รวมบัญชีที่ซ่อนจาก Net Worth',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ),
-                    Switch(
-                      value: _includeExcluded,
-                      onChanged: (v) => setState(() => _includeExcluded = v),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                height: 300,
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'แนวโน้มทรัพย์สินสุทธิ',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${change >= 0 ? "+" : ""}${formatAmount(change)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: change >= 0
+                                          ? (isDarkMode
+                                                ? AppColors.darkIncome
+                                                : AppColors.income)
+                                          : (isDarkMode
+                                                ? AppColors.darkExpense
+                                                : AppColors.expense),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                filteredNetWorthData.isEmpty
-                                    ? ''
-                                    : 'ตั้งแต่ ${_formatDate(filteredNetWorthData.first.date)} - ${_formatDate(filteredNetWorthData.last.date)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: secondaryTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        DropdownButtonHideUnderline(
-                          child: DropdownButton<_NetWorthPeriodFilter>(
-                            value: _selectedFilter,
-                            icon: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: secondaryTextColor,
-                              size: 18,
                             ),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontSize: 13, color: textColor),
-                            dropdownColor: isDarkMode
-                                ? AppColors.darkSurface
-                                : AppColors.surface,
-                            items: _NetWorthPeriodFilter.values.map((f) {
-                              return DropdownMenuItem<_NetWorthPeriodFilter>(
-                                value: f,
-                                child: Text(
-                                  f.label,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: textColor,
-                                      ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => _selectedFilter = value);
-                              }
-                            },
-                          ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '(${changePercent >= 0 ? "+" : ""}${changePercent.toStringAsFixed(1)}%)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    filteredNetWorthData.isEmpty
-                        ? Expanded(
-                            child: Center(
+                    ],
+                  ),
+                ),
+              ),
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: Container(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'รวมบัญชีที่ซ่อนจาก Net Worth',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                      CupertinoSwitch(
+                        value: _includeExcluded,
+                        activeTrackColor: AppColors.accentFor(
+                          isDarkMode,
+                          settingsProvider.themeColor,
+                        ),
+                        inactiveTrackColor: isDarkMode
+                            ? AppColors.darkDivider
+                            : AppColors.divider,
+                        onChanged: (v) => setState(() => _includeExcluded = v),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _StatisticsInsetCard(
+                isDarkMode: isDarkMode,
+                child: SizedBox(
+                  height: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.show_chart,
-                                    size: 48,
-                                    color: secondaryTextColor,
+                                  Text(
+                                    'แนวโน้มทรัพย์สินสุทธิ',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'ยังไม่มีข้อมูลในช่วงเวลาที่เลือก',
+                                    filteredNetWorthData.isEmpty
+                                        ? ''
+                                        : 'ตั้งแต่ ${_formatDate(filteredNetWorthData.first.date)} - ${_formatDate(filteredNetWorthData.last.date)}',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
                                       color: secondaryTextColor,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          )
-                        : Expanded(
-                            child: LineChart(
-                              LineChartData(
-                                gridData: FlGridData(
-                                  show: true,
-                                  drawVerticalLine: false,
-                                  horizontalInterval: _getHorizontalInterval(
-                                    filteredNetWorthData,
-                                  ),
-                                  getDrawingHorizontalLine: (value) {
-                                    return FlLine(
-                                      color: isDarkMode
-                                          ? AppColors.darkDivider
-                                          : AppColors.divider,
-                                      strokeWidth: 1,
-                                    );
-                                  },
+                            Material(
+                              color: isDarkMode
+                                  ? AppColors.darkSurfaceVariant
+                                  : AppColors.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.full,
                                 ),
-                                titlesData: FlTitlesData(
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 32,
-                                      getTitlesWidget: (value, meta) {
-                                        if (value == meta.min ||
-                                            value == meta.max) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        return SizedBox(
-                                          width: 32,
-                                          child: Text(
-                                            _formatCompact(value),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: secondaryTextColor,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                side: BorderSide(
+                                  color:
+                                      (isDarkMode
+                                              ? AppColors.darkDivider
+                                              : AppColors.divider)
+                                          .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () =>
+                                    _showFilterSheet(context, isDarkMode),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
                                   ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 28,
-                                      interval: _getBottomInterval(
-                                        filteredNetWorthData,
-                                        _selectedFilter,
-                                      ).toDouble(),
-                                      getTitlesWidget: (value, meta) {
-                                        final idx = value.round();
-                                        if (value != idx.toDouble()) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        if (!_shouldShowBottomTitle(
-                                          idx,
-                                          filteredNetWorthData,
-                                          _selectedFilter,
-                                        )) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        return Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 4,
-                                          ),
-                                          child: Text(
-                                            _formatMonthYear(
-                                              filteredNetWorthData[idx].date,
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: secondaryTextColor,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  topTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  rightTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        return SizedBox();
-                                      },
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _selectedFilter.label,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: secondaryTextColor,
+                                        size: 18,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                borderData: FlBorderData(show: false),
-                                lineBarsData: [
-                                  LineChartBarData(
-                                    spots: filteredNetWorthData
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                          return FlSpot(
-                                            entry.key.toDouble(),
-                                            entry.value.netWorth,
-                                          );
-                                        })
-                                        .toList(),
-                                    isCurved: true,
-                                    color: lineColor,
-                                    barWidth: 3,
-                                    isStrokeCapRound: true,
-                                    dotData: FlDotData(
-                                      show: filteredNetWorthData.length <= 30,
-                                      getDotPainter:
-                                          (spot, percent, barData, index) {
-                                            return FlDotCirclePainter(
-                                              radius: 4,
-                                              color: isDarkMode
-                                                  ? AppColors.darkSurface
-                                                  : AppColors.surface,
-                                              strokeWidth: 2,
-                                              strokeColor: lineColor,
-                                            );
-                                          },
-                                    ),
-                                    belowBarData: BarAreaData(
-                                      show: true,
-                                      color: lineColor.withValues(alpha: 0.1),
-                                    ),
-                                  ),
-                                ],
-                                lineTouchData: LineTouchData(
-                                  enabled: true,
-                                  touchTooltipData: LineTouchTooltipData(
-                                    tooltipRoundedRadius: 8,
-                                    getTooltipColor: (_) => isDarkMode
-                                        ? AppColors.darkSurface
-                                        : AppColors.surface,
-                                    getTooltipItems: (touchedSpots) {
-                                      return touchedSpots.map((spot) {
-                                        final data =
-                                            filteredNetWorthData[spot.x
-                                                .toInt()];
-                                        return LineTooltipItem(
-                                          '${_formatTooltipDate(data.date)}\n',
-                                          TextStyle(
-                                            color: textColor,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: formatAmount(data.netWorth),
-                                              style: TextStyle(
-                                                color: AppColors.amountColor(
-                                                  data.netWorth,
-                                                  isDarkMode: isDarkMode,
-                                                ),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      }).toList();
-                                    },
-                                  ),
-                                ),
-                                maxY: _getMaxY(filteredNetWorthData),
-                                minY: _getMinY(filteredNetWorthData),
                               ),
                             ),
-                          ),
-                  ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        filteredNetWorthData.isEmpty
+                            ? Expanded(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.show_chart,
+                                        size: 48,
+                                        color: secondaryTextColor,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'ยังไม่มีข้อมูลในช่วงเวลาที่เลือก',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : Expanded(
+                                child: LineChart(
+                                  LineChartData(
+                                    gridData: FlGridData(
+                                      show: true,
+                                      drawVerticalLine: false,
+                                      horizontalInterval:
+                                          _getHorizontalInterval(
+                                            filteredNetWorthData,
+                                          ),
+                                      getDrawingHorizontalLine: (value) {
+                                        return FlLine(
+                                          color: isDarkMode
+                                              ? AppColors.darkDivider
+                                              : AppColors.divider,
+                                          strokeWidth: 1,
+                                        );
+                                      },
+                                    ),
+                                    titlesData: FlTitlesData(
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          reservedSize: 32,
+                                          getTitlesWidget: (value, meta) {
+                                            if (value == meta.min ||
+                                                value == meta.max) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return SizedBox(
+                                              width: 32,
+                                              child: Text(
+                                                _formatCompact(value),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: secondaryTextColor,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          reservedSize: 28,
+                                          interval: _getBottomInterval(
+                                            filteredNetWorthData,
+                                            _selectedFilter,
+                                          ).toDouble(),
+                                          getTitlesWidget: (value, meta) {
+                                            final idx = value.round();
+                                            if (value != idx.toDouble()) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            if (!_shouldShowBottomTitle(
+                                              idx,
+                                              filteredNetWorthData,
+                                              _selectedFilter,
+                                            )) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Text(
+                                                _formatMonthYear(
+                                                  filteredNetWorthData[idx]
+                                                      .date,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: secondaryTextColor,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      topTitles: const AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: false,
+                                        ),
+                                      ),
+                                      rightTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          getTitlesWidget: (value, meta) {
+                                            return SizedBox();
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    borderData: FlBorderData(show: false),
+                                    lineBarsData: [
+                                      LineChartBarData(
+                                        spots: filteredNetWorthData
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
+                                              return FlSpot(
+                                                entry.key.toDouble(),
+                                                entry.value.netWorth,
+                                              );
+                                            })
+                                            .toList(),
+                                        isCurved: true,
+                                        color: lineColor,
+                                        barWidth: 3,
+                                        isStrokeCapRound: true,
+                                        dotData: FlDotData(
+                                          show:
+                                              filteredNetWorthData.length <= 30,
+                                          getDotPainter:
+                                              (spot, percent, barData, index) {
+                                                return FlDotCirclePainter(
+                                                  radius: 4,
+                                                  color: isDarkMode
+                                                      ? AppColors.darkSurface
+                                                      : AppColors.surface,
+                                                  strokeWidth: 2,
+                                                  strokeColor: lineColor,
+                                                );
+                                              },
+                                        ),
+                                        belowBarData: BarAreaData(
+                                          show: true,
+                                          color: lineColor.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    lineTouchData: LineTouchData(
+                                      enabled: true,
+                                      touchTooltipData: LineTouchTooltipData(
+                                        tooltipRoundedRadius: AppRadii.medium,
+                                        getTooltipColor: (_) => isDarkMode
+                                            ? AppColors.darkSurface
+                                            : AppColors.surface,
+                                        getTooltipItems: (touchedSpots) {
+                                          return touchedSpots.map((spot) {
+                                            final data =
+                                                filteredNetWorthData[spot.x
+                                                    .toInt()];
+                                            return LineTooltipItem(
+                                              '${_formatTooltipDate(data.date)}\n',
+                                              TextStyle(
+                                                color: textColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              children: [
+                                                TextSpan(
+                                                  text: formatAmount(
+                                                    data.netWorth,
+                                                  ),
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.amountColor(
+                                                          data.netWorth,
+                                                          isDarkMode:
+                                                              isDarkMode,
+                                                        ),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          }).toList();
+                                        },
+                                      ),
+                                    ),
+                                    maxY: _getMaxY(filteredNetWorthData),
+                                    minY: _getMinY(filteredNetWorthData),
+                                  ),
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1870,6 +2040,87 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
         );
       },
     );
+  }
+
+  Future<void> _showFilterSheet(BuildContext context, bool isDarkMode) async {
+    final selected = await showAppModalBottomSheet<_NetWorthPeriodFilter>(
+      context: context,
+      builder: (sheetContext) {
+        final textColor = isDarkMode
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary;
+        final secondaryColor = isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final surfaceColor = isDarkMode
+            ? AppColors.darkSurface
+            : AppColors.surface;
+        final dividerColor = isDarkMode
+            ? AppColors.darkDivider
+            : AppColors.divider;
+        final accent = AppColors.accentFor(
+          isDarkMode,
+          context.read<SettingsProvider>().themeColor,
+        );
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'ช่วงเวลาที่แสดง'),
+              Material(
+                color: surfaceColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _NetWorthPeriodFilter.values.length,
+                  separatorBuilder: (_, _) => Divider(
+                    height: 1,
+                    color: AppColors.listDividerFor(isDarkMode),
+                  ),
+                  itemBuilder: (_, index) {
+                    final filter = _NetWorthPeriodFilter.values[index];
+                    final isSelected = filter == _selectedFilter;
+                    return ListTile(
+                      onTap: () => Navigator.pop(sheetContext, filter),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                      ),
+                      leading: Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        color: isSelected ? accent : secondaryColor,
+                        size: 22,
+                      ),
+                      title: Text(
+                        filter.label,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null && mounted) {
+      setState(() => _selectedFilter = selected);
+    }
   }
 
   List<_NetWorthData> _calculateNetWorth(

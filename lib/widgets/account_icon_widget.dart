@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:money_vibe/theme/app_radii.dart';
 import '../models/account.dart';
 import '../theme/app_colors.dart';
 
 /// A widget that displays an account icon.
-/// Shows a cached network image if [account.iconUrl] is set (user-uploaded),
+/// Shows a network image if [account.iconUrl] is set (user-uploaded),
 /// otherwise falls back to the Material [account.icon].
 class AccountIconWidget extends StatelessWidget {
   final Account account;
@@ -21,24 +23,38 @@ class AccountIconWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (account.iconUrl.isNotEmpty) {
+      final image = kIsWeb
+          ? Image.network(
+              account.iconUrl,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : _buildLoadingIndicator(),
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildIconFallback(),
+            )
+          : CachedNetworkImage(
+              imageUrl: account.iconUrl,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => _buildLoadingIndicator(),
+              errorWidget: (context, url, error) => _buildIconFallback(),
+              fadeInDuration: Duration.zero,
+              fadeOutDuration: Duration.zero,
+            );
+
       return Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           color: account.color.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(AppRadii.large),
         ),
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: account.iconUrl,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => _buildLoadingIndicator(),
-            errorWidget: (context, url, error) => _buildIconFallback(),
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-          ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.large),
+          child: image,
         ),
       );
     }
@@ -51,7 +67,7 @@ class AccountIconWidget extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: account.color.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(AppRadii.large),
       ),
       child: Center(
         child: Icon(account.icon, color: account.color, size: size * 0.6),

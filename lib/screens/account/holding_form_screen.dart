@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/app_bar_action_button.dart';
+import '../../theme/app_radii.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -531,282 +532,388 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final theme = Theme.of(context);
-    final labelColor = isDarkMode
+    final bgColor = isDarkMode
+        ? AppColors.darkBackground
+        : AppColors.background;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final accentColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: _isSaving ? null : () => Navigator.pop(context),
+        backgroundColor: bgColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Center(
+          child: Material(
+            color: surfaceColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: IconButton(
+              icon: Icon(Icons.close, size: 20, color: textColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+            ),
+          ),
         ),
-        title: Text(_isEditing ? 'แก้ไขหุ้น' : 'เพิ่มหุ้น'),
+        title: Text(
+          _isEditing ? 'แก้ไขหุ้น' : 'เพิ่มหุ้น',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         actions: [
           if (_isEditing && widget.onDelete != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _isSaving ? null : _delete,
-              tooltip: 'ลบหุ้น',
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Material(
+                color: expenseColor.withValues(alpha: 0.12),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: expenseColor,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 38,
+                    minHeight: 38,
+                  ),
+                  onPressed: _isSaving ? null : _delete,
+                  tooltip: 'ลบหุ้น',
+                ),
+              ),
             ),
-          AppBarActionButton(
-            icon: const Icon(Icons.check),
-            onPressed: _save,
-            tooltip: 'บันทึก',
-            isLoading: _isSaving,
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton(
+              onPressed: _isSaving ? null : _save,
+              style: FilledButton.styleFrom(
+                backgroundColor: accentColor,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                shape: const StadiumBorder(),
+                elevation: 0,
+                minimumSize: const Size(64, 36),
+              ),
+              child: _isSaving
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(
+                          isDarkMode ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    )
+                  : const Text(
+                      'บันทึก',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
           ),
         ],
       ),
       body: AbsorbPointer(
         absorbing: _isSaving,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            Container(
-              color:
-                  theme.cardTheme.color ??
-                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              child: Row(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: ListView(
+            padding: const EdgeInsets.only(top: 4, bottom: 40),
+            children: [
+              _buildSectionHeader('ข้อมูลหุ้น', secondaryColor),
+              _buildInsetCard(
+                surfaceColor: surfaceColor,
+                dividerColor: dividerColor,
                 children: [
-                  SizedBox(
-                    width: 150,
-                    child: Text(
-                      'Ticker',
-                      style: TextStyle(fontSize: 15, color: labelColor),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 140,
+                          child: Text(
+                            'Ticker',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: secondaryColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _tickerController,
+                            textCapitalization: TextCapitalization.characters,
+                            textAlign: TextAlign.right,
+                            autofocus: false,
+                            decoration: InputDecoration(
+                              hintText: 'เช่น AAPL',
+                              hintStyle: TextStyle(
+                                color: secondaryColor.withValues(alpha: 0.6),
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                              filled: false,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  // const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: _tickerController,
-                      textCapitalization: TextCapitalization.characters,
-                      textAlign: TextAlign.right,
-                      autofocus: !_isEditing,
-                      decoration: InputDecoration(
-                        hintText: 'เช่น AAPL',
-                        hintStyle: TextStyle(color: labelColor),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                  _buildCardDivider(isDarkMode),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 140,
+                          child: Text(
+                            'กลุ่ม / พอร์ต',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: secondaryColor,
+                            ),
+                          ),
                         ),
-                      ),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
-                        color: isDarkMode
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary,
-                      ),
+                        Expanded(
+                          child: TextField(
+                            controller: _groupController,
+                            textAlign: TextAlign.right,
+                            autofocus: false,
+                            decoration: InputDecoration(
+                              hintText: 'ทั่วไป',
+                              hintStyle: TextStyle(
+                                color: secondaryColor.withValues(alpha: 0.6),
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                              filled: false,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            style: TextStyle(fontSize: 15, color: textColor),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  _buildCardDivider(isDarkMode),
+                  _HoldingNumberFieldRow(
+                    label: 'จำนวนหุ้น',
+                    controller: _sharesController,
+                    focusNode: _sharesFocusNode,
+                    hintText: '0',
+                    isDarkMode: isDarkMode,
+                    inputFormatters: [_sevenDecimalInputFormatter],
+                  ),
+                  _buildCardDivider(isDarkMode),
+                  _HoldingNumberFieldRow(
+                    label: 'ราคาทุน (${widget.currencyCode})',
+                    controller: _costController,
+                    focusNode: _costFocusNode,
+                    hintText: '0.00',
+                    isDarkMode: isDarkMode,
+                    inputFormatters: [_fourDecimalInputFormatter],
+                  ),
+                  _buildCardDivider(isDarkMode),
+                  _HoldingNumberFieldRow(
+                    label: 'ราคาปัจจุบัน (${widget.currencyCode})',
+                    controller: _priceController,
+                    focusNode: _priceFocusNode,
+                    hintText: '0.00',
+                    isDarkMode: isDarkMode,
                   ),
                 ],
               ),
-            ),
-            _buildDivider(isDarkMode),
-            Container(
-              color:
-                  theme.cardTheme.color ??
-                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              child: Row(
+              _buildSectionHeader('แผนการขาย (SELL PLAN)', secondaryColor),
+              _buildInsetCard(
+                surfaceColor: surfaceColor,
+                dividerColor: dividerColor,
                 children: [
-                  SizedBox(
-                    width: 150,
-                    child: Text(
-                      'กลุ่ม / พอร์ต',
-                      style: TextStyle(fontSize: 15, color: labelColor),
-                    ),
+                  _HoldingSwitchRow(
+                    title: 'เปิดแผนขาย',
+                    subtitle:
+                        'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss %',
+                    value: _sellPlanEnabled,
+                    activeColor: accentColor,
+                    isDarkMode: isDarkMode,
+                    textColor: textColor,
+                    secondaryColor: secondaryColor,
+                    onChanged: (value) {
+                      setState(() {
+                        _sellPlanEnabled = value;
+                        _takeProfitError = null;
+                        _trailingStopError = null;
+                        _stopLossError = null;
+                        _peakProfitError = null;
+                        _sellPlanError = null;
+                      });
+                    },
                   ),
-                  Expanded(
-                    child: TextField(
-                      controller: _groupController,
-                      textAlign: TextAlign.right,
-                      decoration: InputDecoration(
-                        hintText: 'ทั่วไป',
-                        hintStyle: TextStyle(color: labelColor),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                  if (_sellPlanEnabled) ...[
+                    _buildCardDivider(isDarkMode),
+                    _HoldingNumberFieldRow(
+                      label: 'Take Profit %',
+                      controller: _takeProfitController,
+                      focusNode: _takeProfitFocusNode,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _takeProfitError,
+                    ),
+                    _buildCardDivider(isDarkMode),
+                    _HoldingNumberFieldRow(
+                      label: 'Trailing Stop %',
+                      controller: _trailingStopController,
+                      focusNode: _trailingStopFocusNode,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _trailingStopError,
+                    ),
+                    _buildCardDivider(isDarkMode),
+                    _HoldingNumberFieldRow(
+                      label: 'Stop Loss %',
+                      controller: _stopLossController,
+                      focusNode: _stopLossFocusNode,
+                      hintText: '0.00',
+                      isDarkMode: isDarkMode,
+                      errorText: _stopLossError,
+                    ),
+                    _buildCardDivider(isDarkMode),
+                    _HoldingSwitchRow(
+                      title: 'กำหนดกำไรสูงสุดเอง',
+                      subtitle: _peakProfitStatusText(),
+                      value: _manualPeakProfitEnabled,
+                      activeColor: accentColor,
+                      isDarkMode: isDarkMode,
+                      textColor: textColor,
+                      secondaryColor: secondaryColor,
+                      onChanged: (value) {
+                        setState(() {
+                          _manualPeakProfitEnabled = value;
+                          _peakProfitError = null;
+                        });
+                        if (!value) {
+                          _peakProfitFocusNode.unfocus();
+                        }
+                      },
+                    ),
+                    if (_manualPeakProfitEnabled) ...[
+                      _buildCardDivider(isDarkMode),
+                      _HoldingNumberFieldRow(
+                        label: 'กำไรสูงสุด %',
+                        controller: _peakProfitController,
+                        focusNode: _peakProfitFocusNode,
+                        hintText: '0.00',
+                        isDarkMode: isDarkMode,
+                        errorText: _peakProfitError,
+                        inputFormatters: [_twoDecimalInputFormatter],
+                      ),
+                    ],
+                    if (_sellPlanError != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                        child: Text(
+                          _sellPlanError!,
+                          style: TextStyle(fontSize: 12, color: expenseColor),
+                          textAlign: TextAlign.right,
                         ),
                       ),
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDarkMode
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            _HoldingNumberFieldRow(
-              label: 'จำนวนหุ้น',
-              controller: _sharesController,
-              focusNode: _sharesFocusNode,
-              hintText: '0',
-              isDarkMode: isDarkMode,
-              inputFormatters: [_sevenDecimalInputFormatter],
-            ),
-            _buildDivider(isDarkMode),
-            _HoldingNumberFieldRow(
-              label: 'ราคาทุน (${widget.currencyCode})',
-              controller: _costController,
-              focusNode: _costFocusNode,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-              inputFormatters: [_fourDecimalInputFormatter],
-            ),
-            _buildDivider(isDarkMode),
-            _HoldingNumberFieldRow(
-              label: 'ราคาปัจจุบัน (${widget.currencyCode})',
-              controller: _priceController,
-              focusNode: _priceFocusNode,
-              hintText: '0.00',
-              isDarkMode: isDarkMode,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              color:
-                  theme.cardTheme.color ??
-                  (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-              child: SwitchListTile(
-                value: _sellPlanEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _sellPlanEnabled = value;
-                    _takeProfitError = null;
-                    _trailingStopError = null;
-                    _stopLossError = null;
-                    _peakProfitError = null;
-                    _sellPlanError = null;
-                  });
-                },
-                title: Text(
-                  'เปิดแผนขาย',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss % (Take Profit ใส่ 0 ได้)',
-                  style: TextStyle(fontSize: 13, color: labelColor),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-            ),
-            if (_sellPlanEnabled) ...[
-              _buildDivider(isDarkMode),
-              _HoldingNumberFieldRow(
-                label: 'Take Profit %',
-                controller: _takeProfitController,
-                focusNode: _takeProfitFocusNode,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                errorText: _takeProfitError,
-              ),
-              _buildDivider(isDarkMode),
-              _HoldingNumberFieldRow(
-                label: 'Trailing Stop %',
-                controller: _trailingStopController,
-                focusNode: _trailingStopFocusNode,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                errorText: _trailingStopError,
-              ),
-              _buildDivider(isDarkMode),
-              _HoldingNumberFieldRow(
-                label: 'Stop Loss %',
-                controller: _stopLossController,
-                focusNode: _stopLossFocusNode,
-                hintText: '0.00',
-                isDarkMode: isDarkMode,
-                errorText: _stopLossError,
-              ),
-              _buildDivider(isDarkMode),
-              Container(
-                color:
-                    theme.cardTheme.color ??
-                    (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-                child: SwitchListTile(
-                  value: _manualPeakProfitEnabled,
-                  onChanged: (value) {
-                    setState(() {
-                      _manualPeakProfitEnabled = value;
-                      _peakProfitError = null;
-                    });
-                    if (!value) {
-                      _peakProfitFocusNode.unfocus();
-                    }
-                  },
-                  title: Text(
-                    'กำหนดกำไรสูงสุดเอง',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: Text(
-                    _peakProfitStatusText(),
-                    style: TextStyle(fontSize: 13, color: labelColor),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-              ),
-              if (_manualPeakProfitEnabled) ...[
-                _buildDivider(isDarkMode),
-                _HoldingNumberFieldRow(
-                  label: 'กำไรสูงสุด %',
-                  controller: _peakProfitController,
-                  focusNode: _peakProfitFocusNode,
-                  hintText: '0.00',
-                  isDarkMode: isDarkMode,
-                  errorText: _peakProfitError,
-                  inputFormatters: [_twoDecimalInputFormatter],
-                ),
-              ],
-              if (_sellPlanError != null)
-                Container(
-                  width: double.infinity,
-                  color:
-                      theme.cardTheme.color ??
-                      (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Text(
-                    _sellPlanError!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDarkMode
-                          ? AppColors.darkExpense
-                          : AppColors.expense,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
             ],
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInsetCard({
+    required Color surfaceColor,
+    required Color dividerColor,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardDivider(bool isDarkMode) {
+    return Divider(
+      height: 1,
+      indent: 16,
+      endIndent: 0,
+      color: isDarkMode
+          ? AppColors.darkDivider.withValues(alpha: 0.3)
+          : AppColors.divider.withValues(alpha: 0.4),
     );
   }
 
@@ -820,13 +927,6 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
       return 'อัตโนมัติ';
     }
     return 'อัตโนมัติ • ปัจจุบัน ${_formatPct(value)}%';
-  }
-
-  Widget _buildDivider(bool isDarkMode) {
-    return Divider(
-      height: 1,
-      color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-    );
   }
 }
 
@@ -851,7 +951,6 @@ class _HoldingNumberFieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final labelColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
@@ -859,17 +958,14 @@ class _HoldingNumberFieldRow extends StatelessWidget {
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
 
-    return Container(
-      color:
-          theme.cardTheme.color ??
-          (isDarkMode ? AppColors.darkSurface : AppColors.surface),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
           Row(
             children: [
               SizedBox(
-                width: 150,
+                width: 140,
                 child: Text(
                   label,
                   style: TextStyle(fontSize: 15, color: labelColor),
@@ -888,23 +984,30 @@ class _HoldingNumberFieldRow extends StatelessWidget {
                   textAlign: TextAlign.right,
                   decoration: InputDecoration(
                     hintText: hintText,
-                    hintStyle: TextStyle(color: labelColor),
+                    hintStyle: TextStyle(
+                      color: labelColor.withValues(alpha: 0.6),
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
+                    filled: false,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  style: TextStyle(fontSize: 15, color: textColor),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
+                  ),
                 ),
               ),
             ],
           ),
           if (errorText != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
@@ -918,6 +1021,71 @@ class _HoldingNumberFieldRow extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HoldingSwitchRow extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final Color activeColor;
+  final bool isDarkMode;
+  final Color textColor;
+  final Color secondaryColor;
+
+  const _HoldingSwitchRow({
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.activeColor,
+    required this.isDarkMode,
+    required this.textColor,
+    required this.secondaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: TextStyle(fontSize: 12, color: secondaryColor),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          CupertinoSwitch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: activeColor,
+            inactiveTrackColor: isDarkMode
+                ? const Color(0xFF39393D)
+                : const Color(0xFFE9E9EA),
+          ),
         ],
       ),
     );

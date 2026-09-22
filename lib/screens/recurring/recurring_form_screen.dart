@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
@@ -10,12 +11,13 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radii.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
-import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
+import 'recurring_section.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -478,405 +480,539 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
           key: _scaffoldKey,
           backgroundColor: bgColor,
           appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      _closeKeyboard();
-                      Navigator.pop(context);
-                    },
+            backgroundColor: bgColor,
+            foregroundColor: textPrimary,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leadingWidth: 64,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Material(
+                color: surfaceColor,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          _closeKeyboard();
+                          Navigator.pop(context);
+                        },
+                ),
+              ),
             ),
-            title: Text(_isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ'),
+            title: Text(
+              _isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
+            ),
             actions: [
               if (_isEditing)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: _isLoading ? null : _delete,
+                Material(
+                  color: surfaceColor,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: isDark ? AppColors.darkExpense : AppColors.expense,
+                    ),
+                    onPressed: _isLoading ? null : _delete,
+                  ),
                 ),
-              AppBarActionButton(
-                icon: const Icon(Icons.check),
-                tooltip: 'บันทึก',
-                isLoading: _isLoading,
-                onPressed: _save,
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Center(
+                  child: Material(
+                    color: isDark
+                        ? AppColors.darkFabYellow
+                        : AppColors.fabYellow,
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: _isLoading ? null : _save,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: _isLoading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.black,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'บันทึก',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          body: AbsorbPointer(
-            absorbing: _isLoading,
-            child: ListView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              children: [
-                const SizedBox(height: 8),
-
-                // ── Name ──────────────────────────────────────────────────────
-                Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
+          body: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              _closeKeyboard();
+            },
+            child: AbsorbPointer(
+              absorbing: _isLoading,
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                children: [
+                  _RecurringTypeSegmentedControl(
+                    selectedType: _type,
+                    isDarkMode: isDark,
+                    onChanged: (type) => setState(() {
+                      _type = type;
+                      _categoryId = null;
+                      if (!type.requiresDebtAccount) _debtAccountId = null;
+                      if (type != TransactionType.transfer) _toAccountId = null;
+                    }),
+                    onShowMore: () => _pickType(isDark),
                   ),
-                  child: TextField(
-                    controller: _nameController,
-                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                    decoration: InputDecoration(
-                      hintText: 'ชื่อรายการ',
-                      hintStyle: TextStyle(color: textSecondary),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    style: TextStyle(fontSize: 16, color: textPrimary),
+                  const SizedBox(height: 14),
+                  _RecurringAmountHeroCard(
+                    type: _type,
+                    amountController: _amountController,
+                    amountFocusNode: _amountFocusNode,
+                    selectedAccount: selectedAccount,
+                    isDarkMode: isDark,
                   ),
-                ),
-                Divider(height: 1, color: dividerColor),
-
-                // ── Amount ────────────────────────────────────────────────────
-                Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: TextField(
-                    controller: _amountController,
-                    focusNode: _amountFocusNode,
-                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                    readOnly: calculatorTextFieldReadOnly,
-                    showCursor: true,
-                    keyboardType: calculatorTextInputType,
-                    inputFormatters: calculatorTextInputFormatters,
-                    decoration: InputDecoration(
-                      hintText: 'จำนวนเงิน',
-                      hintStyle: TextStyle(color: textSecondary),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      suffixText: 'บาท',
-                      suffixStyle: TextStyle(
-                        color: textSecondary,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: TextStyle(fontSize: 16, color: textPrimary),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // ── Type selector ─────────────────────────────────────────────
-                _RowTile(
-                  label: 'ประเภท',
-                  value: _type.label,
-                  valueColor: _typeColor(_type, isDark),
-                  surfaceColor: surfaceColor,
-                  textSecondary: textSecondary,
-                  onTap: () => _pickType(isDark),
-                ),
-                Divider(height: 1, color: dividerColor),
-
-                // ── Account ───────────────────────────────────────────────────
-                _RowTile(
-                  label: 'บัญชี',
-                  value: selectedAccount?.name ?? 'เลือกบัญชี',
-                  surfaceColor: surfaceColor,
-                  textSecondary: textSecondary,
-                  onTap: () => _pickAccount(accounts, isDestination: false),
-                ),
-                Divider(height: 1, color: dividerColor),
-
-                // ── To Account (transfer only) ────────────────────────────────
-                if (_type.isTransferLike) ...[
-                  _RowTile(
-                    label: 'บัญชีปลายทาง',
-                    value:
-                        (_type == TransactionType.debtTransfer
-                                ? selectedDebtAccount
-                                : selectedToAccount)
-                            ?.name ??
-                        'เลือกบัญชี',
-                    surfaceColor: surfaceColor,
-                    textSecondary: textSecondary,
-                    onTap: () => _type == TransactionType.debtTransfer
-                        ? _pickDebtAccount()
-                        : _pickAccount(accounts, isDestination: true),
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                ],
-
-                // ── Debt Account (debtRepay only) ─────────────────────────────
-                if (_type == TransactionType.debtRepay) ...[
-                  _RowTile(
-                    label: 'บัญชีหนี้สิน',
-                    value: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สิน',
-                    surfaceColor: surfaceColor,
-                    textSecondary: textSecondary,
-                    onTap: _pickDebtAccount,
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                ],
-
-                // ── Category (non-transfer) ────────────────────────────────────
-                if (_type.supportsCategory) ...[
-                  _RowTile(
-                    label: 'หมวดหมู่',
-                    value: selectedCategory?.name ?? 'ไม่ได้เลือก',
-                    surfaceColor: surfaceColor,
-                    textSecondary: textSecondary,
-                    onTap: () => _pickCategory(categories, isDark),
-                  ),
-                  Divider(height: 1, color: dividerColor),
-                ],
-
-                // ── Day of month ──────────────────────────────────────────────
-                _RowTile(
-                  label: 'วันที่ในเดือน',
-                  value: _dayOfMonth == 0 ? 'สิ้นเดือน' : 'วันที่ $_dayOfMonth',
-                  surfaceColor: surfaceColor,
-                  textSecondary: textSecondary,
-                  onTap: () => _pickDayOfMonth(isDark),
-                ),
-                Divider(height: 1, color: dividerColor),
-
-                // ── Month start ────────────────────────────────────────────────
-                InkWell(
-                  onTap: () => _pickDate(isStart: true),
-                  child: Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
+                  const SizedBox(height: 10),
+                  RecurringSection(
+                    title: 'ชื่อรายการ',
+                    inset: false,
+                    child: Column(
                       children: [
-                        Text(
-                          'เดือนเริ่มต้น',
-                          style: TextStyle(fontSize: 16, color: textSecondary),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _formatMonthYear(_startDate),
-                          style: TextStyle(fontSize: 15, color: textPrimary),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right,
-                          color: textSecondary,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Divider(height: 1, color: dividerColor),
-
-                // ── Month end (optional) ───────────────────────────────────────
-                InkWell(
-                  onTap: () => _pickDate(isStart: false),
-                  child: Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'เดือนสิ้นสุด',
-                          style: TextStyle(fontSize: 16, color: textSecondary),
-                        ),
-                        const Spacer(),
-                        if (_endDate != null) ...[
-                          Text(
-                            _formatMonthYear(_endDate!),
-                            style: TextStyle(fontSize: 15, color: textPrimary),
+                        Container(
+                          color: surfaceColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
                           ),
-                          const SizedBox(width: 4),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkResponse(
-                              onTap: () => setState(() => _endDate = null),
-                              radius: 16,
-                              child: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: textSecondary,
+                          child: TextField(
+                            controller: _nameController,
+                            onTapOutside: (_) =>
+                                FocusScope.of(context).unfocus(),
+                            decoration: InputDecoration(
+                              hintText: 'ชื่อรายการ',
+                              hintStyle: TextStyle(color: textSecondary),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
                               ),
                             ),
+                            style: TextStyle(fontSize: 16, color: textPrimary),
                           ),
-                        ] else
-                          Text(
-                            'ไม่ได้เลือก',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: textSecondary.withValues(alpha: 0.6),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  RecurringSection(
+                    title: 'การตัดรายการ',
+                    inset: false,
+                    child: Column(
+                      children: [
+                        // ── Account ───────────────────────────────────────────────────
+                        _RowTile(
+                          label: 'บัญชี',
+                          value: selectedAccount?.name ?? 'เลือกบัญชี',
+                          surfaceColor: surfaceColor,
+                          textSecondary: textSecondary,
+                          onTap: () =>
+                              _pickAccount(accounts, isDestination: false),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+
+                        // ── To Account (transfer only) ────────────────────────────────
+                        if (_type.isTransferLike) ...[
+                          _RowTile(
+                            label: 'บัญชีปลายทาง',
+                            value:
+                                (_type == TransactionType.debtTransfer
+                                        ? selectedDebtAccount
+                                        : selectedToAccount)
+                                    ?.name ??
+                                'เลือกบัญชี',
+                            surfaceColor: surfaceColor,
+                            textSecondary: textSecondary,
+                            onTap: () => _type == TransactionType.debtTransfer
+                                ? _pickDebtAccount()
+                                : _pickAccount(accounts, isDestination: true),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                        ],
+
+                        // ── Debt Account (debtRepay only) ─────────────────────────────
+                        if (_type == TransactionType.debtRepay) ...[
+                          _RowTile(
+                            label: 'บัญชีหนี้สิน',
+                            value:
+                                selectedDebtAccount?.name ??
+                                'เลือกบัญชีหนี้สิน',
+                            surfaceColor: surfaceColor,
+                            textSecondary: textSecondary,
+                            onTap: _pickDebtAccount,
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                        ],
+
+                        // ── Category (non-transfer) ────────────────────────────────────
+                        if (_type.supportsCategory) ...[
+                          _RowTile(
+                            label: 'หมวดหมู่',
+                            value: selectedCategory?.name ?? 'ไม่ได้เลือก',
+                            surfaceColor: surfaceColor,
+                            textSecondary: textSecondary,
+                            onTap: () => _pickCategory(categories, isDark),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                        ],
+
+                        // ── Day of month ──────────────────────────────────────────────
+                        _RowTile(
+                          label: 'วันที่ในเดือน',
+                          value: _dayOfMonth == 0
+                              ? 'สิ้นเดือน'
+                              : 'วันที่ $_dayOfMonth',
+                          surfaceColor: surfaceColor,
+                          textSecondary: textSecondary,
+                          onTap: () => _pickDayOfMonth(isDark),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                      ],
+                    ),
+                  ),
+
+                  RecurringSection(
+                    title: 'กำหนดการและหน้าตา',
+                    inset: false,
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () => _pickDate(isStart: true),
+                          child: Container(
+                            color: surfaceColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'เดือนเริ่มต้น',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _formatMonthYear(_startDate),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: textSecondary,
+                                  size: 18,
+                                ),
+                              ],
                             ),
                           ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right,
-                          color: textSecondary,
-                          size: 18,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                Divider(height: 1, color: dividerColor),
-                // ── Icon ──────────────────────────────────────────────────────
-                InkWell(
-                  onTap: () => _pickIcon(isDark),
-                  child: Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'ไอคอน',
-                          style: TextStyle(fontSize: 16, color: textSecondary),
-                        ),
-                        const Spacer(),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: _color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(_icon, color: _color, size: 26),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right,
-                          color: textSecondary,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Divider(height: 1, color: dividerColor),
+                        Divider(height: 1, color: dividerColor),
 
-                // ── Color ─────────────────────────────────────────────────────
-                InkWell(
-                  onTap: () => _pickColor(isDark),
-                  child: Container(
-                    color: surfaceColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'สี',
-                          style: TextStyle(fontSize: 16, color: textSecondary),
-                        ),
-                        const Spacer(),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: _color,
-                            borderRadius: BorderRadius.circular(10),
+                        // ── Month end (optional) ───────────────────────────────────────
+                        InkWell(
+                          onTap: () => _pickDate(isStart: false),
+                          child: Container(
+                            color: surfaceColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'เดือนสิ้นสุด',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (_endDate != null) ...[
+                                  Text(
+                                    _formatMonthYear(_endDate!),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkResponse(
+                                      onTap: () =>
+                                          setState(() => _endDate = null),
+                                      radius: 16,
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ] else
+                                  Text(
+                                    'ไม่ได้เลือก',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: textSecondary.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: textSecondary,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right,
-                          color: textSecondary,
-                          size: 18,
+                        Divider(height: 1, color: dividerColor),
+                        InkWell(
+                          onTap: () => _pickIcon(isDark),
+                          child: Container(
+                            color: surfaceColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'ไอคอน',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: _color.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.large,
+                                    ),
+                                  ),
+                                  child: Icon(_icon, color: _color, size: 26),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: textSecondary,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                        InkWell(
+                          onTap: () => _pickColor(isDark),
+                          child: Container(
+                            color: surfaceColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'สี',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: _color,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.large,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: textSecondary,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Divider(height: 1, color: dividerColor),
+                      ],
+                    ),
+                  ),
+
+                  RecurringSection(
+                    title: 'การแจ้งเตือน',
+                    inset: false,
+                    child: Column(
+                      children: [
+                        _ToggleRow(
+                          color: surfaceColor,
+                          activeTrackColor: isDark
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                          value: _notificationEnabled,
+                          onChanged: (v) =>
+                              setState(() => _notificationEnabled = v),
+                          title: Text(
+                            'แจ้งเตือนเมื่อถึงกำหนด',
+                            style: TextStyle(fontSize: 16, color: textPrimary),
+                          ),
+                          subtitle: Text(
+                            _notificationEnabled
+                                ? 'เตือนบนเครื่องนี้เวลา ${_formatTime(_notificationTime)}'
+                                : 'ปิดการแจ้งเตือนอยู่',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondary,
+                            ),
+                          ),
+                        ),
+                        if (_notificationEnabled) ...[
+                          Divider(height: 1, color: dividerColor),
+                          _RowTile(
+                            label: 'เวลาแจ้งเตือน',
+                            value: _formatTime(_notificationTime),
+                            surfaceColor: surfaceColor,
+                            textSecondary: textSecondary,
+                            onTap: () => _pickNotificationTime(isDark),
+                          ),
+                          Divider(height: 1, color: dividerColor),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  RecurringSection(
+                    title: 'เพิ่มเติม',
+                    inset: false,
+                    child: Column(
+                      children: [
+                        Container(
+                          color: surfaceColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: TextField(
+                            controller: _noteController,
+                            onTapOutside: (_) =>
+                                FocusScope.of(context).unfocus(),
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              hintText: 'โน้ต (ไม่บังคับ)',
+                              hintStyle: TextStyle(color: textSecondary),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                            ),
+                            style: TextStyle(fontSize: 16, color: textPrimary),
+                          ),
+                        ),
+
+                        Divider(height: 1, color: dividerColor),
+                        _ToggleRow(
+                          color: surfaceColor,
+                          activeTrackColor: isDark
+                              ? AppColors.darkIncome
+                              : AppColors.income,
+                          value: _isHidden,
+                          onChanged: (v) => setState(() => _isHidden = v),
+                          title: Text(
+                            'ซ่อนรายการนี้',
+                            style: TextStyle(fontSize: 16, color: textPrimary),
+                          ),
+                          subtitle: Text(
+                            'ซ่อนจากรายการประจำ (แต่ยังทำงานอยู่)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                Divider(height: 1, color: dividerColor),
 
-                // ── Notification toggle ──────────────────────────────────────
-                const SizedBox(height: 8),
-                Container(
-                  color: surfaceColor,
-                  child: SwitchListTile(
-                    value: _notificationEnabled,
-                    onChanged: (v) => setState(() => _notificationEnabled = v),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    title: Text(
-                      'แจ้งเตือนเมื่อถึงกำหนด',
-                      style: TextStyle(fontSize: 16, color: textPrimary),
-                    ),
-                    subtitle: Text(
-                      _notificationEnabled
-                          ? 'เตือนบนเครื่องนี้เวลา ${_formatTime(_notificationTime)}'
-                          : 'ปิดการแจ้งเตือนอยู่',
-                      style: TextStyle(fontSize: 13, color: textSecondary),
-                    ),
-                  ),
-                ),
-                if (_notificationEnabled) ...[
-                  Divider(height: 1, color: dividerColor),
-                  _RowTile(
-                    label: 'เวลาแจ้งเตือน',
-                    value: _formatTime(_notificationTime),
-                    surfaceColor: surfaceColor,
-                    textSecondary: textSecondary,
-                    onTap: () => _pickNotificationTime(isDark),
-                  ),
-                  Divider(height: 1, color: dividerColor),
+                  const SizedBox(height: 24),
                 ],
-
-                // ── Note ──────────────────────────────────────────────────────
-                const SizedBox(height: 8),
-                Container(
-                  color: surfaceColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: TextField(
-                    controller: _noteController,
-                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                    maxLines: 2,
-                    decoration: InputDecoration(
-                      hintText: 'โน้ต (ไม่บังคับ)',
-                      hintStyle: TextStyle(color: textSecondary),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    style: TextStyle(fontSize: 16, color: textPrimary),
-                  ),
-                ),
-
-                // ── Hidden toggle ──────────────────────────────────────────────
-                const SizedBox(height: 8),
-                Container(
-                  color: surfaceColor,
-                  child: SwitchListTile(
-                    value: _isHidden,
-                    onChanged: (v) => setState(() => _isHidden = v),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    title: Text(
-                      'ซ่อนรายการนี้',
-                      style: TextStyle(fontSize: 16, color: textPrimary),
-                    ),
-                    subtitle: Text(
-                      'ซ่อนจากรายการประจำ (แต่ยังทำงานอยู่)',
-                      style: TextStyle(fontSize: 13, color: textSecondary),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-              ],
+              ),
             ),
           ),
         );
@@ -1033,7 +1169,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 controller: sc,
                 itemCount: categories.length,
                 separatorBuilder: (context, i) =>
-                    Divider(height: 1, color: dividerColor),
+                    Divider(height: 1, color: AppColors.listDividerFor(isDark)),
                 itemBuilder: (_, i) {
                   final cat = categories[i];
                   final isSelected = _categoryId == cat.id;
@@ -1512,34 +1648,334 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       ),
     );
   }
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
-  Color _typeColor(TransactionType type, bool isDark) {
-    switch (type) {
-      case TransactionType.income:
-        return isDark ? AppColors.darkIncome : AppColors.income;
-      case TransactionType.expense:
-        return isDark ? AppColors.darkExpense : AppColors.expense;
-      case TransactionType.transfer:
-      case TransactionType.debtRepay:
-        return isDark ? AppColors.darkTransfer : AppColors.transfer;
-      case TransactionType.debtTransfer:
-        return isDark ? AppColors.darkDebtTransfer : AppColors.debtTransfer;
-      case TransactionType.increaseBalance:
-        return isDark ? AppColors.darkIncome : AppColors.income;
-      case TransactionType.decreaseBalance:
-        return isDark ? AppColors.darkExpense : AppColors.expense;
-    }
-  }
 }
 
 // ── Reusable widgets ──────────────────────────────────────────────────────────
 
+class _RecurringTypeSegmentedControl extends StatelessWidget {
+  final TransactionType selectedType;
+  final bool isDarkMode;
+  final ValueChanged<TransactionType> onChanged;
+  final VoidCallback onShowMore;
+
+  const _RecurringTypeSegmentedControl({
+    required this.selectedType,
+    required this.isDarkMode,
+    required this.onChanged,
+    required this.onShowMore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final selectedSurface = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
+    final primary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final secondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final isPrimary =
+        selectedType == TransactionType.expense ||
+        selectedType == TransactionType.income ||
+        selectedType == TransactionType.transfer;
+    final otherLabel = switch (selectedType) {
+      TransactionType.debtRepay => 'ชำระหนี้ ▾',
+      TransactionType.debtTransfer => 'โอนหนี้ ▾',
+      TransactionType.increaseBalance => 'ปรับเพิ่ม ▾',
+      TransactionType.decreaseBalance => 'ปรับลด ▾',
+      _ => 'อื่นๆ ▾',
+    };
+
+    return Material(
+      color: surface,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            _tab(
+              'รายจ่าย',
+              selectedType == TransactionType.expense,
+              TransactionType.expense,
+              selectedSurface,
+              primary,
+              secondary,
+            ),
+            _tab(
+              'รายรับ',
+              selectedType == TransactionType.income,
+              TransactionType.income,
+              selectedSurface,
+              primary,
+              secondary,
+            ),
+            _tab(
+              'โอน',
+              selectedType == TransactionType.transfer,
+              TransactionType.transfer,
+              selectedSurface,
+              primary,
+              secondary,
+            ),
+            Expanded(
+              child: _segment(
+                otherLabel,
+                !isPrimary,
+                selectedSurface,
+                primary,
+                secondary,
+                onShowMore,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tab(
+    String label,
+    bool isSelected,
+    TransactionType type,
+    Color selectedSurface,
+    Color primary,
+    Color secondary,
+  ) => Expanded(
+    child: _segment(
+      label,
+      isSelected,
+      selectedSurface,
+      primary,
+      secondary,
+      () => onChanged(type),
+    ),
+  );
+
+  Widget _segment(
+    String label,
+    bool isSelected,
+    Color selectedSurface,
+    Color primary,
+    Color secondary,
+    VoidCallback onTap,
+  ) => Material(
+    color: isSelected ? selectedSurface : Colors.transparent,
+    borderRadius: BorderRadius.circular(AppRadii.large),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? primary : secondary,
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _RecurringAmountHeroCard extends StatelessWidget {
+  final TransactionType type;
+  final TextEditingController amountController;
+  final FocusNode amountFocusNode;
+  final Account? selectedAccount;
+  final bool isDarkMode;
+
+  const _RecurringAmountHeroCard({
+    required this.type,
+    required this.amountController,
+    required this.amountFocusNode,
+    required this.selectedAccount,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final surfaceVariant = isDarkMode
+        ? AppColors.darkSurfaceVariant
+        : AppColors.sectionHeader;
+    final textPrimary = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final typeColor = switch (type) {
+      TransactionType.income || TransactionType.increaseBalance =>
+        isDarkMode ? AppColors.darkIncome : AppColors.income,
+      TransactionType.expense || TransactionType.decreaseBalance =>
+        isDarkMode ? AppColors.darkExpense : AppColors.expense,
+      TransactionType.transfer || TransactionType.debtRepay =>
+        isDarkMode ? AppColors.darkTransfer : AppColors.transfer,
+      TransactionType.debtTransfer =>
+        isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer,
+    };
+    final currency = selectedAccount?.currency == 'USD' ? 'USD' : 'THB';
+
+    return Material(
+      color: surface,
+      borderRadius: BorderRadius.circular(AppRadii.sheet),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => amountFocusNode.requestFocus(),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'จำนวนเงิน',
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: surfaceVariant,
+                      borderRadius: BorderRadius.circular(AppRadii.small),
+                    ),
+                    child: Text(
+                      currency,
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    currency == 'USD' ? '\$ ' : '฿ ',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: typeColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: amountController,
+                      focusNode: amountFocusNode,
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      readOnly: calculatorTextFieldReadOnly,
+                      showCursor: true,
+                      keyboardType: calculatorTextInputType,
+                      inputFormatters: calculatorTextInputFormatters,
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        hintStyle: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                          color: isDarkMode
+                              ? AppColors.darkDivider
+                              : AppColors.divider,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        filled: false,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ToggleRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final Widget title;
+  final Widget subtitle;
+  final Color color;
+  final Color activeTrackColor;
+
+  const _ToggleRow({
+    required this.value,
+    required this.onChanged,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.activeTrackColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<SettingsProvider>().isDarkMode;
+    return Container(
+      color: color,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [title, const SizedBox(height: 2), subtitle],
+            ),
+          ),
+          const SizedBox(width: 12),
+          CupertinoSwitch(
+            value: value,
+            activeTrackColor: activeTrackColor,
+            inactiveTrackColor: isDark
+                ? const Color(0xFF39393D)
+                : const Color(0xFFE9E9EA),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RowTile extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
   final Color surfaceColor;
   final Color textSecondary;
   final VoidCallback onTap;
@@ -1547,7 +1983,6 @@ class _RowTile extends StatelessWidget {
   const _RowTile({
     required this.label,
     required this.value,
-    this.valueColor,
     required this.surfaceColor,
     required this.textSecondary,
     required this.onTap,
@@ -1559,6 +1994,15 @@ class _RowTile extends StatelessWidget {
     final textPrimary = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
+    final icon = switch (label) {
+      'บัญชี' => Icons.account_balance_wallet_outlined,
+      'บัญชีปลายทาง' => Icons.input_rounded,
+      'บัญชีหนี้สิน' => Icons.credit_card_rounded,
+      'หมวดหมู่' => Icons.category_outlined,
+      'วันที่ในเดือน' => Icons.calendar_today_rounded,
+      'เวลาแจ้งเตือน' => Icons.notifications_outlined,
+      _ => Icons.tune_rounded,
+    };
 
     return InkWell(
       onTap: onTap,
@@ -1567,20 +2011,44 @@ class _RowTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Text(label, style: TextStyle(fontSize: 16, color: textSecondary)),
-            const Spacer(),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                color: valueColor ?? textPrimary,
-                fontWeight: valueColor != null
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: textSecondary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.large),
+              ),
+              child: Icon(icon, color: textSecondary, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: textSecondary, size: 18),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
           ],
         ),
       ),
