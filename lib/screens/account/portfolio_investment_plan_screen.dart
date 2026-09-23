@@ -142,55 +142,57 @@ class _PortfolioInvestmentPlanScreenState
 
     return Container(
       color: backgroundColor,
-      child: ListView(
+      child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 96),
-        children: [
-          _Section(
-            title: 'DCA เดือนนี้',
-            isDarkMode: widget.isDarkMode,
-            child: _buildDcaChecklist(
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-              dividerColor: dividerColor,
-            ),
-          ),
-          _Section(
-            title: 'สัดส่วนเป้าหมาย',
-            trailing: _TargetTotalBadge(
-              total: analysis.targetPercentTotal,
-              isBalanced: analysis.isTargetBalanced,
+        child: Column(
+          children: [
+            _Section(
+              title: 'DCA เดือนนี้',
               isDarkMode: widget.isDarkMode,
+              child: _buildDcaChecklist(
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                dividerColor: dividerColor,
+              ),
             ),
-            isDarkMode: widget.isDarkMode,
-            child: _buildTargetEditor(
-              analysis: analysis,
-              enabledCount: enabledCount,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-              dividerColor: dividerColor,
+            _Section(
+              title: 'สัดส่วนเป้าหมาย',
+              trailing: _TargetTotalBadge(
+                total: analysis.targetPercentTotal,
+                isBalanced: analysis.isTargetBalanced,
+                isDarkMode: widget.isDarkMode,
+              ),
+              isDarkMode: widget.isDarkMode,
+              child: _buildTargetEditor(
+                analysis: analysis,
+                enabledCount: enabledCount,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                dividerColor: dividerColor,
+              ),
             ),
-          ),
-          _Section(
-            title: 'บาลานซ์ปัจจุบัน',
-            isDarkMode: widget.isDarkMode,
-            child: _buildRebalanceRows(
-              analysis: analysis,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-              dividerColor: dividerColor,
+            _Section(
+              title: 'บาลานซ์ปัจจุบัน',
+              isDarkMode: widget.isDarkMode,
+              child: _buildRebalanceRows(
+                analysis: analysis,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                dividerColor: dividerColor,
+              ),
             ),
-          ),
-          _Section(
-            title: 'จำลองซื้อเพิ่ม',
-            isDarkMode: widget.isDarkMode,
-            child: _buildBuyRecommendation(
-              analysis: analysis,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-              dividerColor: dividerColor,
+            _Section(
+              title: 'จำลองซื้อเพิ่ม',
+              isDarkMode: widget.isDarkMode,
+              child: _buildBuyRecommendation(
+                analysis: analysis,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                dividerColor: dividerColor,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

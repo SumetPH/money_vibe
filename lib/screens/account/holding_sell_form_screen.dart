@@ -30,8 +30,6 @@ TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
       return match ? newValue : oldValue;
     });
 
-double _roundToCents(double value) => (value * 100).roundToDouble() / 100;
-
 class HoldingSellFormScreen extends StatefulWidget {
   final StockHolding holding;
   final String currencyCode;
@@ -253,9 +251,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     final displayedCashReceived = double.tryParse(
       _cashReceivedController.text.trim(),
     );
-    final cashReceived = _cashEdited
-        ? displayedCashReceived
-        : _roundToCents(_calculateCashReceivedFromDetails());
+    final cashReceived = displayedCashReceived;
     final remainingShares = double.tryParse(_remainingSharesController.text);
     final remainingTotalCost = double.tryParse(
       _remainingTotalCostController.text,

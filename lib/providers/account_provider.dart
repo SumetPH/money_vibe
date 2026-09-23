@@ -1097,7 +1097,10 @@ class AccountProvider extends ChangeNotifier {
     final oldTrades = List<StockTrade>.from(_stockTrades);
     final isFullSell = remainingShares <= 0.0000001;
     final updatedAccount = oldAccount.copyWith(
-      cashBalance: oldAccount.cashBalance + cashReceivedUsd,
+      cashBalance:
+          ((oldAccount.cashBalance * 100).round() +
+              (cashReceivedUsd * 100).round()) /
+          100,
     );
 
     _accounts[accountIndex] = updatedAccount;
@@ -1189,7 +1192,10 @@ class AccountProvider extends ChangeNotifier {
     final oldAccount = _accounts[accountIndex];
     final oldHolding = isNewHolding ? null : holdings[holdingIndex];
     final updatedAccount = oldAccount.copyWith(
-      cashBalance: oldAccount.cashBalance - purchase.cashPaidUsd,
+      cashBalance:
+          ((oldAccount.cashBalance * 100).round() -
+              (purchase.cashPaidUsd * 100).round()) /
+          100,
     );
     _accounts[accountIndex] = updatedAccount;
     if (isNewHolding) {

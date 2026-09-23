@@ -323,15 +323,14 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
     Color textSecondaryColor,
   ) {
     // คำนวณยอดสรุปภาพรวมสำหรับ Hero Card
-    final totalUnpaid = bills
-        .where((b) => b.remainingAmount > 0)
-        .fold(0.0, (sum, b) => sum + b.remainingAmount);
-
     final openBill = bills.where((b) => b.isOpen).firstOrNull;
-    final openCycleAmount = openBill?.remainingAmount ?? 0.0;
-    final pastPending = bills
-        .where((b) => !b.isOpen && b.remainingAmount > 0)
-        .fold(0.0, (sum, b) => sum + b.remainingAmount);
+    final totalUnpaid = openBill?.remainingAmount ?? 0.0;
+    // ยอดชำระรอบปัจจุบันหักยอดค้างยกมาก่อน แล้วส่วนที่เหลือจึงหักยอดใช้ใหม่
+    final pastPending =
+        ((openBill?.carriedOverAmount ?? 0.0) - (openBill?.paidAmount ?? 0.0))
+            .clamp(0.0, totalUnpaid)
+            .toDouble();
+    final openCycleAmount = totalUnpaid - pastPending;
 
     return ListView(
       key: const PageStorageKey('credit_card_bill_list'),

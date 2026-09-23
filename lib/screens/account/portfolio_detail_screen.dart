@@ -37,10 +37,11 @@ class PortfolioDetailScreen extends StatefulWidget {
 }
 
 class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late StockPriceService _priceService;
   late StockLogoStorageService _logoStorageService;
   late final AnimationController _refreshIconController;
+  late final TabController _tabController;
   bool _isRefreshing = false;
   bool _isReorderMode = false;
   Map<String, String> _groupSortTypes =
@@ -57,12 +58,14 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
   }
 
   @override
   void dispose() {
     _refreshIconController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -308,121 +311,115 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           0,
           (sum, holding) => sum + holding.valueUsd,
         );
-        final tabContent = DefaultTabController(
-          length: 2,
-          child: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverToBoxAdapter(
-                  child: _HeroPortfolioSummaryCard(
-                    account: acc,
-                    totalValue: totalValue,
-                    holdings: holdings,
-                    onRateTap: () => _editExchangeRate(context, provider, acc),
-                    onCashTap: () => _editCashBalance(context, provider, acc),
-                    isDarkMode: isDarkMode,
+        final tabContent = SingleChildScrollView(
+          child: Column(
+            children: [
+              _HeroPortfolioSummaryCard(
+                account: acc,
+                totalValue: totalValue,
+                holdings: holdings,
+                onRateTap: () => _editExchangeRate(context, provider, acc),
+                onCashTap: () => _editCashBalance(context, provider, acc),
+                isDarkMode: isDarkMode,
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                SliverPersistentHeader(
-                  pinned: false,
-                  delegate: _TabBarDelegate(
-                    TabBar(
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      indicator: BoxDecoration(
-                        color: isDarkMode
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.sectionHeader,
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDarkMode ? 0.2 : 0.05,
-                            ),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.sectionHeader,
+                      borderRadius: BorderRadius.circular(AppRadii.large),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDarkMode ? 0.2 : 0.05,
                           ),
-                        ],
-                      ),
-                      dividerColor: Colors.transparent,
-                      labelColor: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
-                      unselectedLabelColor: isDarkMode
-                          ? AppColors.darkTextSecondary
-                          : AppColors.textSecondary,
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      tabs: const [
-                        Tab(text: 'พอร์ต'),
-                        // Tab(text: 'หุ้นทั้งหมด'),
-                        Tab(text: 'แผนการลงทุน'),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
                       ],
                     ),
-                    isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                    dividerColor: Colors.transparent,
+                    labelColor: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                    unselectedLabelColor: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    labelStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: const [
+                      Tab(text: 'พอร์ต'),
+                      // Tab(text: 'หุ้นทั้งหมด'),
+                      Tab(text: 'แผนการลงทุน'),
+                    ],
                   ),
                 ),
-              ];
-            },
-            body: TabBarView(
-              children: [
-                // Tab พอร์ต
-                _buildPortfolioTab(
-                  context,
-                  provider,
-                  acc,
-                  holdings,
-                  totalHoldingsValueUsd,
-                  isDarkMode,
-                ),
-                // Tab หุ้นทั้งหมด
-                // _buildAllStocksTab(
-                //   context,
-                //   provider,
-                //   acc,
-                //   holdings,
-                //   totalHoldingsValueUsd,
-                //   isDarkMode,
-                // ),
-                PortfolioInvestmentPlanScreen(
-                  account: acc,
-                  holdings: holdings,
-                  targets: provider.getPortfolioAllocationTargets(acc.id),
-                  dcaCompleted: provider.isInvestmentPlanDcaCompleted(acc.id),
-                  onDcaChanged: (completed) async {
-                    try {
-                      await provider.setInvestmentPlanDcaCompleted(
-                        portfolioId: acc.id,
-                        completed: completed,
-                      );
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('บันทึก DCA ไม่ได้: $e')),
-                      );
-                    }
-                  },
-                  onTargetChanged:
-                      ({
-                        required holding,
-                        required targetPercent,
-                        required isEnabled,
-                      }) => provider.updateAllocationTargetForHolding(
-                        portfolioId: acc.id,
-                        holding: holding,
-                        targetPercent: targetPercent,
-                        isEnabled: isEnabled,
+              ),
+              AnimatedBuilder(
+                animation: _tabController,
+                builder: (context, _) => _tabController.index == 0
+                    ? _buildPortfolioTab(
+                        context,
+                        provider,
+                        acc,
+                        holdings,
+                        totalHoldingsValueUsd,
+                        isDarkMode,
+                      )
+                    : PortfolioInvestmentPlanScreen(
+                        account: acc,
+                        holdings: holdings,
+                        targets: provider.getPortfolioAllocationTargets(acc.id),
+                        dcaCompleted: provider.isInvestmentPlanDcaCompleted(
+                          acc.id,
+                        ),
+                        onDcaChanged: (completed) async {
+                          try {
+                            await provider.setInvestmentPlanDcaCompleted(
+                              portfolioId: acc.id,
+                              completed: completed,
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('บันทึก DCA ไม่ได้: $e')),
+                            );
+                          }
+                        },
+                        onTargetChanged:
+                            ({
+                              required holding,
+                              required targetPercent,
+                              required isEnabled,
+                            }) => provider.updateAllocationTargetForHolding(
+                              portfolioId: acc.id,
+                              holding: holding,
+                              targetPercent: targetPercent,
+                              isEnabled: isEnabled,
+                            ),
+                        isDarkMode: isDarkMode,
                       ),
-                  isDarkMode: isDarkMode,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
 
@@ -1335,22 +1332,24 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) => _saveGroupOrder());
     }
 
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.only(bottom: 80),
-      children: [
-        for (final groupName in sortedGroupKeys) ...[
-          _buildGroupSection(
-            context,
-            groupName,
-            groups[groupName]!,
-            acc,
-            totalHoldingsValueUsd,
-            isDarkMode,
-            provider,
-          ),
-          const SizedBox(height: 16),
+      child: Column(
+        children: [
+          for (final groupName in sortedGroupKeys) ...[
+            _buildGroupSection(
+              context,
+              groupName,
+              groups[groupName]!,
+              acc,
+              totalHoldingsValueUsd,
+              isDarkMode,
+              provider,
+            ),
+            const SizedBox(height: 16),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -1758,43 +1757,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         );
       },
     );
-  }
-}
-
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-  final Color backgroundColor;
-
-  _TabBarDelegate(this.tabBar, this.backgroundColor);
-
-  @override
-  double get minExtent => 50;
-  @override
-  double get maxExtent => 50;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        ),
-        child: tabBar,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_TabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar ||
-        backgroundColor != oldDelegate.backgroundColor;
   }
 }
 

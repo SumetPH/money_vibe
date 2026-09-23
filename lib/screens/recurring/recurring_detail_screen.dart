@@ -413,11 +413,11 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
           ),
           body: SafeArea(
             top: false,
-            child: NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                // ── Header card ──────────────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: RecurringSection(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // ── Header card ──────────────────────────────────────────────
+                  RecurringSection(
                     title: 'สรุปรายการประจำ',
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -618,149 +618,105 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 12),
 
-                SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                // ── Tab bar ──────────────────────────────────────────────────
-                SliverPersistentHeader(
-                  pinned: false,
-                  delegate: _SliverTabBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      indicator: BoxDecoration(
+                  // ── Tab bar ──────────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
                         color: isDark
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.sectionHeader,
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.2 : 0.05,
-                            ),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                            ? AppColors.darkSurface
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       ),
-                      dividerColor: Colors.transparent,
-                      labelColor: textPrimary,
-                      unselectedLabelColor: textSecondary,
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      tabs: [
-                        Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
-                        Tab(text: 'รายการที่ผ่านมา (${past.length})'),
-                      ],
-                    ),
-                    isDark ? AppColors.darkSurface : AppColors.surface,
-                  ),
-                ),
-              ],
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  // ── Upcoming tab ─────────────────────────────────────────
-                  upcoming.isEmpty
-                      ? _EmptyState(
-                          message: 'ไม่มีรายการที่จะเกิดขึ้น',
-                          isDark: isDark,
-                        )
-                      : ListView(
-                          padding: EdgeInsets.zero,
-                          children: [
-                            for (var i = 0; i < upcoming.length; i++) ...[
-                              Builder(
-                                builder: (context) {
-                                  final date = upcoming[i];
-                                  final occ = occurrencesByDay[_dayKey(date)];
-                                  final linkedTx = occ?.transactionId != null
-                                      ? transactionsById[occ!.transactionId]
-                                      : null;
-                                  return _OccurrenceItem(
-                                    date: date,
-                                    occurrence: occ,
-                                    linkedTransaction: linkedTx,
-                                    recurring: recurring,
-                                    isDark: isDark,
-                                    surfaceColor: surfaceColor,
-                                    textPrimary: textPrimary,
-                                    textSecondary: textSecondary,
-                                    dividerColor: dividerColor,
-                                    typeColor: typeColor,
-                                    formatDate: _formatDateLong,
-                                    onCreateTap: () => _createTransaction(
-                                      context,
-                                      date,
-                                      isDark,
-                                    ),
-                                    onSkipTap: () =>
-                                        _skipOccurrence(context, date, isDark),
-                                    onUndoTap: () =>
-                                        _undoOccurrence(context, date, isDark),
-                                    onEditTap: linkedTx != null
-                                        ? () => _editTransaction(
-                                            context,
-                                            linkedTx,
-                                            date,
-                                          )
-                                        : null,
-                                  );
-                                },
+                      child: TabBar(
+                        controller: _tabController,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        indicator: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.sectionHeader,
+                          borderRadius: BorderRadius.circular(AppRadii.large),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.2 : 0.05,
                               ),
-                            ],
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
                           ],
                         ),
-                  // ── Past tab ─────────────────────────────────────────────
-                  past.isEmpty
-                      ? _EmptyState(
-                          message: 'ไม่มีรายการที่ผ่านมา',
-                          isDark: isDark,
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: past.length,
-                          itemBuilder: (context, i) {
-                            final date = past[i];
-                            final occ = occurrencesByDay[_dayKey(date)];
-                            final linkedTx = occ?.transactionId != null
-                                ? transactionsById[occ!.transactionId]
-                                : null;
-                            return _OccurrenceItem(
-                              date: date,
-                              occurrence: occ,
-                              linkedTransaction: linkedTx,
-                              recurring: recurring,
-                              isDark: isDark,
-                              surfaceColor: surfaceColor,
-                              textPrimary: textPrimary,
-                              textSecondary: textSecondary,
-                              dividerColor: dividerColor,
-                              typeColor: typeColor,
-                              formatDate: _formatDateLong,
-                              onCreateTap: () =>
-                                  _createTransaction(context, date, isDark),
-                              onSkipTap: () =>
-                                  _skipOccurrence(context, date, isDark),
-                              onUndoTap: () =>
-                                  _undoOccurrence(context, date, isDark),
-                              onEditTap: linkedTx != null
-                                  ? () => _editTransaction(
-                                      context,
-                                      linkedTx,
-                                      date,
-                                    )
-                                  : null,
-                            );
-                          },
+                        dividerColor: Colors.transparent,
+                        labelColor: textPrimary,
+                        unselectedLabelColor: textSecondary,
+                        labelStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                         ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        tabs: [
+                          Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
+                          Tab(text: 'รายการที่ผ่านมา (${past.length})'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) {
+                      final isUpcomingTab = _tabController.index == 0;
+                      final dates = isUpcomingTab ? upcoming : past;
+                      if (dates.isEmpty) {
+                        return _EmptyState(
+                          message: isUpcomingTab
+                              ? 'ไม่มีรายการที่จะเกิดขึ้น'
+                              : 'ไม่มีรายการที่ผ่านมา',
+                          isDark: isDark,
+                        );
+                      }
+
+                      Widget buildOccurrence(DateTime date) {
+                        final occ = occurrencesByDay[_dayKey(date)];
+                        final linkedTx = occ?.transactionId != null
+                            ? transactionsById[occ!.transactionId]
+                            : null;
+                        return _OccurrenceItem(
+                          date: date,
+                          occurrence: occ,
+                          linkedTransaction: linkedTx,
+                          recurring: recurring,
+                          isDark: isDark,
+                          surfaceColor: surfaceColor,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          dividerColor: dividerColor,
+                          typeColor: typeColor,
+                          formatDate: _formatDateLong,
+                          onCreateTap: () =>
+                              _createTransaction(context, date, isDark),
+                          onSkipTap: () =>
+                              _skipOccurrence(context, date, isDark),
+                          onUndoTap: () =>
+                              _undoOccurrence(context, date, isDark),
+                          onEditTap: linkedTx != null
+                              ? () => _editTransaction(context, linkedTx, date)
+                              : null,
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          for (final date in dates) buildOccurrence(date),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -1131,44 +1087,6 @@ class _TypeBadge extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-  final Color backgroundColor;
-
-  _SliverTabBarDelegate(this.tabBar, this.backgroundColor);
-
-  @override
-  double get minExtent => 50;
-
-  @override
-  double get maxExtent => 50;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        ),
-        child: tabBar,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar ||
-        backgroundColor != oldDelegate.backgroundColor;
   }
 }
 
