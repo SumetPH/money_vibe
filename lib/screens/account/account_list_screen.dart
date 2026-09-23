@@ -88,7 +88,15 @@ class _AccountListScreenState extends State<AccountListScreen> {
             padding: const EdgeInsets.only(right: 16),
             child: Material(
               color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              shape: const CircleBorder(),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                side: BorderSide(
+                  color: isDarkMode
+                      ? AppColors.darkDivider.withValues(alpha: 0.4)
+                      : AppColors.divider.withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
               clipBehavior: Clip.antiAlias,
               child: IconButton(
                 icon: const Icon(Icons.more_horiz),
@@ -890,7 +898,6 @@ class _TotalRow extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    final accent = isDarkMode ? AppColors.darkFabYellow : AppColors.fabYellow;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
@@ -906,7 +913,7 @@ class _TotalRow extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: accent),
+              Icon(icon, size: 18, color: textColor),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(

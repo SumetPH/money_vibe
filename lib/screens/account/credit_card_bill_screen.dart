@@ -182,7 +182,15 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             leading: Center(
               child: Material(
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(
@@ -268,7 +276,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
           decoration: BoxDecoration(
             color: surfaceColor,
-            borderRadius: BorderRadius.circular(AppRadii.sheet),
+            borderRadius: BorderRadius.circular(AppRadii.xLarge),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -447,7 +455,7 @@ class _HeroSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: isDarkMode
               ? AppColors.darkDivider.withValues(alpha: 0.4)

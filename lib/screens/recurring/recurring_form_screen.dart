@@ -492,7 +492,15 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               padding: const EdgeInsets.only(left: 12),
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDark
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(
@@ -525,7 +533,15 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               if (_isEditing)
                 Material(
                   color: surfaceColor,
-                  shape: const CircleBorder(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: isDark
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     icon: Icon(

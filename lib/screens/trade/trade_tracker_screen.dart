@@ -338,7 +338,15 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
       padding: const EdgeInsets.only(right: 8),
       child: Material(
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.full),
+          side: BorderSide(
+            color: isDarkMode
+                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                : AppColors.divider.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
           icon: Icon(

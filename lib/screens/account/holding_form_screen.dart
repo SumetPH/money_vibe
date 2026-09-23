@@ -557,7 +557,15 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         leading: Center(
           child: Material(
             color: surfaceColor,
-            shape: const CircleBorder(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.full),
+              side: BorderSide(
+                color: isDarkMode
+                    ? AppColors.darkDivider.withValues(alpha: 0.4)
+                    : AppColors.divider.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
             clipBehavior: Clip.antiAlias,
             child: IconButton(
               icon: Icon(Icons.close, size: 20, color: textColor),
@@ -581,7 +589,15 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: Material(
                 color: expenseColor.withValues(alpha: 0.12),
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(

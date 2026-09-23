@@ -432,7 +432,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             leading: Center(
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: _isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(
@@ -466,7 +474,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   padding: const EdgeInsets.only(right: 6),
                   child: Material(
                     color: surfaceColor,
-                    shape: const CircleBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: _isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
                       icon: Icon(

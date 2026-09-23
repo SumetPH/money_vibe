@@ -158,7 +158,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: dialogBgColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.sheet),
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
         ),
         title: Text(
           'ลบหมวดหมู่',
@@ -262,7 +262,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
             leading: Center(
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
@@ -286,7 +294,15 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                   padding: const EdgeInsets.only(right: 6),
                   child: Material(
                     color: surfaceColor,
-                    shape: const CircleBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
                       icon: Icon(

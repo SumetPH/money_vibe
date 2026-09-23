@@ -604,7 +604,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             leading: Center(
               child: Material(
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(
@@ -640,7 +648,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     color: isDarkMode
                         ? AppColors.darkSurface
                         : AppColors.surface,
-                    shape: const CircleBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
                       icon: Icon(
@@ -1283,7 +1299,7 @@ class _AmountHeroCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.sheet),
+            borderRadius: BorderRadius.circular(AppRadii.xLarge),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1571,7 +1587,7 @@ class _SelectionGroupCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: isDarkMode
               ? AppColors.darkDivider.withValues(alpha: 0.4)
@@ -2055,7 +2071,7 @@ class _MetaInfoCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: isDarkMode
               ? AppColors.darkDivider.withValues(alpha: 0.4)

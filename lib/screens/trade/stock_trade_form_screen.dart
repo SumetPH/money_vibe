@@ -374,7 +374,15 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
           padding: const EdgeInsets.only(left: 12),
           child: Material(
             color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-            shape: const CircleBorder(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.full),
+              side: BorderSide(
+                color: isDarkMode
+                    ? AppColors.darkDivider.withValues(alpha: 0.4)
+                    : AppColors.divider.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
             clipBehavior: Clip.antiAlias,
             child: IconButton(
               icon: Icon(

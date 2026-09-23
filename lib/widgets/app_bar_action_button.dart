@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_vibe/theme/app_radii.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
@@ -29,7 +30,15 @@ class AppBarActionButton extends StatelessWidget {
       padding: const EdgeInsets.only(right: 8),
       child: Material(
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.full),
+          side: BorderSide(
+            color: isDarkMode
+                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                : AppColors.divider.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
           tooltip: tooltip,

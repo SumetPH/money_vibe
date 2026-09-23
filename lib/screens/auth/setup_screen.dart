@@ -36,7 +36,7 @@ class SetupScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: surfaceColor,
-                  borderRadius: BorderRadius.circular(AppRadii.sheet),
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
                   border: Border.all(
                     color:
                         (isDarkMode ? AppColors.darkDivider : AppColors.divider)

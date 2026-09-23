@@ -43,7 +43,7 @@ class AppDrawer extends StatelessWidget {
       elevation: 0,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(
-          right: Radius.circular(AppRadii.sheet),
+          right: Radius.circular(AppRadii.xLarge),
         ),
       ),
       clipBehavior: Clip.antiAlias,

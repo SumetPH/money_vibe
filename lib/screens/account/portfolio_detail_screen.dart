@@ -440,7 +440,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             leading: Center(
               child: Material(
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: Icon(
@@ -486,7 +494,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 padding: const EdgeInsets.only(right: 6),
                 child: Material(
                   color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  shape: const CircleBorder(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: isDarkMode
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     icon: _isRefreshing
@@ -510,7 +526,15 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 padding: const EdgeInsets.only(right: 16),
                 child: Material(
                   color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  shape: const CircleBorder(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: isDarkMode
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     icon: Icon(

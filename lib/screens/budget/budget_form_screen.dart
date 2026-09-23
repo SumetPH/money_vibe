@@ -222,7 +222,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           builder: (dialogContext) => AlertDialog(
             backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.sheet),
+              borderRadius: BorderRadius.circular(AppRadii.xLarge),
             ),
             title: Text(
               'ย้ายหมวดหมู่',
@@ -380,7 +380,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.sheet),
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
         ),
         title: Text(
           'ลบงบประมาณ',
@@ -498,7 +498,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             leading: Center(
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDark
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
@@ -527,7 +535,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   padding: const EdgeInsets.only(right: 6),
                   child: Material(
                     color: surfaceColor,
-                    shape: const CircleBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: isDark
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
                       icon: Icon(

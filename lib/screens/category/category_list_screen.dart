@@ -158,7 +158,15 @@ class _CategoryListScreenState extends State<CategoryListScreen>
               padding: const EdgeInsets.only(right: 8),
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: const Icon(Icons.add_rounded, size: 22),
@@ -172,7 +180,15 @@ class _CategoryListScreenState extends State<CategoryListScreen>
               padding: const EdgeInsets.only(right: 16),
               child: Material(
                 color: surfaceColor,
-                shape: const CircleBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: isDarkMode
+                        ? AppColors.darkDivider.withValues(alpha: 0.4)
+                        : AppColors.divider.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   icon: const Icon(Icons.more_horiz_rounded, size: 20),

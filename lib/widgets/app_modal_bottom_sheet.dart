@@ -25,7 +25,9 @@ Future<T?> showAppModalBottomSheet<T>({
     barrierColor: Colors.black.withValues(alpha: 0.5),
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppRadii.xLarge),
+      ),
     ),
     builder: builder,
   );

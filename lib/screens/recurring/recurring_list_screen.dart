@@ -118,7 +118,15 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                 padding: const EdgeInsets.only(right: 12),
                 child: Material(
                   color: surfaceColor,
-                  shape: const CircleBorder(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: isDark
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     icon: Icon(

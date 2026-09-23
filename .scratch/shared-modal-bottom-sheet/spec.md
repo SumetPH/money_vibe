@@ -17,7 +17,7 @@ Status: resolved
 
 - Put modal presentation defaults behind one shared function in `lib/widgets`.
 - Use Flutter's native drag handle rather than drawing a handle in each sheet.
-- Reuse `AppColors`, `AppRadii.sheet`, `SettingsProvider`, and the existing `BottomSheetThemeData`.
+- Reuse `AppColors`, `AppRadii`, `SettingsProvider`, and the existing `BottomSheetThemeData`.
 - Migrate all current modal call sites; do not add a dependency or a new state abstraction.
 
 ## Validation

@@ -295,33 +295,57 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     ],
                                   ),
                                 ),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.xLarge,
-                                  ),
-                                  child: Column(
-                                    children: txs.asMap().entries.map((entry) {
-                                      final tx = entry.value;
-                                      return Column(
-                                        children: [
-                                          _TransactionItem(
-                                            tx: tx,
-                                            accountProvider: accountProvider,
-                                            catProvider: catProvider,
-                                            onTap: () => _openForm(context, tx),
-                                            isDarkMode: isDarkMode,
-                                            viewingAccountId: widget.accountId,
-                                          ),
-                                          if (entry.key < txs.length - 1)
-                                            Divider(
-                                              height: 1,
-                                              color: AppColors.listDividerFor(
-                                                isDarkMode,
-                                              ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode
+                                        ? AppColors.darkSurface
+                                        : AppColors.surface,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.xLarge,
+                                    ),
+                                    border: Border.all(
+                                      color: isDarkMode
+                                          ? AppColors.darkDivider.withValues(
+                                              alpha: 0.4,
+                                            )
+                                          : AppColors.divider.withValues(
+                                              alpha: 0.4,
                                             ),
-                                        ],
-                                      );
-                                    }).toList(),
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.xLarge,
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: Column(
+                                      children: txs.asMap().entries.map((
+                                        entry,
+                                      ) {
+                                        final tx = entry.value;
+                                        return Column(
+                                          children: [
+                                            _TransactionItem(
+                                              tx: tx,
+                                              accountProvider: accountProvider,
+                                              catProvider: catProvider,
+                                              onTap: () =>
+                                                  _openForm(context, tx),
+                                              isDarkMode: isDarkMode,
+                                              viewingAccountId:
+                                                  widget.accountId,
+                                            ),
+                                            if (entry.key < txs.length - 1)
+                                              Divider(
+                                                height: 1,
+                                                color: AppColors.listDividerFor(
+                                                  isDarkMode,
+                                                ),
+                                              ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -803,7 +827,15 @@ class _HeaderAction extends StatelessWidget {
       padding: const EdgeInsets.only(left: 6),
       child: Material(
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.full),
+          side: BorderSide(
+            color: isDarkMode
+                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                : AppColors.divider.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
           onPressed: onTap,
@@ -853,7 +885,7 @@ class _CashFlowSummary extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: isDarkMode
               ? AppColors.darkDivider.withValues(alpha: 0.4)
@@ -876,14 +908,14 @@ class _CashFlowSummary extends StatelessWidget {
                 ),
               ),
               if (!hidePeriodSelector)
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: 32),
-                  child: TextButton.icon(
-                    onPressed: onSelectPeriod,
-                    iconAlignment: IconAlignment.end,
-                    icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                    label: Text(periodLabel),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
                   ),
+                  onPressed: onSelectPeriod,
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  label: Text(periodLabel),
                 ),
             ],
           ),
@@ -1260,92 +1292,76 @@ class _TransactionItem extends StatelessWidget {
               ? '+'
               : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
 
-    return Material(
-      color: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          color: surfaceColor,
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: (category?.color ?? typeColor).withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(AppRadii.large),
-                ),
-                child: Icon(
-                  tx.type == TransactionType.debtTransfer
-                      ? Icons.account_tree
-                      : tx.type == TransactionType.transfer
-                      ? Icons.swap_horiz
-                      : tx.type == TransactionType.debtRepay
-                      ? Icons.payment
-                      : (category?.icon ?? Icons.receipt),
-                  color: category?.color ?? typeColor,
-                  size: 22,
-                ),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: surfaceColor,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: (category?.color ?? typeColor).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(AppRadii.large),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAccountWidget(
-                      account,
-                      toAccount,
-                      tx,
-                      textPrimaryColor,
-                      isDarkMode,
-                    ),
-                    if (subLabel.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subLabel,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondaryColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
+              child: Icon(
+                tx.type == TransactionType.debtTransfer
+                    ? Icons.account_tree
+                    : tx.type == TransactionType.transfer
+                    ? Icons.swap_horiz
+                    : tx.type == TransactionType.debtRepay
+                    ? Icons.payment
+                    : (category?.icon ?? Icons.receipt),
+                color: category?.color ?? typeColor,
+                size: 22,
               ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    amountText,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: amountColor,
+                  _buildAccountWidget(
+                    account,
+                    toAccount,
+                    tx,
+                    textPrimaryColor,
+                    isDarkMode,
+                  ),
+                  if (subLabel.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subLabel,
+                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatTime(tx.dateTime),
-                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                  ),
+                  ],
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  amountText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: amountColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatTime(tx.dateTime),
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

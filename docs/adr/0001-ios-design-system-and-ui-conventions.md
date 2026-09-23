@@ -60,8 +60,16 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
      - Encase leading and action icons inside circular surface containers with proper touch ripple:
        ```dart
        Material(
-         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-         shape: const CircleBorder(),
+          color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.full),
+          side: BorderSide(
+            color: isDarkMode
+                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                : AppColors.divider.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
          clipBehavior: Clip.antiAlias,
          child: IconButton(
            icon: const Icon(Icons.more_horiz, size: 20),
@@ -76,13 +84,13 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
      - Never use sticky, full-width rectangular Material `NavigationBar` or `BottomNavigationBar`.
      - Always use `AppBottomNavigation` floating capsule dock:
        - Margin: `EdgeInsets.symmetric(horizontal: 12)`
-       - Radius: `BorderRadius.circular(AppRadii.sheet)`
+       - Radius: `BorderRadius.circular(AppRadii.xLarge)`
        - Border: `Border.all(color: dividerColor.withValues(alpha: 0.4), width: 1)`
        - Shadow: `BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 4))`
        - Inset padding: `SafeArea(top: false, minimum: const EdgeInsets.symmetric(vertical: 6))`
    - **Tab & Action Structure**:
      - Three Main Tab destinations: บัญชี (`/accounts`), แผน (`/budgets`), and รายการ (`/transactions`). เมนูเปิด AppDrawer, which also exposes secondary destinations. See ADR 0002 for retained tab state and primary-navigation ownership.
-     - Central elevated Quick-Add FAB: Dedicated circular action button (`width: 54, height: 54`, `shape: CircleBorder()`, `color: fabColor`, `onFab` icon `Icons.add_rounded, size: 30`) for immediate transaction creation.
+     - Central elevated Quick-Add FAB: Dedicated circular action button (`width: 54, height: 54`, `color: fabColor`, `onFab` icon `Icons.add_rounded, size: 30`) for immediate transaction creation.
    - **Responsive & Scoped Integration**:
      - Show on mobile only (`isLargeScreen ? null : ...` where `isLargeScreen` is width >= 800px).
      - Must be wrapped in `Builder` inside `Scaffold.bottomNavigationBar` so that `onOpenDrawer: () => Scaffold.of(context).openDrawer()` receives a descendant context with access to the Scaffold.

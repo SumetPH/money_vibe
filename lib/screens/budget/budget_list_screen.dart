@@ -361,7 +361,15 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               else ...[
                 Material(
                   color: surfaceColor,
-                  shape: const CircleBorder(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: isDarkMode
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     icon: const Icon(Icons.pie_chart_outline_rounded),
@@ -385,7 +393,15 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   padding: const EdgeInsets.only(right: 16),
                   child: Material(
                     color: surfaceColor,
-                    shape: const CircleBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
                       icon: const Icon(Icons.more_horiz_rounded),

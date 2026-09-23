@@ -58,8 +58,8 @@
 - **Scaffold Header & App Bar**: พื้นหลังกลืนกับ canvas (`backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.background`, `elevation: 0`, `scrolledUnderElevation: 0`)
   - _หน้าหลัก (Tab Screens)_: ใช้ iOS Large Title สองระดับ (supertitle `13sp` `textSecondary` + title `30sp` `textPrimary`), `toolbarHeight: 100`, `centerTitle: false`
   - _หน้า Form / Detail_: ใช้ title กึ่งกลาง `18sp`, `leadingWidth: 64`
-  - _ปุ่ม Action / Leading_: ต้องครอบด้วยวงกลมพื้นหลัง surface เสมอ (`Material(color: surface, shape: CircleBorder(), clipBehavior: Clip.antiAlias, child: IconButton(...))`) ห้ามวาง icon ลอย ๆ บนพื้นหลัง
-- **Bottom Navigation**: สำหรับหน้าจอหลักบน mobile (`!isLargeScreen`) ต้องใช้ `AppBottomNavigation` แบบ Floating Capsule เสมอ (ขอบโค้งมน `AppRadii.sheet`, มีขอบเส้นบางและเงาละมุน, มีปุ่ม FAB เพิ่มรายการตรงกลาง และปุ่มเมนูเปิด Drawer) โดยครอบด้วย `Builder` เพื่อให้ `Scaffold.of(context).openDrawer()` ทำงานได้ถูกต้อง
+  - _ปุ่ม Action / Leading_: ต้องครอบด้วยวงกลมพื้นหลัง surface เสมอ (`Material(color: surface, clipBehavior: Clip.antiAlias, child: IconButton(...))`) ห้ามวาง icon ลอย ๆ บนพื้นหลัง
+- **Bottom Navigation**: สำหรับหน้าจอหลักบน mobile (`!isLargeScreen`) ต้องใช้ `AppBottomNavigation` แบบ Floating Capsule เสมอ (ขอบโค้งมน `AppRadii.xLarge`, มีขอบเส้นบางและเงาละมุน, มีปุ่ม FAB เพิ่มรายการตรงกลาง และปุ่มเมนูเปิด Drawer) โดยครอบด้วย `Builder` เพื่อให้ `Scaffold.of(context).openDrawer()` ทำงานได้ถูกต้อง
 - การใช้สี income, expense, transfer, debtRepay ควรใช้เพื่อสื่อความหมายของตัวเลขหรือสถานะ ไม่ใช้เพื่อแต่งพื้นหลังจนรก
 - ศึกษาตัวอย่างและรายละเอียดเพิ่มเติมได้ที่ `docs/adr/0001-ios-design-system-and-ui-conventions.md`
 
