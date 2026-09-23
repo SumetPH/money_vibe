@@ -67,12 +67,16 @@ void main() async {
   final authProvider = AuthProvider();
   final llmProvider = LlmProvider();
   final syncProvider = SyncProvider(
-    repository: dbManager.repositoryOrNull,
-    accountProvider: accountProvider,
-    categoryProvider: categoryProvider,
-    transactionProvider: transactionProvider,
-    budgetProvider: budgetProvider,
-    recurringProvider: recurringProvider,
+    isAuthenticated: () => dbManager.repositoryOrNull?.isAuthenticated ?? false,
+    getSyncLogs: () async =>
+        await dbManager.repositoryOrNull?.getSyncLogs() ?? <String, DateTime>{},
+    refreshers: {
+      SyncModule.accounts: accountProvider.reloadPersistedData,
+      SyncModule.categories: categoryProvider.reload,
+      SyncModule.transactions: transactionProvider.reload,
+      SyncModule.budgets: budgetProvider.reload,
+      SyncModule.recurring: recurringProvider.reload,
+    },
   );
 
   try {
@@ -89,13 +93,15 @@ void main() async {
 
     // โหลดข้อมูลถ้า Login แล้ว
     if (authProvider.isLoggedIn) {
-      await Future.wait([
-        _initProvider('Account', accountProvider.init),
-        _initProvider('Budget', budgetProvider.init),
-        _initProvider('Category', categoryProvider.init),
-        _initProvider('Transaction', transactionProvider.init),
-        _initProvider('Recurring', recurringProvider.init),
-      ]);
+      await syncProvider.initialize(
+        () => Future.wait([
+          _initProvider('Account', accountProvider.init),
+          _initProvider('Budget', budgetProvider.init),
+          _initProvider('Category', categoryProvider.init),
+          _initProvider('Transaction', transactionProvider.init),
+          _initProvider('Recurring', recurringProvider.init),
+        ]),
+      );
     }
 
     await _initProvider(
@@ -176,6 +182,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final _AppRouterRefreshNotifier _routerRefreshNotifier;
   late final GoRouter _router;
   late final VoidCallback _routeInformationListener;
+  late final VoidCallback _authStateListener;
+  String? _syncUserId;
   String? _pendingRecurringDetailId;
 
   @override
@@ -268,10 +276,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
     _routeInformationListener = () {
       if (mounted) {
+        if (widget.authProvider.isLoggedIn && widget.syncProvider.hasBaseline) {
+          _checkAndSync();
+        }
         setState(() {});
       }
     };
     _router.routeInformationProvider.addListener(_routeInformationListener);
+    _syncUserId = widget.authProvider.userId;
+    _authStateListener = () {
+      final userId = widget.authProvider.userId;
+      if (userId == _syncUserId) return;
+      _syncUserId = userId;
+      widget.syncProvider.reset();
+    };
+    widget.authProvider.addListener(_authStateListener);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       RecurringNotificationService.instance.setOnNotificationTap(
@@ -282,9 +301,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && widget.authProvider.isLoggedIn) {
-      widget.syncProvider.checkAndSync();
+    if (state == AppLifecycleState.resumed &&
+        widget.authProvider.isLoggedIn &&
+        widget.syncProvider.hasBaseline) {
+      _checkAndSync();
     }
+  }
+
+  void _checkAndSync() {
+    widget.syncProvider.checkAndSync().catchError((error, stackTrace) {
+      debugPrint('[MyApp] Background sync failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    });
   }
 
   String _getDefaultTopLevelLocation() {
@@ -420,6 +448,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     RecurringNotificationService.instance.clearOnNotificationTap();
+    widget.authProvider.removeListener(_authStateListener);
     _router.routeInformationProvider.removeListener(_routeInformationListener);
     _routerRefreshNotifier.dispose();
     _router.dispose();

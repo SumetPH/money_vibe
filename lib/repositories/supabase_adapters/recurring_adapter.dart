@@ -95,7 +95,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
     await client
         .from('recurring_transactions')
         .insert(_recurringToSupabase(recurring));
-    await repo.updateSyncLog('recurring');
   }
 
   @override
@@ -111,7 +110,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
         .update(_recurringToSupabase(recurring))
         .eq('id', recurring.id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('recurring');
   }
 
   @override
@@ -123,7 +121,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('recurring');
   }
 
   @override
@@ -144,11 +141,21 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
         );
       }
       repo.log('Updated recurring sort order successfully: $id');
-      await repo.updateSyncLog('recurring');
     } catch (e) {
       repo.logError('Error updating recurring sort order', e);
       rethrow;
     }
+  }
+
+  @override
+  Future<void> updateRecurringSortOrders(
+    List<RecurringTransaction> recurring,
+  ) async {
+    if (recurring.isEmpty) return;
+    _requireAuth();
+    await client
+        .from('recurring_transactions')
+        .upsert(recurring.map(_recurringToSupabase).toList(), onConflict: 'id');
   }
 
   @override
@@ -213,7 +220,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
     await client
         .from('recurring_occurrences')
         .insert(_occurrenceToSupabase(occurrence));
-    await repo.updateSyncLog('recurring');
   }
 
   @override
@@ -225,7 +231,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('recurring');
   }
 
   @override
@@ -239,7 +244,6 @@ class SupabaseRecurringAdapter implements RecurringRepositoryInterface {
         .delete()
         .eq('recurring_id', recurringId)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('recurring');
   }
 
   @override

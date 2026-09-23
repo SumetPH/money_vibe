@@ -11,7 +11,6 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
-import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/monthly_cycle_selector.dart';
@@ -38,12 +37,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
-    if (!widget.showPrimaryNavigation) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<SyncProvider>().checkAndSync();
-      }
-    });
   }
 
   @override

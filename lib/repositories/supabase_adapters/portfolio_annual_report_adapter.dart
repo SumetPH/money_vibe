@@ -40,7 +40,6 @@ class SupabasePortfolioAnnualReportAdapter
       await _repo.client
           .from('portfolio_annual_reports')
           .insert(report.toMap());
-      await _repo.updateSyncLog('portfolio_annual_reports');
     } catch (e) {
       _repo.logError('Failed to insert portfolio annual report', e);
       rethrow;
@@ -56,7 +55,6 @@ class SupabasePortfolioAnnualReportAdapter
           .from('portfolio_annual_reports')
           .update(report.toMap())
           .eq('id', report.id);
-      await _repo.updateSyncLog('portfolio_annual_reports');
     } catch (e) {
       _repo.logError('Failed to update portfolio annual report', e);
       rethrow;
@@ -69,7 +67,6 @@ class SupabasePortfolioAnnualReportAdapter
     try {
       _repo.log('Deleting portfolio annual report: $id');
       await _repo.client.from('portfolio_annual_reports').delete().eq('id', id);
-      await _repo.updateSyncLog('portfolio_annual_reports');
     } catch (e) {
       _repo.logError('Failed to delete portfolio annual report', e);
       rethrow;

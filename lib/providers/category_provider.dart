@@ -11,6 +11,7 @@ class CategoryProvider extends ChangeNotifier {
 
   final List<Category> _categories = [];
   bool _isLoading = false;
+  int _stateVersion = 0;
 
   bool get isLoading => _isLoading;
 
@@ -23,6 +24,12 @@ class CategoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
@@ -30,7 +37,11 @@ class CategoryProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      final loadVersion = _stateVersion;
       final categories = await _db.getCategories();
+      if (_stateVersion != loadVersion) {
+        throw StateError('Category state changed during refresh');
+      }
       // Sort by sortOrder to ensure correct order
       categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _categories.clear();
@@ -202,9 +213,7 @@ class CategoryProvider extends ChangeNotifier {
 
     try {
       debugPrint('CategoryProvider: Saving to database...');
-      for (final cat in typeCategories) {
-        await _db.updateCategorySortOrder(cat.id, cat.sortOrder);
-      }
+      await _db.updateCategorySortOrders(typeCategories);
       debugPrint('CategoryProvider: Reorder complete');
     } catch (e) {
       debugPrint('CategoryProvider: Error reordering categories: $e');

@@ -70,7 +70,6 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
     _requireAuth();
     repo.log('Inserting account: ${account.id} for user: $currentUserId');
     await client.from('accounts').insert(_accountToSupabase(account));
-    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -82,7 +81,6 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .update(_accountToSupabase(account))
         .eq('id', account.id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -94,7 +92,6 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .update({'cash_balance': cashBalance})
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -114,7 +111,6 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .update(values)
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('accounts');
   }
 
   @override
@@ -135,11 +131,19 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         );
       }
       repo.log('Updated account sort order successfully: $id');
-      await repo.updateSyncLog('accounts');
     } catch (e) {
       repo.logError('Error updating account sort order', e);
       rethrow;
     }
+  }
+
+  @override
+  Future<void> updateAccountSortOrders(List<Account> accounts) async {
+    if (accounts.isEmpty) return;
+    _requireAuth();
+    await client
+        .from('accounts')
+        .upsert(accounts.map(_accountToSupabase).toList(), onConflict: 'id');
   }
 
   @override
@@ -151,7 +155,6 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('accounts');
   }
 
   @override

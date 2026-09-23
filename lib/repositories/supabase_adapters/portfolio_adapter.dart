@@ -61,7 +61,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
     _requireAuth();
     repo.log('Inserting holding: ${holding.id} for user: $currentUserId');
     await client.from('portfolio_holdings').insert(_holdingToSupabase(holding));
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -73,7 +72,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
         .update(_holdingToSupabase(holding))
         .eq('id', holding.id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -89,7 +87,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
         })
         .eq('id', holding.id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -110,7 +107,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
         );
       }
       repo.log('Updated holding sort order successfully: $id');
-      await repo.updateSyncLog('portfolio');
     } catch (e) {
       repo.logError('Error updating holding sort order', e);
       rethrow;
@@ -126,7 +122,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -140,7 +135,6 @@ class SupabasePortfolioAdapter implements PortfolioRepositoryInterface {
         .delete()
         .eq('portfolio_id', portfolioId)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override

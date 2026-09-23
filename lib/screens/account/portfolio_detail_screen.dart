@@ -10,7 +10,6 @@ import '../../models/account.dart';
 import '../../models/stock_holding.dart';
 import '../../models/stock_purchase.dart';
 import '../../providers/account_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
@@ -132,10 +131,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     setState(() => _isRefreshing = true);
 
     try {
-      await context.read<SyncProvider>().checkAndSync();
-      if (!mounted) return;
-
-      await provider.reload();
+      await provider.reloadPersistedData();
       if (!mounted) return;
 
       _priceService = _buildPriceService();

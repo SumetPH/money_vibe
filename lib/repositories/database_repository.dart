@@ -24,6 +24,7 @@ abstract class AccountRepositoryInterface {
     bool? autoUpdateRate,
   });
   Future<void> updateAccountSortOrder(String id, int sortOrder);
+  Future<void> updateAccountSortOrders(List<Account> accounts);
   Future<void> deleteAccount(String id);
   Future<Set<String>> getExistingAccountIds();
   Future<void> bulkInsertAccounts(List<Account> accounts);
@@ -35,6 +36,7 @@ abstract class CategoryRepositoryInterface {
   Future<void> insertCategory(Category category);
   Future<void> updateCategory(Category category);
   Future<void> updateCategorySortOrder(String id, int sortOrder);
+  Future<void> updateCategorySortOrders(List<Category> categories);
   Future<void> deleteCategory(String id);
   Future<Set<String>> getExistingCategoryIds();
   Future<void> bulkInsertCategories(List<Category> categories);
@@ -120,6 +122,7 @@ abstract class RecurringRepositoryInterface {
   Future<void> updateRecurringTransaction(RecurringTransaction recurring);
   Future<void> deleteRecurringTransaction(String id);
   Future<void> updateRecurringSortOrder(String id, int sortOrder);
+  Future<void> updateRecurringSortOrders(List<RecurringTransaction> recurring);
   Future<Set<String>> getExistingRecurringIds();
   Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring);
 
@@ -135,14 +138,8 @@ abstract class RecurringRepositoryInterface {
 
 /// Interface สำหรับจัดการข้อมูล Sync Log
 abstract class SyncRepositoryInterface {
-  /// อัปเดตเวลาล่าสุดของโมดูล
-  Future<void> updateSyncLog(String moduleName);
-
   /// ดึงข้อมูล Sync Log ทั้งหมดของผู้ใช้ปัจจุบัน
   Future<Map<String, DateTime>> getSyncLogs();
-
-  /// Stream แจ้งเตือนเมื่อมีการอัปเดตข้อมูลในเครื่อง (เพื่อให้อัปเดต local timestamp ทันที)
-  Stream<String> get onLocalSyncLogUpdate;
 }
 
 // ── Composite Repository Interface ──────────────────────────────────────────

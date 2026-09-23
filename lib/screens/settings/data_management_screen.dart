@@ -7,6 +7,7 @@ import '../../providers/budget_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_manager.dart';
@@ -88,13 +89,15 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (result.canceled) return;
 
       if (result.hasData) {
-        await Future.wait([
-          context.read<AccountProvider>().reload(),
-          context.read<CategoryProvider>().reload(),
-          context.read<TransactionProvider>().reload(),
-          context.read<BudgetProvider>().reload(),
-          context.read<RecurringTransactionProvider>().reload(),
-        ]);
+        await context.read<SyncProvider>().initialize(
+          () => Future.wait([
+            context.read<AccountProvider>().reload(),
+            context.read<CategoryProvider>().reload(),
+            context.read<TransactionProvider>().reload(),
+            context.read<BudgetProvider>().reload(),
+            context.read<RecurringTransactionProvider>().reload(),
+          ]),
+        );
       }
 
       if (!mounted) return;
@@ -196,13 +199,15 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
       if (!mounted) return;
 
-      await Future.wait([
-        accountProvider.reload(),
-        budgetProvider.reload(),
-        categoryProvider.reload(),
-        transactionProvider.reload(),
-        recurringProvider.reload(),
-      ]);
+      await context.read<SyncProvider>().initialize(
+        () => Future.wait([
+          accountProvider.reload(),
+          budgetProvider.reload(),
+          categoryProvider.reload(),
+          transactionProvider.reload(),
+          recurringProvider.reload(),
+        ]),
+      );
 
       if (!mounted) return;
 

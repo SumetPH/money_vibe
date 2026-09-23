@@ -8,6 +8,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../settings/data_management_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -66,13 +67,15 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('[AuthScreen] Login success, reloading providers...');
 
       // โหลดข้อมูลใหม่ตาม user ที่ login
-      await Future.wait([
-        context.read<AccountProvider>().reload(),
-        context.read<CategoryProvider>().reload(),
-        context.read<TransactionProvider>().reload(),
-        context.read<BudgetProvider>().reload(),
-        context.read<RecurringTransactionProvider>().reload(),
-      ]);
+      await context.read<SyncProvider>().initialize(
+        () => Future.wait([
+          context.read<AccountProvider>().reload(),
+          context.read<CategoryProvider>().reload(),
+          context.read<TransactionProvider>().reload(),
+          context.read<BudgetProvider>().reload(),
+          context.read<RecurringTransactionProvider>().reload(),
+        ]),
+      );
 
       debugPrint('[AuthScreen] Providers reloaded, navigating to home');
       if (mounted) {

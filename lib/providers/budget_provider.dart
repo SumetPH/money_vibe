@@ -33,6 +33,7 @@ class BudgetProvider extends ChangeNotifier {
   final List<Budget> _budgets = [];
   bool _showHiddenBudgets = false;
   bool _isLoading = false;
+  int _stateVersion = 0;
 
   bool get isLoading => _isLoading;
   bool get showHiddenBudgets => _showHiddenBudgets;
@@ -79,6 +80,12 @@ class BudgetProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
+
   void _validateBudgetCategoryAssignments(Budget budget) {
     if (budget.type != BudgetType.expense) return;
 
@@ -104,7 +111,11 @@ class BudgetProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      final loadVersion = _stateVersion;
       final budgets = await _db.getBudgets();
+      if (_stateVersion != loadVersion) {
+        throw StateError('Budget state changed during refresh');
+      }
       // Sort by sortOrder to ensure correct order
       budgets.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _budgets.clear();
@@ -337,9 +348,7 @@ class BudgetProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      for (var i = 0; i < _budgets.length; i++) {
-        await _db.updateBudgetSortOrder(_budgets[i].id, i * 10);
-      }
+      await _db.updateBudgets(_budgets);
     } catch (e) {
       debugPrint('BudgetProvider: Error reordering budgets: $e');
       await reload();

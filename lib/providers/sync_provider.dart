@@ -1,139 +1,160 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
-import '../repositories/database_repository.dart';
-import 'account_provider.dart';
-import 'category_provider.dart';
-import 'transaction_provider.dart';
-import 'budget_provider.dart';
-import 'recurring_transaction_provider.dart';
+import 'package:flutter/foundation.dart';
+
+typedef SyncLogReader = Future<Map<String, DateTime>> Function();
+typedef SyncRefreshCallback = Future<void> Function();
+
+enum SyncModule {
+  accounts,
+  portfolio,
+  categories,
+  transactions,
+  budgets,
+  recurring;
+
+  SyncModule get refreshTarget => this == portfolio ? accounts : this;
+
+  static SyncModule? fromKey(String key) {
+    for (final module in values) {
+      if (module.name == key) return module;
+    }
+    return null;
+  }
+}
 
 class SyncProvider extends ChangeNotifier {
-  final DatabaseRepository? repository;
-  final AccountProvider accountProvider;
-  final CategoryProvider categoryProvider;
-  final TransactionProvider transactionProvider;
-  final BudgetProvider budgetProvider;
-  final RecurringTransactionProvider recurringProvider;
+  final bool Function() isAuthenticated;
+  final SyncLogReader getSyncLogs;
+  final Map<SyncModule, SyncRefreshCallback> refreshers;
+  final DateTime Function() _now;
+  final Duration cooldown;
 
-  final Map<String, DateTime> _localTimestamps = {};
+  final Map<SyncModule, DateTime> _localTimestamps = {};
   Future<void>? _activeCheck;
+  Future<void>? _activeInitialization;
   DateTime? _lastCheckTime;
-  StreamSubscription<String>? _localSyncSubscription;
+  bool _hasBaseline = false;
+
+  bool get hasBaseline => _hasBaseline;
 
   SyncProvider({
-    required this.repository,
-    required this.accountProvider,
-    required this.categoryProvider,
-    required this.transactionProvider,
-    required this.budgetProvider,
-    required this.recurringProvider,
-  }) {
-    _localSyncSubscription = repository?.onLocalSyncLogUpdate.listen((module) {
-      final now = DateTime.now();
-      debugPrint(
-        '[SyncProvider] Local write detected for module "$module". Updating local timestamp to $now.',
-      );
-      _localTimestamps[module] = now;
-    });
-  }
+    required this.isAuthenticated,
+    required this.getSyncLogs,
+    required this.refreshers,
+    DateTime Function()? now,
+    this.cooldown = const Duration(seconds: 30),
+  }) : _now = now ?? DateTime.now;
 
-  @override
-  void dispose() {
-    _localSyncSubscription?.cancel();
-    super.dispose();
-  }
-
-  /// เช็คและอัปเดตข้อมูลจาก Server
   Future<void> checkAndSync() {
+    final activeInitialization = _activeInitialization;
+    if (activeInitialization != null) return activeInitialization;
+
     final activeCheck = _activeCheck;
     if (activeCheck != null) return activeCheck;
 
-    final check = _checkAndSync();
+    final check = _runCheck();
     _activeCheck = check;
-    check.whenComplete(() {
-      if (identical(_activeCheck, check)) {
-        _activeCheck = null;
-      }
-    });
     return check;
   }
 
-  Future<void> _checkAndSync() async {
-    final repo = repository;
-    if (repo == null) return;
+  Future<void> _runCheck() async {
+    try {
+      await _checkAndSync();
+    } finally {
+      _activeCheck = null;
+    }
+  }
 
-    // 1. ตรวจสอบ Auth (ป้องกัน Error ตอนยังไม่ Login)
-    if (!repo.isAuthenticated) return;
+  Future<void> initialize(Future<void> Function() loadInitialData) {
+    final activeInitialization = _activeInitialization;
+    if (activeInitialization != null) return activeInitialization;
 
-    // 2. Debouncing (ไม่เช็คซ้ำภายใน 30 วินาที)
-    final now = DateTime.now();
-    if (_lastCheckTime != null &&
-        now.difference(_lastCheckTime!) < const Duration(seconds: 30)) {
+    final initialization = _runInitialization(loadInitialData);
+    _activeInitialization = initialization;
+    return initialization;
+  }
+
+  Future<void> _runInitialization(
+    Future<void> Function() loadInitialData,
+  ) async {
+    try {
+      final activeCheck = _activeCheck;
+      if (activeCheck != null) await activeCheck;
+      await _initialize(loadInitialData);
+    } finally {
+      _activeInitialization = null;
+    }
+  }
+
+  Future<void> _initialize(Future<void> Function() loadInitialData) async {
+    if (!isAuthenticated()) {
+      await loadInitialData();
       return;
     }
 
+    final before = await _readRemoteLogs();
+    await loadInitialData();
+    final after = await _readRemoteLogs();
+
+    _localTimestamps
+      ..clear()
+      ..addAll(before);
+    _hasBaseline = true;
+    await _refreshChanged(after);
+    _lastCheckTime = _now();
+  }
+
+  Future<void> _checkAndSync() async {
+    if (!isAuthenticated()) return;
+
+    final now = _now();
+    if (_lastCheckTime != null && now.difference(_lastCheckTime!) < cooldown) {
+      return;
+    }
     _lastCheckTime = now;
 
-    try {
-      debugPrint('[SyncProvider] Checking for remote updates...');
-      final remoteLogs = await repo.getSyncLogs();
+    await _refreshChanged(await _readRemoteLogs());
+  }
 
-      if (remoteLogs.isEmpty) {
-        debugPrint('[SyncProvider] No remote logs found.');
-        return;
+  Future<Map<SyncModule, DateTime>> _readRemoteLogs() async {
+    final remoteLogs = await getSyncLogs();
+    final normalized = <SyncModule, DateTime>{};
+
+    for (final entry in remoteLogs.entries) {
+      final module = SyncModule.fromKey(entry.key);
+      if (module == null) {
+        debugPrint('[SyncProvider] Unknown module: ${entry.key}');
+        continue;
       }
+      normalized[module] = entry.value;
+    }
+    return normalized;
+  }
 
-      for (final entry in remoteLogs.entries) {
-        final module = entry.key;
-        final remoteTime = entry.value;
-        final localTime = _localTimestamps[module];
+  Future<void> _refreshChanged(Map<SyncModule, DateTime> remoteLogs) async {
+    final changedByTarget = <SyncModule, Map<SyncModule, DateTime>>{};
 
-        // ถ้ายังไม่มีเวลาในเครื่อง หรือเวลาใน Server ใหม่กว่า
-        if (localTime == null || remoteTime.isAfter(localTime)) {
-          debugPrint(
-            '[SyncProvider] Module "$module" needs refresh. Remote: $remoteTime, Local: $localTime',
-          );
-
-          await _refreshModule(module);
-          _localTimestamps[module] = remoteTime;
-        }
+    for (final entry in remoteLogs.entries) {
+      final module = entry.key;
+      final localTime = _localTimestamps[module];
+      if (localTime == null || entry.value.isAfter(localTime)) {
+        (changedByTarget[module.refreshTarget] ??= {})[module] = entry.value;
       }
-    } catch (e) {
-      debugPrint('[SyncProvider] Sync Error: $e');
+    }
+
+    for (final entry in changedByTarget.entries) {
+      final refresh = refreshers[entry.key];
+      if (refresh == null) {
+        debugPrint('[SyncProvider] No refresher for ${entry.key.name}');
+        continue;
+      }
+      await refresh();
+      _localTimestamps.addAll(entry.value);
     }
   }
 
-  /// สั่งให้ Provider ที่เกี่ยวข้องโหลดข้อมูลใหม่
-  Future<void> _refreshModule(String module) async {
-    try {
-      switch (module) {
-        case 'accounts':
-        case 'portfolio':
-          await accountProvider.reload();
-          break;
-        case 'categories':
-          await categoryProvider.reload();
-          break;
-        case 'transactions':
-          await transactionProvider.reload();
-          break;
-        case 'budgets':
-          await budgetProvider.reload();
-          break;
-        case 'recurring':
-          await recurringProvider.reload();
-          break;
-        default:
-          debugPrint('[SyncProvider] Unknown module: $module');
-      }
-    } catch (e) {
-      debugPrint('[SyncProvider] Failed to refresh module $module: $e');
-    }
-  }
-
-  /// รีเซ็ตเวลาในเครื่อง (ใช้ตอนเปลี่ยน user หรือ logout)
   void reset() {
     _localTimestamps.clear();
-    notifyListeners();
+    _lastCheckTime = null;
+    _hasBaseline = false;
   }
 }

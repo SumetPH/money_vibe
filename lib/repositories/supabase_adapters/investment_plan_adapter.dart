@@ -77,7 +77,6 @@ class SupabaseInvestmentPlanAdapter
           _monthStatusToSupabase(status),
           onConflict: 'user_id, portfolio_id, dca_month',
         );
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -111,6 +110,5 @@ class SupabaseInvestmentPlanAdapter
           _allocationTargetToSupabase(target),
           onConflict: 'user_id, portfolio_id, ticker',
         );
-    await repo.updateSyncLog('portfolio');
   }
 }

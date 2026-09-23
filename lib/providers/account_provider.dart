@@ -32,6 +32,7 @@ class AccountProvider extends ChangeNotifier {
 
   bool _showHiddenAccounts = false;
   bool _isLoading = false;
+  int _stateVersion = 0;
   Future<void>? _activeLoad;
   Future<void>? _activeMarketDataUpdate;
 
@@ -52,20 +53,34 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  Future<void> init() async {
+  Future<void> init() => _load(refreshExchangeRate: true);
+
+  Future<void> _load({required bool refreshExchangeRate}) async {
     final activeLoad = _activeLoad;
     if (activeLoad != null) return activeLoad;
 
-    final load = _loadData(_activeMarketDataUpdate);
+    final load = _runLoad(refreshExchangeRate);
     _activeLoad = load;
-    load.whenComplete(() {
-      if (identical(_activeLoad, load)) {
-        _activeLoad = null;
-      }
-    });
     return load;
+  }
+
+  Future<void> _runLoad(bool refreshExchangeRate) async {
+    try {
+      await _loadData(
+        _activeMarketDataUpdate,
+        refreshExchangeRate: refreshExchangeRate,
+      );
+    } finally {
+      _activeLoad = null;
+    }
   }
 
   Future<void> waitForIdle() async {
@@ -73,7 +88,10 @@ class AccountProvider extends ChangeNotifier {
     if (activeLoad != null) await activeLoad;
   }
 
-  Future<void> _loadData(Future<void>? pendingMarketDataUpdate) async {
+  Future<void> _loadData(
+    Future<void>? pendingMarketDataUpdate, {
+    required bool refreshExchangeRate,
+  }) async {
     debugPrint('AccountProvider: Initializing...');
     _setLoading(true);
 
@@ -81,18 +99,32 @@ class AccountProvider extends ChangeNotifier {
       if (pendingMarketDataUpdate != null) {
         await pendingMarketDataUpdate;
       }
-      final accounts = await _db.getAccounts();
+      final loadVersion = _stateVersion;
+      final results = await Future.wait<Object>([
+        _db.getAccounts(),
+        _db.getPortfolioHoldings(),
+        _db.getStockTrades(),
+        _db.getStockPurchases(),
+        _db.getPortfolioAnnualReports(),
+        _db.getInvestmentPlanMonthStatuses(),
+        _db.getPortfolioAllocationTargets(),
+      ]);
+      if (_stateVersion != loadVersion) {
+        throw StateError('Account state changed during refresh');
+      }
+      final accounts = results[0] as List<Account>;
+      final holdings = results[1] as List<StockHolding>;
+      final stockTrades = results[2] as List<StockTrade>;
+      final stockPurchases = results[3] as List<StockPurchase>;
+      final annualReports = results[4] as List<PortfolioAnnualReport>;
+      final investmentPlanStatuses =
+          results[5] as List<InvestmentPlanMonthStatus>;
+      final allocationTargets = results[6] as List<PortfolioAllocationTarget>;
+
       // Sort by sortOrder to ensure correct order
       accounts.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _accounts.clear();
       _accounts.addAll(accounts);
-
-      final holdings = await _db.getPortfolioHoldings();
-      final stockTrades = await _db.getStockTrades();
-      final stockPurchases = await _db.getStockPurchases();
-      final annualReports = await _db.getPortfolioAnnualReports();
-      final investmentPlanStatuses = await _db.getInvestmentPlanMonthStatuses();
-      final allocationTargets = await _db.getPortfolioAllocationTargets();
       _holdings.clear();
       for (final holding in holdings) {
         _holdings.putIfAbsent(holding.portfolioId, () => []).add(holding);
@@ -135,10 +167,10 @@ class AccountProvider extends ChangeNotifier {
         'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${annualReports.length} annual reports, ${investmentPlanStatuses.length} investment plan statuses, ${allocationTargets.length} allocation targets',
       );
 
-      // Auto-update exchangeRate เฉพาะ account ที่ currency == 'USD' และ autoUpdateRate == true
-      await _refreshUsdExchangeRate();
+      if (refreshExchangeRate) await _refreshUsdExchangeRate();
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -147,7 +179,12 @@ class AccountProvider extends ChangeNotifier {
   /// Reload accounts from database (used after restore/mode switch)
   Future<void> reload() async {
     debugPrint('AccountProvider: Reloading...');
-    return init(); // Same logic
+    return _load(refreshExchangeRate: true);
+  }
+
+  Future<void> reloadPersistedData() async {
+    debugPrint('AccountProvider: Reloading persisted data...');
+    return _load(refreshExchangeRate: false);
   }
 
   /// Fetch USD/THB rate และ update เฉพาะ USD accounts ที่มี autoUpdateRate == true
@@ -686,12 +723,7 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      for (int i = 0; i < _accounts.length; i++) {
-        await _db.updateAccountSortOrder(
-          _accounts[i].id,
-          _accounts[i].sortOrder,
-        );
-      }
+      await _db.updateAccountSortOrders(_accounts);
     } catch (e) {
       debugPrint('AccountProvider: Error reordering accounts: $e');
       // Note: Full rollback is complex, just reload on error
@@ -791,9 +823,7 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      for (final account in _accounts) {
-        await _db.updateAccountSortOrder(account.id, account.sortOrder);
-      }
+      await _db.updateAccountSortOrders(_accounts);
     } catch (e) {
       debugPrint('AccountProvider: Error reordering account groups: $e');
       await reload();

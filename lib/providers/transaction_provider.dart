@@ -11,6 +11,7 @@ class TransactionProvider extends ChangeNotifier {
 
   final List<AppTransaction> _transactions = [];
   bool _isLoading = false;
+  int _stateVersion = 0;
 
   bool get isLoading => _isLoading;
 
@@ -23,13 +24,23 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     _setLoading(true);
 
     try {
+      final loadVersion = _stateVersion;
       final transactions = await _db.getTransactions();
+      if (_stateVersion != loadVersion) {
+        throw StateError('Transaction state changed during refresh');
+      }
       _transactions.clear();
       _transactions.addAll(transactions);
     } catch (e) {

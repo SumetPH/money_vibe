@@ -10,7 +10,6 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
@@ -54,12 +53,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   void initState() {
     super.initState();
     _selectedCycleMonth = widget.monthlyCycleMonth;
-    if (!widget.showPrimaryNavigation) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<SyncProvider>().checkAndSync();
-      }
-    });
   }
 
   @override

@@ -38,7 +38,6 @@ class SupabaseStockPurchaseAdapter implements StockPurchaseRepositoryInterface {
   @override
   Future<void> insertStockPurchase(StockPurchase purchase) async {
     await client.from('stock_purchases').insert(_toRow(purchase));
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -48,7 +47,6 @@ class SupabaseStockPurchaseAdapter implements StockPurchaseRepositoryInterface {
         .update(_toRow(purchase))
         .eq('id', purchase.id)
         .eq('user_id', _userId);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -58,6 +56,5 @@ class SupabaseStockPurchaseAdapter implements StockPurchaseRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', _userId);
-    await repo.updateSyncLog('portfolio');
   }
 }

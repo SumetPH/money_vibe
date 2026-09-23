@@ -7,7 +7,6 @@ import '../../models/category.dart';
 import '../../models/transaction.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -35,11 +34,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<SyncProvider>().checkAndSync();
-      }
-    });
   }
 
   @override

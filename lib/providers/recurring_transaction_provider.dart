@@ -16,6 +16,7 @@ class RecurringTransactionProvider extends ChangeNotifier {
   final List<RecurringOccurrence> _occurrences = [];
   bool _isLoading = false;
   bool _showHiddenRecurring = false;
+  int _stateVersion = 0;
 
   bool get isLoading => _isLoading;
   bool get showHiddenRecurring => _showHiddenRecurring;
@@ -41,6 +42,12 @@ class RecurringTransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
@@ -48,8 +55,16 @@ class RecurringTransactionProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final recurring = await _db.getRecurringTransactions();
-      final occurrences = await _db.getRecurringOccurrences();
+      final loadVersion = _stateVersion;
+      final results = await Future.wait<Object>([
+        _db.getRecurringTransactions(),
+        _db.getRecurringOccurrences(),
+      ]);
+      if (_stateVersion != loadVersion) {
+        throw StateError('Recurring state changed during refresh');
+      }
+      final recurring = results[0] as List<RecurringTransaction>;
+      final occurrences = results[1] as List<RecurringOccurrence>;
 
       // Sort by sortOrder to ensure correct order
       recurring.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -262,9 +277,7 @@ class RecurringTransactionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      for (var i = 0; i < _recurring.length; i++) {
-        await _db.updateRecurringSortOrder(_recurring[i].id, i * 10);
-      }
+      await _db.updateRecurringSortOrders(_recurring);
     } catch (e) {
       debugPrint(
         'RecurringTransactionProvider: Error reordering recurring: $e',

@@ -33,8 +33,15 @@ class _MainTabScreenState extends State<MainTabScreen> {
       TransactionListScreen(showPrimaryNavigation: false),
       StatisticsScreen(showPrimaryNavigation: false),
     ];
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<SyncProvider>().checkAndSync();
+  }
+
+  void _selectTab(int index) {
+    if (index == _selectedTab) return;
+    setState(() => _selectedTab = index);
+    final syncProvider = context.read<SyncProvider>();
+    if (!syncProvider.hasBaseline) return;
+    syncProvider.checkAndSync().catchError((error) {
+      debugPrint('[MainTabScreen] Background sync failed: $error');
     });
   }
 
@@ -47,13 +54,11 @@ class _MainTabScreenState extends State<MainTabScreen> {
           ? null
           : AppDrawer(
               currentRoute: _routeForTab(_selectedTab),
-              onSelectTab: (route) => setState(() {
-                _selectedTab = switch (route) {
-                  '/budgets' => 1,
-                  '/transactions' => 2,
-                  '/statistics' => 3,
-                  _ => 0,
-                };
+              onSelectTab: (route) => _selectTab(switch (route) {
+                '/budgets' => 1,
+                '/transactions' => 2,
+                '/statistics' => 3,
+                _ => 0,
               }),
             ),
       body: isLargeScreen
@@ -64,7 +69,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
           : Builder(
               builder: (context) => AppBottomNavigation(
                 selectedIndex: _selectedTab,
-                onSelectTab: (index) => setState(() => _selectedTab = index),
+                onSelectTab: _selectTab,
                 onAdd: () => Navigator.push(
                   context,
                   MaterialPageRoute(

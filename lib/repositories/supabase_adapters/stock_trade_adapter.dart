@@ -71,7 +71,6 @@ class SupabaseStockTradeAdapter implements StockTradeRepositoryInterface {
     _requireAuth();
     repo.log('Inserting stock trade: ${trade.id} for user: $currentUserId');
     await client.from('stock_trades').insert(_tradeToSupabase(trade));
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -83,7 +82,6 @@ class SupabaseStockTradeAdapter implements StockTradeRepositoryInterface {
         .update(_tradeToSupabase(trade))
         .eq('id', trade.id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -95,7 +93,6 @@ class SupabaseStockTradeAdapter implements StockTradeRepositoryInterface {
         .delete()
         .eq('id', id)
         .eq('user_id', currentUserId!);
-    await repo.updateSyncLog('portfolio');
   }
 
   @override
@@ -116,6 +113,5 @@ class SupabaseStockTradeAdapter implements StockTradeRepositoryInterface {
       'stock_trades',
       trades.map((t) => _tradeToSupabase(t)).toList(),
     );
-    await repo.updateSyncLog('portfolio');
   }
 }

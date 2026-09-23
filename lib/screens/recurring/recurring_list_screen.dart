@@ -12,7 +12,6 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../providers/sync_provider.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
 
@@ -25,16 +24,6 @@ class RecurringListScreen extends StatefulWidget {
 
 class _RecurringListScreenState extends State<RecurringListScreen> {
   bool _isReorderMode = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<SyncProvider>().checkAndSync();
-      }
-    });
-  }
 
   static const _thaiMonths = [
     'ม.ค.',

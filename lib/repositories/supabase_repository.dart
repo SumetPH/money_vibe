@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database_repository.dart';
@@ -41,11 +40,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   SupabaseClient? _client;
   bool _initialized = false;
-
-  final _localSyncUpdateController = StreamController<String>.broadcast();
-
-  @override
-  Stream<String> get onLocalSyncLogUpdate => _localSyncUpdateController.stream;
 
   late final _accountAdapter = SupabaseAccountAdapter(this);
   late final _categoryAdapter = SupabaseCategoryAdapter(this);
@@ -220,6 +214,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _accountAdapter.updateAccountSortOrder(id, sortOrder);
 
   @override
+  Future<void> updateAccountSortOrders(List<Account> accounts) =>
+      _accountAdapter.updateAccountSortOrders(accounts);
+
+  @override
   Future<void> deleteAccount(String id) => _accountAdapter.deleteAccount(id);
 
   // ── Categories (Delegated to Adapter) ─────────────────────────────────────
@@ -238,6 +236,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> updateCategorySortOrder(String id, int sortOrder) =>
       _categoryAdapter.updateCategorySortOrder(id, sortOrder);
+
+  @override
+  Future<void> updateCategorySortOrders(List<Category> categories) =>
+      _categoryAdapter.updateCategorySortOrders(categories);
 
   @override
   Future<void> deleteCategory(String id) => _categoryAdapter.deleteCategory(id);
@@ -409,6 +411,11 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> updateRecurringSortOrder(String id, int sortOrder) =>
       _recurringAdapter.updateRecurringSortOrder(id, sortOrder);
 
+  @override
+  Future<void> updateRecurringSortOrders(
+    List<RecurringTransaction> recurring,
+  ) => _recurringAdapter.updateRecurringSortOrders(recurring);
+
   // ── Recurring Occurrences (Delegated to Adapter) ──────────────────────────
 
   @override
@@ -434,42 +441,21 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   // ── Sync Logs ─────────────────────────────────────────────────────────────
 
   @override
-  Future<void> updateSyncLog(String moduleName) async {
-    if (!isAuthenticated) return;
-    try {
-      log('Updating sync log for module: $moduleName');
-      await client.from('sync_logs').upsert({
-        'user_id': currentUserId,
-        'module_name': moduleName,
-        'last_updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id, module_name');
-      _localSyncUpdateController.add(moduleName);
-    } catch (e) {
-      logError('Failed to update sync log for $moduleName', e);
-    }
-  }
-
-  @override
   Future<Map<String, DateTime>> getSyncLogs() async {
     if (!isAuthenticated) return {};
-    try {
-      log('Fetching sync logs for user: $currentUserId');
-      final response = await client
-          .from('sync_logs')
-          .select('module_name, last_updated_at')
-          .eq('user_id', currentUserId!);
+    log('Fetching sync logs for user: $currentUserId');
+    final response = await client
+        .from('sync_logs')
+        .select('module_name, last_updated_at')
+        .eq('user_id', currentUserId!);
 
-      final Map<String, DateTime> logs = {};
-      for (final row in (response as List)) {
-        final module = row['module_name'] as String;
-        final timestamp = row['last_updated_at'] as String;
-        logs[module] = DateTime.parse(timestamp);
-      }
-      return logs;
-    } catch (e) {
-      logError('Failed to fetch sync logs', e);
-      return {};
+    final Map<String, DateTime> logs = {};
+    for (final row in (response as List)) {
+      final module = row['module_name'] as String;
+      final timestamp = row['last_updated_at'] as String;
+      logs[module] = DateTime.parse(timestamp);
     }
+    return logs;
   }
 
   // ── Migration Helpers ──────────────────────────────────────────────────────
