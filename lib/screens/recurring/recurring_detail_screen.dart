@@ -672,6 +672,9 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               ),
                             ],
                           ),
+                          splashBorderRadius: BorderRadius.circular(
+                            AppRadii.large,
+                          ),
                           dividerColor: Colors.transparent,
                           labelColor: textPrimary,
                           unselectedLabelColor: textSecondary,

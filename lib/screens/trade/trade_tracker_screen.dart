@@ -158,6 +158,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                       ),
                     ],
                   ),
+                  splashBorderRadius: BorderRadius.circular(AppRadii.large),
                   dividerColor: Colors.transparent,
                   labelColor: isDarkMode
                       ? AppColors.darkTextPrimary

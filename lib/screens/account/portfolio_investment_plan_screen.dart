@@ -143,7 +143,7 @@ class _PortfolioInvestmentPlanScreenState
     return Container(
       color: backgroundColor,
       child: Padding(
-        padding: const EdgeInsets.only(top: 4, bottom: 96),
+        padding: const EdgeInsets.only(bottom: 96),
         child: Column(
           children: [
             _Section(
@@ -1251,7 +1251,7 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Row(
             children: [
               Expanded(
@@ -1270,7 +1270,7 @@ class _Section extends StatelessWidget {
           ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           decoration: BoxDecoration(
             color: surfaceColor,
             borderRadius: BorderRadius.circular(AppRadii.xLarge),

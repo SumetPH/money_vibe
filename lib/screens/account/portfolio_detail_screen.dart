@@ -318,11 +318,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 onCashTap: () => _editCashBalance(context, provider, acc),
                 isDarkMode: isDarkMode,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Container(
                   padding: const EdgeInsets.all(5),
+                  height: 50,
                   decoration: BoxDecoration(
                     color: isDarkMode
                         ? AppColors.darkSurface
@@ -1372,7 +1373,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               isDarkMode,
               provider,
             ),
-            const SizedBox(height: 16),
           ],
         ],
       ),
@@ -1428,7 +1428,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
