@@ -474,7 +474,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             (isDarkMode
                                     ? AppColors.darkDivider
                                     : AppColors.divider)
-                                .withValues(alpha: 0.35),
+                                .withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
@@ -777,7 +777,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
           color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-              .withValues(alpha: 0.35),
+              .withValues(alpha: 0.4),
           width: 1,
         ),
       ),

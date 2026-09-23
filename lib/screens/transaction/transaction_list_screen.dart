@@ -44,7 +44,7 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  _PeriodFilter _filter = _PeriodFilter.thisMonth;
+  _PeriodFilter _filter = _PeriodFilter.all;
   _TransactionTypeFilter _typeFilter = _TransactionTypeFilter.all;
   String _searchQuery = '';
   DateTime? _selectedCycleMonth;
@@ -546,6 +546,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             from,
             DateTime(9999),
           );
+        case _PeriodFilter.oneYear:
+          final from = DateTime(now.year - 1, now.month, now.day);
+          transactions = provider.getTransactionsForPeriod(
+            from,
+            DateTime(9999),
+          );
       }
     }
 
@@ -848,6 +854,11 @@ class _CashFlowSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.sheet),
+        border: Border.all(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -899,8 +910,11 @@ class _CashFlowSummary extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              Text('สุทธิ', style: TextStyle(color: textSecondary)),
-              const Spacer(),
+              Text(
+                'สุทธิ',
+                style: TextStyle(color: textSecondary, fontSize: 16),
+              ),
+              const SizedBox(width: 12),
               Text(
                 '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
                 style: TextStyle(
@@ -988,7 +1002,15 @@ class _TransactionTypeTabs extends StatelessWidget {
 
     return Material(
       color: surface,
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(5),
@@ -1069,7 +1091,8 @@ enum _PeriodFilter {
   last180Days('180 วันล่าสุด'),
   thisMonth('เดือนนี้'),
   lastMonth('เดือนที่แล้ว'),
-  thisYear('ปีนี้');
+  thisYear('ปีนี้'),
+  oneYear('1 ปี');
 
   final String label;
   const _PeriodFilter(this.label);
@@ -1082,6 +1105,7 @@ enum _PeriodFilter {
     _PeriodFilter.thisMonth => 'เดือนนี้',
     _PeriodFilter.lastMonth => 'เดือนก่อน',
     _PeriodFilter.thisYear => 'ปีนี้',
+    _PeriodFilter.oneYear => '1 ปี',
   };
 }
 
@@ -1236,76 +1260,92 @@ class _TransactionItem extends StatelessWidget {
               ? '+'
               : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: surfaceColor,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: (category?.color ?? typeColor).withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(AppRadii.large),
+    return Material(
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          color: surfaceColor,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: (category?.color ?? typeColor).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(AppRadii.large),
+                ),
+                child: Icon(
+                  tx.type == TransactionType.debtTransfer
+                      ? Icons.account_tree
+                      : tx.type == TransactionType.transfer
+                      ? Icons.swap_horiz
+                      : tx.type == TransactionType.debtRepay
+                      ? Icons.payment
+                      : (category?.icon ?? Icons.receipt),
+                  color: category?.color ?? typeColor,
+                  size: 22,
+                ),
               ),
-              child: Icon(
-                tx.type == TransactionType.debtTransfer
-                    ? Icons.account_tree
-                    : tx.type == TransactionType.transfer
-                    ? Icons.swap_horiz
-                    : tx.type == TransactionType.debtRepay
-                    ? Icons.payment
-                    : (category?.icon ?? Icons.receipt),
-                color: category?.color ?? typeColor,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAccountWidget(
-                    account,
-                    toAccount,
-                    tx,
-                    textPrimaryColor,
-                    isDarkMode,
-                  ),
-                  if (subLabel.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subLabel,
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildAccountWidget(
+                      account,
+                      toAccount,
+                      tx,
+                      textPrimaryColor,
+                      isDarkMode,
                     ),
+                    if (subLabel.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subLabel,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: textSecondaryColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    amountText,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: amountColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatTime(tx.dateTime),
+                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  amountText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: amountColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatTime(tx.dateTime),
-                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

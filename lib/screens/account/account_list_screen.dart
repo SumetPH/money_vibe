@@ -222,50 +222,68 @@ class _AccountListScreenState extends State<AccountListScreen> {
                               ],
                             ),
                           ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              AppRadii.xLarge,
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? AppColors.darkSurface
+                                  : AppColors.surface,
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.xLarge,
+                              ),
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? AppColors.darkDivider.withValues(
+                                        alpha: 0.4,
+                                      )
+                                    : AppColors.divider.withValues(alpha: 0.4),
+                              ),
                             ),
-                            child: ReorderableListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              buildDefaultDragHandles: false,
-                              itemCount: entry.value.length,
-                              onReorderItem: isReorderMode
-                                  ? (oldIndex, newIndex) {
-                                      accountProvider.reorderAccountsInGroup(
-                                        entry.key,
-                                        oldIndex,
-                                        newIndex,
-                                      );
-                                    }
-                                  : (_, _) {},
-                              proxyDecorator: (child, index, animation) =>
-                                  Material(
-                                    elevation: 6,
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.xLarge,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.xLarge,
+                              ),
+                              child: ReorderableListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                buildDefaultDragHandles: false,
+                                itemCount: entry.value.length,
+                                onReorderItem: isReorderMode
+                                    ? (oldIndex, newIndex) {
+                                        accountProvider.reorderAccountsInGroup(
+                                          entry.key,
+                                          oldIndex,
+                                          newIndex,
+                                        );
+                                      }
+                                    : (_, _) {},
+                                proxyDecorator: (child, index, animation) =>
+                                    Material(
+                                      elevation: 6,
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.xLarge,
+                                      ),
+                                      child: child,
                                     ),
-                                    child: child,
-                                  ),
-                              itemBuilder: (context, index) {
-                                final account = entry.value[index];
-                                final balance =
-                                    totals.balancesByAccountId[account.id] ?? 0;
-                                return _AccountItem(
-                                  key: ValueKey(account.id),
-                                  account: account,
-                                  balance: balance,
-                                  isReorderMode: isReorderMode,
-                                  reorderIndex: isReorderMode ? index : null,
-                                  onTap: () => _openForm(context, account),
-                                  onTapEdit: () =>
-                                      _openEditForm(context, account),
-                                  isDarkMode: isDarkMode,
-                                  showDivider: index < entry.value.length - 1,
-                                );
-                              },
+                                itemBuilder: (context, index) {
+                                  final account = entry.value[index];
+                                  final balance =
+                                      totals.balancesByAccountId[account.id] ??
+                                      0;
+                                  return _AccountItem(
+                                    key: ValueKey(account.id),
+                                    account: account,
+                                    balance: balance,
+                                    isReorderMode: isReorderMode,
+                                    reorderIndex: isReorderMode ? index : null,
+                                    onTap: () => _openForm(context, account),
+                                    onTapEdit: () =>
+                                        _openEditForm(context, account),
+                                    isDarkMode: isDarkMode,
+                                    showDivider: index < entry.value.length - 1,
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ],
@@ -369,7 +387,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: dividerColor.withValues(alpha: 0.4),
                             width: 1,
                           ),
                         ),
@@ -763,87 +781,104 @@ class _TotalRow extends StatelessWidget {
     final actionColor = isDarkMode
         ? AppColors.darkSurfaceVariant
         : AppColors.sectionHeader;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
-    return Material(
-      color: surfaceColor,
-      borderRadius: BorderRadius.circular(AppRadii.sheet),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.sheet),
-        onTap: isReorderMode ? null : () => _showTotalMenu(context),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: textSecondaryColor,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.visibility_outlined,
-                    size: 18,
-                    color: textSecondaryColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    filterIds == null
-                        ? 'ทุกบัญชี'
-                        : '${filterIds!.length} บัญชี',
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        border: Border.all(
+          color: dividerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: textSecondaryColor,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '฿ ${formatAmount(amount)}',
-                  style: TextStyle(
-                    fontSize: 36,
-                    height: 1.15,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimaryColor,
+                ),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppRadii.large),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadii.large),
+                    onTap: isReorderMode ? null : () => _showTotalMenu(context),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility_outlined,
+                            size: 18,
+                            color: textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            filterIds == null
+                                ? 'ทุกบัญชี'
+                                : '${filterIds!.length} บัญชี',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '฿ ${formatAmount(amount)}',
+                style: TextStyle(
+                  fontSize: 36,
+                  height: 1.15,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimaryColor,
+                ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildAction(
-                      icon: Icons.add,
-                      label: 'เพิ่มรายการ',
-                      color: actionColor,
-                      onTap: onAddTransaction,
-                    ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildAction(
+                    icon: Icons.add,
+                    label: 'เพิ่มรายการ',
+                    color: actionColor,
+                    onTap: onAddTransaction,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildAction(
-                      icon: Icons.insert_chart_outlined,
-                      label: 'สรุปผล',
-                      color: actionColor,
-                      onTap: onShowSummary,
-                    ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildAction(
+                    icon: Icons.insert_chart_outlined,
+                    label: 'สรุปผล',
+                    color: actionColor,
+                    onTap: onShowSummary,
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -926,7 +961,7 @@ class _TotalRow extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
@@ -1160,7 +1195,7 @@ class _AccountItem extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),

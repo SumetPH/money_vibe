@@ -112,7 +112,7 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
                 color: surfaceColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+                  side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Padding(

@@ -37,12 +37,12 @@ class AppBottomNavigation extends StatelessWidget {
           color: surface,
           borderRadius: BorderRadius.circular(AppRadii.xLarge),
           border: Border.all(
-            color: dividerColor.withValues(alpha: 0.35),
+            color: dividerColor.withValues(alpha: 0.4),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),

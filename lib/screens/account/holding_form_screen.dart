@@ -879,7 +879,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),

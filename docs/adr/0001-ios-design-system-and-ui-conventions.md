@@ -13,7 +13,7 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
 1. **Inset Grouped Card**:
    - `margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6)`
    - `borderRadius: BorderRadius.circular(AppRadii.xLarge)`
-   - Border: `Border.all(color: dividerColor.withValues(alpha: 0.35), width: 1)`
+   - Border: `Border.all(color: dividerColor.withValues(alpha: 0.4), width: 1)`
    - Section header placed outside the card: uppercase, 12sp, `FontWeight.w600`, `letterSpacing: 0.5`, using `textSecondary`.
 
 2. **Form & Setting Row**:
@@ -77,8 +77,8 @@ We standardize the Money Vibe user interface on a modern iOS Inset Grouped, surf
      - Always use `AppBottomNavigation` floating capsule dock:
        - Margin: `EdgeInsets.symmetric(horizontal: 12)`
        - Radius: `BorderRadius.circular(AppRadii.sheet)`
-       - Border: `Border.all(color: dividerColor.withValues(alpha: 0.35), width: 1)`
-       - Shadow: `BoxShadow(color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08), blurRadius: 16, offset: const Offset(0, 4))`
+       - Border: `Border.all(color: dividerColor.withValues(alpha: 0.4), width: 1)`
+       - Shadow: `BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 4))`
        - Inset padding: `SafeArea(top: false, minimum: const EdgeInsets.symmetric(vertical: 6))`
    - **Tab & Action Structure**:
      - Three Main Tab destinations: บัญชี (`/accounts`), แผน (`/budgets`), and รายการ (`/transactions`). เมนูเปิด AppDrawer, which also exposes secondary destinations. See ADR 0002 for retained tab state and primary-navigation ownership.

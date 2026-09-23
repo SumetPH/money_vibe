@@ -121,7 +121,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Material(
                   color: surfaceColor,
-                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                    side: BorderSide(
+                      color: isDarkMode
+                          ? AppColors.darkDivider.withValues(alpha: 0.4)
+                          : AppColors.divider.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
                     padding: const EdgeInsets.all(5),
@@ -204,12 +212,15 @@ class _StatisticsInsetCard extends StatelessWidget {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      ),
     );
   }
 }
@@ -999,7 +1010,7 @@ class _StatSummaryMetric extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurfaceVariant : AppColors.background,
         borderRadius: BorderRadius.circular(AppRadii.large),
-        border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
+        border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: alignEnd
@@ -2073,7 +2084,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                 color: surfaceColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+                  side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: ListView.separated(

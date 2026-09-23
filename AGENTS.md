@@ -50,7 +50,7 @@
 - ทุก screen และ widget ใหม่ต้องรองรับทั้ง light mode และ dark mode โดยเน้น Dark Mode First
 - ให้ดึงสถานะ theme จาก `SettingsProvider`
 - ใช้ token จาก `lib/theme/app_colors.dart` และ `lib/theme/app_radii.dart` เป็นค่าเริ่มต้น ห้าม hardcode สีเทาหรือ hex ทั่วไป (อนุญาตให้ใช้ alpha บนสีดำ/ขาวเพื่อสร้าง depth แบบ iOS เช่น `.withValues(alpha: 0.05)`)
-- **Inset Grouped Card**: ใช้การ์ดโค้งมน `AppRadii.xLarge` มีระยะขอบข้าง `16` ขอบเส้นบาง (`dividerColor.withValues(alpha: 0.35)`) และหัวข้อ Section นอกการ์ดตัวพิมพ์เล็ก/ใหญ่กึ่งหนา (`12sp`, `letterSpacing: 0.5`)
+- **Inset Grouped Card**: ใช้การ์ดโค้งมน `AppRadii.xLarge` มีระยะขอบข้าง `16` ขอบเส้นบาง (`dividerColor.withValues(alpha: 0.4)`) และหัวข้อ Section นอกการ์ดตัวพิมพ์เล็ก/ใหญ่กึ่งหนา (`12sp`, `letterSpacing: 0.5`)
 - **Toggles**: บังคับใช้ `CupertinoSwitch` พร้อมกำหนด `activeTrackColor` และ `inactiveTrackColor` เสมอ ห้ามใช้ Material `SwitchListTile`
 - **Selection**: ใช้ `showAppModalBottomSheet` แทน dropdown หรือ `DropdownButtonFormField` เมื่อเป็นการเลือกค่าจากรายการ
 - **Numeric & Amount Input**: กล่องกรอกตัวเลขแบบ iOS พื้นหลังนุ่มนวล ขอบมน จัดชิดขวา มีหน่วย/สกุลเงินในตัว และมี `onTapOutside` ปิดคีย์บอร์ดเสมอ

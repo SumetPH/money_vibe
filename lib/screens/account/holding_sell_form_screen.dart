@@ -493,7 +493,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                     color: surfaceColor,
                     borderRadius: BorderRadius.circular(AppRadii.xLarge),
                     border: Border.all(
-                      color: dividerColor.withValues(alpha: 0.35),
+                      color: dividerColor.withValues(alpha: 0.4),
                       width: 1,
                     ),
                   ),
@@ -726,7 +726,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),

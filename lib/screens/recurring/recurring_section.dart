@@ -58,7 +58,7 @@ class RecurringSection extends StatelessWidget {
             color: surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.xLarge),
-              side: BorderSide(color: divider.withValues(alpha: 0.35)),
+              side: BorderSide(color: divider.withValues(alpha: 0.4)),
             ),
             clipBehavior: Clip.antiAlias,
             child: child,

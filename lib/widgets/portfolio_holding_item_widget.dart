@@ -351,7 +351,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
                   side: BorderSide(
-                    color: dividerColor.withValues(alpha: 0.35),
+                    color: dividerColor.withValues(alpha: 0.4),
                     width: 1,
                   ),
                 ),

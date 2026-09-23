@@ -278,7 +278,7 @@ class _PortfolioInvestmentPlanScreenState
           height: 1,
           indent: 16,
           endIndent: 16,
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -756,7 +756,7 @@ class _PortfolioInvestmentPlanScreenState
                     ),
                     Divider(
                       height: 1,
-                      color: dividerColor.withValues(alpha: 0.35),
+                      color: dividerColor.withValues(alpha: 0.4),
                     ),
                     Expanded(
                       child: ListView.separated(
@@ -1051,7 +1051,7 @@ class _PortfolioInvestmentPlanScreenState
             height: 1,
             indent: 16,
             endIndent: 16,
-            color: dividerColor.withValues(alpha: 0.35),
+            color: dividerColor.withValues(alpha: 0.4),
           ),
           for (var i = 0; i < recommendedRows.length; i++) ...[
             if (i > 0)
@@ -1275,7 +1275,7 @@ class _Section extends StatelessWidget {
             color: surfaceColor,
             borderRadius: BorderRadius.circular(AppRadii.xLarge),
             border: Border.all(
-              color: dividerColor.withValues(alpha: 0.35),
+              color: dividerColor.withValues(alpha: 0.4),
               width: 1,
             ),
           ),

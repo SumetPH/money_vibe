@@ -174,7 +174,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                     fontWeight: FontWeight.w500,
                   ),
                   tabs: const [
-                    Tab(text: 'สรุปรายปี'),
+                    Tab(text: 'สรุป'),
                     Tab(text: 'ขาย'),
                     Tab(text: 'ซื้อ'),
                     Tab(text: 'ภาษีไทย'),
@@ -1650,7 +1650,7 @@ class _TradeInsetCard extends StatelessWidget {
         color: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+          side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(padding: padding, child: child),
@@ -2011,7 +2011,7 @@ class _YearSelector extends StatelessWidget {
 
     return _TradeInsetCard(
       isDarkMode: isDarkMode,
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+      padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
       child: Column(
         children: [
           Row(

@@ -253,6 +253,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         foregroundColor: textColor,
         elevation: 0,
         scrolledUnderElevation: 0,
+        toolbarHeight: 100,
         centerTitle: true,
         leadingWidth: 64,
         leading: Padding(
@@ -262,14 +263,26 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                size: 20,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'จัดการข้อมูล',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
       ),
       body: Consumer<DatabaseManager>(
@@ -649,14 +662,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
       ),
       child: child,
     );

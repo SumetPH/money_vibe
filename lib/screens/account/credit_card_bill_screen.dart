@@ -448,6 +448,11 @@ class _HeroSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.sheet),
+        border: Border.all(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +657,15 @@ class _BillItemCard extends StatelessWidget {
 
     return Material(
       color: surfaceColor,
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

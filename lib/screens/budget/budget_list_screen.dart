@@ -503,7 +503,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           decoration: BoxDecoration(
             color: surfaceColor,
             borderRadius: BorderRadius.circular(AppRadii.xLarge),
-            border: Border.all(color: dividerColor.withValues(alpha: 0.35)),
+            border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -683,7 +683,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           color: surfaceColor,
           borderRadius: BorderRadius.circular(AppRadii.xLarge),
           border: Border.all(
-            color: dividerColor.withValues(alpha: 0.35),
+            color: dividerColor.withValues(alpha: 0.4),
             width: 1,
           ),
         ),
@@ -925,7 +925,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: dividerColor.withValues(alpha: 0.4),
                             width: 1,
                           ),
                         ),
@@ -1179,7 +1179,7 @@ class _SummaryHeader extends StatelessWidget {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -1453,7 +1453,7 @@ class _BudgetItemCard extends StatelessWidget {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -1748,7 +1748,7 @@ class _BudgetItemRow extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
@@ -1914,7 +1914,7 @@ class _BudgetGroupDetailsSheet extends StatelessWidget {
                           color: bgColor,
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           border: Border.all(
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: dividerColor.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Column(

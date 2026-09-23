@@ -343,7 +343,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: dividerColor.withValues(alpha: 0.4),
                             width: 1,
                           ),
                         ),
@@ -724,7 +724,7 @@ class _RecurringItem extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),

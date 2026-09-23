@@ -440,7 +440,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         final textSecondary = isDark
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
+        final dividerColor = isDark
+            ? AppColors.darkDivider.withValues(alpha: 0.4)
+            : AppColors.divider.withValues(alpha: 0.4);
 
         final accounts = switch (_type) {
           TransactionType.debtTransfer =>
@@ -721,7 +723,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           textSecondary: textSecondary,
                           onTap: () => _pickDayOfMonth(isDark),
                         ),
-                        Divider(height: 1, color: dividerColor),
                       ],
                     ),
                   ),
@@ -908,7 +909,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                             ),
                           ),
                         ),
-                        Divider(height: 1, color: dividerColor),
                       ],
                     ),
                   ),
@@ -1027,7 +1027,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
+    final dividerColor = isDark
+        ? AppColors.darkDivider.withValues(alpha: 0.4)
+        : AppColors.divider.withValues(alpha: 0.4);
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
     showAppModalBottomSheet(
@@ -1691,7 +1693,15 @@ class _RecurringTypeSegmentedControl extends StatelessWidget {
 
     return Material(
       color: surface,
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(4),
@@ -1827,7 +1837,15 @@ class _RecurringAmountHeroCard extends StatelessWidget {
 
     return Material(
       color: surface,
-      borderRadius: BorderRadius.circular(AppRadii.sheet),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => amountFocusNode.requestFocus(),

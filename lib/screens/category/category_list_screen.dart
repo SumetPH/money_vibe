@@ -275,7 +275,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -501,7 +501,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
             color: surfaceColor,
             borderRadius: BorderRadius.circular(AppRadii.xLarge),
             border: Border.all(
-              color: dividerColor.withValues(alpha: 0.35),
+              color: dividerColor.withValues(alpha: 0.4),
               width: 1,
             ),
           ),
@@ -590,7 +590,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -709,7 +709,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: dividerColor.withValues(alpha: 0.35),
+                            color: dividerColor.withValues(alpha: 0.4),
                             width: 1,
                           ),
                         ),
@@ -1024,7 +1024,7 @@ class _CategoryItem extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),

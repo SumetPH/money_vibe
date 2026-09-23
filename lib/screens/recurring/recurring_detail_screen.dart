@@ -621,49 +621,59 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                   const SizedBox(height: 12),
 
                   // ── Tab bar ──────────────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkSurface
-                            : AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        indicator: BoxDecoration(
+                  SizedBox(
+                    height: 50,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
                           color: isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.sectionHeader,
-                          borderRadius: BorderRadius.circular(AppRadii.large),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(
-                                alpha: isDark ? 0.2 : 0.05,
+                              ? AppColors.darkSurface
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                                : AppColors.divider.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: TabBar(
+                          controller: _tabController,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicator: BoxDecoration(
+                            color: isDark
+                                ? AppColors.darkSurfaceVariant
+                                : AppColors.sectionHeader,
+                            borderRadius: BorderRadius.circular(AppRadii.large),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.05,
+                                ),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
                               ),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
+                            ],
+                          ),
+                          dividerColor: Colors.transparent,
+                          labelColor: textPrimary,
+                          unselectedLabelColor: textSecondary,
+                          labelStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          unselectedLabelStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          tabs: [
+                            Tab(
+                              text: 'รายการที่จะเกิดขึ้น (${upcoming.length})',
                             ),
+                            Tab(text: 'รายการที่ผ่านมา (${past.length})'),
                           ],
                         ),
-                        dividerColor: Colors.transparent,
-                        labelColor: textPrimary,
-                        unselectedLabelColor: textSecondary,
-                        labelStyle: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        unselectedLabelStyle: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        tabs: [
-                          Tab(text: 'รายการที่จะเกิดขึ้น (${upcoming.length})'),
-                          Tab(text: 'รายการที่ผ่านมา (${past.length})'),
-                        ],
                       ),
                     ),
                   ),
@@ -799,7 +809,7 @@ class _OccurrenceItem extends StatelessWidget {
         color: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          side: BorderSide(color: dividerColor.withValues(alpha: 0.35)),
+          side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Container(

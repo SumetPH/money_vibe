@@ -203,7 +203,7 @@ class AppDrawer extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: dividerColor.withValues(alpha: 0.35),
+              color: dividerColor.withValues(alpha: 0.4),
               width: 1,
             ),
           ),
@@ -282,7 +282,7 @@ class AppDrawer extends StatelessWidget {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),

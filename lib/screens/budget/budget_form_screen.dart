@@ -768,7 +768,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -812,7 +812,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(
-          color: dividerColor.withValues(alpha: 0.35),
+          color: dividerColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -1157,7 +1157,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? accentColor
-                      : accentColor.withValues(alpha: 0.35),
+                      : accentColor.withValues(alpha: 0.4),
                 ),
               ),
               const SizedBox(width: 6),

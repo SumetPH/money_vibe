@@ -211,7 +211,9 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
 
   Widget _buildDivider(bool isDarkMode) => Divider(
     height: 1,
-    color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+    color: isDarkMode
+        ? AppColors.darkDivider.withValues(alpha: 0.4)
+        : AppColors.divider.withValues(alpha: 0.4),
   );
 
   double _parseAmount(TextEditingController controller) =>
@@ -399,7 +401,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                           (isDarkMode
                                   ? AppColors.darkDivider
                                   : AppColors.divider)
-                              .withValues(alpha: 0.35),
+                              .withValues(alpha: 0.4),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,

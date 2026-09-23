@@ -1103,7 +1103,15 @@ class _TypeSegmentedControl extends StatelessWidget {
 
     return Material(
       color: surface,
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(4),
@@ -1255,7 +1263,15 @@ class _AmountHeroCard extends StatelessWidget {
 
     return Material(
       color: surface,
-      borderRadius: BorderRadius.circular(AppRadii.sheet),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        side: BorderSide(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
@@ -1556,6 +1572,11 @@ class _SelectionGroupCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.sheet),
+        border: Border.all(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -2035,6 +2056,11 @@ class _MetaInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.sheet),
+        border: Border.all(
+          color: isDarkMode
+              ? AppColors.darkDivider.withValues(alpha: 0.4)
+              : AppColors.divider.withValues(alpha: 0.4),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

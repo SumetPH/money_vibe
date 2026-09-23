@@ -38,8 +38,9 @@ class AppColors {
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
   static const Color darkFabYellow = Color(0xFFFFB74D);
 
-  static Color listDividerFor(bool isDarkMode) =>
-      isDarkMode ? darkDivider : divider;
+  static Color listDividerFor(bool isDarkMode) => isDarkMode
+      ? darkDivider.withValues(alpha: 0.4)
+      : divider.withValues(alpha: 0.4);
 
   static Color amountColor(double amount, {bool isDarkMode = false}) {
     if (amount.abs() < 0.005) {

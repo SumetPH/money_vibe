@@ -164,7 +164,7 @@ class BrokerReportListScreen extends StatelessWidget {
                     color: surfaceColor,
                     borderRadius: BorderRadius.circular(AppRadii.xLarge),
                     border: Border.all(
-                      color: dividerColor.withValues(alpha: 0.35),
+                      color: dividerColor.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Column(
@@ -318,7 +318,7 @@ class BrokerReportListScreen extends StatelessWidget {
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       border: Border.all(
-                        color: dividerColor.withValues(alpha: 0.35),
+                        color: dividerColor.withValues(alpha: 0.4),
                       ),
                     ),
                     child: ListView.separated(

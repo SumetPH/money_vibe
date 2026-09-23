@@ -377,18 +377,35 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
+              icon: Icon(
+                Icons.close_rounded,
+                size: 20,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
               onPressed: _isSaving ? null : () => Navigator.pop(context),
             ),
           ),
         ),
         title: Text(
           _isEditing ? 'แก้ไข Trade' : 'เพิ่ม Trade',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
         actions: [
           AppBarActionButton(
-            icon: const Icon(Icons.check),
+            icon: Icon(
+              Icons.check,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
             onPressed: _submit,
             tooltip: 'บันทึก',
             isLoading: _isSaving,
@@ -409,7 +426,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   side: BorderSide(
                     color:
                         (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.35),
+                            .withValues(alpha: 0.4),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -677,7 +694,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                   side: BorderSide(
                     color:
                         (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.35),
+                            .withValues(alpha: 0.4),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -709,7 +726,9 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   Widget _buildDivider(bool isDarkMode) {
     return Divider(
       height: 1,
-      color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
+      color: isDarkMode
+          ? AppColors.darkDivider.withValues(alpha: 0.4)
+          : AppColors.divider.withValues(alpha: 0.4),
     );
   }
 

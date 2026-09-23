@@ -206,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             (isDarkMode
                                     ? AppColors.darkDivider
                                     : AppColors.divider)
-                                .withValues(alpha: 0.35),
+                                .withValues(alpha: 0.4),
                       ),
                       boxShadow: [
                         BoxShadow(

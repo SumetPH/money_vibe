@@ -40,7 +40,7 @@ class SetupScreen extends StatelessWidget {
                   border: Border.all(
                     color:
                         (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.35),
+                            .withValues(alpha: 0.4),
                   ),
                 ),
                 child: Column(
