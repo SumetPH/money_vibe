@@ -118,7 +118,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(50),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Material(
                   color: surfaceColor,
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
@@ -199,7 +199,7 @@ class _StatisticsInsetCard extends StatelessWidget {
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
@@ -264,7 +264,7 @@ class _YearlyBarChart extends StatelessWidget {
             : expenseColor;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 6, bottom: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             children: [
               _StatisticsInsetCard(
@@ -338,7 +338,7 @@ class _YearlyBarChart extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 16, 2),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -1124,7 +1124,7 @@ class _CategoryPieChart extends StatelessWidget {
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 6, bottom: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1233,7 +1233,7 @@ class _CategoryPieChart extends StatelessWidget {
               ),
 
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 16, 2),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -1529,7 +1529,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             : 0;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 6, bottom: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

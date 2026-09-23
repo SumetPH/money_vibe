@@ -129,8 +129,9 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
       ),
       body: Column(
         children: [
-          SizedBox(
+          Container(
             height: 50,
+            margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -1165,7 +1166,6 @@ class _YearlyTradeTab extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: _YearSelector(
             selectedYear: selectedYear,
@@ -1188,7 +1188,7 @@ class _YearlyTradeTab extends StatelessWidget {
           SliverToBoxAdapter(
             child: Container(
               height: 28.0,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -1645,7 +1645,7 @@ class _TradeInsetCard extends StatelessWidget {
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Material(
         color: surfaceColor,
         shape: RoundedRectangleBorder(

@@ -488,7 +488,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
         // Section Title
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Text(
             'รายการหมวดหมู่ (${filtered.length})',
             style: TextStyle(
@@ -590,7 +590,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         : (isDarkMode ? AppColors.darkIncome : AppColors.income);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: surfaceColor,
