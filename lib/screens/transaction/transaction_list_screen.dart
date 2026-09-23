@@ -908,14 +908,28 @@ class _CashFlowSummary extends StatelessWidget {
                 ),
               ),
               if (!hidePeriodSelector)
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
+                InkWell(
+                  onTap: onSelectPeriod,
+                  borderRadius: BorderRadius.circular(AppRadii.large),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        periodLabel,
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: textSecondary,
+                      ),
+                    ],
                   ),
-                  onPressed: onSelectPeriod,
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                  label: Text(periodLabel),
                 ),
             ],
           ),
