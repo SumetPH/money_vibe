@@ -1377,8 +1377,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
           onTap: _isLoading ? null : _delete,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             alignment: Alignment.center,
@@ -1614,9 +1614,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               : AppColors.header;
 
           return DraggableScrollableSheet(
-            initialChildSize: 0.85,
+            initialChildSize: 1.0,
             minChildSize: 0.3,
-            maxChildSize: 0.85,
+            maxChildSize: 1.0,
             expand: false,
             builder: (context, scrollController) => SafeArea(
               child: CustomScrollView(

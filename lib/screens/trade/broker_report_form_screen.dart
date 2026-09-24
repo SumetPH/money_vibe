@@ -270,8 +270,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
+        leading: Center(
           child: Material(
             color: surfaceColor,
             shape: RoundedRectangleBorder(

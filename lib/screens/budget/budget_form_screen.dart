@@ -1420,22 +1420,11 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       onTap: _delete,
       borderRadius: BorderRadius.circular(AppRadii.xLarge),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: deleteColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadii.xLarge),
-              ),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                color: deleteColor,
-                size: 18,
-              ),
-            ),
+            Icon(Icons.delete_outline_rounded, color: deleteColor, size: 18),
             const SizedBox(width: 12),
             Text(
               'ลบงบประมาณนี้',
@@ -1482,9 +1471,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               : AppColors.income;
 
           return DraggableScrollableSheet(
-            initialChildSize: 0.85,
-            minChildSize: 0.4,
-            maxChildSize: 0.9,
+            initialChildSize: 1.0,
+            minChildSize: 0.3,
+            maxChildSize: 1.0,
             expand: false,
             builder: (_, sc) => Column(
               children: [

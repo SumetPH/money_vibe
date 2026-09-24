@@ -83,9 +83,9 @@ class AccountPickerBottomSheet extends StatelessWidget {
             .toList();
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 1.0,
       minChildSize: 0.3,
-      maxChildSize: 0.85,
+      maxChildSize: 1.0,
       expand: false,
       builder: (_, scrollController) => Column(
         children: [

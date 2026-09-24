@@ -123,77 +123,83 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(50),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Material(
-                  color: surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                    side: BorderSide(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
-                      width: 1,
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Material(
+                    color: surfaceColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      side: BorderSide(
+                        color: isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Padding(
-                    padding: const EdgeInsets.all(5),
-                    child: Row(
-                      children: tabLable.map((value) {
-                        final isSelected =
-                            _selectedTab == tabLable.indexOf(value);
-                        return Expanded(
-                          child: Material(
-                            color: isSelected
-                                ? selectedSurface
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppRadii.large),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedTab = tabLable.indexOf(value);
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                child: Text(
-                                  value,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: isSelected ? textColor : secondary,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        children: tabLable.map((value) {
+                          final isSelected =
+                              _selectedTab == tabLable.indexOf(value);
+                          return Expanded(
+                            child: Material(
+                              color: isSelected
+                                  ? selectedSurface
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.large,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedTab = tabLable.indexOf(value);
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  child: Text(
+                                    value,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: isSelected ? textColor : secondary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          body: SafeArea(
-            child: IndexedStack(
-              index: _selectedTab,
-              children: [
-                _NetWorthLineChart(),
-                _YearlyBarChart(
-                  selectedYear: selectedYear,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                Expanded(
+                  child: IndexedStack(
+                    index: _selectedTab,
+                    children: [
+                      _NetWorthLineChart(),
+                      _YearlyBarChart(
+                        selectedYear: selectedYear,
+                        onYearChanged: (year) =>
+                            setState(() => _selectedYear = year),
+                      ),
+                      _CategoryPieChart(type: CategoryType.expense),
+                      _CategoryPieChart(type: CategoryType.income),
+                    ],
+                  ),
                 ),
-                _CategoryPieChart(type: CategoryType.expense),
-                _CategoryPieChart(type: CategoryType.income),
               ],
             ),
           ),

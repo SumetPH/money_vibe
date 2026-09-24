@@ -344,6 +344,87 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     }
   }
 
+  void _delete() {
+    showDialog(
+      context: context,
+      builder: (_) => Consumer<SettingsProvider>(
+        builder: (context, sp, _) {
+          final isDark = sp.isDarkMode;
+          return AlertDialog(
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+            title: Text(
+              'ลบรายการประจำ',
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
+            ),
+            content: Text(
+              'คุณต้องการลบรายการประจำนี้ใช่หรือไม่?',
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'ยกเลิก',
+                  style: TextStyle(
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark
+                      ? AppColors.darkExpense
+                      : AppColors.expense,
+                ),
+                onPressed: () async {
+                  final provider = context.read<RecurringTransactionProvider>();
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                  setState(() => _isLoading = true);
+                  try {
+                    await provider.deleteRecurring(widget.recurring!.id);
+                    if (mounted) {
+                      _closeKeyboard();
+                      navigator.pop(); // Close dialog
+                      navigator.pop(); // Close form
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      _closeKeyboard();
+                      navigator.pop(); // Close dialog
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: Text('ลบรายการไม่สำเร็จ: $e'),
+                          backgroundColor: AppColors.expense,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isLoading = false);
+                    }
+                  }
+                },
+                child: const Text('ลบ'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer3<AccountProvider, CategoryProvider, SettingsProvider>(
@@ -407,8 +488,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12),
+            leading: Center(
               child: Material(
                 color: surfaceColor,
                 shape: RoundedRectangleBorder(
@@ -924,6 +1004,52 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 16),
+
+                  if (_isEditing)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: surfaceColor,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.darkDivider.withValues(alpha: 0.4)
+                              : AppColors.divider.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: _delete,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                color: isDark
+                                    ? AppColors.darkExpense
+                                    : AppColors.expense,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'ลบรายการประจำนี้',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -950,9 +1076,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, sc) => Column(
           children: [
@@ -1051,9 +1177,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, sc) => Column(
           children: [
@@ -1129,9 +1255,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, sc) => Column(
           children: [
@@ -1458,9 +1584,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, sc) => Column(
           children: [
@@ -1513,9 +1639,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, sc) => Column(
           children: [

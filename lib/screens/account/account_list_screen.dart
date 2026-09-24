@@ -1325,9 +1325,9 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.85,
+        initialChildSize: 1.0,
         minChildSize: 0.3,
-        maxChildSize: 0.85,
+        maxChildSize: 1.0,
         builder: (_, scrollController) => Column(
           children: [
             Padding(

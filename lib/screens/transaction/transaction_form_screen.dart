@@ -785,13 +785,21 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   // 5. Destructive delete button at bottom (iOS Settings pattern)
                   if (_isEditing) ...[
                     const SizedBox(height: 20),
-                    Material(
-                      color: isDarkMode
-                          ? AppColors.darkSurface
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      clipBehavior: Clip.antiAlias,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? AppColors.darkSurface
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                        border: Border.all(
+                          color: isDarkMode
+                              ? AppColors.darkDivider.withValues(alpha: 0.4)
+                              : AppColors.divider.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
                       child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
                         onTap: _isLoading ? null : _delete,
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -934,9 +942,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.4,
-        maxChildSize: 0.85,
+        initialChildSize: 1.0,
+        minChildSize: 0.3,
+        maxChildSize: 1.0,
         expand: false,
         builder: (_, scrollController) => Column(
           children: [
@@ -1597,10 +1605,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // 2. Payment Source Account
             _SelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีที่ใช้ชำระ',
@@ -1639,10 +1644,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1691,10 +1693,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // 2. To Debt Account
             _SelectionRow(
               title: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สินปลายทาง',
@@ -1724,10 +1723,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1776,10 +1772,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // Transfer: To Account
             _SelectionRow(
               title: selectedToAccount?.name ?? 'เลือกบัญชีปลายทาง',
@@ -1874,10 +1867,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: dividerColor),
-            ),
+            Divider(height: 1, color: dividerColor),
             // Row 2: Category
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -2106,10 +2096,7 @@ class _MetaInfoCard extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 68),
-            child: Divider(height: 1, color: dividerColor),
-          ),
+          Divider(height: 1, color: dividerColor),
           // Row 2: Note
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
