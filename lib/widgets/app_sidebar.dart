@@ -73,31 +73,7 @@ class AppSidebar extends StatefulWidget {
   State<AppSidebar> createState() => _AppSidebarState();
 }
 
-class _AppSidebarState extends State<AppSidebar> with WidgetsBindingObserver {
-  int _interactionEpoch = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.resumed) {
-      // Flutter Web can retain an InkWell hover or pressed overlay while its
-      // browser tab is hidden. Clear it before and after the tab becomes active.
-      setState(() => _interactionEpoch++);
-    }
-  }
-
+class _AppSidebarState extends State<AppSidebar> {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
@@ -193,7 +169,6 @@ class _AppSidebarState extends State<AppSidebar> with WidgetsBindingObserver {
                           widget.currentRoute.startsWith(item.route));
 
                   return _SidebarItemTile(
-                    key: ValueKey('${item.route}-$_interactionEpoch'),
                     item: item,
                     isSelected: isSelected,
                     isDarkMode: isDarkMode,
@@ -231,7 +206,6 @@ class _SidebarItemTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _SidebarItemTile({
-    super.key,
     required this.item,
     required this.isSelected,
     required this.isDarkMode,
