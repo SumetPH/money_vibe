@@ -253,7 +253,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         foregroundColor: textColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        toolbarHeight: 100,
         centerTitle: true,
         leadingWidth: 64,
         leading: Padding(
