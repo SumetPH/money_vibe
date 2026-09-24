@@ -1042,17 +1042,25 @@ class _SettingsGroup extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Material(
-        color: surfaceColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          splashFactory: NoSplash.splashFactory,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: ListTileTheme(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          minVerticalPadding: 10,
-          child: child,
+        child: Material(
+          color: surfaceColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.xLarge),
+            side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: ListTileTheme(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            minVerticalPadding: 10,
+            child: child,
+          ),
         ),
       ),
     );

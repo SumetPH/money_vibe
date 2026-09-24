@@ -1915,9 +1915,17 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
                   ),
                 ),
                 if (isUsd)
-                  Material(
-                    color: dividerColor.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(AppRadii.full),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      border: Border.all(
+                        color: isDarkMode
+                            ? AppColors.darkDivider.withValues(alpha: 0.4)
+                            : AppColors.divider.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: onRateTap,
@@ -2096,73 +2104,67 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
           Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
 
           // ── 3. Bottom Row: Cash in Broker ──
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onCashTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: incomeColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: incomeColor,
-                        size: 18,
-                      ),
+          InkWell(
+            onTap: onCashTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: incomeColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'เงินสดใน Broker',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
-                        ),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatAmount(cashBalanceThb),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.getAmountColor(
-                              cashBalanceThb,
-                              isDarkMode,
-                            ),
-                          ),
-                        ),
-                        if (isUsd)
-                          Text(
-                            '${formatAmount(account.cashBalance)} $currencyCode',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: textSecondaryColor,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      Icons.chevron_right,
-                      color: textSecondaryColor.withValues(alpha: 0.5),
+                    child: Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: incomeColor,
                       size: 18,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'เงินสดใน Broker',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatAmount(cashBalanceThb),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.getAmountColor(
+                            cashBalanceThb,
+                            isDarkMode,
+                          ),
+                        ),
+                      ),
+                      if (isUsd)
+                        Text(
+                          '${formatAmount(account.cashBalance)} $currencyCode',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: textSecondaryColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.chevron_right,
+                    color: textSecondaryColor.withValues(alpha: 0.5),
+                    size: 18,
+                  ),
+                ],
               ),
             ),
           ),

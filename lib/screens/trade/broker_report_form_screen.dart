@@ -167,48 +167,6 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     }
   }
 
-  Future<void> _delete() async {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ลบรายงาน'),
-        content: const Text('คุณต้องการลบข้อมูลรายงานปีนี้ใช่หรือไม่?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-            ),
-            child: const Text('ลบข้อมูล'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true || !mounted) return;
-
-    setState(() => _isSaving = true);
-    try {
-      await context.read<AccountProvider>().deletePortfolioAnnualReport(
-        widget.existingReport!.id,
-      );
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('เกิดข้อผิดพลาดในการลบข้อมูล')),
-      );
-      setState(() => _isSaving = false);
-    }
-  }
-
   Widget _buildDivider(bool isDarkMode) => Divider(
     height: 1,
     color: isDarkMode
@@ -351,32 +309,6 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
           ),
         ),
         actions: [
-          if (widget.existingReport != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: isDarkMode
-                        ? AppColors.darkExpense
-                        : AppColors.expense,
-                  ),
-                  onPressed: _isSaving ? null : _delete,
-                ),
-              ),
-            ),
           AppBarActionButton(
             icon: Icon(
               Icons.check,
@@ -471,8 +403,12 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       ),
                       _buildDivider(isDarkMode),
 
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      Container(
+                        width: double.infinity,
+                        color: isDarkMode
+                            ? AppColors.darkSectionHeader
+                            : AppColors.sectionHeader,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                         child: Text(
                           'เงินทุนเติมเข้า Broker จากรายงานประจำปี',
                           style: TextStyle(
@@ -504,8 +440,12 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       ),
                       _buildDivider(isDarkMode),
 
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      Container(
+                        width: double.infinity,
+                        color: isDarkMode
+                            ? AppColors.darkSectionHeader
+                            : AppColors.sectionHeader,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                         child: Text(
                           'เงินโอนกลับไทยจากรายงานประจำปี',
                           style: TextStyle(
@@ -536,8 +476,12 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                       ),
                       _buildDivider(isDarkMode),
 
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      Container(
+                        width: double.infinity,
+                        color: isDarkMode
+                            ? AppColors.darkSectionHeader
+                            : AppColors.sectionHeader,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                         child: Text(
                           'เงินปันผลจากรายงานประจำปี',
                           style: TextStyle(
@@ -577,8 +521,6 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                         secondaryColor: secondaryColor,
                       ),
                       _buildDivider(isDarkMode),
-
-                      const SizedBox(height: 24),
 
                       // Note
                       Container(

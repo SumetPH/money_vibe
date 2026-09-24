@@ -255,71 +255,83 @@ class _SidebarItemTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        color: isSelected ? selectedTileColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          hoverColor: hoverColor,
-          highlightColor: Colors.transparent,
+      child: Theme(
+        data: Theme.of(context).copyWith(
           splashFactory: NoSplash.splashFactory,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      item.icon,
-                      color: isSelected ? selectedColor : unselectedColor,
-                      size: 22,
-                    ),
-                    if (item.route == '/settings' &&
-                        reinstallReminder.needsExpiredBadge)
-                      Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            color: AppColors.expense,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Text(
-                            '!',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? selectedTileColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            hoverColor: hoverColor,
+            highlightColor: Colors.transparent,
+            splashFactory: NoSplash.splashFactory,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        item.icon,
+                        color: isSelected ? selectedColor : unselectedColor,
+                        size: 22,
+                      ),
+                      if (item.route == '/settings' &&
+                          reinstallReminder.needsExpiredBadge)
+                        Positioned(
+                          right: -6,
+                          top: -6,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: AppColors.expense,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Text(
+                              '!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: TextStyle(
+                        color: isSelected
+                            ? (isDarkMode
+                                  ? Colors.white
+                                  : AppColors.textPrimary)
+                            : (isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary),
+                        fontSize: 14,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    item.label,
-                    style: TextStyle(
-                      color: isSelected
-                          ? (isDarkMode ? Colors.white : AppColors.textPrimary)
-                          : (isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary),
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

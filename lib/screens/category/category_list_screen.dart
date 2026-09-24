@@ -342,41 +342,38 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _selectTab(index),
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? selectedSurface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.large),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1.5),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? textPrimary : textSecondary,
-                ),
+    return InkWell(
+      onTap: () => _selectTab(index),
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedSurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1.5),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? textPrimary : textSecondary,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -889,117 +886,113 @@ class _CategoryItem extends StatelessWidget {
         : AppColors.textSecondary;
     return Column(
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isReorderMode ? null : onTap,
-            onLongPress: isReorderMode
-                ? null
-                : () => _showCategoryMenu(context),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-              child: Row(
-                children: [
-                  // Drag handle (visible only in reorder mode)
-                  if (reorderIndex != null) ...[
-                    ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Icon(
-                          Icons.drag_indicator_rounded,
-                          color: textSecondaryColor,
-                          size: 22,
-                        ),
+        InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          onTap: isReorderMode ? null : onTap,
+          onLongPress: isReorderMode ? null : () => _showCategoryMenu(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            child: Row(
+              children: [
+                // Drag handle (visible only in reorder mode)
+                if (reorderIndex != null) ...[
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        color: textSecondaryColor,
+                        size: 22,
                       ),
                     ),
-                  ],
-
-                  // Squircle Icon Container
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: category.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppRadii.medium),
-                    ),
-                    child: Icon(category.icon, color: category.color, size: 22),
                   ),
-                  const SizedBox(width: 14),
+                ],
 
-                  // Name and Subtitle
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                // Squircle Icon Container
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: category.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.medium),
+                  ),
+                  child: Icon(category.icon, color: category.color, size: 22),
+                ),
+                const SizedBox(width: 14),
+
+                // Name and Subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimaryColor,
+                        ),
+                      ),
+                      if (parentCategoryName != null) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.subdirectory_arrow_right_rounded,
+                              size: 12,
+                              color: textSecondaryColor,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              parentCategoryName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: textSecondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else if (category.note != null &&
+                          category.note!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 2),
                         Text(
-                          category.name,
+                          category.note!.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: textPrimaryColor,
+                            fontSize: 12,
+                            color: textSecondaryColor,
                           ),
                         ),
-                        if (parentCategoryName != null) ...[
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.subdirectory_arrow_right_rounded,
-                                size: 12,
-                                color: textSecondaryColor,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                parentCategoryName!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: textSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else if (category.note != null &&
-                            category.note!.trim().isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            category.note!.trim(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: textSecondaryColor,
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
+                    ],
                   ),
+                ),
 
-                  // Total Amount display
-                  if (total > 0) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '${formatAmount(displayAmount)} ฿',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.getAmountColor(
-                          displayAmount,
-                          isDarkMode,
-                        ),
+                // Total Amount display
+                if (total > 0) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '${formatAmount(displayAmount)} ฿',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.getAmountColor(
+                        displayAmount,
+                        isDarkMode,
                       ),
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),

@@ -323,9 +323,11 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: Center(
-                    child: Material(
-                      color: incomeColor,
-                      borderRadius: BorderRadius.circular(AppRadii.full),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: incomeColor,
+                        borderRadius: BorderRadius.circular(AppRadii.full),
+                      ),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
                         onTap: () => setState(() => _isReorderMode = false),
@@ -1541,188 +1543,183 @@ class _BudgetItemRow extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isReorderMode || budget.type == BudgetType.savings
-                ? null
-                : onTap,
-            onLongPress: isReorderMode ? null : () => _showBudgetMenu(context),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Reorder Handle if active
-                  if (reorderIndex != null) ...[
-                    ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: Icon(
-                          Icons.drag_indicator_rounded,
-                          color: dividerColor,
-                          size: 20,
-                        ),
+        InkWell(
+          onTap: isReorderMode || budget.type == BudgetType.savings
+              ? null
+              : onTap,
+          onLongPress: isReorderMode ? null : () => _showBudgetMenu(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Reorder Handle if active
+                if (reorderIndex != null) ...[
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        color: dividerColor,
+                        size: 20,
                       ),
                     ),
-                  ],
-
-                  // Squircle Avatar
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: budget.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppRadii.large),
-                    ),
-                    child: Icon(budget.icon, color: budget.color, size: 22),
                   ),
-                  const SizedBox(width: 12),
+                ],
 
-                  // Title & Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
+                // Squircle Avatar
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: budget.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.large),
+                  ),
+                  child: Icon(budget.icon, color: budget.color, size: 22),
+                ),
+                const SizedBox(width: 12),
+
+                // Title & Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              budget.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (budget.isHidden) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.small,
+                                ),
+                              ),
                               child: Text(
-                                budget.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                'ซ่อน',
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  color: textSecondary,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: textPrimary,
                                 ),
                               ),
                             ),
-                            if (budget.isHidden) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 1.5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.small,
-                                  ),
-                                ),
-                                child: Text(
-                                  'ซ่อน',
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        budget.type == BudgetType.savings
+                            ? 'เป้าหมาย: ${formatAmount(budget.amount)}'
+                            : 'งบ ${formatAmount(budget.amount)} · ใช้ ${formatAmount(spent)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: textSecondary,
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          budget.type == BudgetType.savings
-                              ? 'เป้าหมาย: ${formatAmount(budget.amount)}'
-                              : 'งบ ${formatAmount(budget.amount)} · ใช้ ${formatAmount(spent)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: textSecondary,
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                // Right side: Savings capsule OR Expense metrics
+                if (budget.type == BudgetType.savings) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (isDarkMode ? AppColors.darkIncome : AppColors.income)
+                              .withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                    ),
+                    child: Text(
+                      'แผนออม',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDarkMode
+                            ? AppColors.darkIncome
+                            : AppColors.income,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-
-                  // Right side: Savings capsule OR Expense metrics
-                  if (budget.type == BudgetType.savings) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                ] else ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${(_progress * 100).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: _progressColor,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 80,
+                            child: _BudgetProgressBar(
+                              progress: _progress,
+                              color: _progressColor,
+                              backgroundColor: isDarkMode
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider,
+                            ),
+                          ),
+                        ],
                       ),
-                      decoration: BoxDecoration(
-                        color:
-                            (isDarkMode
-                                    ? AppColors.darkIncome
-                                    : AppColors.income)
-                                .withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                      ),
-                      child: Text(
-                        'แผนออม',
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining.abs())}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: isDarkMode
-                              ? AppColors.darkIncome
-                              : AppColors.income,
+                          color: _isRemainingNeutral
+                              ? textPrimary
+                              : _remaining > 0
+                              ? (isDarkMode
+                                    ? AppColors.darkIncome
+                                    : AppColors.income)
+                              : (isDarkMode
+                                    ? AppColors.darkExpense
+                                    : AppColors.expense),
                         ),
                       ),
-                    ),
-                  ] else ...[
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${(_progress * 100).toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: _progressColor,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            SizedBox(
-                              width: 80,
-                              child: _BudgetProgressBar(
-                                progress: _progress,
-                                color: _progressColor,
-                                backgroundColor: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_remaining >= -0.001 ? 'เหลือ' : 'เกิน'} ${formatAmount(_remaining.abs())}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _isRemainingNeutral
-                                ? textPrimary
-                                : _remaining > 0
-                                ? (isDarkMode
-                                      ? AppColors.darkIncome
-                                      : AppColors.income)
-                                : (isDarkMode
-                                      ? AppColors.darkExpense
-                                      : AppColors.expense),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),

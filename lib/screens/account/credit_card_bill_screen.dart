@@ -663,11 +663,11 @@ class _BillItemCard extends StatelessWidget {
         ? AppColors.darkTransfer
         : AppColors.transfer;
 
-    return Material(
-      color: surfaceColor,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
+        border: Border.all(
           color: isDarkMode
               ? AppColors.darkDivider.withValues(alpha: 0.4)
               : AppColors.divider.withValues(alpha: 0.4),

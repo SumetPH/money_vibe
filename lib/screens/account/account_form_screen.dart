@@ -471,79 +471,54 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             actions: [
               if (_isEditing)
                 Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Material(
-                    color: surfaceColor,
-                    shape: RoundedRectangleBorder(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: Material(
+                      color: fabYellow,
                       borderRadius: BorderRadius.circular(AppRadii.full),
-                      side: BorderSide(
-                        color: _isDarkMode
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: expenseColor,
-                      ),
-                      onPressed: _isLoading ? null : _delete,
-                      tooltip: 'ลบบัญชี',
-                    ),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black,
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: _isLoading ? null : _save,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black,
                                     ),
                                   ),
-                                ],
-                              ),
+                                )
+                              : const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.black,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'บันทึก',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           body: GestureDetector(
@@ -1396,9 +1371,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(top: 24),
-      child: Material(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: Container(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.xLarge),
@@ -1736,9 +1713,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.background,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       border: Border.all(
                         color: dividerColor.withValues(alpha: 0.4),

@@ -327,185 +327,193 @@ class BrokerReportListScreen extends StatelessWidget {
                 ),
                 GroupHeader(title: 'แยกตามรายปี', isDarkMode: isDarkMode),
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: surfaceColor,
-                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      border: Border.all(
-                        color: dividerColor.withValues(alpha: 0.4),
-                      ),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      splashFactory: NoSplash.splashFactory,
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
                     ),
-                    child: ListView.separated(
-                      itemCount: reports.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: AppColors.listDividerFor(isDarkMode),
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: surfaceColor,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                        border: Border.all(
+                          color: dividerColor.withValues(alpha: 0.4),
+                        ),
                       ),
-                      itemBuilder: (context, index) {
-                        final report = reports[index];
-                        return Material(
-                          color: surfaceColor,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BrokerReportFormScreen(
-                                    portfolioId: portfolioId,
-                                    existingReport: report,
+                      child: ListView.separated(
+                        itemCount: reports.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          color: AppColors.listDividerFor(isDarkMode),
+                        ),
+                        itemBuilder: (context, index) {
+                          final report = reports[index];
+                          return Material(
+                            color: surfaceColor,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BrokerReportFormScreen(
+                                      portfolioId: portfolioId,
+                                      existingReport: report,
+                                    ),
                                   ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
                                 ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'ปี ${report.year}',
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'ปี ${report.year}',
+                                          style: TextStyle(
+                                            color: textColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "เงินทุน USD",
-                                        style: TextStyle(fontSize: 14),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.inflowUsd)} USD',
-                                        style: TextStyle(
-                                          color: incomeColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "เงินทุน USD",
+                                          style: TextStyle(fontSize: 14),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "เงินทุน THB",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.inflowThb)} THB',
-                                        style: TextStyle(
-                                          color: incomeColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.inflowUsd)} USD',
+                                          style: TextStyle(
+                                            color: incomeColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "โอนกลับ USD",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.remittedUsd)} USD',
-                                        style: TextStyle(
-                                          color: transferColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "เงินทุน THB",
+                                          style: TextStyle(fontSize: 13),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "โอนกลับ THB",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.remittedThb)} THB',
-                                        style: TextStyle(
-                                          color: transferColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.inflowThb)} THB',
+                                          style: TextStyle(
+                                            color: incomeColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "ปันผลรวม",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.dividendGrossUsd)} USD',
-                                        style: TextStyle(
-                                          color: debtRepayColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "โอนกลับ USD",
+                                          style: TextStyle(fontSize: 13),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "ภาษีปันผล",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
-                                        style: TextStyle(
-                                          color: debtRepayColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.remittedUsd)} USD',
+                                          style: TextStyle(
+                                            color: transferColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "ปันผลสุทธิ",
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${currencyFormat.format(report.dividendNetUsd)} USD',
-                                        style: TextStyle(
-                                          color: debtRepayColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "โอนกลับ THB",
+                                          style: TextStyle(fontSize: 13),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.remittedThb)} THB',
+                                          style: TextStyle(
+                                            color: transferColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "ปันผลรวม",
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.dividendGrossUsd)} USD',
+                                          style: TextStyle(
+                                            color: debtRepayColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "ภาษีปันผล",
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.dividendTaxWithheldUsd)} USD',
+                                          style: TextStyle(
+                                            color: debtRepayColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "ปันผลสุทธิ",
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          '${currencyFormat.format(report.dividendNetUsd)} USD',
+                                          style: TextStyle(
+                                            color: debtRepayColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

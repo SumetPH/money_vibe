@@ -530,34 +530,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               ),
             ),
             actions: [
-              if (_isEditing)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Material(
-                    color: surfaceColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.full),
-                      side: BorderSide(
-                        color: isDark
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: isDark
-                            ? AppColors.darkExpense
-                            : AppColors.expense,
-                      ),
-                      tooltip: 'ลบงบประมาณ',
-                      onPressed: _isLoading ? null : _delete,
-                    ),
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Center(
@@ -778,20 +750,23 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required Color surfaceColor,
     required Color dividerColor,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          border: Border.all(
+            color: dividerColor.withValues(alpha: 0.4),
+            width: 1,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }
@@ -984,19 +959,8 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required Color textSecondaryColor,
     required bool isDark,
   }) {
-    final inputBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: inputBg,
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        border: Border.all(
-          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
-          width: 1,
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Container(
@@ -1139,60 +1103,57 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required bool isDark,
     required Color accentColor,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _selectedType = type),
-        borderRadius: BorderRadius.circular(AppRadii.medium),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? (isDark ? AppColors.darkSurfaceVariant : Colors.white)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.medium),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected
-                      ? accentColor
-                      : accentColor.withValues(alpha: 0.4),
-                ),
+    return InkWell(
+      onTap: () => setState(() => _selectedType = type),
+      borderRadius: BorderRadius.circular(AppRadii.medium),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? AppColors.darkSurfaceVariant : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadii.medium),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? accentColor
+                    : accentColor.withValues(alpha: 0.4),
               ),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? (isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary)
-                      : (isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary),
-                ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? (isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary)
+                    : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1207,54 +1168,51 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: textSecondaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(icon, color: textSecondaryColor, size: 18),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Text(
-                label,
+              child: Icon(icon, color: textSecondaryColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
+                  color: textSecondaryColor,
                   fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: textSecondaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: textSecondaryColor.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+            ),
+          ],
         ),
       ),
     );
@@ -1324,64 +1282,62 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required Color textSecondaryColor,
     required bool isDark,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _pickIcon(isDark),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 18),
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      onTap: () => _pickIcon(isDark),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _selectedColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ไอคอน',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'เลือกไอคอนสำหรับงบประมาณ',
-                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                  border: Border.all(
-                    color: _selectedColor.withValues(alpha: 0.4),
-                    width: 1.5,
+              child: Icon(_selectedIcon, color: _selectedColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ไอคอน',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimaryColor,
                   ),
                 ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 20),
+                const SizedBox(height: 2),
+                Text(
+                  'เลือกไอคอนสำหรับงบประมาณ',
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _selectedColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+                border: Border.all(
+                  color: _selectedColor.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
               ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: textSecondaryColor.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
+              child: Icon(_selectedIcon, color: _selectedColor, size: 20),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+            ),
+          ],
         ),
       ),
     );
@@ -1393,64 +1349,62 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required Color textSecondaryColor,
     required bool isDark,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _pickColor(isDark),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: _selectedColor,
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      onTap: () => _pickColor(isDark),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _selectedColor,
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'สีประจำงบประมาณ',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'เลือกโทนสีเพื่อการแยกแยะ',
-                    style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _selectedColor,
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                  border: Border.all(
-                    color: (isDark ? Colors.white : Colors.black).withValues(
-                      alpha: 0.2,
-                    ),
-                    width: 1.5,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'สีประจำงบประมาณ',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimaryColor,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  'เลือกโทนสีเพื่อการแยกแยะ',
+                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _selectedColor,
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+                border: Border.all(
+                  color: (isDark ? Colors.white : Colors.black).withValues(
+                    alpha: 0.2,
+                  ),
+                  width: 1.5,
+                ),
               ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: textSecondaryColor.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: textSecondaryColor.withValues(alpha: 0.5),
+            ),
+          ],
         ),
       ),
     );
@@ -1462,38 +1416,36 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }) {
     final deleteColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _delete,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: deleteColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: deleteColor,
-                  size: 18,
-                ),
+    return InkWell(
+      onTap: _delete,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: deleteColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.xLarge),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'ลบงบประมาณนี้',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: deleteColor,
-                ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: deleteColor,
+                size: 18,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'ลบงบประมาณนี้',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: deleteColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1703,13 +1655,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) {
-        final bgColor = isDark
-            ? AppColors.darkBackground
-            : AppColors.background;
         final textSecondary = isDark
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
         return SafeArea(
           child: Column(
@@ -1728,30 +1676,15 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                   itemBuilder: (_, i) {
                     final icon = AppColors.accountIcons[i];
                     final selected = icon == _selectedIcon;
-                    return Material(
-                      color: selected
-                          ? _selectedColor.withValues(alpha: 0.15)
-                          : bgColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        side: selected
-                            ? BorderSide(color: _selectedColor, width: 2)
-                            : BorderSide(
-                                color: dividerColor.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _selectedIcon = icon);
-                          Navigator.pop(context);
-                        },
-                        child: Icon(
-                          icon,
-                          color: selected ? _selectedColor : textSecondary,
-                          size: 24,
-                        ),
+                    return InkWell(
+                      onTap: () {
+                        setState(() => _selectedIcon = icon);
+                        Navigator.pop(context);
+                      },
+                      child: Icon(
+                        icon,
+                        color: selected ? _selectedColor : textSecondary,
+                        size: 24,
                       ),
                     );
                   },

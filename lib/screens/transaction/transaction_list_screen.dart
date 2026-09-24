@@ -1308,6 +1308,7 @@ class _TransactionItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
       child: Container(
         color: surfaceColor,
         padding: const EdgeInsets.all(14),

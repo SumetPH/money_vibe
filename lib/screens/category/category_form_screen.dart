@@ -289,34 +289,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             actions: [
-              if (_isEditing)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Material(
-                    color: surfaceColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.full),
-                      side: BorderSide(
-                        color: isDarkMode
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: isDarkMode
-                            ? AppColors.darkExpense
-                            : AppColors.expense,
-                      ),
-                      tooltip: 'ลบหมวดหมู่',
-                      onPressed: _isLoading ? null : _delete,
-                    ),
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Center(
@@ -541,52 +513,49 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _onTypeChanged(type),
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? selectedSurface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.large),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1.5),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected
-                      ? accentColor
-                      : accentColor.withValues(alpha: 0.4),
-                ),
+    return InkWell(
+      onTap: () => _onTypeChanged(type),
+      borderRadius: BorderRadius.circular(AppRadii.large),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedSurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadii.large),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1.5),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? accentColor
+                    : accentColor.withValues(alpha: 0.4),
               ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? textPrimary : textSecondary,
-                ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? textPrimary : textSecondary,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -820,49 +789,47 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: textSecondaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(icon, color: textSecondaryColor, size: 18),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
-                ),
+              child: Icon(icon, color: textSecondaryColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
               ),
-              const Spacer(),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: textPrimaryColor,
-                ),
+            ),
+            const Spacer(),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: textPrimaryColor,
               ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: textSecondaryColor,
-                size: 20,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: textSecondaryColor,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -873,54 +840,52 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _pickIcon,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: textSecondaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(
-                  Icons.category_outlined,
-                  color: textSecondaryColor,
-                  size: 18,
-                ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      onTap: _pickIcon,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'ไอคอน',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 20),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
+              child: Icon(
+                Icons.category_outlined,
                 color: textSecondaryColor,
-                size: 20,
+                size: 18,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'ไอคอน',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _selectedColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+              ),
+              child: Icon(_selectedIcon, color: _selectedColor, size: 20),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: textSecondaryColor,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -931,65 +896,63 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _pickColor,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: textSecondaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(
-                  Icons.color_lens_outlined,
-                  color: textSecondaryColor,
-                  size: 18,
-                ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      onTap: _pickColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: textSecondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'สีประจำหมวด',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _selectedColor,
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _selectedColor.withValues(alpha: 0.4),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
+              child: Icon(
+                Icons.color_lens_outlined,
                 color: textSecondaryColor,
-                size: 20,
+                size: 18,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'สีประจำหมวด',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textPrimaryColor,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _selectedColor,
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+                boxShadow: [
+                  BoxShadow(
+                    color: _selectedColor.withValues(alpha: 0.4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: textSecondaryColor,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -1063,44 +1026,42 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   }) {
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _delete,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: expenseColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: expenseColor,
-                  size: 18,
-                ),
+    return InkWell(
+      onTap: _delete,
+      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: expenseColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'ลบหมวดหมู่นี้',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: expenseColor,
-                ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: expenseColor,
+                size: 18,
               ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: expenseColor.withValues(alpha: 0.7),
-                size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'ลบหมวดหมู่นี้',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: expenseColor,
               ),
-            ],
-          ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: expenseColor.withValues(alpha: 0.7),
+              size: 20,
+            ),
+          ],
         ),
       ),
     );

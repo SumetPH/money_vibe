@@ -344,87 +344,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     }
   }
 
-  void _delete() {
-    showDialog(
-      context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, sp, _) {
-          final isDark = sp.isDarkMode;
-          return AlertDialog(
-            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-            title: Text(
-              'ลบรายการประจำ',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-            ),
-            content: Text(
-              'คุณต้องการลบรายการประจำนี้ใช่หรือไม่?',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'ยกเลิก',
-                  style: TextStyle(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark
-                      ? AppColors.darkExpense
-                      : AppColors.expense,
-                ),
-                onPressed: () async {
-                  final provider = context.read<RecurringTransactionProvider>();
-                  final navigator = Navigator.of(context);
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-                  setState(() => _isLoading = true);
-                  try {
-                    await provider.deleteRecurring(widget.recurring!.id);
-                    if (mounted) {
-                      _closeKeyboard();
-                      navigator.pop(); // Close dialog
-                      navigator.pop(); // Close form
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      _closeKeyboard();
-                      navigator.pop(); // Close dialog
-                      scaffoldMessenger.showSnackBar(
-                        SnackBar(
-                          content: Text('ลบรายการไม่สำเร็จ: $e'),
-                          backgroundColor: AppColors.expense,
-                        ),
-                      );
-                    }
-                  } finally {
-                    if (mounted) {
-                      setState(() => _isLoading = false);
-                    }
-                  }
-                },
-                child: const Text('ลบ'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer3<AccountProvider, CategoryProvider, SettingsProvider>(
@@ -530,27 +449,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               ),
             ),
             actions: [
-              if (_isEditing)
-                Material(
-                  color: surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: isDark
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
-                      width: 1,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
-                      color: isDark ? AppColors.darkExpense : AppColors.expense,
-                    ),
-                    onPressed: _isLoading ? null : _delete,
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Center(

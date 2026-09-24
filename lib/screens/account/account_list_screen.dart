@@ -902,9 +902,11 @@ class _TotalRow extends StatelessWidget {
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
 
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(AppRadii.large),
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadii.large),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
