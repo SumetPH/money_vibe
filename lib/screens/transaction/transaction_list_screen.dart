@@ -1315,8 +1315,8 @@ class _TransactionItem extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: (category?.color ?? typeColor).withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(AppRadii.large),
@@ -1357,7 +1357,7 @@ class _TransactionItem extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -1427,7 +1427,7 @@ class _TransactionItem extends StatelessWidget {
     bool isDarkMode,
   ) {
     final style = TextStyle(
-      fontSize: 15,
+      fontSize: 13,
       fontWeight: FontWeight.w600,
       color: textPrimaryColor,
     );

@@ -230,67 +230,82 @@ class _AccountListScreenState extends State<AccountListScreen> {
                               ],
                             ),
                           ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? AppColors.darkSurface
-                                  : AppColors.surface,
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.xLarge,
-                              ),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? AppColors.darkDivider.withValues(
-                                        alpha: 0.4,
-                                      )
-                                    : AppColors.divider.withValues(alpha: 0.4),
-                              ),
+                          Theme(
+                            data: Theme.of(context).copyWith(
+                              splashFactory: NoSplash.splashFactory,
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.xLarge,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? AppColors.darkSurface
+                                    : AppColors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.xLarge,
+                                ),
+                                border: Border.all(
+                                  color: isDarkMode
+                                      ? AppColors.darkDivider.withValues(
+                                          alpha: 0.4,
+                                        )
+                                      : AppColors.divider.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                ),
                               ),
-                              child: ReorderableListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                buildDefaultDragHandles: false,
-                                itemCount: entry.value.length,
-                                onReorderItem: isReorderMode
-                                    ? (oldIndex, newIndex) {
-                                        accountProvider.reorderAccountsInGroup(
-                                          entry.key,
-                                          oldIndex,
-                                          newIndex,
-                                        );
-                                      }
-                                    : (_, _) {},
-                                proxyDecorator: (child, index, animation) =>
-                                    Material(
-                                      elevation: 6,
-                                      color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadii.xLarge,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.xLarge,
+                                ),
+                                child: ReorderableListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  buildDefaultDragHandles: false,
+                                  itemCount: entry.value.length,
+                                  onReorderItem: isReorderMode
+                                      ? (oldIndex, newIndex) {
+                                          accountProvider
+                                              .reorderAccountsInGroup(
+                                                entry.key,
+                                                oldIndex,
+                                                newIndex,
+                                              );
+                                        }
+                                      : (_, _) {},
+                                  proxyDecorator: (child, index, animation) =>
+                                      Material(
+                                        elevation: 6,
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadii.xLarge,
+                                        ),
+                                        child: child,
                                       ),
-                                      child: child,
-                                    ),
-                                itemBuilder: (context, index) {
-                                  final account = entry.value[index];
-                                  final balance =
-                                      totals.balancesByAccountId[account.id] ??
-                                      0;
-                                  return _AccountItem(
-                                    key: ValueKey(account.id),
-                                    account: account,
-                                    balance: balance,
-                                    isReorderMode: isReorderMode,
-                                    reorderIndex: isReorderMode ? index : null,
-                                    onTap: () => _openForm(context, account),
-                                    onTapEdit: () =>
-                                        _openEditForm(context, account),
-                                    isDarkMode: isDarkMode,
-                                    showDivider: index < entry.value.length - 1,
-                                  );
-                                },
+                                  itemBuilder: (context, index) {
+                                    final account = entry.value[index];
+                                    final balance =
+                                        totals.balancesByAccountId[account
+                                            .id] ??
+                                        0;
+                                    return _AccountItem(
+                                      key: ValueKey(account.id),
+                                      account: account,
+                                      balance: balance,
+                                      isReorderMode: isReorderMode,
+                                      reorderIndex: isReorderMode
+                                          ? index
+                                          : null,
+                                      onTap: () => _openForm(context, account),
+                                      onTapEdit: () =>
+                                          _openEditForm(context, account),
+                                      isDarkMode: isDarkMode,
+                                      showDivider:
+                                          index < entry.value.length - 1,
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -1114,7 +1129,7 @@ class _AccountItem extends StatelessWidget {
                       Text(
                         account.name,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: textPrimaryColor,
                         ),

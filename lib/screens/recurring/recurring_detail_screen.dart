@@ -364,28 +364,14 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
             leadingWidth: 64,
             leading: Padding(
               padding: const EdgeInsets.only(left: 12),
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDark
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    size: 20,
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
             title: Text(

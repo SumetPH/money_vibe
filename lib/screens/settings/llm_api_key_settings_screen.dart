@@ -87,27 +87,25 @@ class _LLMApiKeySettingsScreenState extends State<LLMApiKeySettingsScreen> {
         leadingWidth: 64,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: Material(
-            color: surfaceColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
             ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
-        title: const Text(
+        title: Text(
           'LLM API Key',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
       ),
       body: SafeArea(

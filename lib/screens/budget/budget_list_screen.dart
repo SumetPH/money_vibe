@@ -695,73 +695,81 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       );
 
     Widget buildGroupList(List<Budget> groupBudgets, String? groupName) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          border: Border.all(
-            color: dividerColor.withValues(alpha: 0.4),
-            width: 1,
-          ),
+      return Theme(
+        data: Theme.of(context).copyWith(
+          splashFactory: NoSplash.splashFactory,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: ReorderableListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          buildDefaultDragHandles: false,
-          onReorderItem: _isReorderMode
-              ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
-                  groupName,
-                  oldIndex,
-                  newIndex,
-                )
-              : (_, _) {},
-          proxyDecorator: (child, index, animation) {
-            return AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                final animValue = Curves.easeInOut.transform(animation.value);
-                final elevation = 1 + animValue * 8;
-                final scale = 1 + animValue * 0.02;
-                return Transform.scale(
-                  scale: scale,
-                  child: Material(
-                    elevation: elevation,
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(AppRadii.medium),
-                    child: child,
-                  ),
-                );
-              },
-              child: child,
-            );
-          },
-          itemCount: groupBudgets.length,
-          itemBuilder: (context, index) {
-            final budget = groupBudgets[index];
-            final spent = _getSpentFromCategoryTotals(
-              budget,
-              spentByCategoryId,
-            );
-            final isLast = index == groupBudgets.length - 1;
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(AppRadii.xLarge),
+            border: Border.all(
+              color: dividerColor.withValues(alpha: 0.4),
+              width: 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            onReorderItem: _isReorderMode
+                ? (oldIndex, newIndex) => budgetProvider.reorderBudgetsInGroup(
+                    groupName,
+                    oldIndex,
+                    newIndex,
+                  )
+                : (_, _) {},
+            proxyDecorator: (child, index, animation) {
+              return AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  final animValue = Curves.easeInOut.transform(animation.value);
+                  final elevation = 1 + animValue * 8;
+                  final scale = 1 + animValue * 0.02;
+                  return Transform.scale(
+                    scale: scale,
+                    child: Material(
+                      elevation: elevation,
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(AppRadii.medium),
+                      child: child,
+                    ),
+                  );
+                },
+                child: child,
+              );
+            },
+            itemCount: groupBudgets.length,
+            itemBuilder: (context, index) {
+              final budget = groupBudgets[index];
+              final spent = _getSpentFromCategoryTotals(
+                budget,
+                spentByCategoryId,
+              );
+              final isLast = index == groupBudgets.length - 1;
 
-            return _BudgetItemRow(
-              key: ValueKey(budget.id),
-              budget: budget,
-              spent: spent,
-              isReorderMode: _isReorderMode,
-              reorderIndex: _isReorderMode ? index : null,
-              showDivider: !isLast,
-              isDarkMode: isDarkMode,
-              surfaceColor: surfaceColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              dividerColor: dividerColor,
-              onTap: () => _openTransactions(context, budget, period),
-              onTapEdit: () => _openForm(context, budget),
-            );
-          },
+              return _BudgetItemRow(
+                key: ValueKey(budget.id),
+                budget: budget,
+                spent: spent,
+                isReorderMode: _isReorderMode,
+                reorderIndex: _isReorderMode ? index : null,
+                showDivider: !isLast,
+                isDarkMode: isDarkMode,
+                surfaceColor: surfaceColor,
+                textPrimary: textPrimary,
+                textSecondary: textSecondary,
+                dividerColor: dividerColor,
+                onTap: () => _openTransactions(context, budget, period),
+                onTapEdit: () => _openForm(context, budget),
+              );
+            },
+          ),
         ),
       );
     }

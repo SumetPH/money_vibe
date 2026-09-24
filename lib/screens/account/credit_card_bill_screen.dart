@@ -180,29 +180,15 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             centerTitle: true,
             leadingWidth: 64,
             leading: Center(
-              child: Material(
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    size: 20,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  tooltip: 'ย้อนกลับ',
-                  onPressed: () => Navigator.pop(context),
-                ),
+                tooltip: 'ย้อนกลับ',
+                onPressed: () => Navigator.pop(context),
               ),
             ),
             title: Column(

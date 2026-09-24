@@ -140,28 +140,21 @@ class _AuthScreenState extends State<AuthScreen> {
         leading: Navigator.canPop(context)
             ? Padding(
                 padding: const EdgeInsets.only(left: 12),
-                child: Material(
-                  color: surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
-                      width: 1,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  onPressed: () => Navigator.pop(context),
                 ),
               )
             : null,
         title: Text(
           _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
         ),
       ),
       body: AbsorbPointer(
