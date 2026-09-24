@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:money_vibe/providers/recurring_transaction_provider.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
@@ -460,6 +461,60 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
+  void _delete() {
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: bgColor,
+        title: Text('ลบรายการ', style: TextStyle(color: textColor)),
+        content: Text(
+          'คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () {
+              final transactionId = widget.transaction!.id;
+
+              // Check if this transaction is linked to a recurring occurrence
+              final recurProvider = context
+                  .read<RecurringTransactionProvider>();
+              final occ = recurProvider.findOccurrenceByTransactionId(
+                transactionId,
+              );
+
+              // Delete the transaction
+              context.read<TransactionProvider>().deleteTransaction(
+                transactionId,
+              );
+
+              // If linked to a recurring occurrence, undo it
+              if (occ != null) {
+                recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
+              }
+
+              _closeKeyboard();
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close form
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _selectType(TransactionType t) {
     _closeKeyboard();
     setState(() {
@@ -726,6 +781,48 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     isDarkMode: isDarkMode,
                     onPickDateTime: () => _pickDateTime(context),
                   ),
+
+                  // 5. Destructive delete button at bottom (iOS Settings pattern)
+                  if (_isEditing) ...[
+                    const SizedBox(height: 20),
+                    Material(
+                      color: isDarkMode
+                          ? AppColors.darkSurface
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: _isLoading ? null : _delete,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                size: 20,
+                                color: isDarkMode
+                                    ? AppColors.darkExpense
+                                    : AppColors.expense,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'ลบรายการนี้',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? AppColors.darkExpense
+                                      : AppColors.expense,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
