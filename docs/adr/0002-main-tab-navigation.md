@@ -1,3 +1,3 @@
 # Main-tab navigation owns mobile primary navigation
 
-On mobile, accounts, budgets, and transactions are retained Main Tabs that switch locally rather than navigating through GoRouter. Their routes remain external entry points, while Drawer and desktop Sidebar expose the Main Tabs alongside the existing Secondary Screen destinations. This keeps primary tab state local without removing access to secondary features, and supersedes the route-switching tab structure in ADR 0001.
+On mobile, the Main Tabs switch locally rather than navigating through GoRouter. `MainTabScreen` retains tab state and owns primary navigation; its routes remain external entry points. This preserves access to secondary features without resetting a tab on each switch. Current tab names and UI rules live in [design.md](../design.md).

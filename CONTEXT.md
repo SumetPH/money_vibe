@@ -25,14 +25,12 @@
 - **Wireless install target**: A physical iPhone that Flutter reports through its wireless-device filter; simulators and wired devices are excluded.
 - **App provisioning profile**: A signing profile whose application identifier exactly matches the target Team ID and Bundle ID; profiles for other apps or teams are unrelated.
 
-## UI Design System
+## Accounts
 
-- **Main Tab**: One of the three primary mobile work areas: accounts, budgets, or transactions. Switching a Main Tab preserves each area's visible state. _Avoid_: Main route, bottom-nav page
-- **Secondary Screen**: A screen opened from a Main Tab or another navigation entry that is not itself a Main Tab. Its bottom action surface may contain only the action applicable to that screen. _Avoid_: Nested tab, sub-tab
-- **Primary Navigation**: The mobile Bottom Navigation switches between the three Main Tabs locally, while Drawer and desktop Sidebar expose those tabs alongside Secondary Screen destinations. _Avoid_: route-driven tab switch
-- **Inset Grouped Card**: An iOS-style rounded container card (`AppRadii.xLarge`) with horizontal margins, a subtle border, and an uppercase section title outside the card. _Avoid_: Full-width container, elevated Material card
-- **Selection Bottom Sheet**: A modal bottom sheet displayed via `showAppModalBottomSheet` used to present choices in a vertical list with clear selected state. _Avoid_: Dropdown, DropdownButtonFormField
-- **Status Capsule**: A pill-shaped badge (`AppRadii.full`) with a semantic tint background and bold text to indicate state (e.g. overweight, underweight, balanced). _Avoid_: Chip, raw colored text
-- **Metric Grid**: A structured 2-column or 2x3 grid of rounded tiles showing related financial figures (e.g. target, current, diff). _Avoid_: Arbitrary Wrap, unaligned text column
-- **Numeric Input Box**: A rounded container housing a right-aligned bold numeric input with an integrated unit/currency label and tap-outside dismiss behavior. _Avoid_: Default underlined TextField
-- **List Row Divider**: A 1px full-width separator between rows in a list, using the theme-aware divider color at full opacity for visible contrast. _Avoid_: Inset divider, per-screen opacity
+- **Account**: A user-owned record for a financial balance or position, including assets, liabilities, and investment portfolios. _Avoid_: Wallet as a name for every account type
+- **Account type**: The specific kind of Account that determines its financial behavior and destination when opened, such as cash, credit card, debt, or portfolio. _Avoid_: Account group
+- **Account group**: A category that collects related Account types for browsing and financial summaries. _Avoid_: Account type
+- **Portfolio account**: An Account whose value consists of cash and held investments; US and Thai portfolios are distinct types. _Avoid_: Holding
+- **Credit-card account**: An Account representing a card liability and its statement cycles. _Avoid_: Credit-card bill
+- **Hidden account**: An Account omitted from the ordinary Account List while retaining its other financial settings. _Avoid_: Excluded account
+- **Excluded account**: An Account omitted from net-worth calculation while retaining its list visibility setting. _Avoid_: Hidden account
