@@ -161,6 +161,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  copy_with_extension:
+    dependency: transitive
+    description:
+      name: copy_with_extension
+      sha256: e4fcee1392f7413aa252e408474cf4b3a70ee88cc378600c81f66a422f19814d
+      url: "https://pub.dev"
+    source: hosted
+    version: "17.1.0"
   cross_file:
     dependency: transitive
     description:
@@ -1069,6 +1077,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
+  text_sight:
+    dependency: "direct main"
+    description:
+      name: text_sight
+      sha256: "79662ef0b947dd8de7750e008b5f5e80f8d6a104688b7ae5fc9a96d6db07d2e2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   timezone:
     dependency: "direct main"
     description:
@@ -1246,5 +1262,5 @@ packages:
     source: hosted
     version: "2.1.0"
 sdks:
-  dart: ">=3.11.0 <4.0.0"
-  flutter: ">=3.38.4"
+  dart: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"

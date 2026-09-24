@@ -34,3 +34,8 @@
 - **Credit-card account**: An Account representing a card liability and its statement cycles. _Avoid_: Credit-card bill
 - **Hidden account**: An Account omitted from the ordinary Account List while retaining its other financial settings. _Avoid_: Excluded account
 - **Excluded account**: An Account omitted from net-worth calculation while retaining its list visibility setting. _Avoid_: Hidden account
+
+## Stock trading
+
+- **Portfolio stock trade**: A completed purchase or sale of shares in a portfolio account that changes the held position and portfolio cash. _Avoid_: Standalone trade-history entry
+- **Broker order detail image**: A broker's image of a completed stock order used to draft a portfolio stock trade. The image is evidence for data entry, not the portfolio stock trade itself.

@@ -847,8 +847,8 @@ class _BillItemCard extends StatelessWidget {
                             Text(
                               '${bill.remainingAmount > 0 ? '-' : '+'}฿ ${formatAmount(bill.remainingAmount.abs())}',
                               style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: bill.remainingAmount > 0
                                     ? (isDarkMode
                                           ? AppColors.darkExpense
@@ -878,8 +878,8 @@ class _BillItemCard extends StatelessWidget {
                                   ? 'ยอดค้างยกมาจากรอบก่อน'
                                   : 'ยอดชำระเกินยกมา',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: textSecondary,
                               ),
                             ),

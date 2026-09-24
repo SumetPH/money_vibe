@@ -374,11 +374,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       ),
                       title: Text(
                         'แก้ไข ${widget.holding.ticker}',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: textColor, fontSize: 15),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -406,12 +402,8 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         ),
                       ),
                       title: Text(
-                        'ซื้อเพิ่ม ${widget.holding.ticker}',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        'ซื้อ ${widget.holding.ticker}',
+                        style: TextStyle(color: textColor, fontSize: 15),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -440,11 +432,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       ),
                       title: Text(
                         'ขาย ${widget.holding.ticker}',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: textColor, fontSize: 15),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -475,11 +463,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         widget.holding.logoUrl.isEmpty
                             ? 'เพิ่มโลโก้ ${widget.holding.ticker}'
                             : 'เปลี่ยนโลโก้ ${widget.holding.ticker}',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: textColor, fontSize: 15),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -511,11 +495,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         ),
                         title: Text(
                           'ลบโลโก้ ${widget.holding.ticker}',
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(color: textColor, fontSize: 15),
                         ),
                         onTap: () {
                           Navigator.pop(context);
@@ -545,11 +525,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       ),
                       title: Text(
                         'ลบ ${widget.holding.ticker}',
-                        style: TextStyle(
-                          color: expenseColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: expenseColor, fontSize: 15),
                       ),
                       onTap: () {
                         Navigator.pop(context);

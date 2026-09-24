@@ -788,6 +788,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 brokerFeeUsd,
                 exchangeFeeUsd,
                 taxFeeUsd,
+                executedAt,
               }) async {
                 await provider.sellHolding(
                   portfolioId: portfolioId,
@@ -802,6 +803,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   brokerFeeUsd: brokerFeeUsd,
                   exchangeFeeUsd: exchangeFeeUsd,
                   taxFeeUsd: taxFeeUsd,
+                  soldAt: executedAt,
                 );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -846,6 +848,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 brokerFeeUsd,
                 exchangeFeeUsd,
                 taxFeeUsd,
+                executedAt,
                 required sellPlanEnabled,
                 required takeProfitPct,
                 required trailingStopPct,
@@ -899,7 +902,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                     brokerFeeUsd: brokerFeeUsd,
                     exchangeFeeUsd: exchangeFeeUsd,
                     taxFeeUsd: taxFeeUsd,
-                    boughtAt: DateTime.now(),
+                    boughtAt: executedAt ?? DateTime.now(),
                     createdAt: DateTime.now(),
                   ),
                   updatedHolding: updatedHolding,

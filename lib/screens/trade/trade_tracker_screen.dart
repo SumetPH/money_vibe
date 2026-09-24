@@ -561,6 +561,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
                 brokerFeeUsd,
                 exchangeFeeUsd,
                 taxFeeUsd,
+                executedAt,
                 required sellPlanEnabled,
                 required takeProfitPct,
                 required trailingStopPct,

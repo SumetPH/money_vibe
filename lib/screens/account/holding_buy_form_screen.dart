@@ -7,9 +7,11 @@ import '../../models/stock_holding.dart';
 import '../../models/account.dart';
 import '../../models/stock_purchase.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/dime_trade_ocr.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/broker_order_import_button.dart';
 
 typedef BuyHoldingCallback =
     Future<void> Function({
@@ -25,6 +27,7 @@ typedef BuyHoldingCallback =
       double? brokerFeeUsd,
       double? exchangeFeeUsd,
       double? taxFeeUsd,
+      DateTime? executedAt,
       required bool sellPlanEnabled,
       required double takeProfitPct,
       required double trailingStopPct,
@@ -74,6 +77,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
   bool _resultSharesEdited = false;
   bool _saving = false;
   bool _sellPlanEnabled = true;
+  bool _hasOcrDraft = false;
+  String? _ocrTicker;
+  DateTime? _ocrDate;
+  TimeOfDay? _ocrTime;
   late String _selectedPortfolioId;
 
   StockHolding? get _holding => widget.holding;
@@ -267,7 +274,95 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     _syncing = false;
   }
 
+  void _applyOcrDraft(DimeTradeDraft draft) {
+    final complete =
+        draft.netUsd != null &&
+        draft.brokerFeeUsd != null &&
+        draft.vatUsd != null &&
+        draft.exchangeFeeUsd != null;
+    _grossEdited = !complete;
+    _cashEdited = !complete;
+    _resultSharesEdited = false;
+    if (_isNewHolding && draft.ticker != null && draft.ticker!.isNotEmpty) {
+      _ticker.text = draft.ticker!;
+    }
+    void fill(TextEditingController controller, double? value, int digits) {
+      controller.text = value == null
+          ? ''
+          : formatStockHoldingEditableNumber(value, scale: digits);
+    }
+
+    fill(_shares, draft.shares, stockHoldingSharesDecimalPlaces);
+    fill(_price, draft.priceUsd, stockHoldingPriceDecimalPlaces);
+    fill(_gross, draft.grossUsd, 2);
+    fill(_brokerFee, draft.brokerFeeUsd, 4);
+    fill(_taxFee, draft.vatUsd, 4);
+    fill(_exchangeFee, draft.exchangeFeeUsd, 4);
+    fill(_cash, draft.netUsd, 2);
+    _syncFromPurchase();
+    setState(() {
+      _hasOcrDraft = true;
+      _ocrTicker = draft.ticker;
+      _ocrDate = null;
+      _ocrTime = draft.completedTime;
+    });
+  }
+
+  Future<void> _pickOcrDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _ocrDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _ocrDate = picked);
+  }
+
+  Future<void> _pickOcrTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _ocrTime ?? TimeOfDay.now(),
+    );
+    if (picked != null) setState(() => _ocrTime = picked);
+  }
+
   Future<void> _save() async {
+    if (_hasOcrDraft) {
+      if (_currencyCode != 'USD' ||
+          _ticker.text.trim().toUpperCase() != _ocrTicker ||
+          _ocrDate == null ||
+          _ocrTime == null ||
+          [
+            _shares,
+            _price,
+            _gross,
+            _brokerFee,
+            _taxFee,
+            _exchangeFee,
+            _cash,
+          ].any((controller) => controller.text.trim().isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ตรวจและกรอกข้อมูลจากภาพให้ครบ รวมถึงวันที่และเวลา'),
+          ),
+        );
+        return;
+      }
+      final shares = _value(_shares);
+      final price = _value(_price);
+      final gross = _value(_gross);
+      final total =
+          gross + _value(_brokerFee) + _value(_taxFee) + _value(_exchangeFee);
+      if ((shares * price * 100).round() != (gross * 100).round() ||
+          (total * 100).round() != (_value(_cash) * 100).round()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('มูลค่าหุ้นหรือยอดสุทธิไม่ตรงกับข้อมูลที่กรอก'),
+          ),
+        );
+        return;
+      }
+    }
     final shares = _value(_shares);
     final price = _value(_price);
     final cash = _value(_cash);
@@ -293,6 +388,15 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         brokerFeeUsd: _value(_brokerFee),
         taxFeeUsd: _value(_taxFee),
         exchangeFeeUsd: _value(_exchangeFee),
+        executedAt: _hasOcrDraft
+            ? DateTime(
+                _ocrDate!.year,
+                _ocrDate!.month,
+                _ocrDate!.day,
+                _ocrTime!.hour,
+                _ocrTime!.minute,
+              )
+            : null,
         sellPlanEnabled: _sellPlanEnabled,
         takeProfitPct: takeProfit,
         trailingStopPct: trailingStop,
@@ -467,95 +571,77 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!_isNewHolding)
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: surfaceColor,
-                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      border: Border.all(
-                        color:
-                            (isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider)
-                                .withValues(alpha: 0.4),
-                        width: 1,
+                if (!_isHistoryEdit &&
+                    _currencyCode == 'USD' &&
+                    BrokerOrderImportButton.isSupported) ...[
+                  _buildSectionHeader('นำเข้าจากภาพ', secondaryColor),
+                  _buildInsetCard(
+                    surfaceColor: surfaceColor,
+                    isDarkMode: isDarkMode,
+                    children: [
+                      BrokerOrderImportButton(
+                        isBuy: true,
+                        expectedTicker: _holding?.ticker,
+                        onApply: _applyOcrDraft,
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? AppColors.darkSurfaceVariant
-                                : AppColors.sectionHeader,
-                            borderRadius: BorderRadius.circular(AppRadii.large),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            _holding!.ticker.length > 2
-                                ? _holding!.ticker.substring(0, 2)
-                                : _holding!.ticker,
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _holding!.ticker,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (_holding!.name.isNotEmpty)
-                                Text(
-                                  _holding!.name,
-                                  style: TextStyle(
-                                    color: secondaryColor,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? AppColors.darkSurfaceVariant
-                                : AppColors.sectionHeader,
-                            borderRadius: BorderRadius.circular(AppRadii.full),
-                          ),
-                          child: Text(
-                            'ถือ ${formatStockHoldingShares(_holding!.shares)} หุ้น',
-                            style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
+                ],
+                if (_hasOcrDraft) ...[
+                  _buildSectionHeader('วันที่คำสั่งสำเร็จ', secondaryColor),
+                  _buildInsetCard(
+                    surfaceColor: surfaceColor,
+                    isDarkMode: isDarkMode,
+                    children: [
+                      ListTile(
+                        title: const Text('วันที่'),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          side: BorderSide(
+                            color: isDarkMode
+                                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                                : AppColors.divider.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
+                        ),
+                        trailing: Text(
+                          _ocrDate == null
+                              ? 'เลือกวันที่'
+                              : '${_ocrDate!.day}/${_ocrDate!.month}/${_ocrDate!.year}',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        onTap: _pickOcrDate,
+                      ),
+                      _buildCardDivider(isDarkMode),
+                      ListTile(
+                        title: const Text('เวลา'),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                          side: BorderSide(
+                            color: isDarkMode
+                                ? AppColors.darkDivider.withValues(alpha: 0.4)
+                                : AppColors.divider.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
+                        ),
+                        trailing: Text(
+                          _ocrTime?.format(context) ?? 'เลือกเวลา',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        onTap: _pickOcrTime,
+                      ),
+                    ],
+                  ),
+                ],
+
                 _buildSectionHeader('ข้อมูลการซื้อ', secondaryColor),
                 _buildInsetCard(
                   surfaceColor: surfaceColor,
@@ -778,21 +864,29 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     required bool isDarkMode,
     required List<Widget> children,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-              .withValues(alpha: 0.4),
-          width: 1,
-        ),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          border: Border.all(
+            color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
+                .withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }
@@ -893,7 +987,7 @@ class _BuyPortfolioFieldRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
             SizedBox(
@@ -978,7 +1072,7 @@ class _BuyNumberFieldRow extends StatelessWidget {
                 focusedErrorBorder: InputBorder.none,
                 filled: false,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
               style: TextStyle(
                 fontSize: 15,
@@ -1036,7 +1130,7 @@ class _BuyTickerFieldRow extends StatelessWidget {
                 focusedErrorBorder: InputBorder.none,
                 filled: false,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
               style: TextStyle(
                 fontSize: 16,

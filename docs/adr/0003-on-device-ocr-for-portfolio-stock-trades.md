@@ -1,0 +1,3 @@
+# On-device OCR for portfolio stock trades
+
+Money Vibe reads Dime! US stock order images on-device to prefill portfolio buy and sell forms without uploading or attaching the image; users review the values and confirm the execution date before saving. The shared Flutter integration uses Apple Vision on iOS and Google ML Kit on Android, because the iOS ML Kit binary cannot run on Apple Silicon iOS 26+ simulators. The Android model is bundled so first use works offline. Both return positioned text lines for the same Dime! parser. If a date is unreadable, the user enters it manually rather than guessing.
