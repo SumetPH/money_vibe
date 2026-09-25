@@ -74,6 +74,7 @@ class StockPurchase {
   StockPurchase copyWith({
     String? portfolioId,
     String? ticker,
+    String? logoUrl,
     double? sharesBought,
     double? buyPriceUsd,
     double? cashPaidUsd,
@@ -87,7 +88,7 @@ class StockPurchase {
     holdingId: holdingId,
     ticker: ticker ?? this.ticker,
     name: name,
-    logoUrl: logoUrl,
+    logoUrl: logoUrl ?? this.logoUrl,
     sharesBought: sharesBought ?? this.sharesBought,
     buyPriceUsd: buyPriceUsd ?? this.buyPriceUsd,
     cashPaidUsd: cashPaidUsd ?? this.cashPaidUsd,

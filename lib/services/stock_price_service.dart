@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -194,7 +196,12 @@ class StockPriceService {
         '$_finnhubBase/stock/profile2?symbol=$ticker&token=$_finnhubApiKey',
       );
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        debugPrint(
+          'StockPriceService: profile $ticker failed (${response.statusCode})',
+        );
+        return null;
+      }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final name = (data['name'] as String? ?? '').trim();
@@ -202,7 +209,8 @@ class StockPriceService {
 
       if (name.isEmpty && logoUrl.isEmpty) return null;
       return StockCompanyProfile(name: name, logoUrl: logoUrl);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('StockPriceService: profile $ticker error: $e');
       return null;
     }
   }

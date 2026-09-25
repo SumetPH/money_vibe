@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -38,6 +40,14 @@ class PortfolioDetailScreen extends StatefulWidget {
 
 class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     with TickerProviderStateMixin {
+  // Finnhub free tier จำกัดต่อนาที จึงเว้นระยะให้รอบท้ายพ้นช่วง rate limit
+  static const List<Duration> _logoBackfillDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 10),
+    Duration(seconds: 30),
+    Duration(seconds: 65),
+  ];
+
   late StockPriceService _priceService;
   late StockLogoStorageService _logoStorageService;
   late final AnimationController _refreshIconController;
@@ -851,26 +861,30 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   holdingAfterBuy.copyWith(peakProfitPct: peakProfitPct),
                   existing: holding,
                 );
+                final purchase = StockPurchase(
+                  id: provider.generateId(),
+                  portfolioId: portfolioId,
+                  holdingId: updatedHolding.id,
+                  ticker: ticker,
+                  name: updatedHolding.name,
+                  logoUrl: updatedHolding.logoUrl,
+                  sharesBought: sharesBought,
+                  buyPriceUsd: buyPriceUsd,
+                  cashPaidUsd: cashPaidUsd,
+                  grossCostUsd: grossCostUsd,
+                  brokerFeeUsd: brokerFeeUsd,
+                  exchangeFeeUsd: exchangeFeeUsd,
+                  taxFeeUsd: taxFeeUsd,
+                  boughtAt: executedAt ?? DateTime.now(),
+                  createdAt: DateTime.now(),
+                );
                 await provider.buyHolding(
-                  purchase: StockPurchase(
-                    id: provider.generateId(),
-                    portfolioId: portfolioId,
-                    holdingId: updatedHolding.id,
-                    ticker: ticker,
-                    name: updatedHolding.name,
-                    logoUrl: updatedHolding.logoUrl,
-                    sharesBought: sharesBought,
-                    buyPriceUsd: buyPriceUsd,
-                    cashPaidUsd: cashPaidUsd,
-                    grossCostUsd: grossCostUsd,
-                    brokerFeeUsd: brokerFeeUsd,
-                    exchangeFeeUsd: exchangeFeeUsd,
-                    taxFeeUsd: taxFeeUsd,
-                    boughtAt: executedAt ?? DateTime.now(),
-                    createdAt: DateTime.now(),
-                  ),
+                  purchase: purchase,
                   updatedHolding: updatedHolding,
                 );
+                if (updatedHolding.logoUrl.isEmpty) {
+                  unawaited(_backfillHoldingLogo(provider, purchase));
+                }
               },
         ),
       ),
@@ -886,6 +900,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         ? holding.logoUrl
         : (hasSameTicker ? existing.logoUrl : '');
 
+    // สร้าง service ใหม่ทุกครั้งเพื่อใช้ Finnhub API key ล่าสุดจาก settings
+    if (mounted) _priceService = _buildPriceService();
     if (!_priceService.isConfigured) {
       return holding.copyWith(logoUrl: fallbackLogoUrl);
     }
@@ -898,6 +914,60 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     );
 
     return holding.copyWith(logoUrl: logoUrl);
+  }
+
+  /// การดึงโลโก้ตอนซื้อหุ้นใหม่อาจล้มเหลวชั่วคราว (เช่น Finnhub rate limit
+  /// แบบนับต่อนาทีหลังรีเฟรชราคา) จึงลองดึงซ้ำเบื้องหลังโดยเว้นระยะห่างขึ้นเรื่อย ๆ
+  /// แล้วอัปเดตทั้ง holding และประวัติซื้อ
+  Future<void> _backfillHoldingLogo(
+    AccountProvider provider,
+    StockPurchase purchase,
+  ) async {
+    StockHolding? findHolding() => provider
+        .getHoldings(purchase.portfolioId)
+        .where((h) => h.id == purchase.holdingId)
+        .firstOrNull;
+
+    for (final delay in _logoBackfillDelays) {
+      await Future<void>.delayed(delay);
+      if (!mounted) return;
+
+      final holding = findHolding();
+      if (holding == null || holding.logoUrl.isNotEmpty) return;
+
+      try {
+        final enriched = await _enrichHoldingWithProfile(holding);
+        if (enriched.logoUrl.isEmpty) continue;
+        await _applyBackfilledLogo(provider, purchase, enriched.logoUrl);
+        return;
+      } catch (e) {
+        debugPrint('Backfill logo failed for ${purchase.ticker}: $e');
+      }
+    }
+  }
+
+  Future<void> _applyBackfilledLogo(
+    AccountProvider provider,
+    StockPurchase purchase,
+    String logoUrl,
+  ) async {
+    // อ่านค่าล่าสุดอีกครั้ง เผื่อผู้ใช้แก้ไขระหว่างรอ
+    final latestHolding = provider
+        .getHoldings(purchase.portfolioId)
+        .where((h) => h.id == purchase.holdingId)
+        .firstOrNull;
+    if (latestHolding != null && latestHolding.logoUrl.isEmpty) {
+      await provider.updateHolding(latestHolding.copyWith(logoUrl: logoUrl));
+    }
+
+    final latestPurchase = provider.stockPurchases
+        .where((p) => p.id == purchase.id)
+        .firstOrNull;
+    if (latestPurchase != null && latestPurchase.logoUrl.isEmpty) {
+      await provider.updateStockPurchase(
+        latestPurchase.copyWith(logoUrl: logoUrl),
+      );
+    }
   }
 
   Future<String> _resolveLogoUrl({
