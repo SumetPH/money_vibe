@@ -541,10 +541,13 @@ class _AccountListScreenState extends State<AccountListScreen> {
                               ),
                               trailing: CupertinoSwitch(
                                 value: showHiddenAccounts,
-                                activeTrackColor: incomeColor,
+                                activeTrackColor: AppColors.accentFor(
+                                  isDarkMode,
+                                  settingsProvider.themeColor,
+                                ),
                                 inactiveTrackColor: isDarkMode
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
                                 onChanged: (value) {
                                   accountProvider.toggleShowHiddenAccounts();
                                 },

@@ -1134,12 +1134,13 @@ class _SettingsToggleTile extends StatelessWidget {
           const SizedBox(width: 12),
           CupertinoSwitch(
             value: value,
-            activeTrackColor: isDarkMode
-                ? AppColors.darkIncome
-                : AppColors.income,
+            activeTrackColor: AppColors.accentFor(
+              isDarkMode,
+              context.read<SettingsProvider>().themeColor,
+            ),
             inactiveTrackColor: isDarkMode
-                ? const Color(0xFF39393D)
-                : const Color(0xFFE9E9EA),
+                ? AppColors.darkDivider
+                : AppColors.divider,
             onChanged: onChanged,
           ),
         ],

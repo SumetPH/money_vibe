@@ -135,7 +135,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),

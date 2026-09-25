@@ -480,7 +480,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    final accentColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final accentColor = AppColors.accentFor(isDarkMode, settings.themeColor);
 
     return Scaffold(
       backgroundColor: backgroundColor,

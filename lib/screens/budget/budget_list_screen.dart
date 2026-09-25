@@ -931,6 +931,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           final yellowColor = isDark
               ? AppColors.darkFabYellow
               : AppColors.fabYellow;
+          final activeColor = AppColors.accentFor(
+            isDark,
+            context.read<SettingsProvider>().themeColor,
+          );
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
@@ -1037,7 +1041,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                               ),
                               trailing: CupertinoSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: incomeColor,
+                                activeTrackColor: activeColor,
                                 inactiveTrackColor: isDark
                                     ? const Color(0xFF39393D)
                                     : const Color(0xFFE9E9EA),
@@ -1086,7 +1090,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                               ),
                               trailing: CupertinoSwitch(
                                 value: budgetProvider.showHiddenBudgets,
-                                activeTrackColor: incomeColor,
+                                activeTrackColor: activeColor,
                                 inactiveTrackColor: isDark
                                     ? const Color(0xFF39393D)
                                     : const Color(0xFFE9E9EA),

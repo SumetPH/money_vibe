@@ -286,7 +286,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
@@ -344,14 +344,14 @@ class _CategoryListScreenState extends State<CategoryListScreen>
 
     return InkWell(
       onTap: () => _selectTab(index),
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      borderRadius: BorderRadius.circular(AppRadii.large),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? selectedSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
+          borderRadius: BorderRadius.circular(AppRadii.large),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -816,12 +816,13 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                               ),
                               trailing: CupertinoSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: isDarkMode
-                                    ? AppColors.darkIncome
-                                    : AppColors.income,
+                                activeTrackColor: AppColors.accentFor(
+                                  isDarkMode,
+                                  context.read<SettingsProvider>().themeColor,
+                                ),
                                 inactiveTrackColor: isDarkMode
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
                                 onChanged: (value) {
                                   setStateModal(() => _isReorderMode = value);
                                   setState(() => _isReorderMode = value);

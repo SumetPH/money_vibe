@@ -322,7 +322,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   height: 50,
                   decoration: BoxDecoration(
                     color: isDarkMode
@@ -603,12 +603,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                     ),
                     CupertinoSwitch(
                       value: autoUpdate,
-                      activeTrackColor: isDarkMode
-                          ? AppColors.darkIncome
-                          : AppColors.income,
+                      activeTrackColor: AppColors.accentFor(
+                        isDarkMode,
+                        context.read<SettingsProvider>().themeColor,
+                      ),
                       inactiveTrackColor: isDarkMode
-                          ? const Color(0xFF39393D)
-                          : const Color(0xFFE9E9EA),
+                          ? AppColors.darkDivider
+                          : AppColors.divider,
                       onChanged: (v) => setDialogState(() => autoUpdate = v),
                     ),
                   ],
@@ -1230,10 +1231,13 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             ),
                             trailing: CupertinoSwitch(
                               value: _isReorderMode,
-                              activeTrackColor: incomeColor,
+                              activeTrackColor: AppColors.accentFor(
+                                isDarkMode,
+                                context.read<SettingsProvider>().themeColor,
+                              ),
                               inactiveTrackColor: isDarkMode
-                                  ? const Color(0xFF39393D)
-                                  : const Color(0xFFE9E9EA),
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider,
                               onChanged: (value) {
                                 setStateModal(() => _isReorderMode = value);
                                 setState(() => _isReorderMode = value);

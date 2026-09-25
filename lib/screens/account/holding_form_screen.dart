@@ -470,65 +470,6 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     return currentPnlPct >= takeProfitPct;
   }
 
-  Future<void> _delete() async {
-    if (widget.onDelete == null) return;
-
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: backgroundColor,
-        title: Text('ยืนยันการลบหุ้น', style: TextStyle(color: textColor)),
-        content: Text(
-          'คุณต้องการลบ ${widget.existing!.ticker} ใช่หรือไม่?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: expenseColor),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isSaving = true);
-    try {
-      await widget.onDelete!();
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เกิดข้อผิดพลาดในการลบ: $e'),
-            backgroundColor: AppColors.expense,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
@@ -543,7 +484,10 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final accentColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+    final accentColor = AppColors.accentFor(
+      isDarkMode,
+      context.read<SettingsProvider>().themeColor,
+    );
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     return Scaffold(
@@ -584,37 +528,6 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
           ),
         ),
         actions: [
-          if (_isEditing && widget.onDelete != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Material(
-                color: expenseColor.withValues(alpha: 0.12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: 20,
-                    color: expenseColor,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 38,
-                    minHeight: 38,
-                  ),
-                  onPressed: _isSaving ? null : _delete,
-                  tooltip: 'ลบหุ้น',
-                ),
-              ),
-            ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: FilledButton(

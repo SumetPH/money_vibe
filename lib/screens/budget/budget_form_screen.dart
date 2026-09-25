@@ -472,6 +472,10 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             : AppColors.textSecondary;
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
         final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
+        final activeColor = AppColors.accentFor(
+          isDark,
+          context.read<SettingsProvider>().themeColor,
+        );
 
         final expenseCategories = catProvider.categoriesOfType(
           CategoryType.expense,
@@ -673,7 +677,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       title: 'ซ่อนงบประมาณนี้',
                       subtitle: 'ไม่แสดงในหน้ารวมงบประมาณหลัก',
                       value: _isHidden,
-                      activeTrackColor: incomeColor,
+                      activeTrackColor: activeColor,
                       isDark: isDark,
                       textColor: textPrimaryColor,
                       textSecondary: textSecondaryColor,

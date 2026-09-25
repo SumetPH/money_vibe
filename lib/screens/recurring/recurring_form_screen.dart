@@ -914,9 +914,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                       children: [
                         _ToggleRow(
                           color: surfaceColor,
-                          activeTrackColor: isDark
-                              ? AppColors.darkIncome
-                              : AppColors.income,
+                          activeTrackColor: AppColors.accentFor(
+                            isDark,
+                            context.read<SettingsProvider>().themeColor,
+                          ),
                           value: _notificationEnabled,
                           onChanged: (v) =>
                               setState(() => _notificationEnabled = v),
@@ -983,9 +984,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         Divider(height: 1, color: dividerColor),
                         _ToggleRow(
                           color: surfaceColor,
-                          activeTrackColor: isDark
-                              ? AppColors.darkIncome
-                              : AppColors.income,
+                          activeTrackColor: AppColors.accentFor(
+                            isDark,
+                            context.read<SettingsProvider>().themeColor,
+                          ),
                           value: _isHidden,
                           onChanged: (v) => setState(() => _isHidden = v),
                           title: Text(

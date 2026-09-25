@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
+import 'package:money_vibe/providers/settings_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../main.dart';
@@ -94,6 +96,10 @@ class _PortfolioInvestmentPlanScreenState
         ? AppColors.darkDivider
         : AppColors.divider;
     final enabledCount = analysis.rows.where((row) => row.isEnabled).length;
+    final activeColor = AppColors.accentFor(
+      widget.isDarkMode,
+      context.read<SettingsProvider>().themeColor,
+    );
 
     if (widget.holdings.isEmpty) {
       return Container(
@@ -153,6 +159,7 @@ class _PortfolioInvestmentPlanScreenState
                 textColor: textColor,
                 secondaryColor: secondaryColor,
                 dividerColor: dividerColor,
+                activeColor: activeColor,
               ),
             ),
             _Section(
@@ -201,11 +208,9 @@ class _PortfolioInvestmentPlanScreenState
     required Color textColor,
     required Color secondaryColor,
     required Color dividerColor,
+    required Color activeColor,
   }) {
     final monthLabel = _formatMonthLabel(currentInvestmentMonthKey());
-    final activeColor = widget.isDarkMode
-        ? AppColors.darkIncome
-        : AppColors.income;
 
     return Column(
       children: [

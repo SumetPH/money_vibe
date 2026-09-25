@@ -460,7 +460,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     required bool isDarkMode,
   }) {
     return Container(
-      padding: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),

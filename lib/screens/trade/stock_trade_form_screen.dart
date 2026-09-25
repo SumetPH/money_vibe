@@ -658,12 +658,13 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                               const SizedBox(width: 12),
                               CupertinoSwitch(
                                 value: _useBrokerPnl,
-                                activeTrackColor: isDarkMode
-                                    ? AppColors.darkIncome
-                                    : AppColors.income,
+                                activeTrackColor: AppColors.accentFor(
+                                  isDarkMode,
+                                  context.read<SettingsProvider>().themeColor,
+                                ),
                                 inactiveTrackColor: isDarkMode
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
+                                    ? AppColors.darkDivider
+                                    : AppColors.divider,
                                 onChanged: (value) =>
                                     setState(() => _useBrokerPnl = value),
                               ),

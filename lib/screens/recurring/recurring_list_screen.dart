@@ -331,6 +331,10 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
           final yellowColor = isDk
               ? AppColors.darkFabYellow
               : AppColors.fabYellow;
+          final activeColor = AppColors.accentFor(
+            isDk,
+            context.read<SettingsProvider>().themeColor,
+          );
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
@@ -433,7 +437,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               ),
                               trailing: CupertinoSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: incomeColor,
+                                activeTrackColor: activeColor,
                                 inactiveTrackColor: isDk
                                     ? const Color(0xFF39393D)
                                     : const Color(0xFFE9E9EA),
@@ -482,7 +486,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               ),
                               trailing: CupertinoSwitch(
                                 value: rtp.showHiddenRecurring,
-                                activeTrackColor: incomeColor,
+                                activeTrackColor: activeColor,
                                 inactiveTrackColor: isDk
                                     ? const Color(0xFF39393D)
                                     : const Color(0xFFE9E9EA),

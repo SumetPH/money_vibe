@@ -633,6 +633,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                                 setState(() => _autoUpdateRate = v),
                             textPrimaryColor: textPrimaryColor,
                             textSecondaryColor: textSecondaryColor,
+                            isDarkMode: _isDarkMode,
+                            settingsProvider: settingsProvider,
                           ),
                           if (!_autoUpdateRate) ...[
                             _buildIndentedDivider(dividerColor),
@@ -684,6 +686,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             setState(() => _excludeFromNetWorth = v),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
+                        isDarkMode: _isDarkMode,
+                        settingsProvider: settingsProvider,
                       ),
                       _buildIndentedDivider(dividerColor),
                       _buildSwitchRow(
@@ -693,6 +697,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         onChanged: (v) => setState(() => _isHidden = v),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
+                        isDarkMode: _isDarkMode,
+                        settingsProvider: settingsProvider,
                       ),
                     ],
                     surfaceColor: surfaceColor,
@@ -1200,6 +1206,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required ValueChanged<bool> onChanged,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
+    required bool isDarkMode,
+    required settingsProvider,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1231,10 +1239,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: _selectedColor,
-            inactiveTrackColor: _isDarkMode
-                ? const Color(0xFF39393D)
-                : const Color(0xFFE9E9EA),
+            activeTrackColor: AppColors.accentFor(
+              isDarkMode,
+              settingsProvider.themeColor,
+            ),
+            inactiveTrackColor: isDarkMode
+                ? AppColors.darkDivider
+                : AppColors.divider,
           ),
         ],
       ),

@@ -628,7 +628,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Container(
-                        padding: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.darkSurface

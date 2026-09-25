@@ -1059,7 +1059,7 @@ class _TransactionTypeTabs extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(6),
         child: Row(
           children: _TransactionTypeFilter.values.map((value) {
             final isSelected = selected == value;
