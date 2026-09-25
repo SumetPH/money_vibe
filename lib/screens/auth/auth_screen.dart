@@ -12,6 +12,7 @@ import '../../providers/sync_provider.dart';
 import '../settings/data_management_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -137,15 +138,7 @@ class _AuthScreenState extends State<AuthScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Navigator.canPop(context)
-            ? Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              )
-            : null,
+        leading: Navigator.canPop(context) ? const AppBackButton() : null,
         title: Text(
           _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
           style: TextStyle(
@@ -203,11 +196,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       border: Border.all(
-                        color:
-                            (isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider)
-                                .withValues(alpha: 0.4),
+                        color: AppColors.borderFor(isDarkMode),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -515,6 +504,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     showDialog(
       context: context,
+      // design-check: allow input or multi-choice dialog
       builder: (ctx) => AlertDialog(
         backgroundColor: surfaceColor,
         title: Text('รีเซ็ตรหัสผ่าน', style: TextStyle(color: textColor)),

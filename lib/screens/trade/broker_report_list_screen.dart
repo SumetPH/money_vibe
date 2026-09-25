@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_form_screen.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 class BrokerReportListScreen extends StatelessWidget {
   final String portfolioId;
@@ -86,18 +87,7 @@ class BrokerReportListScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: IconButton(
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        leading: const AppBackButton(),
         title: Text(
           'รายงานประจำปี Broker',
           style: TextStyle(
@@ -116,9 +106,7 @@ class BrokerReportListScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.full),
                 side: BorderSide(
-                  color: isDarkMode
-                      ? AppColors.darkDivider.withValues(alpha: 0.4)
-                      : AppColors.divider.withValues(alpha: 0.4),
+                  color: AppColors.borderFor(isDarkMode),
                   width: 1,
                 ),
               ),

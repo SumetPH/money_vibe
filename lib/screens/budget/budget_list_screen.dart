@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
@@ -17,6 +16,8 @@ import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_inset_card.dart';
 
 class BudgetListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -366,9 +367,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.full),
                     side: BorderSide(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
+                      color: AppColors.borderFor(isDarkMode),
                       width: 1,
                     ),
                   ),
@@ -398,9 +397,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.full),
                       side: BorderSide(
-                        color: isDarkMode
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
+                        color: AppColors.borderFor(isDarkMode),
                         width: 1,
                       ),
                     ),
@@ -780,7 +777,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       children: [
         header,
         if (ungrouped.isNotEmpty) ...[
-          _buildSectionHeader('งบประมาณทั่วไป', textSecondary),
+          AppSectionHeader(
+            'งบประมาณทั่วไป',
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 4),
+          ),
           buildGroupList(ungrouped, null),
           const SizedBox(height: 12),
         ],
@@ -872,21 +872,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, top: 10, bottom: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
   void _openForm(BuildContext context, Budget? budget) {
     Navigator.push(
       context,
@@ -931,10 +916,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           final yellowColor = isDark
               ? AppColors.darkFabYellow
               : AppColors.fabYellow;
-          final activeColor = AppColors.accentFor(
-            isDark,
-            context.read<SettingsProvider>().themeColor,
-          );
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
@@ -1039,12 +1020,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: activeColor,
-                                inactiveTrackColor: isDark
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (v) {
                                   setStateModal(() => _isReorderMode = v);
                                   setState(() => _isReorderMode = v);
@@ -1088,12 +1065,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: budgetProvider.showHiddenBudgets,
-                                activeTrackColor: activeColor,
-                                inactiveTrackColor: isDark
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (_) {
                                   budgetProvider.toggleShowHiddenBudgets();
                                   setStateModal(() {});

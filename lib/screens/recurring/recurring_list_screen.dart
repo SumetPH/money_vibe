@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
+import '../../widgets/app_switch.dart';
 
 class RecurringListScreen extends StatefulWidget {
   const RecurringListScreen({super.key});
@@ -121,9 +121,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.full),
                     side: BorderSide(
-                      color: isDark
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
+                      color: AppColors.borderFor(isDark),
                       width: 1,
                     ),
                   ),
@@ -331,10 +329,6 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
           final yellowColor = isDk
               ? AppColors.darkFabYellow
               : AppColors.fabYellow;
-          final activeColor = AppColors.accentFor(
-            isDk,
-            context.read<SettingsProvider>().themeColor,
-          );
 
           return StatefulBuilder(
             builder: (context, setStateModal) {
@@ -435,12 +429,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: activeColor,
-                                inactiveTrackColor: isDk
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (v) {
                                   setStateModal(() => _isReorderMode = v);
                                   setState(() => _isReorderMode = v);
@@ -484,12 +474,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: rtp.showHiddenRecurring,
-                                activeTrackColor: activeColor,
-                                inactiveTrackColor: isDk
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (v) {
                                   rtp.toggleShowHiddenRecurring();
                                 },

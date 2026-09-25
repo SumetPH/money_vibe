@@ -38,9 +38,43 @@ class AppColors {
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
   static const Color darkFabYellow = Color(0xFFFFB74D);
 
-  static Color listDividerFor(bool isDarkMode) => isDarkMode
+  /// Border for cards, circular header buttons and in-card dividers.
+  static Color borderFor(bool isDarkMode) => isDarkMode
       ? darkDivider.withValues(alpha: 0.4)
       : divider.withValues(alpha: 0.4);
+
+  static Color listDividerFor(bool isDarkMode) => borderFor(isDarkMode);
+
+  static Color switchInactiveFor(bool isDarkMode) =>
+      isDarkMode ? darkDivider : divider;
+
+  static Color backgroundFor(bool isDarkMode) =>
+      isDarkMode ? darkBackground : background;
+
+  static Color surfaceFor(bool isDarkMode) =>
+      isDarkMode ? darkSurface : surface;
+
+  static Color textPrimaryFor(bool isDarkMode) =>
+      isDarkMode ? darkTextPrimary : textPrimary;
+
+  static Color textSecondaryFor(bool isDarkMode) =>
+      isDarkMode ? darkTextSecondary : textSecondary;
+
+  static Color expenseFor(bool isDarkMode) =>
+      isDarkMode ? darkExpense : expense;
+
+  /// Recessed fill for inline inputs and segmented controls on a card.
+  static Color insetFillFor(bool isDarkMode) =>
+      isDarkMode ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
+
+  /// Raised fill for secondary buttons that sit on a card.
+  static Color raisedFillFor(bool isDarkMode) =>
+      isDarkMode ? darkSurfaceVariant : const Color(0xFFF2F2F7);
+
+  static const Color onHeader = Color(0xFFE3E3E3);
+
+  static Color saveButtonFor(bool isDarkMode) =>
+      isDarkMode ? darkFabYellow : fabYellow;
 
   static Color amountColor(double amount, {bool isDarkMode = false}) {
     if (amount.abs() < 0.005) {

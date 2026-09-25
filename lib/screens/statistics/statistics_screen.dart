@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -16,6 +15,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
+import '../../widgets/app_switch.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -76,9 +76,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadii.full),
                         side: BorderSide(
-                          color: isDarkMode
-                              ? AppColors.darkDivider.withValues(alpha: 0.4)
-                              : AppColors.divider.withValues(alpha: 0.4),
+                          color: AppColors.borderFor(isDarkMode),
                           width: 1,
                         ),
                       ),
@@ -134,9 +132,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       side: BorderSide(
-                        color: isDarkMode
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
+                        color: AppColors.borderFor(isDarkMode),
                         width: 1,
                       ),
                     ),
@@ -1750,15 +1746,8 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
                           ),
                         ),
                       ),
-                      CupertinoSwitch(
+                      AppSwitch(
                         value: _includeExcluded,
-                        activeTrackColor: AppColors.accentFor(
-                          isDarkMode,
-                          settingsProvider.themeColor,
-                        ),
-                        inactiveTrackColor: isDarkMode
-                            ? AppColors.darkDivider
-                            : AppColors.divider,
                         onChanged: (v) => setState(() => _includeExcluded = v),
                       ),
                     ],

@@ -61,3 +61,26 @@ class AppModalBottomSheetHeader extends StatelessWidget {
     );
   }
 }
+
+/// Full-height, draggable body for selection sheets with long lists. Use it
+/// as the builder result of [showAppModalBottomSheet] with
+/// `isScrollControlled: true`, and attach [ScrollController] to the list.
+class AppDraggableSheet extends StatelessWidget {
+  static const double _minChildSize = 0.3;
+  static const double _maxChildSize = 1.0;
+
+  final ScrollableWidgetBuilder builder;
+
+  const AppDraggableSheet({super.key, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: _maxChildSize,
+      minChildSize: _minChildSize,
+      maxChildSize: _maxChildSize,
+      expand: false,
+      builder: builder,
+    );
+  }
+}

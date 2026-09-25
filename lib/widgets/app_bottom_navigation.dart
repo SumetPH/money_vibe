@@ -85,9 +85,7 @@ class AppBottomNavigation extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.full),
                           side: BorderSide(
-                            color: isDarkMode
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDarkMode),
                             width: 1,
                           ),
                         ),

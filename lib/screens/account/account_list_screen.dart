@@ -18,6 +18,7 @@ import 'portfolio_detail_screen.dart';
 import 'credit_card_bill_screen.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../transaction/transaction_form_screen.dart';
+import '../../widgets/app_switch.dart';
 
 class AccountListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -91,9 +92,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.full),
                 side: BorderSide(
-                  color: isDarkMode
-                      ? AppColors.darkDivider.withValues(alpha: 0.4)
-                      : AppColors.divider.withValues(alpha: 0.4),
+                  color: AppColors.borderFor(isDarkMode),
                   width: 1,
                 ),
               ),
@@ -490,12 +489,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: incomeColor,
-                                inactiveTrackColor: isDarkMode
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (value) {
                                   setStateModal(() => _isReorderMode = value);
                                   setState(() => _isReorderMode = value);
@@ -539,15 +534,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: showHiddenAccounts,
-                                activeTrackColor: AppColors.accentFor(
-                                  isDarkMode,
-                                  settingsProvider.themeColor,
-                                ),
-                                inactiveTrackColor: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
                                 onChanged: (value) {
                                   accountProvider.toggleShowHiddenAccounts();
                                 },
@@ -1326,11 +1314,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     }
 
     return SafeArea(
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
+      child: AppDraggableSheet(
         builder: (_, scrollController) => Column(
           children: [
             Padding(

@@ -21,6 +21,7 @@ import '../../widgets/group_header.dart';
 import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
 import '../account/holding_buy_form_screen.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -341,12 +342,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(
-            color: isDarkMode
-                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                : AppColors.divider.withValues(alpha: 0.4),
-            width: 1,
-          ),
+          side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
@@ -588,22 +584,11 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     BuildContext context,
     StockPurchase purchase,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ลบประวัติซื้อ'),
-        content: Text('ต้องการลบประวัติซื้อ ${purchase.ticker} ใช่ไหม?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
+      title: 'ลบประวัติซื้อ',
+      message: 'ต้องการลบประวัติซื้อ ${purchase.ticker} ใช่ไหม?',
+      confirmLabel: 'ลบ',
     );
     if (confirmed == true && context.mounted) {
       await context.read<AccountProvider>().deleteStockPurchase(purchase.id);
@@ -699,33 +684,12 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
     BuildContext context,
     StockTrade trade,
   ) async {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        title: Text('ลบ Trade', style: TextStyle(color: textColor)),
-        content: Text(
-          'ต้องการลบประวัติขาย ${trade.ticker} ใช่ไหม?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: expenseColor),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
+      title: 'ลบ Trade',
+      message: 'ต้องการลบประวัติขาย ${trade.ticker} ใช่ไหม?',
+      confirmLabel: 'ลบ',
+      isDestructive: true,
     );
 
     if (confirmed != true || !context.mounted) return;

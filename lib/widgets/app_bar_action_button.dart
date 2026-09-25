@@ -32,12 +32,7 @@ class AppBarActionButton extends StatelessWidget {
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(
-            color: isDarkMode
-                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                : AppColors.divider.withValues(alpha: 0.4),
-            width: 1,
-          ),
+          side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(

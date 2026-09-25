@@ -7,7 +7,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -167,12 +167,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
     }
   }
 
-  Widget _buildDivider(bool isDarkMode) => Divider(
-    height: 1,
-    color: isDarkMode
-        ? AppColors.darkDivider.withValues(alpha: 0.4)
-        : AppColors.divider.withValues(alpha: 0.4),
-  );
+  Widget _buildDivider(bool isDarkMode) =>
+      Divider(height: 1, color: AppColors.borderFor(isDarkMode));
 
   double _parseAmount(TextEditingController controller) =>
       double.tryParse(controller.text.trim()) ?? 0.0;
@@ -270,30 +266,8 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Center(
-          child: Material(
-            color: surfaceColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: Icon(
-                Icons.close_rounded,
-                size: 20,
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-              onPressed: _isSaving ? null : () => Navigator.pop(context),
-            ),
-          ),
+        leading: AppCloseButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
         title: Text(
           widget.existingReport == null
@@ -307,19 +281,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                 : AppColors.textPrimary,
           ),
         ),
-        actions: [
-          AppBarActionButton(
-            icon: Icon(
-              Icons.check,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-            tooltip: 'บันทึก',
-            isLoading: _isSaving,
-            onPressed: _save,
-          ),
-        ],
+        actions: [AppSaveButton(onPressed: _save, isLoading: _isSaving)],
       ),
       body: AbsorbPointer(
         absorbing: _isSaving,
@@ -343,13 +305,7 @@ class _BrokerReportFormScreenState extends State<BrokerReportFormScreen> {
                   color: surfaceColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                    side: BorderSide(
-                      color:
-                          (isDarkMode
-                                  ? AppColors.darkDivider
-                                  : AppColors.divider)
-                              .withValues(alpha: 0.4),
-                    ),
+                    side: BorderSide(color: AppColors.borderFor(isDarkMode)),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Column(

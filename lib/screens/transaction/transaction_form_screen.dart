@@ -18,6 +18,8 @@ import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -461,58 +463,32 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
-  void _delete() {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-
-    showDialog(
+  Future<void> _delete() async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: bgColor,
-        title: Text('ลบรายการ', style: TextStyle(color: textColor)),
-        content: Text(
-          'คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () {
-              final transactionId = widget.transaction!.id;
-
-              // Check if this transaction is linked to a recurring occurrence
-              final recurProvider = context
-                  .read<RecurringTransactionProvider>();
-              final occ = recurProvider.findOccurrenceByTransactionId(
-                transactionId,
-              );
-
-              // Delete the transaction
-              context.read<TransactionProvider>().deleteTransaction(
-                transactionId,
-              );
-
-              // If linked to a recurring occurrence, undo it
-              if (occ != null) {
-                recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
-              }
-
-              _closeKeyboard();
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close form
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
+      title: 'ลบรายการ',
+      message: 'คุณต้องการที่จะลบรายการนี้ใช่หรือไม่?',
+      confirmLabel: 'ลบ',
+      isDestructive: true,
     );
+    if (!confirmed || !mounted) return;
+
+    final transactionId = widget.transaction!.id;
+
+    // Check if this transaction is linked to a recurring occurrence
+    final recurProvider = context.read<RecurringTransactionProvider>();
+    final occ = recurProvider.findOccurrenceByTransactionId(transactionId);
+
+    // Delete the transaction
+    context.read<TransactionProvider>().deleteTransaction(transactionId);
+
+    // If linked to a recurring occurrence, undo it
+    if (occ != null) {
+      recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
+    }
+
+    _closeKeyboard();
+    Navigator.pop(context); // Close form
   }
 
   void _selectType(TransactionType t) {
@@ -601,36 +577,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: Material(
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 20,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  tooltip: 'ปิด',
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          _closeKeyboard();
-                          Navigator.pop(context);
-                        },
-                ),
-              ),
+            leading: AppCloseButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(
               _isEditing ? 'แก้ไขรายการ' : 'บันทึกรายการ',
@@ -640,59 +593,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: isDarkMode
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
           ),
           body: GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -792,9 +693,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                             : AppColors.surface,
                         borderRadius: BorderRadius.circular(AppRadii.xLarge),
                         border: Border.all(
-                          color: isDarkMode
-                              ? AppColors.darkDivider.withValues(alpha: 0.4)
-                              : AppColors.divider.withValues(alpha: 0.4),
+                          color: AppColors.borderFor(isDarkMode),
                           width: 1,
                         ),
                       ),
@@ -941,11 +840,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, scrollController) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'เลือกประเภทรายการ'),
@@ -1099,12 +994,7 @@ class _TypeSegmentedControl extends StatelessWidget {
       color: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -1259,12 +1149,7 @@ class _AmountHeroCard extends StatelessWidget {
       color: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1566,11 +1451,7 @@ class _SelectionGroupCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -2033,11 +1914,7 @@ class _MetaInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

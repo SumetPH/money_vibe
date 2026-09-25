@@ -71,3 +71,4 @@
 ต้องรันคำสั่งต่อไปนี้เสมอเมื่อมีการแก้โค้ด:
 
 1. `dart format .`
+2. `tool/check_design.sh` (ตรวจว่าไม่ได้สร้าง UI primitive ซ้ำแทน shared widget/token ใน `docs/design.md`)

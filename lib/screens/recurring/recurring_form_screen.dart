@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
@@ -18,6 +17,9 @@ import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
 import 'recurring_section.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -344,85 +346,42 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     }
   }
 
-  void _delete() {
-    showDialog(
+  Future<void> _delete() async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, sp, _) {
-          final isDark = sp.isDarkMode;
-          return AlertDialog(
-            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-            title: Text(
-              'ลบรายการประจำ',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-            ),
-            content: Text(
-              'คุณต้องการลบรายการประจำนี้ใช่หรือไม่?',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'ยกเลิก',
-                  style: TextStyle(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark
-                      ? AppColors.darkExpense
-                      : AppColors.expense,
-                ),
-                onPressed: () async {
-                  final provider = context.read<RecurringTransactionProvider>();
-                  final navigator = Navigator.of(context);
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-                  setState(() => _isLoading = true);
-                  try {
-                    await provider.deleteRecurring(widget.recurring!.id);
-                    if (mounted) {
-                      _closeKeyboard();
-                      navigator.pop(); // Close dialog
-                      navigator.pop(); // Close form
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      _closeKeyboard();
-                      navigator.pop(); // Close dialog
-                      scaffoldMessenger.showSnackBar(
-                        SnackBar(
-                          content: Text('ลบรายการไม่สำเร็จ: $e'),
-                          backgroundColor: AppColors.expense,
-                        ),
-                      );
-                    }
-                  } finally {
-                    if (mounted) {
-                      setState(() => _isLoading = false);
-                    }
-                  }
-                },
-                child: const Text('ลบ'),
-              ),
-            ],
-          );
-        },
-      ),
+      title: 'ลบรายการประจำ',
+      message: 'คุณต้องการลบรายการประจำนี้ใช่หรือไม่?',
+      confirmLabel: 'ลบ',
+      isDestructive: true,
     );
+    if (!confirmed || !mounted) return;
+
+    final provider = context.read<RecurringTransactionProvider>();
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    setState(() => _isLoading = true);
+    try {
+      await provider.deleteRecurring(widget.recurring!.id);
+      if (mounted) {
+        _closeKeyboard();
+        navigator.pop(); // Close form
+      }
+    } catch (e) {
+      if (mounted) {
+        _closeKeyboard();
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('ลบรายการไม่สำเร็จ: $e'),
+            backgroundColor: AppColors.expense,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -440,9 +399,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         final textSecondary = isDark
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDark
-            ? AppColors.darkDivider.withValues(alpha: 0.4)
-            : AppColors.divider.withValues(alpha: 0.4);
+        final dividerColor = AppColors.borderFor(isDark);
 
         final accounts = switch (_type) {
           TransactionType.debtTransfer =>
@@ -488,35 +445,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDark
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    size: 20,
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          _closeKeyboard();
-                          Navigator.pop(context);
-                        },
-                ),
-              ),
+            leading: AppCloseButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(
               _isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ',
@@ -528,57 +463,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     : AppColors.textPrimary,
               ),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: isDark
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
           ),
           body: GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -914,10 +799,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                       children: [
                         _ToggleRow(
                           color: surfaceColor,
-                          activeTrackColor: AppColors.accentFor(
-                            isDark,
-                            context.read<SettingsProvider>().themeColor,
-                          ),
                           value: _notificationEnabled,
                           onChanged: (v) =>
                               setState(() => _notificationEnabled = v),
@@ -984,10 +865,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         Divider(height: 1, color: dividerColor),
                         _ToggleRow(
                           color: surfaceColor,
-                          activeTrackColor: AppColors.accentFor(
-                            isDark,
-                            context.read<SettingsProvider>().themeColor,
-                          ),
                           value: _isHidden,
                           onChanged: (v) => setState(() => _isHidden = v),
                           title: Text(
@@ -1014,9 +891,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         color: surfaceColor,
                         borderRadius: BorderRadius.circular(AppRadii.xLarge),
                         border: Border.all(
-                          color: isDark
-                              ? AppColors.darkDivider.withValues(alpha: 0.4)
-                              : AppColors.divider.withValues(alpha: 0.4),
+                          color: AppColors.borderFor(isDark),
                           width: 1,
                         ),
                       ),
@@ -1069,19 +944,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDark
-        ? AppColors.darkDivider.withValues(alpha: 0.4)
-        : AppColors.divider.withValues(alpha: 0.4);
+    final dividerColor = AppColors.borderFor(isDark);
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, sc) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'เลือกประเภทรายการ'),
@@ -1178,11 +1047,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, sc) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),
@@ -1256,11 +1121,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, sc) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'วันที่ในเดือน'),
@@ -1585,11 +1446,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, sc) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
@@ -1640,11 +1497,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.3,
-        maxChildSize: 1.0,
-        expand: false,
+      builder: (_) => AppDraggableSheet(
         builder: (_, sc) => Column(
           children: [
             const AppModalBottomSheetHeader(title: 'เลือกสี'),
@@ -1737,12 +1590,7 @@ class _RecurringTypeSegmentedControl extends StatelessWidget {
       color: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -1881,12 +1729,7 @@ class _RecurringAmountHeroCard extends StatelessWidget {
       color: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1993,7 +1836,6 @@ class _ToggleRow extends StatelessWidget {
   final Widget title;
   final Widget subtitle;
   final Color color;
-  final Color activeTrackColor;
 
   const _ToggleRow({
     required this.value,
@@ -2001,12 +1843,10 @@ class _ToggleRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
-    required this.activeTrackColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<SettingsProvider>().isDarkMode;
     return Container(
       color: color,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -2019,14 +1859,7 @@ class _ToggleRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          CupertinoSwitch(
-            value: value,
-            activeTrackColor: activeTrackColor,
-            inactiveTrackColor: isDark
-                ? const Color(0xFF39393D)
-                : const Color(0xFFE9E9EA),
-            onChanged: onChanged,
-          ),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

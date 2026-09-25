@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 class FinnhubApiKeySettingsScreen extends StatefulWidget {
   const FinnhubApiKeySettingsScreen({super.key});
@@ -73,18 +74,7 @@ class _FinnhubApiKeySettingsScreenState
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: IconButton(
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        leading: const AppBackButton(),
         title: Text(
           'Finnhub API Key',
           style: TextStyle(

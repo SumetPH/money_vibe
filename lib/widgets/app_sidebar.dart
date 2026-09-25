@@ -117,7 +117,7 @@ class _AppSidebarState extends State<AppSidebar> {
                       ),
                       child: const Icon(
                         Icons.account_balance_wallet,
-                        color: Color(0xFFE3E3E3),
+                        color: AppColors.onHeader,
                         size: 22,
                       ),
                     ),

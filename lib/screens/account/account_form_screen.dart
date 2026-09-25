@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +14,10 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -344,52 +347,19 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     }
   }
 
-  void _delete() {
-    showDialog(
+  Future<void> _delete() async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final dialogBgColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
-          final textColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-
-          return AlertDialog(
-            backgroundColor: dialogBgColor,
-            title: Text('ลบบัญชี', style: TextStyle(color: textColor)),
-            content: Text(
-              'คุณต้องการที่จะลบบัญชีนี้ใช่หรือไม่?',
-              style: TextStyle(color: textColor),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-              ),
-              TextButton(
-                onPressed: () {
-                  context.read<AccountProvider>().deleteAccount(
-                    widget.account!.id,
-                  );
-                  _closeKeyboard();
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Close form
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: isDarkMode
-                      ? AppColors.darkExpense
-                      : AppColors.expense,
-                ),
-                child: const Text('ลบ'),
-              ),
-            ],
-          );
-        },
-      ),
+      title: 'ลบบัญชี',
+      message: 'คุณต้องการที่จะลบบัญชีนี้ใช่หรือไม่?',
+      confirmLabel: 'ลบ',
+      isDestructive: true,
     );
+    if (!confirmed || !mounted) return;
+
+    context.read<AccountProvider>().deleteAccount(widget.account!.id);
+    _closeKeyboard();
+    Navigator.pop(context); // Close form
   }
 
   @override
@@ -416,9 +386,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         final expenseColor = _isDarkMode
             ? AppColors.darkExpense
             : AppColors.expense;
-        final fabYellow = _isDarkMode
-            ? AppColors.darkFabYellow
-            : AppColors.fabYellow;
 
         return Scaffold(
           key: _scaffoldKey,
@@ -429,36 +396,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: _isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 20,
-                    color: _isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  tooltip: 'ปิด',
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          _closeKeyboard();
-                          Navigator.pop(context);
-                        },
-                ),
-              ),
+            leading: AppCloseButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(
               _isEditing ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่',
@@ -468,57 +412,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
           ),
           body: GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -542,9 +436,13 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   ),
 
                   // 2. ข้อมูลบัญชี
-                  _buildSectionHeader('ข้อมูลบัญชี', textSecondaryColor),
-                  _buildInsetCard(
-                    [
+                  AppSectionHeader(
+                    'ข้อมูลบัญชี',
+                    padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
+                  ),
+                  AppInsetCard(
+                    margin: EdgeInsets.zero,
+                    children: [
                       _buildTextFieldRow(
                         controller: _nameController,
                         label: 'ชื่อบัญชี',
@@ -553,7 +451,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       _buildPickerRow(
                         label: 'ชนิดบัญชี',
                         value: _selectedType.label,
@@ -562,7 +460,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       if (_selectedType.isPortfolio)
                         _buildReadOnlyRow(
                           label: 'สกุลเงิน',
@@ -585,7 +483,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       _buildPickerRow(
                         label: 'เริ่มวันที่',
                         value: _formatThaiDate(_startDate),
@@ -595,34 +493,38 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ],
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
                   ),
 
                   // 3. รูปลักษณ์
-                  _buildSectionHeader('รูปลักษณ์', textSecondaryColor),
-                  _buildInsetCard(
-                    [
+                  AppSectionHeader(
+                    'รูปลักษณ์',
+                    padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
+                  ),
+                  AppInsetCard(
+                    margin: EdgeInsets.zero,
+                    children: [
                       _buildIconRow(
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       _buildColorRow(
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ],
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
                   ),
 
                   // 4. พอร์ตการลงทุน (USD only or portfolio)
                   if (_effectiveSelectedCurrency == 'USD' ||
                       _selectedType.isPortfolio) ...[
-                    _buildSectionHeader('พอร์ตการลงทุน', textSecondaryColor),
-                    _buildInsetCard(
-                      [
+                    AppSectionHeader(
+                      'พอร์ตการลงทุน',
+                      padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
+                    ),
+                    AppInsetCard(
+                      margin: EdgeInsets.zero,
+                      children: [
                         if (_effectiveSelectedCurrency == 'USD') ...[
                           _buildSwitchRow(
                             label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
@@ -633,11 +535,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                                 setState(() => _autoUpdateRate = v),
                             textPrimaryColor: textPrimaryColor,
                             textSecondaryColor: textSecondaryColor,
-                            isDarkMode: _isDarkMode,
-                            settingsProvider: settingsProvider,
                           ),
                           if (!_autoUpdateRate) ...[
-                            _buildIndentedDivider(dividerColor),
+                            const AppCardDivider(indent: 60, endIndent: 16),
                             _buildExchangeRateField(
                               textPrimaryColor: textPrimaryColor,
                               textSecondaryColor: textSecondaryColor,
@@ -653,30 +553,34 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             textSecondaryColor: textSecondaryColor,
                           ),
                       ],
-                      surfaceColor: surfaceColor,
-                      dividerColor: dividerColor,
                     ),
                   ],
 
                   // 5. บัตรเครดิต
                   if (_selectedType == AccountType.creditCard) ...[
-                    _buildSectionHeader('บัตรเครดิต', textSecondaryColor),
-                    _buildInsetCard(
-                      [
+                    AppSectionHeader(
+                      'บัตรเครดิต',
+                      padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
+                    ),
+                    AppInsetCard(
+                      margin: EdgeInsets.zero,
+                      children: [
                         _buildStatementDayPicker(
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
                       ],
-                      surfaceColor: surfaceColor,
-                      dividerColor: dividerColor,
                     ),
                   ],
 
                   // 6. สวิตช์การแสดงผลและคำนวณ
-                  _buildSectionHeader('การแสดงผลและคำนวณ', textSecondaryColor),
-                  _buildInsetCard(
-                    [
+                  AppSectionHeader(
+                    'การแสดงผลและคำนวณ',
+                    padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
+                  ),
+                  AppInsetCard(
+                    margin: EdgeInsets.zero,
+                    children: [
                       _buildSwitchRow(
                         label: 'ไม่รวมในทรัพย์สินสุทธิ',
                         subtitle:
@@ -686,10 +590,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             setState(() => _excludeFromNetWorth = v),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
-                        isDarkMode: _isDarkMode,
-                        settingsProvider: settingsProvider,
                       ),
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       _buildSwitchRow(
                         label: 'ซ่อนบัญชีนี้',
                         subtitle: 'ซ่อนบัญชีนี้จากหน้ารายการบัญชีหลัก',
@@ -697,12 +599,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         onChanged: (v) => setState(() => _isHidden = v),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
-                        isDarkMode: _isDarkMode,
-                        settingsProvider: settingsProvider,
                       ),
                     ],
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
                   ),
 
                   // 7. Delete card if editing
@@ -818,53 +716,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 20, bottom: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-          letterSpacing: -0.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInsetCard(
-    List<Widget> children, {
-    required Color surfaceColor,
-    required Color dividerColor,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildIndentedDivider(Color color) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      indent: 60,
-      endIndent: 16,
-      color: color.withValues(alpha: 0.3),
     );
   }
 
@@ -1206,8 +1057,6 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     required ValueChanged<bool> onChanged,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
-    required bool isDarkMode,
-    required settingsProvider,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1236,17 +1085,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ],
             ),
           ),
-          CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: AppColors.accentFor(
-              isDarkMode,
-              settingsProvider.themeColor,
-            ),
-            inactiveTrackColor: isDarkMode
-                ? AppColors.darkDivider
-                : AppColors.divider,
-          ),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );
@@ -1624,11 +1463,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
               ? AppColors.darkIncome
               : AppColors.header;
 
-          return DraggableScrollableSheet(
-            initialChildSize: 1.0,
-            minChildSize: 0.3,
-            maxChildSize: 1.0,
-            expand: false,
+          return AppDraggableSheet(
             builder: (context, scrollController) => SafeArea(
               child: CustomScrollView(
                 controller: scrollController,

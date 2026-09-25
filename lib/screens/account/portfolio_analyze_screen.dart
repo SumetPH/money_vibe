@@ -327,7 +327,10 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUser = message.role == 'user';
     final bubbleColor = isUser
-        ? (isDarkMode ? const Color(0xFF1565C0) : const Color(0xFF1976D2))
+        ? AppColors.accentFor(
+            isDarkMode,
+            context.watch<SettingsProvider>().themeColor,
+          )
         : surfaceColor;
     final textColor = isUser ? Colors.white : textPrimary;
 
@@ -478,9 +481,10 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sendColor = isDarkMode
-        ? const Color(0xFF42A5F5)
-        : const Color(0xFF1976D2);
+    final sendColor = AppColors.accentFor(
+      isDarkMode,
+      context.watch<SettingsProvider>().themeColor,
+    );
 
     return Container(
       decoration: BoxDecoration(

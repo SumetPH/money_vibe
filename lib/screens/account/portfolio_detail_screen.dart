@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -25,6 +24,8 @@ import 'holding_sell_form_screen.dart';
 import 'holding_buy_form_screen.dart';
 import 'portfolio_investment_plan_screen.dart';
 import '../trade/broker_report_list_screen.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -329,11 +330,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         ? AppColors.darkSurface
                         : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
-                    ),
+                    border: Border.all(color: AppColors.borderFor(isDarkMode)),
                   ),
                   child: TabBar(
                     controller: _tabController,
@@ -438,18 +435,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: isDarkMode
-                      ? AppColors.darkTextPrimary
-                      : AppColors.textPrimary,
-                ),
-                tooltip: 'ย้อนกลับ',
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
+            leading: const AppBackButton(),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -484,9 +470,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.full),
                     side: BorderSide(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
+                      color: AppColors.borderFor(isDarkMode),
                       width: 1,
                     ),
                   ),
@@ -516,9 +500,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.full),
                     side: BorderSide(
-                      color: isDarkMode
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
+                      color: AppColors.borderFor(isDarkMode),
                       width: 1,
                     ),
                   ),
@@ -569,6 +551,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       builder: (ctx) {
         var autoUpdate = acc.autoUpdateRate;
         return StatefulBuilder(
+          // design-check: allow input or multi-choice dialog
           builder: (ctx, setDialogState) => AlertDialog(
             backgroundColor: dialogBgColor,
             title: Text('อัตราแลกเปลี่ยน', style: TextStyle(color: textColor)),
@@ -601,15 +584,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                         style: TextStyle(fontSize: 14, color: textColor),
                       ),
                     ),
-                    CupertinoSwitch(
+                    AppSwitch(
                       value: autoUpdate,
-                      activeTrackColor: AppColors.accentFor(
-                        isDarkMode,
-                        context.read<SettingsProvider>().themeColor,
-                      ),
-                      inactiveTrackColor: isDarkMode
-                          ? AppColors.darkDivider
-                          : AppColors.divider,
                       onChanged: (v) => setDialogState(() => autoUpdate = v),
                     ),
                   ],
@@ -663,6 +639,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       builder: (ctx) {
         var autoUpdate = acc.autoUpdateRate;
         return StatefulBuilder(
+          // design-check: allow input or multi-choice dialog
           builder: (ctx, setDialogState) => AlertDialog(
             backgroundColor: dialogBgColor,
             title: Text('ยอดเงินสด', style: TextStyle(color: textColor)),
@@ -1229,15 +1206,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                                 color: textSecondary,
                               ),
                             ),
-                            trailing: CupertinoSwitch(
+                            trailing: AppSwitch(
                               value: _isReorderMode,
-                              activeTrackColor: AppColors.accentFor(
-                                isDarkMode,
-                                context.read<SettingsProvider>().themeColor,
-                              ),
-                              inactiveTrackColor: isDarkMode
-                                  ? AppColors.darkDivider
-                                  : AppColors.divider,
                               onChanged: (value) {
                                 setStateModal(() => _isReorderMode = value);
                                 setState(() => _isReorderMode = value);
@@ -1718,6 +1688,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+            // design-check: allow input or multi-choice dialog
             return AlertDialog(
               backgroundColor: bgColor,
               title: Text(
@@ -1913,9 +1884,7 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       border: Border.all(
-                        color: isDarkMode
-                            ? AppColors.darkDivider.withValues(alpha: 0.4)
-                            : AppColors.divider.withValues(alpha: 0.4),
+                        color: AppColors.borderFor(isDarkMode),
                         width: 1,
                       ),
                     ),

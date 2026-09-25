@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +11,9 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/broker_order_import_button.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 
 typedef BuyHoldingCallback =
     Future<void> Function({
@@ -439,6 +441,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
 
     return showDialog<bool>(
       context: context,
+      // design-check: allow input or multi-choice dialog
       builder: (dialogContext) => AlertDialog(
         backgroundColor: backgroundColor,
         title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
@@ -472,15 +475,12 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     final backgroundColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-
-    final accentColor = AppColors.accentFor(isDarkMode, settings.themeColor);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -490,26 +490,8 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Center(
-          child: Material(
-            color: surfaceColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: Icon(Icons.close, size: 20, color: textColor),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              onPressed: _saving ? null : () => Navigator.pop(context),
-            ),
-          ),
+        leading: AppCloseButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
         ),
         title: Text(
           _isHistoryEdit
@@ -524,40 +506,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FilledButton(
-              onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                shape: const StadiumBorder(),
-                elevation: 0,
-                minimumSize: const Size(64, 36),
-              ),
-              child: _saving
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(
-                          isDarkMode ? Colors.black : Colors.white,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      _isHistoryEdit ? 'บันทึก' : 'ซื้อ',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
+          AppSaveButton(
+            onPressed: _save,
+            isLoading: _saving,
+            label: _isHistoryEdit ? 'บันทึก' : 'ซื้อ',
           ),
         ],
       ),
@@ -574,10 +526,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                 if (!_isHistoryEdit &&
                     _currencyCode == 'USD' &&
                     BrokerOrderImportButton.isSupported) ...[
-                  _buildSectionHeader('นำเข้าจากภาพ', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    isDarkMode: isDarkMode,
+                  AppSectionHeader('นำเข้าจากภาพ'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    disableSplash: true,
                     children: [
                       BrokerOrderImportButton(
                         isBuy: true,
@@ -588,10 +540,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   ),
                 ],
                 if (_hasOcrDraft) ...[
-                  _buildSectionHeader('วันที่คำสั่งสำเร็จ', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    isDarkMode: isDarkMode,
+                  AppSectionHeader('วันที่คำสั่งสำเร็จ'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    disableSplash: true,
                     children: [
                       ListTile(
                         title: const Text('วันที่'),
@@ -599,9 +551,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: isDarkMode
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDarkMode),
                             width: 1,
                           ),
                         ),
@@ -616,16 +566,14 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         ),
                         onTap: _pickOcrDate,
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       ListTile(
                         title: const Text('เวลา'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: isDarkMode
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDarkMode),
                             width: 1,
                           ),
                         ),
@@ -642,10 +590,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   ),
                 ],
 
-                _buildSectionHeader('ข้อมูลการซื้อ', secondaryColor),
-                _buildInsetCard(
-                  surfaceColor: surfaceColor,
-                  isDarkMode: isDarkMode,
+                AppSectionHeader('ข้อมูลการซื้อ'),
+                AppInsetCard(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  disableSplash: true,
                   children: [
                     if (_isNewHolding) ...[
                       _BuyPortfolioFieldRow(
@@ -653,12 +601,12 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         onTap: () => _selectPortfolio(isDarkMode: isDarkMode),
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyTickerFieldRow(
                         controller: _ticker,
                         isDarkMode: isDarkMode,
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                     ],
                     _BuyNumberFieldRow(
                       label: 'จำนวนที่ซื้อ',
@@ -667,7 +615,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(7)],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _BuyNumberFieldRow(
                       label: 'ราคาซื้อ ($_currencyCode)',
                       controller: _price,
@@ -675,7 +623,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _BuyNumberFieldRow(
                       label: 'มูลค่าหุ้น (Gross $_currencyCode)',
                       controller: _gross,
@@ -688,7 +636,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       },
                     ),
                     if (!_isHistoryEdit) ...[
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyNumberFieldRow(
                         label: 'ยอดที่จ่าย (Net $_currencyCode)',
                         controller: _cash,
@@ -704,10 +652,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   ],
                 ),
                 if (!_isHistoryEdit) ...[
-                  _buildSectionHeader('ค่าธรรมเนียม', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    isDarkMode: isDarkMode,
+                  AppSectionHeader('ค่าธรรมเนียม'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    disableSplash: true,
                     children: [
                       _BuyNumberFieldRow(
                         label: 'ค่าคอมมิชชัน ($_currencyCode)',
@@ -716,7 +664,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyNumberFieldRow(
                         label: 'ภาษี (VAT $_currencyCode)',
                         controller: _taxFee,
@@ -724,7 +672,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyNumberFieldRow(
                         label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
                         controller: _exchangeFee,
@@ -734,10 +682,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       ),
                     ],
                   ),
-                  _buildSectionHeader('หลังการซื้อ', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    isDarkMode: isDarkMode,
+                  AppSectionHeader('หลังการซื้อ'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    disableSplash: true,
                     children: [
                       _BuyNumberFieldRow(
                         label: 'จำนวนหุ้น',
@@ -750,7 +698,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                           _syncCostBasisFromTotal();
                         },
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyNumberFieldRow(
                         label: 'ต้นทุนรวม ($_currencyCode)',
                         controller: _resultTotalCost,
@@ -758,7 +706,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(2)],
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _BuyNumberFieldRow(
                         label: 'ต้นทุนต่อหุ้น ($_currencyCode)',
                         controller: _resultCostBasis,
@@ -769,13 +717,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                     ],
                   ),
                   if (_isNewHolding) ...[
-                    _buildSectionHeader(
-                      'แผนการขาย (SELL PLAN)',
-                      secondaryColor,
-                    ),
-                    _buildInsetCard(
-                      surfaceColor: surfaceColor,
-                      isDarkMode: isDarkMode,
+                    AppSectionHeader('แผนการขาย (SELL PLAN)'),
+                    AppInsetCard(
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      disableSplash: true,
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -809,12 +754,8 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              CupertinoSwitch(
+                              AppSwitch(
                                 value: _sellPlanEnabled,
-                                activeTrackColor: accentColor,
-                                inactiveTrackColor: isDarkMode
-                                    ? const Color(0xFF39393D)
-                                    : const Color(0xFFE9E9EA),
                                 onChanged: (value) =>
                                     setState(() => _sellPlanEnabled = value),
                               ),
@@ -822,7 +763,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                           ),
                         ),
                         if (_sellPlanEnabled) ...[
-                          _buildCardDivider(isDarkMode),
+                          const AppCardDivider(indent: 16),
                           _BuyNumberFieldRow(
                             label: 'Take Profit (%)',
                             controller: _takeProfit,
@@ -830,7 +771,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             isDarkMode: isDarkMode,
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
-                          _buildCardDivider(isDarkMode),
+                          const AppCardDivider(indent: 16),
                           _BuyNumberFieldRow(
                             label: 'Trailing Stop (%)',
                             controller: _trailingStop,
@@ -838,7 +779,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             isDarkMode: isDarkMode,
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
-                          _buildCardDivider(isDarkMode),
+                          const AppCardDivider(indent: 16),
                           _BuyNumberFieldRow(
                             label: 'Stop Loss (%)',
                             controller: _stopLoss,
@@ -858,62 +799,6 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
       ),
     );
   }
-
-  Widget _buildInsetCard({
-    required Color surfaceColor,
-    required bool isDarkMode,
-    required List<Widget> children,
-  }) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        splashFactory: NoSplash.splashFactory,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        hoverColor: Colors.transparent,
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          border: Border.all(
-            color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                .withValues(alpha: 0.4),
-            width: 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardDivider(bool isDarkMode) => Divider(
-    height: 1,
-    indent: 16,
-    endIndent: 0,
-    color: (isDarkMode ? AppColors.darkDivider : AppColors.divider).withValues(
-      alpha: 0.3,
-    ),
-  );
 
   Future<void> _selectPortfolio({required bool isDarkMode}) async {
     final textColor = isDarkMode

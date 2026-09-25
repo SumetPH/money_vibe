@@ -8,6 +8,8 @@ import '../../services/dime_trade_ocr.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/broker_order_import_button.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 
 typedef SellHoldingCallback =
     Future<void> Function({
@@ -466,6 +468,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
 
     return showDialog<bool>(
       context: context,
+      // design-check: allow input or multi-choice dialog
       builder: (dialogContext) => AlertDialog(
         backgroundColor: backgroundColor,
         title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
@@ -499,15 +502,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
     final bgColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     final sharesSold = double.tryParse(_sharesController.text.trim()) ?? 0;
     final cashReceived =
@@ -521,26 +518,8 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Center(
-          child: Material(
-            color: surfaceColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: Icon(Icons.close, size: 20, color: textColor),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              onPressed: _isSaving ? null : () => Navigator.pop(context),
-            ),
-          ),
+        leading: AppCloseButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
         title: Text(
           'ขาย ${widget.holding.ticker}',
@@ -551,39 +530,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FilledButton(
-              onPressed: _isSaving ? null : _submit,
-              style: FilledButton.styleFrom(
-                backgroundColor: expenseColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                shape: const StadiumBorder(),
-                elevation: 0,
-                minimumSize: const Size(64, 36),
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'ขาย',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
+          AppSaveButton(onPressed: _submit, isLoading: _isSaving, label: 'ขาย'),
         ],
       ),
       body: AbsorbPointer(
@@ -598,10 +545,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
               children: [
                 if (widget.currencyCode == 'USD' &&
                     BrokerOrderImportButton.isSupported) ...[
-                  _buildSectionHeader('นำเข้าจากภาพ', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
+                  AppSectionHeader('นำเข้าจากภาพ'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     children: [
                       BrokerOrderImportButton(
                         isBuy: false,
@@ -612,10 +558,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                   ),
                 ],
                 if (_hasOcrDraft) ...[
-                  _buildSectionHeader('วันที่คำสั่งสำเร็จ', secondaryColor),
-                  _buildInsetCard(
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
+                  AppSectionHeader('วันที่คำสั่งสำเร็จ'),
+                  AppInsetCard(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     children: [
                       ListTile(
                         title: const Text('วันที่'),
@@ -623,9 +568,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: isDarkMode
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDarkMode),
                             width: 1,
                           ),
                         ),
@@ -640,16 +583,14 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         ),
                         onTap: _pickOcrDate,
                       ),
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       ListTile(
                         title: const Text('เวลา'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           side: BorderSide(
-                            color: isDarkMode
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDarkMode),
                             width: 1,
                           ),
                         ),
@@ -667,10 +608,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                   const SizedBox(height: 12),
                 ],
 
-                _buildSectionHeader('ข้อมูลการขาย', secondaryColor),
-                _buildInsetCard(
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
+                AppSectionHeader('ข้อมูลการขาย'),
+                AppInsetCard(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   children: [
                     _SellNumberFieldRow(
                       label: 'จำนวนที่ขาย',
@@ -682,7 +622,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
                       ],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ราคาขาย (${widget.currencyCode})',
                       controller: _sellPriceController,
@@ -693,7 +633,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _decimalInputFormatter(stockHoldingPriceDecimalPlaces),
                       ],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'มูลค่าหุ้น (Gross ${widget.currencyCode})',
                       controller: _grossProceedsController,
@@ -705,7 +645,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _syncCashReceived();
                       },
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ยอดที่จะได้รับคืน (Net ${widget.currencyCode})',
                       controller: _cashReceivedController,
@@ -720,10 +660,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                     ),
                   ],
                 ),
-                _buildSectionHeader('ค่าธรรมเนียม', secondaryColor),
-                _buildInsetCard(
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
+                AppSectionHeader('ค่าธรรมเนียม'),
+                AppInsetCard(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   children: [
                     _SellNumberFieldRow(
                       label: 'ค่าคอมมิชชัน (${widget.currencyCode})',
@@ -732,7 +671,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ภาษี (VAT ${widget.currencyCode})',
                       controller: _taxFeeController,
@@ -740,7 +679,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
                       controller: _exchangeFeeController,
@@ -750,10 +689,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                     ),
                   ],
                 ),
-                _buildSectionHeader('หลังการขาย', secondaryColor),
-                _buildInsetCard(
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
+                AppSectionHeader('หลังการขาย'),
+                AppInsetCard(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   children: [
                     _SellNumberFieldRow(
                       label: 'จำนวนหุ้นคงเหลือ',
@@ -769,7 +707,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _syncRemainingHoldingFromSharesSold();
                       },
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ต้นทุนรวมคงเหลือ (${widget.currencyCode})',
                       controller: _remainingTotalCostController,
@@ -778,7 +716,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       errorText: _remainingTotalCostError,
                       inputFormatters: [_decimalInputFormatter(2)],
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _SellNumberFieldRow(
                       label: 'ต้นทุนต่อหุ้นคงเหลือ (${widget.currencyCode})',
                       controller: _remainingCostBasisController,
@@ -793,10 +731,9 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                     ),
                   ],
                 ),
-                _buildSectionHeader('สรุปผลการขาย', secondaryColor),
-                _buildInsetCard(
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
+                AppSectionHeader('สรุปผลการขาย'),
+                AppInsetCard(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   children: [
                     _SellSummaryCard(
                       holding: widget.holding,
@@ -812,54 +749,6 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildInsetCard({
-    required Color surfaceColor,
-    required Color dividerColor,
-    required List<Widget> children,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardDivider(bool isDarkMode) {
-    return Divider(
-      height: 1,
-      indent: 16,
-      endIndent: 0,
-      color: (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-          .withValues(alpha: 0.3),
     );
   }
 }

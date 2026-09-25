@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +13,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
+import '../../widgets/app_switch.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -161,9 +161,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.full),
                   side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
+                    color: AppColors.borderFor(isDarkMode),
                     width: 1,
                   ),
                 ),
@@ -183,9 +181,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.full),
                   side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
+                    color: AppColors.borderFor(isDarkMode),
                     width: 1,
                   ),
                 ),
@@ -814,15 +810,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                                   fontSize: 12,
                                 ),
                               ),
-                              trailing: CupertinoSwitch(
+                              trailing: AppSwitch(
                                 value: _isReorderMode,
-                                activeTrackColor: AppColors.accentFor(
-                                  isDarkMode,
-                                  context.read<SettingsProvider>().themeColor,
-                                ),
-                                inactiveTrackColor: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
                                 onChanged: (value) {
                                   setStateModal(() => _isReorderMode = value);
                                   setState(() => _isReorderMode = value);

@@ -16,6 +16,7 @@ import '../../widgets/account_icon_widget.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -120,17 +121,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     : AppColors.textPrimary,
                 centerTitle: false,
                 titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
-                leading: isFiltered
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.textPrimary,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    : null,
+                leading: isFiltered ? const AppBackButton() : null,
                 title: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -829,12 +820,7 @@ class _HeaderAction extends StatelessWidget {
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(
-            color: isDarkMode
-                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                : AppColors.divider.withValues(alpha: 0.4),
-            width: 1,
-          ),
+          side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
@@ -886,11 +872,7 @@ class _CashFlowSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1050,12 +1032,7 @@ class _TransactionTypeTabs extends StatelessWidget {
       color: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(

@@ -13,6 +13,8 @@ import '../../main.dart';
 import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class RecurringDetailScreen extends StatefulWidget {
   final RecurringTransaction recurring;
@@ -159,41 +161,20 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
   }
 
   void _skipOccurrence(BuildContext context, DateTime dueDate, bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    showDialog(
+    showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: bgColor,
-        title: Text('ข้ามรายการนี้?', style: TextStyle(color: textColor)),
-        content: Text(
+      title: 'ข้ามรายการนี้?',
+      message:
           'ต้องการข้ามรายการวันที่ ${_formatDateShort(dueDate)} ใช่หรือไม่?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-            ),
-            onPressed: () {
-              context
-                  .read<RecurringTransactionProvider>()
-                  .markOccurrenceSkipped(_recurring.id, dueDate);
-              Navigator.pop(context);
-            },
-            child: const Text('ข้าม'),
-          ),
-        ],
-      ),
-    );
+      confirmLabel: 'ข้าม',
+      isDestructive: true,
+    ).then((confirmed) {
+      if (!confirmed || !context.mounted) return;
+      context.read<RecurringTransactionProvider>().markOccurrenceSkipped(
+        _recurring.id,
+        dueDate,
+      );
+    });
   }
 
   void _undoOccurrence(BuildContext context, DateTime dueDate, bool isDark) {
@@ -209,87 +190,68 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
         ? transactionsById[occ!.transactionId]
         : null;
 
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
 
-    showDialog(
+    showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: bgColor,
-        title: Text('ยกเลิกรายการนี้?', style: TextStyle(color: textColor)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ต้องการยกเลิกสถานะรายการวันที่ ${_formatDateShort(dueDate)} ใช่หรือไม่?',
-              style: TextStyle(color: textColor),
-            ),
-            if (linkedTx != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkExpense.withValues(alpha: 0.2)
-                      : AppColors.expense.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '⚠️ จะมีการลบธุรกรรมที่สร้างไว้ด้วย',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? AppColors.darkExpense
-                            : AppColors.expense,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'จำนวน: ${formatAmount(linkedTx.amount)} บาท',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.expense,
-                      ),
-                    ),
-                  ],
-                ),
+      title: 'ยกเลิกรายการนี้?',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ต้องการยกเลิกสถานะรายการวันที่ ${_formatDateShort(dueDate)} ใช่หรือไม่?',
+            style: TextStyle(color: textColor),
+          ),
+          if (linkedTx != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkExpense.withValues(alpha: 0.2)
+                    : AppColors.expense.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
               ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '⚠️ จะมีการลบธุรกรรมที่สร้างไว้ด้วย',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.darkExpense : AppColors.expense,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'จำนวน: ${formatAmount(linkedTx.amount)} บาท',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.expense,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () {
-              // Delete linked transaction if exists
-              if (linkedTx != null) {
-                txProvider.deleteTransaction(linkedTx.id);
-              }
-              // Undo the occurrence
-              recurProvider.undoOccurrence(_recurring.id, dueDate);
-              Navigator.pop(context);
-            },
-            child: const Text('ยืนยัน'),
-          ),
+          ],
         ],
       ),
-    );
+      confirmLabel: 'ยืนยัน',
+      isDestructive: true,
+    ).then((confirmed) {
+      if (!confirmed || !context.mounted) return;
+      // Delete linked transaction if exists
+      if (linkedTx != null) {
+        txProvider.deleteTransaction(linkedTx.id);
+      }
+      // Undo the occurrence
+      recurProvider.undoOccurrence(_recurring.id, dueDate);
+    });
   }
 
   @override
@@ -362,18 +324,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.textPrimary,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
+            leading: const AppBackButton(),
             title: Text(
               recurring.name,
               style: TextStyle(
@@ -392,9 +343,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.full),
                     side: BorderSide(
-                      color: isDark
-                          ? AppColors.darkDivider.withValues(alpha: 0.4)
-                          : AppColors.divider.withValues(alpha: 0.4),
+                      color: AppColors.borderFor(isDark),
                       width: 1,
                     ),
                   ),
@@ -635,9 +584,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                               : AppColors.surface,
                           borderRadius: BorderRadius.circular(AppRadii.xLarge),
                           border: Border.all(
-                            color: isDark
-                                ? AppColors.darkDivider.withValues(alpha: 0.4)
-                                : AppColors.divider.withValues(alpha: 0.4),
+                            color: AppColors.borderFor(isDark),
                           ),
                         ),
                         child: TabBar(

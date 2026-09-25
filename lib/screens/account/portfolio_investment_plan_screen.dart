@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:money_vibe/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +12,8 @@ import '../../models/stock_holding.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class PortfolioInvestmentPlanScreen extends StatefulWidget {
   final Account account;
@@ -267,13 +268,9 @@ class _PortfolioInvestmentPlanScreenState
                     ],
                   ),
                 ),
-                CupertinoSwitch(
+                AppSwitch(
                   value: widget.dcaCompleted,
                   onChanged: _handleDcaChanged,
-                  activeTrackColor: activeColor,
-                  inactiveTrackColor: widget.isDarkMode
-                      ? const Color(0xFF39393D)
-                      : const Color(0xFFE9E9EA),
                 ),
               ],
             ),
@@ -320,56 +317,16 @@ class _PortfolioInvestmentPlanScreenState
   }
 
   Future<bool?> _confirmDcaChange(bool completed) {
-    final backgroundColor = widget.isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = widget.isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondaryColor = widget.isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final actionColor = completed
-        ? (widget.isDarkMode ? AppColors.darkIncome : AppColors.income)
-        : (widget.isDarkMode ? AppColors.darkExpense : AppColors.expense);
     final monthLabel = _formatMonthLabel(currentInvestmentMonthKey());
 
-    return showDialog<bool>(
+    return showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        ),
-        title: Text(
-          completed ? 'ยืนยัน DCA เดือนนี้' : 'ยกเลิกสถานะ DCA',
-          style: TextStyle(
-            color: textColor,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          completed
-              ? 'ต้องการติ๊กว่า DCA $monthLabel ซื้อครบตามแผนแล้วใช่ไหม?'
-              : 'ต้องการยกเลิกสถานะซื้อครบของ DCA $monthLabel ใช่ไหม?',
-          style: TextStyle(color: secondaryColor, fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('ยกเลิก', style: TextStyle(color: secondaryColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: actionColor),
-            child: Text(
-              completed ? 'ยืนยัน' : 'ยกเลิกสถานะ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
+      title: completed ? 'ยืนยัน DCA เดือนนี้' : 'ยกเลิกสถานะ DCA',
+      message: completed
+          ? 'ต้องการติ๊กว่า DCA $monthLabel ซื้อครบตามแผนแล้วใช่ไหม?'
+          : 'ต้องการยกเลิกสถานะซื้อครบของ DCA $monthLabel ใช่ไหม?',
+      confirmLabel: completed ? 'ยืนยัน' : 'ยกเลิกสถานะ',
+      isDestructive: !completed,
     );
   }
 
@@ -429,9 +386,7 @@ class _PortfolioInvestmentPlanScreenState
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.isDarkMode
-                        ? const Color(0xFF2C2C2E)
-                        : const Color(0xFFF2F2F7),
+                    backgroundColor: AppColors.raisedFillFor(widget.isDarkMode),
                     foregroundColor: widget.isDarkMode
                         ? AppColors.darkTextPrimary
                         : AppColors.textPrimary,
@@ -617,9 +572,7 @@ class _PortfolioInvestmentPlanScreenState
             width: 88,
             height: 38,
             decoration: BoxDecoration(
-              color: widget.isDarkMode
-                  ? const Color(0xFF1C1C1E)
-                  : const Color(0xFFF2F2F7),
+              color: AppColors.insetFillFor(widget.isDarkMode),
               borderRadius: BorderRadius.circular(AppRadii.medium),
               border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
             ),
@@ -860,14 +813,7 @@ class _PortfolioInvestmentPlanScreenState
                                       ],
                                     ),
                                   ),
-                                  CupertinoSwitch(
-                                    value: enabled,
-                                    onChanged: toggle,
-                                    activeTrackColor: accentColor,
-                                    inactiveTrackColor: widget.isDarkMode
-                                        ? const Color(0xFF39393D)
-                                        : const Color(0xFFE9E9EA),
-                                  ),
+                                  AppSwitch(value: enabled, onChanged: toggle),
                                 ],
                               ),
                             ),
@@ -944,9 +890,7 @@ class _PortfolioInvestmentPlanScreenState
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.isDarkMode
-                ? const Color(0xFF1C1C1E)
-                : const Color(0xFFF2F2F7),
+            color: AppColors.insetFillFor(widget.isDarkMode),
             borderRadius: BorderRadius.circular(AppRadii.large),
             border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
           ),

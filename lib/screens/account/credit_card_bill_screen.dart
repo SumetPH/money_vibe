@@ -11,6 +11,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../transaction/transaction_list_screen.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 // ฟังก์ชันระดับ top-level สำหรับ compute() isolate
 class _BillParams {
@@ -179,18 +180,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: isDarkMode
-                      ? AppColors.darkTextPrimary
-                      : AppColors.textPrimary,
-                ),
-                tooltip: 'ย้อนกลับ',
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
+            leading: const AppBackButton(),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -442,11 +432,7 @@ class _HeroSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -653,12 +639,7 @@ class _BillItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: isDarkMode
-              ? AppColors.darkDivider.withValues(alpha: 0.4)
-              : AppColors.divider.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderFor(isDarkMode), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

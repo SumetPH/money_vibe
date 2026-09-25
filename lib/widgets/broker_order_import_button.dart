@@ -8,6 +8,7 @@ import '../providers/settings_provider.dart';
 import '../services/dime_trade_ocr.dart';
 import '../theme/app_colors.dart';
 import 'app_modal_bottom_sheet.dart';
+import 'app_confirm_dialog.dart';
 
 class BrokerOrderImportButton extends StatefulWidget {
   final bool isBuy;
@@ -102,37 +103,25 @@ class _BrokerOrderImportButtonState extends State<BrokerOrderImportButton> {
     String value(double? amount, int digits) =>
         amount == null ? 'อ่านไม่ได้' : amount.toStringAsFixed(digits);
 
-    return showDialog<bool>(
+    return showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-        title: Text('ข้อมูลจาก Dime!', style: TextStyle(color: textColor)),
-        content: SingleChildScrollView(
-          child: Text(
-            'หุ้น ${draft.ticker ?? 'ไม่ระบุ'}\n'
-            'จำนวน ${value(draft.shares, 7)} หุ้น\n'
-            'ราคาที่ได้จริง ${value(draft.priceUsd, 4)} USD\n'
-            'มูลค่าหุ้น ${value(draft.grossUsd, 2)} USD\n'
-            'ค่าคอมมิชชัน ${value(draft.brokerFeeUsd, 4)} USD\n'
-            'VAT ${value(draft.vatUsd, 4)} USD\n'
-            'SEC/TAF ${value(draft.exchangeFeeUsd, 4)} USD\n'
-            'ยอดสุทธิ ${value(draft.netUsd, 2)} USD\n\n'
-            'เมื่อกดเติมฟอร์ม ค่าที่มีอยู่จะถูกเขียนทับ และช่องที่อ่านไม่ได้จะถูกเว้นว่าง\n\n'
-            'เลือกวันที่และตรวจข้อมูลก่อนบันทึก',
-            style: TextStyle(color: textColor),
-          ),
+      title: 'ข้อมูลจาก Dime!',
+      content: SingleChildScrollView(
+        child: Text(
+          'หุ้น ${draft.ticker ?? 'ไม่ระบุ'}\n'
+          'จำนวน ${value(draft.shares, 7)} หุ้น\n'
+          'ราคาที่ได้จริง ${value(draft.priceUsd, 4)} USD\n'
+          'มูลค่าหุ้น ${value(draft.grossUsd, 2)} USD\n'
+          'ค่าคอมมิชชัน ${value(draft.brokerFeeUsd, 4)} USD\n'
+          'VAT ${value(draft.vatUsd, 4)} USD\n'
+          'SEC/TAF ${value(draft.exchangeFeeUsd, 4)} USD\n'
+          'ยอดสุทธิ ${value(draft.netUsd, 2)} USD\n\n'
+          'เมื่อกดเติมฟอร์ม ค่าที่มีอยู่จะถูกเขียนทับ และช่องที่อ่านไม่ได้จะถูกเว้นว่าง\n\n'
+          'เลือกวันที่และตรวจข้อมูลก่อนบันทึก',
+          style: TextStyle(color: textColor),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('เติมฟอร์ม'),
-          ),
-        ],
       ),
+      confirmLabel: 'เติมฟอร์ม',
     );
   }
 

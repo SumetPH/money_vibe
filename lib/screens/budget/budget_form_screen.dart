@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
@@ -12,6 +11,10 @@ import '../../main.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final Budget? budget;
@@ -204,64 +207,22 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     BuildContext context, {
     required Category category,
     required Budget sourceBudget,
-    required bool isDark,
-  }) async {
+  }) {
     final editedName = _nameController.text.trim();
     final targetBudgetName = editedName.isNotEmpty
         ? editedName
         : widget.budget?.name ?? 'งบปัจจุบัน';
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
 
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.xLarge),
-            ),
-            title: Text(
-              'ย้ายหมวดหมู่',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            content: Text(
-              'หมวดหมู่ "${category.name}" ใช้อยู่ในงบ '
-              '"${sourceBudget.name}"\n\n'
-              'หากยืนยัน หมวดหมู่นี้จะถูกย้ายมาอยู่ในงบ '
-              '"$targetBudgetName" เมื่อบันทึก',
-              style: TextStyle(color: textSecondary, fontSize: 14),
-            ),
-            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text('ยกเลิก', style: TextStyle(color: textSecondary)),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: isDark
-                      ? AppColors.darkIncome
-                      : AppColors.income,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('ย้ายมา'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return showAppConfirmDialog(
+      context: context,
+      title: 'ย้ายหมวดหมู่',
+      message:
+          'หมวดหมู่ "${category.name}" ใช้อยู่ในงบ '
+          '"${sourceBudget.name}"\n\n'
+          'หากยืนยัน หมวดหมู่นี้จะถูกย้ายมาอยู่ในงบ '
+          '"$targetBudgetName" เมื่อบันทึก',
+      confirmLabel: 'ย้ายมา',
+    );
   }
 
   Future<void> _save() async {
@@ -365,94 +326,47 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     }
   }
 
-  void _delete() {
-    final settingsProvider = context.read<SettingsProvider>();
-    final isDarkMode = settingsProvider.isDarkMode;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    showDialog(
+  Future<void> _delete() async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        ),
-        title: Text(
-          'ลบงบประมาณ',
-          style: TextStyle(
-            color: textColor,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
+      title: 'ลบงบประมาณ',
+      message:
           'คุณต้องการลบงบประมาณ "${widget.budget?.name}" ใช่หรือไม่? รายการธุรกรรมเดิมจะไม่ได้รับผลกระทบ',
-          style: TextStyle(color: textSecondary, fontSize: 14),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ยกเลิก', style: TextStyle(color: textSecondary)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.full),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            ),
-            onPressed: () async {
-              final provider = context.read<BudgetProvider>();
-              final navigator = Navigator.of(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-              setState(() => _isLoading = true);
-              try {
-                await provider.deleteBudget(widget.budget!.id);
-                if (mounted) {
-                  _closeKeyboard();
-                  navigator.pop(); // Close dialog
-                  navigator.pop(); // Close form
-                }
-              } catch (e) {
-                if (mounted) {
-                  _closeKeyboard();
-                  navigator.pop(); // Close dialog
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('ลบงบประมาณไม่สำเร็จ: $e'),
-                      backgroundColor: AppColors.expense,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.medium),
-                      ),
-                    ),
-                  );
-                }
-              } finally {
-                if (mounted) {
-                  setState(() => _isLoading = false);
-                }
-              }
-            },
-            child: const Text(
-              'ลบงบประมาณ',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
+      confirmLabel: 'ลบงบประมาณ',
+      isDestructive: true,
     );
+    if (!confirmed || !mounted) return;
+
+    final provider = context.read<BudgetProvider>();
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    setState(() => _isLoading = true);
+    try {
+      await provider.deleteBudget(widget.budget!.id);
+      if (mounted) {
+        _closeKeyboard();
+        navigator.pop(); // Close form
+      }
+    } catch (e) {
+      if (mounted) {
+        _closeKeyboard();
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('ลบงบประมาณไม่สำเร็จ: $e'),
+            backgroundColor: AppColors.expense,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.medium),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -471,11 +385,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
         final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
-        final incomeColor = isDark ? AppColors.darkIncome : AppColors.income;
-        final activeColor = AppColors.accentFor(
-          isDark,
-          context.read<SettingsProvider>().themeColor,
-        );
 
         final expenseCategories = catProvider.categoriesOfType(
           CategoryType.expense,
@@ -499,31 +408,13 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDark
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  color: textPrimaryColor,
-                  tooltip: 'ปิด',
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          _closeKeyboard();
-                          Navigator.pop(context);
-                        },
-                ),
-              ),
+            leading: AppCloseButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _closeKeyboard();
+                      Navigator.pop(context);
+                    },
             ),
             title: Text(
               _isEditing ? 'แก้ไขงบประมาณ' : 'เพิ่มงบประมาณใหม่',
@@ -533,59 +424,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: isDark
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check_rounded,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
           ),
           body: AbsorbPointer(
             absorbing: _isLoading,
@@ -606,9 +445,9 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 const SizedBox(height: 12),
 
                 // 2. Section: ข้อมูลทั่วไป
-                _buildSectionHeader('ข้อมูลทั่วไป', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('ข้อมูลทั่วไป'),
+                AppInsetCard(
+                  children: [
                     _buildInputFieldRow(
                       icon: Icons.edit_note_rounded,
                       label: 'ชื่อ',
@@ -618,7 +457,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                       onChanged: (_) => setState(() {}),
                     ),
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     _buildInputFieldRow(
                       icon: Icons.folder_outlined,
                       label: 'กลุ่ม',
@@ -629,14 +468,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 3. Section: จำนวนเงินและประเภท
-                _buildSectionHeader('จำนวนเงินและประเภท', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('จำนวนเงินและประเภท'),
+                AppInsetCard(
+                  children: [
                     // Amount Input Box
                     _buildAmountInputRow(
                       surfaceColor: surfaceColor,
@@ -644,7 +481,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                       isDark: isDark,
                     ),
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     // Type Selector
                     _buildTypeSelectorRow(
                       surfaceColor: surfaceColor,
@@ -654,7 +491,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     ),
                     // Categories picker (Only if expense type)
                     if (_selectedType == BudgetType.expense) ...[
-                      _buildIndentedDivider(dividerColor),
+                      const AppCardDivider(indent: 60, endIndent: 16),
                       _buildPickerRow(
                         icon: Icons.category_outlined,
                         label: 'หมวดหมู่',
@@ -670,35 +507,32 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ],
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     // Hide Budget Switch (CupertinoSwitch)
                     _buildSwitchRow(
                       icon: Icons.visibility_off_outlined,
                       title: 'ซ่อนงบประมาณนี้',
                       subtitle: 'ไม่แสดงในหน้ารวมงบประมาณหลัก',
                       value: _isHidden,
-                      activeTrackColor: activeColor,
                       isDark: isDark,
                       textColor: textPrimaryColor,
                       textSecondary: textSecondaryColor,
                       onChanged: (val) => setState(() => _isHidden = val),
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 4. Section: รูปลักษณ์
-                _buildSectionHeader('รูปลักษณ์', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('รูปลักษณ์'),
+                AppInsetCard(
+                  children: [
                     _buildIconPickerRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                       isDark: isDark,
                     ),
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     _buildColorPickerRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,
@@ -706,22 +540,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       isDark: isDark,
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 5. Section: การจัดการ (ถ้าอยู่ในโหมดแก้ไข)
                 if (_isEditing) ...[
-                  _buildSectionHeader('การจัดการ', textSecondaryColor),
-                  _buildInsetCard(
-                    [
+                  AppSectionHeader('การจัดการ'),
+                  AppInsetCard(
+                    children: [
                       _buildDeleteRow(
                         isDarkMode: isDark,
                         surfaceColor: surfaceColor,
                       ),
                     ],
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
                   ),
                 ],
               ],
@@ -733,57 +563,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }
 
   // ── Helper Widgets ─────────────────────────────────────────────────────────
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, top: 16, bottom: 6),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInsetCard(
-    List<Widget> children, {
-    required Color surfaceColor,
-    required Color dividerColor,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          border: Border.all(
-            color: dividerColor.withValues(alpha: 0.4),
-            width: 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIndentedDivider(Color color) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      indent: 60,
-      endIndent: 16,
-      color: color.withValues(alpha: 0.3),
-    );
-  }
 
   Widget _buildLivePreviewCard({
     required Color surfaceColor,
@@ -1071,7 +850,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           Container(
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+              color: AppColors.insetFillFor(isDark),
               borderRadius: BorderRadius.circular(AppRadii.large),
             ),
             child: Row(
@@ -1227,7 +1006,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     required String title,
     required String subtitle,
     required bool value,
-    required Color activeTrackColor,
     required bool isDark,
     required Color textColor,
     required Color textSecondary,
@@ -1267,14 +1045,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               ],
             ),
           ),
-          CupertinoSwitch(
-            value: value,
-            activeTrackColor: activeTrackColor,
-            inactiveTrackColor: isDark
-                ? const Color(0xFF39393D)
-                : const Color(0xFFE9E9EA),
-            onChanged: onChanged,
-          ),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );
@@ -1474,11 +1245,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               ? AppColors.darkIncome
               : AppColors.income;
 
-          return DraggableScrollableSheet(
-            initialChildSize: 1.0,
-            minChildSize: 0.3,
-            maxChildSize: 1.0,
-            expand: false,
+          return AppDraggableSheet(
             builder: (_, sc) => Column(
               children: [
                 const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่รายจ่าย'),
@@ -1588,7 +1355,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                               context,
                               category: cat,
                               sourceBudget: assignedBudget,
-                              isDark: isDark,
                             );
                             if (!confirmed || !mounted) return;
                           }

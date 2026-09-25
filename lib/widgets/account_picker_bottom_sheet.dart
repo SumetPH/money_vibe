@@ -82,11 +82,7 @@ class AccountPickerBottomSheet extends StatelessWidget {
             .where((group) => groupedAccounts.containsKey(group.label))
             .toList();
 
-    return DraggableScrollableSheet(
-      initialChildSize: 1.0,
-      minChildSize: 0.3,
-      maxChildSize: 1.0,
-      expand: false,
+    return AppDraggableSheet(
       builder: (_, scrollController) => Column(
         children: [
           AppModalBottomSheetHeader(title: title),

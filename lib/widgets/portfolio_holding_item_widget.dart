@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../main.dart';
 import 'app_modal_bottom_sheet.dart';
+import 'app_confirm_dialog.dart';
 
 /// วิดเจ็ตแสดงข้อมูลหุ้นถือครองแต่ละตัวในพอร์ต (Deep Module)
 /// ควบรวมตรรกะคำนวณกำไร/ขาดทุน Trailing Stop และเมนูย่อยเบ็ดเสร็จในตัวเอง
@@ -224,7 +225,10 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: Column(
               children: [
-                Divider(height: 1, color: dividerColor),
+                Divider(
+                  height: 1,
+                  color: AppColors.listDividerFor(widget.isDarkMode),
+                ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -543,41 +547,16 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
   }
 
   void _showDeleteConfirmation(BuildContext context) {
-    final dialogBgColor = widget.isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = widget.isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final expenseColor = widget.isDarkMode
-        ? AppColors.darkExpense
-        : AppColors.expense;
-
-    showDialog(
+    showAppConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: dialogBgColor,
-        title: Text('ยืนยันการลบหุ้น', style: TextStyle(color: textColor)),
-        content: Text(
-          'คุณต้องการลบ ${widget.holding.ticker} ใช่หรือไม่?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              widget.onDelete();
-            },
-            style: TextButton.styleFrom(foregroundColor: expenseColor),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
+      title: 'ยืนยันการลบหุ้น',
+      message: 'คุณต้องการลบ ${widget.holding.ticker} ใช่หรือไม่?',
+      confirmLabel: 'ลบ',
+      isDestructive: true,
+    ).then((confirmed) {
+      if (!confirmed || !context.mounted) return;
+      widget.onDelete();
+    });
   }
 
   _SellPlanStatusHelper? _buildSellPlanStatus() {

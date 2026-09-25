@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -10,8 +9,9 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
 
 typedef SaveStockTradeCallback = Future<void> Function(StockTrade trade);
 typedef FetchStockProfileCallback =
@@ -370,30 +370,8 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Center(
-          child: Material(
-            color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: Icon(
-                Icons.close_rounded,
-                size: 20,
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-              ),
-              onPressed: _isSaving ? null : () => Navigator.pop(context),
-            ),
-          ),
+        leading: AppCloseButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
         title: Text(
           _isEditing ? 'แก้ไข Trade' : 'เพิ่ม Trade',
@@ -405,19 +383,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                 : AppColors.textPrimary,
           ),
         ),
-        actions: [
-          AppBarActionButton(
-            icon: Icon(
-              Icons.check,
-              color: isDarkMode
-                  ? AppColors.darkTextPrimary
-                  : AppColors.textPrimary,
-            ),
-            onPressed: _submit,
-            tooltip: 'บันทึก',
-            isLoading: _isSaving,
-          ),
-        ],
+        actions: [AppSaveButton(onPressed: _submit, isLoading: _isSaving)],
       ),
       body: AbsorbPointer(
         absorbing: _isSaving,
@@ -430,11 +396,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  side: BorderSide(
-                    color:
-                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.4),
-                  ),
+                  side: BorderSide(color: AppColors.borderFor(isDarkMode)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
@@ -656,15 +618,8 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              CupertinoSwitch(
+                              AppSwitch(
                                 value: _useBrokerPnl,
-                                activeTrackColor: AppColors.accentFor(
-                                  isDarkMode,
-                                  context.read<SettingsProvider>().themeColor,
-                                ),
-                                inactiveTrackColor: isDarkMode
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
                                 onChanged: (value) =>
                                     setState(() => _useBrokerPnl = value),
                               ),
@@ -699,11 +654,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  side: BorderSide(
-                    color:
-                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.4),
-                  ),
+                  side: BorderSide(color: AppColors.borderFor(isDarkMode)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: ListTile(
@@ -732,12 +683,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   }
 
   Widget _buildDivider(bool isDarkMode) {
-    return Divider(
-      height: 1,
-      color: isDarkMode
-          ? AppColors.darkDivider.withValues(alpha: 0.4)
-          : AppColors.divider.withValues(alpha: 0.4),
-    );
+    return Divider(height: 1, color: AppColors.borderFor(isDarkMode));
   }
 
   String _formatDate(DateTime date) {

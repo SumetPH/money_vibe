@@ -42,11 +42,7 @@ class CategoryPickerBottomSheet extends StatelessWidget {
     );
     final colorScheme = Theme.of(context).colorScheme;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 1.0,
-      minChildSize: 0.3,
-      maxChildSize: 1.0,
-      expand: false,
+    return AppDraggableSheet(
       builder: (_, scrollController) => Column(
         children: [
           const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),

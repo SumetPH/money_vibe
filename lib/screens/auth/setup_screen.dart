@@ -37,11 +37,7 @@ class SetupScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: surfaceColor,
                   borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  border: Border.all(
-                    color:
-                        (isDarkMode ? AppColors.darkDivider : AppColors.divider)
-                            .withValues(alpha: 0.4),
-                  ),
+                  border: Border.all(color: AppColors.borderFor(isDarkMode)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

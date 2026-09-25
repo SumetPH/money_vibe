@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +23,9 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
 import 'llm_api_key_settings_screen.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -100,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListView(
               children: [
                 // Account Section
-                _buildSectionHeader('บัญชีผู้ใช้', secondaryTextColor),
+                AppSectionHeader('บัญชีผู้ใช้'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -218,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Appearance Section
-                _buildSectionHeader('ลักษณะ', secondaryTextColor),
+                AppSectionHeader('ลักษณะ'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -280,7 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
 
-                _buildSectionHeader('รอบคำนวณ', secondaryTextColor),
+                AppSectionHeader('รอบคำนวณ'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -312,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // API Section
-                _buildSectionHeader('API', secondaryTextColor),
+                AppSectionHeader('API'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -457,7 +459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Data Management Section
-                _buildSectionHeader('ข้อมูล', secondaryTextColor),
+                AppSectionHeader('ข้อมูล'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -528,7 +530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (reinstallReminder.isSupported &&
                     reinstallReminder.state != null) ...[
-                  _buildSectionHeader('การติดตั้ง', secondaryTextColor),
+                  AppSectionHeader('การติดตั้ง'),
                   _SettingsGroup(
                     isDarkMode: isDarkMode,
                     child: Column(
@@ -575,7 +577,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
 
                 // About Section
-                _buildSectionHeader('เกี่ยวกับ', secondaryTextColor),
+                AppSectionHeader('เกี่ยวกับ'),
                 _SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
@@ -764,53 +766,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-
-    showDialog(
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: surfaceColor,
-        title: Text('ออกจากระบบ', style: TextStyle(color: textColor)),
-        content: Text(
-          'คุณต้องการออกจากระบบหรือไม่?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-
-              // Logout - ล้างแค่ login state ไม่ล้าง Supabase config
-              await context.read<AuthProvider>().signOut();
-
-              // Clear all providers (ข้อมูลเก่าของ user ก่อนหน้า)
-              if (context.mounted) {
-                await _clearAllProviders(context);
-              }
-
-              // Navigate to login screen and clear navigation stack
-              if (context.mounted) {
-                context.go('/auth');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.expense,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('ออกจากระบบ'),
-          ),
-        ],
-      ),
+      title: 'ออกจากระบบ',
+      message: 'คุณต้องการออกจากระบบหรือไม่?',
+      confirmLabel: 'ออกจากระบบ',
+      isDestructive: true,
     );
+    if (!confirmed || !context.mounted) return;
+
+    // Logout - ล้างแค่ login state ไม่ล้าง Supabase config
+    await context.read<AuthProvider>().signOut();
+
+    // Clear all providers (ข้อมูลเก่าของ user ก่อนหน้า)
+    if (context.mounted) {
+      await _clearAllProviders(context);
+    }
+
+    // Navigate to login screen and clear navigation stack
+    if (context.mounted) {
+      context.go('/auth');
+    }
   }
 
   Future<void> _clearAllProviders(BuildContext context) async {
@@ -927,21 +904,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return '${packageInfo.version} ($buildNumber)';
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: textColor,
-        ),
-      ),
-    );
   }
 
   Widget _buildExportScopeTile({
@@ -1132,17 +1094,7 @@ class _SettingsToggleTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          CupertinoSwitch(
-            value: value,
-            activeTrackColor: AppColors.accentFor(
-              isDarkMode,
-              context.read<SettingsProvider>().themeColor,
-            ),
-            inactiveTrackColor: isDarkMode
-                ? AppColors.darkDivider
-                : AppColors.divider,
-            onChanged: onChanged,
-          ),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../models/stock_holding.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
+import '../../widgets/app_switch.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -434,6 +435,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
 
     return showDialog<bool>(
       context: context,
+      // design-check: allow input or multi-choice dialog
       builder: (dialogContext) => AlertDialog(
         backgroundColor: backgroundColor,
         title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
@@ -476,18 +478,12 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
     final bgColor = isDarkMode
         ? AppColors.darkBackground
         : AppColors.background;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-    final accentColor = AppColors.accentFor(
-      isDarkMode,
-      context.read<SettingsProvider>().themeColor,
-    );
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     return Scaffold(
@@ -498,26 +494,8 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leadingWidth: 64,
-        leading: Center(
-          child: Material(
-            color: surfaceColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              side: BorderSide(
-                color: isDarkMode
-                    ? AppColors.darkDivider.withValues(alpha: 0.4)
-                    : AppColors.divider.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: IconButton(
-              icon: Icon(Icons.close, size: 20, color: textColor),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              onPressed: _isSaving ? null : () => Navigator.pop(context),
-            ),
-          ),
+        leading: AppCloseButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
         title: Text(
           _isEditing ? 'แก้ไขหุ้น' : 'เพิ่มหุ้น',
@@ -528,40 +506,10 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FilledButton(
-              onPressed: _isSaving ? null : _save,
-              style: FilledButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                shape: const StadiumBorder(),
-                elevation: 0,
-                minimumSize: const Size(64, 36),
-              ),
-              child: _isSaving
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(
-                          isDarkMode ? Colors.black : Colors.white,
-                        ),
-                      ),
-                    )
-                  : const Text(
-                      'บันทึก',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
+          AppSaveButton(
+            onPressed: _save,
+            isLoading: _isSaving,
+            label: 'บันทึก',
           ),
         ],
       ),
@@ -573,10 +521,9 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
           child: ListView(
             padding: const EdgeInsets.only(top: 4, bottom: 40),
             children: [
-              _buildSectionHeader('ข้อมูลหุ้น', secondaryColor),
-              _buildInsetCard(
-                surfaceColor: surfaceColor,
-                dividerColor: dividerColor,
+              AppSectionHeader('ข้อมูลหุ้น'),
+              AppInsetCard(
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -624,7 +571,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       ],
                     ),
                   ),
-                  _buildCardDivider(isDarkMode),
+                  const AppCardDivider(indent: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -666,7 +613,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       ],
                     ),
                   ),
-                  _buildCardDivider(isDarkMode),
+                  const AppCardDivider(indent: 16),
                   _HoldingNumberFieldRow(
                     label: 'จำนวนหุ้น',
                     controller: _sharesController,
@@ -675,7 +622,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     isDarkMode: isDarkMode,
                     inputFormatters: [_sevenDecimalInputFormatter],
                   ),
-                  _buildCardDivider(isDarkMode),
+                  const AppCardDivider(indent: 16),
                   _HoldingNumberFieldRow(
                     label: 'ราคาทุน (${widget.currencyCode})',
                     controller: _costController,
@@ -684,7 +631,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     isDarkMode: isDarkMode,
                     inputFormatters: [_fourDecimalInputFormatter],
                   ),
-                  _buildCardDivider(isDarkMode),
+                  const AppCardDivider(indent: 16),
                   _HoldingNumberFieldRow(
                     label: 'ราคาปัจจุบัน (${widget.currencyCode})',
                     controller: _priceController,
@@ -694,17 +641,15 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                   ),
                 ],
               ),
-              _buildSectionHeader('แผนการขาย (SELL PLAN)', secondaryColor),
-              _buildInsetCard(
-                surfaceColor: surfaceColor,
-                dividerColor: dividerColor,
+              AppSectionHeader('แผนการขาย (SELL PLAN)'),
+              AppInsetCard(
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 children: [
                   _HoldingSwitchRow(
                     title: 'เปิดแผนขาย',
                     subtitle:
                         'ตั้ง Take Profit %, Trailing Stop % และ Stop Loss %',
                     value: _sellPlanEnabled,
-                    activeColor: accentColor,
                     isDarkMode: isDarkMode,
                     textColor: textColor,
                     secondaryColor: secondaryColor,
@@ -720,7 +665,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     },
                   ),
                   if (_sellPlanEnabled) ...[
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _HoldingNumberFieldRow(
                       label: 'Take Profit %',
                       controller: _takeProfitController,
@@ -729,7 +674,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _takeProfitError,
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _HoldingNumberFieldRow(
                       label: 'Trailing Stop %',
                       controller: _trailingStopController,
@@ -738,7 +683,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _trailingStopError,
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _HoldingNumberFieldRow(
                       label: 'Stop Loss %',
                       controller: _stopLossController,
@@ -747,12 +692,11 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _stopLossError,
                     ),
-                    _buildCardDivider(isDarkMode),
+                    const AppCardDivider(indent: 16),
                     _HoldingSwitchRow(
                       title: 'กำหนดกำไรสูงสุดเอง',
                       subtitle: _peakProfitStatusText(),
                       value: _manualPeakProfitEnabled,
-                      activeColor: accentColor,
                       isDarkMode: isDarkMode,
                       textColor: textColor,
                       secondaryColor: secondaryColor,
@@ -767,7 +711,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       },
                     ),
                     if (_manualPeakProfitEnabled) ...[
-                      _buildCardDivider(isDarkMode),
+                      const AppCardDivider(indent: 16),
                       _HoldingNumberFieldRow(
                         label: 'กำไรสูงสุด %',
                         controller: _peakProfitController,
@@ -794,55 +738,6 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildInsetCard({
-    required Color surfaceColor,
-    required Color dividerColor,
-    required List<Widget> children,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardDivider(bool isDarkMode) {
-    return Divider(
-      height: 1,
-      indent: 16,
-      endIndent: 0,
-      color: isDarkMode
-          ? AppColors.darkDivider.withValues(alpha: 0.3)
-          : AppColors.divider.withValues(alpha: 0.4),
     );
   }
 
@@ -961,7 +856,6 @@ class _HoldingSwitchRow extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
-  final Color activeColor;
   final bool isDarkMode;
   final Color textColor;
   final Color secondaryColor;
@@ -971,7 +865,6 @@ class _HoldingSwitchRow extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
-    required this.activeColor,
     required this.isDarkMode,
     required this.textColor,
     required this.secondaryColor,
@@ -1007,14 +900,7 @@ class _HoldingSwitchRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: activeColor,
-            inactiveTrackColor: isDarkMode
-                ? const Color(0xFF39393D)
-                : const Color(0xFFE9E9EA),
-          ),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

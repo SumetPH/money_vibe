@@ -7,6 +7,9 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_confirm_dialog.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -140,78 +143,19 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     }
   }
 
-  void _delete() {
-    final settingsProvider = context.read<SettingsProvider>();
-    final isDarkMode = settingsProvider.isDarkMode;
-    final dialogBgColor = isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    showDialog(
+  Future<void> _delete() async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: dialogBgColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        ),
-        title: Text(
-          'ลบหมวดหมู่',
-          style: TextStyle(
-            color: textColor,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
+      title: 'ลบหมวดหมู่',
+      message:
           'คุณต้องการลบหมวดหมู่ "${widget.category?.name}" ใช่หรือไม่? รายการธุรกรรมเดิมที่ผูกกับหมวดหมู่นี้จะยังคงอยู่ในระบบ',
-          style: TextStyle(color: textSecondary, fontSize: 14),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'ยกเลิก',
-              style: TextStyle(
-                color: textSecondary,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<CategoryProvider>().deleteCategory(
-                widget.category!.id,
-              );
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close form
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.full),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              elevation: 0,
-            ),
-            child: const Text(
-              'ลบหมวดหมู่',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
+      confirmLabel: 'ลบ',
+      isDestructive: true,
     );
+    if (!confirmed || !mounted) return;
+
+    context.read<CategoryProvider>().deleteCategory(widget.category!.id);
+    Navigator.pop(context); // Close form
   }
 
   void _onTypeChanged(CategoryType newType) {
@@ -259,26 +203,8 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leadingWidth: 64,
-            leading: Center(
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: isDarkMode
-                        ? AppColors.darkDivider.withValues(alpha: 0.4)
-                        : AppColors.divider.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  color: textPrimaryColor,
-                  tooltip: 'ปิด',
-                  onPressed: _isLoading ? null : () => Navigator.pop(context),
-                ),
-              ),
+            leading: AppCloseButton(
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
             ),
             title: Text(
               _isEditing ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่',
@@ -288,59 +214,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Material(
-                    color: isDarkMode
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _save,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check_rounded,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'บันทึก',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
           ),
           body: AbsorbPointer(
             absorbing: _isLoading,
@@ -373,16 +247,16 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 const SizedBox(height: 8),
 
                 // 3. Section: ข้อมูลหมวดหมู่ (Category Info)
-                _buildSectionHeader('ข้อมูลหมวดหมู่', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('ข้อมูลหมวดหมู่'),
+                AppInsetCard(
+                  children: [
                     _buildNameFieldRow(
                       controller: _nameController,
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     _buildPickerRow(
                       icon: Icons.account_tree_outlined,
                       label: 'หมวดหมู่หลัก',
@@ -393,34 +267,30 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 4. Section: รูปลักษณ์ (Appearance)
-                _buildSectionHeader('รูปลักษณ์', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('รูปลักษณ์'),
+                AppInsetCard(
+                  children: [
                     _buildIconRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
-                    _buildIndentedDivider(dividerColor),
+                    const AppCardDivider(indent: 60, endIndent: 16),
                     _buildColorRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 5. Section: บันทึกช่วยจำ (Note)
-                _buildSectionHeader('บันทึกช่วยจำ', textSecondaryColor),
-                _buildInsetCard(
-                  [
+                AppSectionHeader('บันทึกช่วยจำ'),
+                AppInsetCard(
+                  children: [
                     _buildNoteField(
                       controller: _noteController,
                       surfaceColor: surfaceColor,
@@ -428,22 +298,18 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                     ),
                   ],
-                  surfaceColor: surfaceColor,
-                  dividerColor: dividerColor,
                 ),
 
                 // 6. Section: การจัดการ (Delete row if editing)
                 if (_isEditing) ...[
-                  _buildSectionHeader('การจัดการ', textSecondaryColor),
-                  _buildInsetCard(
-                    [
+                  AppSectionHeader('การจัดการ'),
+                  AppInsetCard(
+                    children: [
                       _buildDeleteRow(
                         isDarkMode: isDarkMode,
                         surfaceColor: surfaceColor,
                       ),
                     ],
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
                   ),
                 ],
               ],
@@ -650,54 +516,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, top: 16, bottom: 6),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInsetCard(
-    List<Widget> children, {
-    required Color surfaceColor,
-    required Color dividerColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildIndentedDivider(Color color) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      indent: 60,
-      endIndent: 16,
-      color: color.withValues(alpha: 0.3),
     );
   }
 
@@ -1084,11 +902,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ? AppColors.darkIncome
               : AppColors.income;
 
-          return DraggableScrollableSheet(
-            initialChildSize: 1.0,
-            minChildSize: 0.3,
-            maxChildSize: 1.0,
-            expand: false,
+          return AppDraggableSheet(
             builder: (_, scrollController) => Column(
               children: [
                 const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่หลัก'),
