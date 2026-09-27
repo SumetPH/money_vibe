@@ -9,7 +9,6 @@ import '../../services/cash_flow_forecast_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_switch.dart';
 import 'cash_flow_forecast_scope.dart';
 import 'cash_flow_section.dart';
 import 'planned_purchase_form_screen.dart';
@@ -107,7 +106,7 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'เปิด/ปิดแต่ละรายการเพื่อดูว่าถ้าซื้อแล้วเงินงวดถัดไปจะเหลือเท่าไหร่',
+    'ติ๊กรายการที่จะซื้อเพื่อดูว่าเงินงวดถัดไปจะเหลือเท่าไหร่',
     isDarkMode,
   ),
 
@@ -180,9 +179,23 @@ class _PurchaseRow extends StatelessWidget {
     return InkWell(
       onTap: () => _openPurchaseForm(context, purchase),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+        padding: const EdgeInsets.fromLTRB(4, 6, 16, 6),
         child: Row(
           children: [
+            // ติ๊กแบบเดียวกับแถวเงินเข้าออก: ติ๊ก = นับในการคาดการณ์
+            IconButton(
+              tooltip: isIncluded ? 'ไม่นับรายการนี้' : 'นับรายการนี้',
+              onPressed: () => _toggle(context, !isIncluded),
+              icon: Icon(
+                isIncluded
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: isIncluded
+                    ? AppColors.incomeFor(isDarkMode)
+                    : textSecondary.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(width: 4),
             Expanded(
               child: Text(
                 purchase.name,
@@ -205,11 +218,6 @@ class _PurchaseRow extends StatelessWidget {
                     : textSecondary.withValues(alpha: 0.6),
                 decoration: isIncluded ? null : TextDecoration.lineThrough,
               ),
-            ),
-            const SizedBox(width: 8),
-            AppSwitch(
-              value: isIncluded,
-              onChanged: (value) => _toggle(context, value),
             ),
           ],
         ),
