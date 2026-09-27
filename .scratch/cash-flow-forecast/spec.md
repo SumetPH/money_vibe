@@ -145,3 +145,15 @@ User feedback: with a monthly cycle starting on the 1st and money arriving on th
 - The next window is the following pay period.
 - The next period counts every card amount the current window did not: closed statements due later and all unbilled spending as of today, even when due after the next window. Each card row shows the due date of each part.
 - Budgets and savings plans can be excluded from the next period individually (`budgets.is_excluded_from_cash_forecast`), like liquid accounts.
+
+## Revision 2026-09-28 (b): the current tab shows the upcoming pay period
+
+The pure "period containing today" rule made the current tab show a nearly finished period before payday, while the user wants to see whether the upcoming start day's money covers everything.
+
+- The current window is still exactly one pay period, but it is the one starting at the first anchor day on or after the current monthly cycle start. It rolls to the next pay period when a new monthly cycle starts; with statements closing on the 21st and money on the 30th, the cycle start day should be 22.
+- Before the period starts, items from today up to the start count and are shown in a separate "ก่อนเริ่มงวด" group; older unticked items are ignored.
+- The UI label for the anchor day is "วันเริ่มงวด".
+
+## Revision 2026-09-28 (c): forecast periods are the monthly cycle
+
+To keep a single setting, the forecast anchor day ("วันเริ่มงวด") is removed. Each forecast window is the monthly financial cycle containing today (the setting shared with budgets and statistics); the next window is the following cycle. With statements closing on the 21st, a cycle start of 22 lines budgets, card statements and forecast periods up. The forecast screen offers the cycle start day row for convenience; it edits the same setting. Items dated earlier in the cycle and not ticked still count and are flagged.

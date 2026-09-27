@@ -192,30 +192,26 @@ class CashFlowForecast {
 class CashFlowForecastService {
   static const _liquidTypes = {AccountType.cash, AccountType.bankAccount};
 
-  /// คืน null เมื่อยังไม่ได้ตั้งวันเริ่มงวด ([anchorDay])
-  static CashFlowForecast? calculate({
+  /// งวด = รอบเดือน (monthly financial cycle) ที่มี [today] อยู่
+  static CashFlowForecast calculate({
     required DateTime today,
-    required int? anchorDay,
+    required int monthlyCycleStartDay,
     required List<Account> accounts,
     required double Function(Account account) balanceInThb,
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
     required List<FixedCashFlowPaidMark> paidMarks,
   }) {
-    if (anchorDay == null) return null;
-
     final day = _dayOf(today);
-    // งวด = วันเริ่มงวดล่าสุด (ไม่เกินวันนี้) ถึงวันก่อนวันเริ่มงวดครั้งถัดไป
-    final windowStart = _lastAnchorOnOrBefore(anchorDay, day);
-    final windowEnd = _periodEnd(windowStart, anchorDay);
+    final window = _cycleWindow(day, monthlyCycleStartDay);
     final cardBills = _cardBills(accounts, transactions, day);
 
     return CashFlowForecast(
-      windowStart: windowStart,
-      windowEnd: windowEnd,
+      windowStart: window.start,
+      windowEnd: window.end,
       liquidLines: _liquidLines(accounts, balanceInThb),
-      itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
-      cardLines: _cardLines(accounts, cardBills, windowEnd, day),
+      itemLines: _itemLines(items, paidMarks, window.start, window.end, day),
+      cardLines: _cardLines(accounts, cardBills, window.end, day),
       cardBills: cardBills,
     );
   }
@@ -227,7 +223,6 @@ class CashFlowForecastService {
     required CashFlowForecast current,
     required DateTime today,
     required int monthlyCycleStartDay,
-    required int anchorDay,
     required List<Account> accounts,
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
@@ -237,8 +232,12 @@ class CashFlowForecastService {
   }) {
     final day = _dayOf(today);
     final end = current.windowEnd;
-    final windowStart = DateTime(end.year, end.month, end.day + 1);
-    final windowEnd = _periodEnd(windowStart, anchorDay);
+    final window = _cycleWindow(
+      DateTime(end.year, end.month, end.day + 1),
+      monthlyCycleStartDay,
+    );
+    final windowStart = window.start;
+    final windowEnd = window.end;
 
     return NextPeriodForecast(
       windowStart: windowStart,
@@ -458,20 +457,20 @@ class CashFlowForecastService {
     ];
   }
 
-  static DateTime _lastAnchorOnOrBefore(int anchorDay, DateTime day) {
-    final sameMonth = clampedDayOfMonth(day.year, day.month, anchorDay);
-    if (!sameMonth.isAfter(day)) return sameMonth;
-    return clampedDayOfMonth(day.year, day.month - 1, anchorDay);
-  }
-
-  /// วันก่อนวันเริ่มงวดครั้งถัดจาก [periodStart]
-  static DateTime _periodEnd(DateTime periodStart, int anchorDay) {
-    final nextAnchor = clampedDayOfMonth(
-      periodStart.year,
-      periodStart.month + 1,
-      anchorDay,
+  /// รอบเดือนที่มี [day] อยู่ (วันสุดท้าย inclusive)
+  static ({DateTime start, DateTime end}) _cycleWindow(
+    DateTime day,
+    int monthlyCycleStartDay,
+  ) {
+    final cycle = monthlyCyclePeriod(
+      monthlyCycleReportingMonth(day, monthlyCycleStartDay),
+      monthlyCycleStartDay,
     );
-    return DateTime(nextAnchor.year, nextAnchor.month, nextAnchor.day - 1);
+    final end = cycle.endExclusive;
+    return (
+      start: cycle.start,
+      end: DateTime(end.year, end.month, end.day - 1),
+    );
   }
 
   static double _positive(double value) {

@@ -51,7 +51,7 @@ class NextPeriodHero extends StatelessWidget {
         const SizedBox(height: 12),
         CashFlowTimeline(
           steps: [
-            CashFlowTimelineStep('เริ่มงวด', forecast.windowStart),
+            CashFlowTimelineStep('เริ่มรอบ', forecast.windowStart),
             CashFlowTimelineStep('วันสุดท้าย', forecast.windowEnd),
           ],
           isDarkMode: isDarkMode,
@@ -79,7 +79,8 @@ List<Widget> nextPeriodDetailSections(
   bool isDarkMode,
 ) => [
   ...cashFlowSection(
-    title: 'บัตรเครดิต · -${formatAmount(forecast.cardTotal)} บาท',
+    title:
+        'บัตรเครดิต · ${formatAmount(-forecast.cardTotal, showSign: true)} บาท',
     emptyText: 'ไม่มียอดบัตรที่ต้องชำระเพิ่ม',
     rows: [
       for (final line in forecast.cardLines)
@@ -94,7 +95,8 @@ List<Widget> nextPeriodDetailSections(
   ),
 
   ...cashFlowSection(
-    title: 'อยากซื้อ · -${formatAmount(forecast.purchaseTotal)} บาท',
+    title:
+        'อยากซื้อ · ${formatAmount(-forecast.purchaseTotal, showSign: true)} บาท',
     emptyText: '',
     rows: [
       for (final purchase in forecast.purchases)
@@ -109,7 +111,8 @@ List<Widget> nextPeriodDetailSections(
   ),
 
   ...cashFlowSection(
-    title: 'งบที่เหลือรอบนี้ · -${formatAmount(forecast.budgetTotal)} บาท',
+    title:
+        'งบที่เหลือรอบนี้ · ${formatAmount(-forecast.budgetTotal, showSign: true)} บาท',
     emptyText: 'ยังไม่มีงบรายจ่าย',
     rows: [
       for (final line in forecast.budgetLines.where((l) => l.isIncluded))
@@ -131,7 +134,8 @@ List<Widget> nextPeriodDetailSections(
   ),
 
   ...cashFlowSection(
-    title: 'แผนออม · -${formatAmount(forecast.savingsTotal)} บาท',
+    title:
+        'แผนออม · ${formatAmount(-forecast.savingsTotal, showSign: true)} บาท',
     emptyText: 'ยังไม่มีแผนออมในงบประมาณ',
     rows: [
       for (final plan in forecast.savingsPlans.where(

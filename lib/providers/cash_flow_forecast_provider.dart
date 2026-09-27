@@ -70,15 +70,15 @@ class CashFlowForecastProvider extends ChangeNotifier {
 
   // ── Forecast ──────────────────────────────────────────────────────────────
 
-  CashFlowForecast? buildForecast({
+  CashFlowForecast buildForecast({
     required List<Account> accounts,
     required List<AppTransaction> transactions,
     required double Function(Account account) balanceInThb,
-    required int? anchorDay,
+    required int monthlyCycleStartDay,
     DateTime? today,
   }) => CashFlowForecastService.calculate(
     today: today ?? DateTime.now(),
-    anchorDay: anchorDay,
+    monthlyCycleStartDay: monthlyCycleStartDay,
     accounts: accounts,
     balanceInThb: balanceInThb,
     transactions: transactions,
@@ -92,13 +92,11 @@ class CashFlowForecastProvider extends ChangeNotifier {
     required List<AppTransaction> transactions,
     required List<Budget> budgets,
     required int monthlyCycleStartDay,
-    required int anchorDay,
     DateTime? today,
   }) => CashFlowForecastService.calculateNextPeriod(
     current: current,
     today: today ?? DateTime.now(),
     monthlyCycleStartDay: monthlyCycleStartDay,
-    anchorDay: anchorDay,
     accounts: accounts,
     transactions: transactions,
     items: _items,
