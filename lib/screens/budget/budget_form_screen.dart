@@ -15,6 +15,7 @@ import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final Budget? budget;
@@ -1059,7 +1060,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: () => _pickIcon(isDark),
+      onTap: _pickIcon,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -1126,7 +1127,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: () => _pickColor(isDark),
+      onTap: _pickColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -1409,114 +1410,24 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     );
   }
 
-  void _pickIcon(bool isDark) {
-    showAppModalBottomSheet(
+  Future<void> _pickIcon() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) {
-        final textSecondary = isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกไอคอนงบประมาณ'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountIcons.length,
-                  itemBuilder: (_, i) {
-                    final icon = AppColors.accountIcons[i];
-                    final selected = icon == _selectedIcon;
-                    return InkWell(
-                      onTap: () {
-                        setState(() => _selectedIcon = icon);
-                        Navigator.pop(context);
-                      },
-                      child: Icon(
-                        icon,
-                        color: selected ? _selectedColor : textSecondary,
-                        size: 24,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      title: 'เลือกไอคอนงบประมาณ',
+      selectedIcon: _selectedIcon,
+      accentColor: _selectedColor,
     );
+    if (icon == null || !mounted) return;
+    setState(() => _selectedIcon = icon);
   }
 
-  void _pickColor(bool isDark) {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกสีประจำงบประมาณ'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountColors.length,
-                  itemBuilder: (_, i) {
-                    final color = AppColors.accountColors[i];
-                    final selected =
-                        color.toARGB32() == _selectedColor.toARGB32();
-                    return Material(
-                      color: color,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        side: selected
-                            ? const BorderSide(color: Colors.white, width: 2.5)
-                            : BorderSide.none,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: selected
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.large,
-                                  ),
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                ),
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      title: 'เลือกสีประจำงบประมาณ',
+      selectedColor: _selectedColor,
     );
+    if (color == null || !mounted) return;
+    setState(() => _selectedColor = color);
   }
 }

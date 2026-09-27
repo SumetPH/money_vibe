@@ -22,6 +22,7 @@ import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -702,7 +703,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         ),
                         Divider(height: 1, color: dividerColor),
                         InkWell(
-                          onTap: () => _pickIcon(isDark),
+                          onTap: _pickIcon,
                           child: Container(
                             color: surfaceColor,
                             padding: const EdgeInsets.symmetric(
@@ -742,7 +743,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         ),
                         Divider(height: 1, color: dividerColor),
                         InkWell(
-                          onTap: () => _pickColor(isDark),
+                          onTap: _pickColor,
                           child: Container(
                             color: surfaceColor,
                             padding: const EdgeInsets.symmetric(
@@ -1426,113 +1427,25 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     setState(() => _notificationTime = picked);
   }
 
-  void _pickIcon(bool isDark) {
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.background;
-    final textSecondary = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    showAppModalBottomSheet(
+  Future<void> _pickIcon() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
-            Expanded(
-              child: GridView.builder(
-                controller: sc,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountIcons.length,
-                itemBuilder: (_, i) {
-                  final icon = AppColors.accountIcons[i];
-                  final selected = icon == _icon;
-                  return Material(
-                    color: selected ? _color.withValues(alpha: 0.15) : bgColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: selected
-                          ? BorderSide(color: _color, width: 2)
-                          : BorderSide.none,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _icon = icon);
-                        Navigator.pop(context);
-                      },
-                      child: Icon(
-                        icon,
-                        color: selected ? _color : textSecondary,
-                        size: 24,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'เลือกไอคอน',
+      selectedIcon: _icon,
+      accentColor: _color,
     );
+    if (icon == null || !mounted) return;
+    setState(() => _icon = icon);
   }
 
-  void _pickColor(bool isDark) {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกสี'),
-            Expanded(
-              child: GridView.builder(
-                controller: sc,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountColors.length,
-                itemBuilder: (_, i) {
-                  final color = AppColors.accountColors[i];
-                  final selected = color.toARGB32() == _color.toARGB32();
-                  return Material(
-                    color: color,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: selected
-                          ? const BorderSide(color: Colors.black45, width: 2)
-                          : BorderSide.none,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _color = color);
-                        Navigator.pop(context);
-                      },
-                      child: selected
-                          ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 20,
-                            )
-                          : null,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'เลือกสี',
+      selectedColor: _color,
     );
+    if (color == null || !mounted) return;
+    setState(() => _color = color);
   }
 }
 

@@ -10,6 +10,7 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -1022,137 +1023,24 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     );
   }
 
-  void _pickIcon() {
-    showAppModalBottomSheet(
+  Future<void> _pickIcon() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode
-              ? AppColors.darkBackground
-              : AppColors.background;
-          final textSecondaryColor = isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary;
-
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.65,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppModalBottomSheetHeader(title: 'เลือกไอคอนหมวดหมู่'),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: AppColors.accountIcons.length,
-                      itemBuilder: (_, i) {
-                        final icon = AppColors.accountIcons[i];
-                        final selected = icon == _selectedIcon;
-
-                        return Material(
-                          color: selected
-                              ? _selectedColor.withValues(alpha: 0.15)
-                              : bgColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadii.large),
-                            side: selected
-                                ? BorderSide(color: _selectedColor, width: 2)
-                                : BorderSide.none,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _selectedIcon = icon);
-                              Navigator.pop(context);
-                            },
-                            child: Icon(
-                              icon,
-                              color: selected
-                                  ? _selectedColor
-                                  : textSecondaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      title: 'เลือกไอคอนหมวดหมู่',
+      selectedIcon: _selectedIcon,
+      accentColor: _selectedColor,
     );
+    if (icon == null || !mounted) return;
+    setState(() => _selectedIcon = icon);
   }
 
-  void _pickColor() {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกสีประจำหมวด'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountColors.length,
-                  itemBuilder: (_, i) {
-                    final color = AppColors.accountColors[i];
-                    final selected =
-                        color.toARGB32() == _selectedColor.toARGB32();
-
-                    return Material(
-                      color: color,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        side: selected
-                            ? const BorderSide(color: Colors.white, width: 2.5)
-                            : BorderSide.none,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: selected
-                            ? const Icon(
-                                Icons.check_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'เลือกสีประจำหมวด',
+      selectedColor: _selectedColor,
     );
+    if (color == null || !mounted) return;
+    setState(() => _selectedColor = color);
   }
 }
