@@ -14,6 +14,7 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/recurring_transaction_provider.dart';
+import 'providers/cash_flow_forecast_provider.dart';
 import 'providers/sync_provider.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/setup_screen.dart';
@@ -64,6 +65,7 @@ void main() async {
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
   final recurringProvider = RecurringTransactionProvider();
+  final cashFlowProvider = CashFlowForecastProvider();
   final authProvider = AuthProvider();
   final llmProvider = LlmProvider();
   final syncProvider = SyncProvider(
@@ -76,6 +78,7 @@ void main() async {
       SyncModule.transactions: transactionProvider.reload,
       SyncModule.budgets: budgetProvider.reload,
       SyncModule.recurring: recurringProvider.reload,
+      SyncModule.cashFlow: cashFlowProvider.reload,
     },
   );
 
@@ -100,6 +103,7 @@ void main() async {
           _initProvider('Category', categoryProvider.init),
           _initProvider('Transaction', transactionProvider.init),
           _initProvider('Recurring', recurringProvider.init),
+          _initProvider('Cash-flow forecast', cashFlowProvider.init),
         ]),
       );
     }
@@ -125,6 +129,7 @@ void main() async {
       transactionProvider: transactionProvider,
       settingsProvider: settingsProvider,
       recurringProvider: recurringProvider,
+      cashFlowProvider: cashFlowProvider,
       reinstallReminderService: reinstallReminderService,
       llmProvider: llmProvider,
       syncProvider: syncProvider,
@@ -155,6 +160,7 @@ class MyApp extends StatefulWidget {
   final TransactionProvider transactionProvider;
   final SettingsProvider settingsProvider;
   final RecurringTransactionProvider recurringProvider;
+  final CashFlowForecastProvider cashFlowProvider;
   final ReinstallReminderService reinstallReminderService;
   final LlmProvider llmProvider;
   final SyncProvider syncProvider;
@@ -168,6 +174,7 @@ class MyApp extends StatefulWidget {
     required this.transactionProvider,
     required this.settingsProvider,
     required this.recurringProvider,
+    required this.cashFlowProvider,
     required this.reinstallReminderService,
     required this.llmProvider,
     required this.syncProvider,
@@ -347,6 +354,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider.value(value: widget.transactionProvider),
         ChangeNotifierProvider.value(value: widget.settingsProvider),
         ChangeNotifierProvider.value(value: widget.recurringProvider),
+        ChangeNotifierProvider.value(value: widget.cashFlowProvider),
         ChangeNotifierProvider.value(value: widget.reinstallReminderService),
         ChangeNotifierProvider.value(value: _databaseManager),
         ChangeNotifierProvider.value(value: widget.llmProvider),

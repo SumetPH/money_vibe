@@ -25,3 +25,4 @@
 \ir migrations/20260714100000_create_stock_purchases.sql
 \ir migrations/20260823120000_add_is_hidden_to_budgets.sql
 \ir migrations/20260923000000_harden_background_sync.sql
+\ir migrations/20260927120000_create_cash_flow_forecast.sql

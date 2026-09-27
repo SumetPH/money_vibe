@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -98,6 +99,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             context.read<TransactionProvider>().reload(),
             context.read<BudgetProvider>().reload(),
             context.read<RecurringTransactionProvider>().reload(),
+            context.read<CashFlowForecastProvider>().reload(),
           ]),
         );
       }
@@ -129,6 +131,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     final categoryProvider = context.read<CategoryProvider>();
     final transactionProvider = context.read<TransactionProvider>();
     final recurringProvider = context.read<RecurringTransactionProvider>();
+    final cashFlowProvider = context.read<CashFlowForecastProvider>();
 
     final confirmed = await showAppConfirmDialog(
       context: context,
@@ -194,6 +197,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           categoryProvider.reload(),
           transactionProvider.reload(),
           recurringProvider.reload(),
+          cashFlowProvider.reload(),
         ]),
       );
 

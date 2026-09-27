@@ -5,7 +5,8 @@ import '../models/transaction.dart';
 class CreditCardBill {
   final DateTime statementDate; // วันสรุปยอด
   final DateTime startDate; // วันเริ่มต้นรอบ
-  final DateTime dueDate; // วันครบกำหนดชำระ (สรุปยอด + 15 วัน)
+  final DateTime
+  dueDate; // วันครบกำหนดชำระ (ตาม paymentDueDay หรือสรุปยอด + 15 วัน)
   final DateTime paymentStartDate; // วันเริ่มต้นนับการชำระของรอบนี้
 
   // ยอดต่างๆ
@@ -147,7 +148,7 @@ class CreditCardBillService {
 
     for (int i = 0; i < statementDates.length; i++) {
       final statementDate = statementDates[i];
-      final dueDate = statementDate.add(const Duration(days: 15));
+      final dueDate = paymentDueDate(statementDate, account.paymentDueDay);
 
       // รอบแรก: เริ่มจากวันสร้างบัญชี
       // รอบถัดไป: เริ่มจากวันถัดจากวันสรุปยอดก่อนหน้า
@@ -161,13 +162,13 @@ class CreditCardBillService {
       final dueDateDay = _dayOf(dueDate);
 
       // ช่วงการชำระของรอบนี้:
-      //   เริ่ม: วันถัดจาก due date รอบก่อน (prevStatement + 16) หรือ startDate สำหรับรอบแรก
-      //   สิ้นสุด: due date รอบนี้ (statementDate + 15) inclusive
+      //   เริ่ม: วันถัดจาก due date รอบก่อน หรือ startDate สำหรับรอบแรก
+      //   สิ้นสุด: due date รอบนี้ (inclusive)
       // → การชำระหลัง due date รอบก่อน ถือว่าเป็นการชำระสำหรับรอบปัจจุบัน
       final paymentStartDay = i == 0
           ? _dayOf(account.startDate)
-          : _dayOf(statementDates[i - 1]).add(const Duration(days: 16));
-      final paymentEndDay = dueDateDay; // statementDate + 15 (inclusive)
+          : _dayAfterDueDate(statementDates[i - 1], account.paymentDueDay);
+      final paymentEndDay = dueDateDay;
 
       // รายการใช้จ่ายในรอบ [startDate, statementDate] (inclusive ทั้งสองฝั่ง, เทียบระดับวัน)
       // รวม debtRepay/debtTransfer จากบัตร ให้นับเป็นยอดใช้ของบัตรด้วย
@@ -277,7 +278,7 @@ class CreditCardBillService {
           : account.startDate;
       final openStartDay = _dayOf(openStartDate);
       final openPaymentStartDay = statementDates.isNotEmpty
-          ? _dayOf(statementDates.last).add(const Duration(days: 16))
+          ? _dayAfterDueDate(statementDates.last, account.paymentDueDay)
           : _dayOf(account.startDate);
       final openEndDay = effectiveNow;
 
@@ -321,7 +322,7 @@ class CreditCardBillService {
         CreditCardBill(
           statementDate: nextStatementDate,
           startDate: openStartDate,
-          dueDate: nextStatementDate.add(const Duration(days: 15)),
+          dueDate: paymentDueDate(nextStatementDate, account.paymentDueDay),
           paymentStartDate: openPaymentStartDay,
           expensesAmount: openExpensesAmount,
           carriedOverAmount: carryOverAmount,
@@ -391,6 +392,35 @@ class CreditCardBillService {
   }
 
   static DateTime _dayOf(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+  static const _defaultPaymentDueDays = 15;
+
+  /// วันครบกำหนดชำระของรอบที่สรุปยอดวัน [statementDate]
+  /// [paymentDueDay] = วันที่แรกที่ตรงกับวันนี้หลังวันสรุปยอด (ตัดเป็นวันสิ้นเดือนถ้าเดือนนั้นไม่มี)
+  /// null = วันสรุปยอด + 15 วัน
+  static DateTime paymentDueDate(DateTime statementDate, int? paymentDueDay) {
+    final statementDay = _dayOf(statementDate);
+    if (paymentDueDay == null) {
+      return statementDay.add(const Duration(days: _defaultPaymentDueDays));
+    }
+    final sameMonth = _getStatementDateForMonth(
+      paymentDueDay,
+      statementDay.year,
+      statementDay.month,
+    );
+    if (sameMonth.isAfter(statementDay)) return sameMonth;
+    return _getStatementDateForMonth(
+      paymentDueDay,
+      statementDay.year,
+      statementDay.month + 1,
+    );
+  }
+
+  static DateTime _dayAfterDueDate(
+    DateTime statementDate,
+    int? paymentDueDay,
+  ) =>
+      paymentDueDate(statementDate, paymentDueDay).add(const Duration(days: 1));
 
   /// ปัดเศษทศนิยมเหลือ 2 ตำแหน่ง เพื่อป้องกัน floating-point precision error
   static double _round(double v) => (v * 100).roundToDouble() / 100;

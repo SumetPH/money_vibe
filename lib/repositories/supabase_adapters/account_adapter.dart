@@ -37,6 +37,8 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
       'exchange_rate': account.exchangeRate,
       'auto_update_rate': account.autoUpdateRate ? 1 : 0,
       'statement_day': account.statementDay,
+      'payment_due_day': account.paymentDueDay,
+      'is_excluded_from_cash_forecast': account.isExcludedFromCashForecast,
     };
   }
 

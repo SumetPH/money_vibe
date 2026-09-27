@@ -11,8 +11,10 @@ import '../models/stock_trade.dart';
 import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
+import '../models/fixed_cash_flow_item.dart';
 import 'supabase_adapters/account_adapter.dart';
 import 'supabase_adapters/budget_adapter.dart';
+import 'supabase_adapters/cash_flow_adapter.dart';
 import 'supabase_adapters/category_adapter.dart';
 import 'supabase_adapters/investment_plan_adapter.dart';
 import 'supabase_adapters/portfolio_adapter.dart';
@@ -52,6 +54,7 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   late final _portfolioAnnualReportAdapter =
       SupabasePortfolioAnnualReportAdapter(this);
   late final _investmentPlanAdapter = SupabaseInvestmentPlanAdapter(this);
+  late final _cashFlowAdapter = SupabaseCashFlowAdapter(this);
 
   SupabaseRepository({
     required this.supabaseUrl,
@@ -362,6 +365,40 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> upsertPortfolioAllocationTarget(
     PortfolioAllocationTarget target,
   ) => _investmentPlanAdapter.upsertPortfolioAllocationTarget(target);
+
+  // ── Cash-flow forecast (Delegated to Adapter) ─────────────────────────────
+
+  @override
+  Future<List<FixedCashFlowItem>> getFixedCashFlowItems() =>
+      _cashFlowAdapter.getFixedCashFlowItems();
+
+  @override
+  Future<void> insertFixedCashFlowItem(FixedCashFlowItem item) =>
+      _cashFlowAdapter.insertFixedCashFlowItem(item);
+
+  @override
+  Future<void> updateFixedCashFlowItem(FixedCashFlowItem item) =>
+      _cashFlowAdapter.updateFixedCashFlowItem(item);
+
+  @override
+  Future<void> deleteFixedCashFlowItem(String id) =>
+      _cashFlowAdapter.deleteFixedCashFlowItem(id);
+
+  @override
+  Future<void> setPaydayItem(String? itemId) =>
+      _cashFlowAdapter.setPaydayItem(itemId);
+
+  @override
+  Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks() =>
+      _cashFlowAdapter.getFixedCashFlowPaidMarks();
+
+  @override
+  Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark) =>
+      _cashFlowAdapter.upsertFixedCashFlowPaidMark(mark);
+
+  @override
+  Future<void> deleteFixedCashFlowPaidMark(String itemId, String month) =>
+      _cashFlowAdapter.deleteFixedCashFlowPaidMark(itemId, month);
 
   // ── Budgets ────────────────────────────────────────────────────────────────
 

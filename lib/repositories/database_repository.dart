@@ -9,6 +9,7 @@ import '../models/stock_trade.dart';
 import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
+import '../models/fixed_cash_flow_item.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -136,6 +137,21 @@ abstract class RecurringRepositoryInterface {
   Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences);
 }
 
+/// Interface สำหรับจัดการรายการเงินเข้าออกประจำ (Cash-flow forecast)
+abstract class CashFlowRepositoryInterface {
+  Future<List<FixedCashFlowItem>> getFixedCashFlowItems();
+  Future<void> insertFixedCashFlowItem(FixedCashFlowItem item);
+  Future<void> updateFixedCashFlowItem(FixedCashFlowItem item);
+  Future<void> deleteFixedCashFlowItem(String id);
+
+  /// ตั้ง [itemId] เป็น payday item เพียงรายการเดียว (null = ยกเลิกทั้งหมด)
+  Future<void> setPaydayItem(String? itemId);
+
+  Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks();
+  Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark);
+  Future<void> deleteFixedCashFlowPaidMark(String itemId, String month);
+}
+
 /// Interface สำหรับจัดการข้อมูล Sync Log
 abstract class SyncRepositoryInterface {
   /// ดึงข้อมูล Sync Log ทั้งหมดของผู้ใช้ปัจจุบัน
@@ -158,6 +174,7 @@ abstract class DatabaseRepository
         RecurringRepositoryInterface,
         PortfolioAnnualReportRepositoryInterface,
         InvestmentPlanRepositoryInterface,
+        CashFlowRepositoryInterface,
         SyncRepositoryInterface {
   /// ชื่อของ repository (สำหรับ debug)
   String get name;

@@ -9,13 +9,17 @@ enum SyncModule {
   categories,
   transactions,
   budgets,
-  recurring;
+  recurring,
+  cashFlow;
 
   SyncModule get refreshTarget => this == portfolio ? accounts : this;
 
+  /// ชื่อ module ใน sync_logs (module_name)
+  String get key => this == cashFlow ? 'cash_flow' : name;
+
   static SyncModule? fromKey(String key) {
     for (final module in values) {
-      if (module.name == key) return module;
+      if (module.key == key) return module;
     }
     return null;
   }

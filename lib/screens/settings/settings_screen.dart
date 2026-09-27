@@ -11,6 +11,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../../providers/cash_flow_forecast_provider.dart';
 
 import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
@@ -801,6 +802,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context.read<TransactionProvider>().reload(),
         context.read<BudgetProvider>().reload(),
         context.read<RecurringTransactionProvider>().reload(),
+        context.read<CashFlowForecastProvider>().reload(),
       ]);
 
       debugPrint('[SettingsScreen] Providers cleared and reloaded');

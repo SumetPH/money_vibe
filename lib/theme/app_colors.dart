@@ -60,6 +60,8 @@ class AppColors {
   static Color textSecondaryFor(bool isDarkMode) =>
       isDarkMode ? darkTextSecondary : textSecondary;
 
+  static Color incomeFor(bool isDarkMode) => isDarkMode ? darkIncome : income;
+
   static Color expenseFor(bool isDarkMode) =>
       isDarkMode ? darkExpense : expense;
 

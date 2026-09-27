@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/day_of_month_picker_sheet.dart';
 import '../../utils/currency_utils.dart';
 import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
@@ -50,6 +51,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   late bool _isHidden;
   late bool _autoUpdateRate;
   int? _statementDay;
+  int? _paymentDueDay;
 
   bool get _isEditing => widget.account != null;
   String get _effectiveSelectedCurrency => _selectedType.isPortfolio
@@ -73,6 +75,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     _isHidden = acc?.isHidden ?? false;
     _autoUpdateRate = acc?.autoUpdateRate ?? true;
     _statementDay = acc?.statementDay;
+    _paymentDueDay = acc?.paymentDueDay;
 
     if (_selectedType.isPortfolio) {
       _initialBalanceController.text = acc != null
@@ -298,6 +301,15 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
                 : null,
+            paymentDueDay: _selectedType == AccountType.creditCard
+                ? _paymentDueDay
+                : null,
+            clearStatementDay:
+                _selectedType != AccountType.creditCard ||
+                _statementDay == null,
+            clearPaymentDueDay:
+                _selectedType != AccountType.creditCard ||
+                _paymentDueDay == null,
           ),
         );
       } else {
@@ -319,6 +331,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             autoUpdateRate: autoUpdateRate,
             statementDay: _selectedType == AccountType.creditCard
                 ? _statementDay
+                : null,
+            paymentDueDay: _selectedType == AccountType.creditCard
+                ? _paymentDueDay
                 : null,
           ),
         );
@@ -565,7 +580,24 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                     AppInsetCard(
                       margin: EdgeInsets.zero,
                       children: [
-                        _buildStatementDayPicker(
+                        _buildDayPickerRow(
+                          icon: Icons.credit_card_rounded,
+                          label: 'วันสรุปยอดบิล',
+                          value: _statementDay != null
+                              ? 'ทุกวันที่ $_statementDay'
+                              : 'ไม่ระบุ',
+                          onTap: _pickStatementDay,
+                          textPrimaryColor: textPrimaryColor,
+                          textSecondaryColor: textSecondaryColor,
+                        ),
+                        const AppCardDivider(indent: 60, endIndent: 16),
+                        _buildDayPickerRow(
+                          icon: Icons.event_available_rounded,
+                          label: 'วันครบกำหนดชำระ',
+                          value: _paymentDueDay != null
+                              ? 'ทุกวันที่ $_paymentDueDay'
+                              : 'สรุปยอด + 15 วัน',
+                          onTap: _pickPaymentDueDay,
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
@@ -1160,12 +1192,16 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  Widget _buildStatementDayPicker({
+  Widget _buildDayPickerRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
     required Color textPrimaryColor,
     required Color textSecondaryColor,
   }) {
     return InkWell(
-      onTap: _pickStatementDay,
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -1177,15 +1213,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                 color: textSecondaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.credit_card_rounded,
-                color: textSecondaryColor,
-                size: 18,
-              ),
+              child: Icon(icon, color: textSecondaryColor, size: 18),
             ),
             const SizedBox(width: 12),
             Text(
-              'วันสรุปยอดบิล',
+              label,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
@@ -1194,7 +1226,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
             ),
             const Spacer(),
             Text(
-              _statementDay != null ? 'ทุกวันที่ $_statementDay' : 'ไม่ระบุ',
+              value,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
@@ -1264,109 +1296,26 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  void _pickStatementDay() {
-    showAppModalBottomSheet(
+  Future<void> _pickStatementDay() async {
+    final pick = await showDayOfMonthPickerSheet(
       context: context,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final surfaceColor = isDarkMode
-              ? AppColors.darkSurface
-              : AppColors.surface;
-          final textPrimaryColor = isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary;
-          final textSecondaryColor = isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary;
-          final headerColor = isDarkMode
-              ? AppColors.darkIncome
-              : AppColors.header;
-
-          return SafeArea(
-            child: Container(
-              color: surfaceColor,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppModalBottomSheetHeader(title: 'เลือกวันสรุปยอด'),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                          ),
-                      itemCount: 31,
-                      itemBuilder: (_, i) {
-                        final day = i + 1;
-                        final selected = _statementDay == day;
-                        return Material(
-                          color: selected
-                              ? headerColor.withValues(alpha: 0.2)
-                              : surfaceColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: selected
-                                ? BorderSide(color: headerColor, width: 2)
-                                : BorderSide(
-                                    color: textSecondaryColor.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _statementDay = day);
-                              Navigator.pop(context);
-                            },
-                            child: Center(
-                              child: Text(
-                                '$day',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: selected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                  color: selected
-                                      ? headerColor
-                                      : textPrimaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (_statementDay != null)
-                    ListTile(
-                      tileColor: surfaceColor,
-                      title: Text(
-                        'ลบวันสรุปยอด',
-                        style: TextStyle(
-                          color: AppColors.getAmountColor(-1, isDarkMode),
-                        ),
-                      ),
-                      leading: Icon(
-                        Icons.delete_outline,
-                        color: AppColors.getAmountColor(-1, isDarkMode),
-                      ),
-                      onTap: () {
-                        setState(() => _statementDay = null);
-                        Navigator.pop(context);
-                      },
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      title: 'เลือกวันสรุปยอด',
+      selectedDay: _statementDay,
+      clearLabel: 'ลบวันสรุปยอด',
     );
+    if (pick == null || !mounted) return;
+    setState(() => _statementDay = pick.day);
+  }
+
+  Future<void> _pickPaymentDueDay() async {
+    final pick = await showDayOfMonthPickerSheet(
+      context: context,
+      title: 'เลือกวันครบกำหนดชำระ',
+      selectedDay: _paymentDueDay,
+      clearLabel: 'ใช้ค่าเริ่มต้น (สรุปยอด + 15 วัน)',
+    );
+    if (pick == null || !mounted) return;
+    setState(() => _paymentDueDay = pick.day);
   }
 
   void _pickAccountType() {

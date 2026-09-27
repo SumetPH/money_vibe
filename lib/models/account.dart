@@ -122,6 +122,10 @@ class Account {
 
   // Credit card-specific fields
   int? statementDay; // วันสรุปยอดบัตรเครดิต (1-31)
+  int? paymentDueDay; // วันครบกำหนดชำระ (1-31), null = สรุปยอด + 15 วัน
+
+  // Cash-flow forecast: ไม่นับบัญชีนี้เป็น liquid account
+  bool isExcludedFromCashForecast;
 
   Account({
     required this.id,
@@ -140,6 +144,8 @@ class Account {
     this.exchangeRate = 1.0,
     this.autoUpdateRate = true,
     this.statementDay,
+    this.paymentDueDay,
+    this.isExcludedFromCashForecast = false,
   }) : startDate = startDate ?? DateTime.now();
 
   bool get isPortfolio => type.isPortfolio;
@@ -173,6 +179,8 @@ class Account {
     'exchange_rate': exchangeRate,
     'auto_update_rate': autoUpdateRate ? 1 : 0,
     'statement_day': statementDay,
+    'payment_due_day': paymentDueDay,
+    'is_excluded_from_cash_forecast': isExcludedFromCashForecast,
   };
 
   static Account fromMap(Map<String, dynamic> m) {
@@ -194,6 +202,9 @@ class Account {
       exchangeRate: rawRate <= 0 ? 1.0 : rawRate,
       autoUpdateRate: (m['auto_update_rate'] as int? ?? 1) == 1,
       statementDay: m['statement_day'] as int?,
+      paymentDueDay: m['payment_due_day'] as int?,
+      isExcludedFromCashForecast:
+          m['is_excluded_from_cash_forecast'] as bool? ?? false,
     );
   }
 
@@ -217,6 +228,10 @@ class Account {
     double? exchangeRate,
     bool? autoUpdateRate,
     int? statementDay,
+    int? paymentDueDay,
+    bool? isExcludedFromCashForecast,
+    bool clearStatementDay = false,
+    bool clearPaymentDueDay = false,
   }) {
     return Account(
       id: id,
@@ -234,7 +249,14 @@ class Account {
       cashBalance: cashBalance ?? this.cashBalance,
       exchangeRate: exchangeRate ?? this.exchangeRate,
       autoUpdateRate: autoUpdateRate ?? this.autoUpdateRate,
-      statementDay: statementDay ?? this.statementDay,
+      statementDay: clearStatementDay
+          ? null
+          : statementDay ?? this.statementDay,
+      paymentDueDay: clearPaymentDueDay
+          ? null
+          : paymentDueDay ?? this.paymentDueDay,
+      isExcludedFromCashForecast:
+          isExcludedFromCashForecast ?? this.isExcludedFromCashForecast,
     );
   }
 }

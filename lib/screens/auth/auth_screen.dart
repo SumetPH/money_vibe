@@ -8,6 +8,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
+import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../settings/data_management_screen.dart';
 import '../../theme/app_colors.dart';
@@ -75,6 +76,7 @@ class _AuthScreenState extends State<AuthScreen> {
           context.read<TransactionProvider>().reload(),
           context.read<BudgetProvider>().reload(),
           context.read<RecurringTransactionProvider>().reload(),
+          context.read<CashFlowForecastProvider>().reload(),
         ]),
       );
 
