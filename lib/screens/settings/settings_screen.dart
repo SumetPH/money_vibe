@@ -27,6 +27,7 @@ import 'llm_api_key_settings_screen.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -63,36 +64,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 100,
-        backgroundColor: backgroundColor,
-        foregroundColor: textColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: isLargeScreen ? 24 : 16,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Money Vibe',
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+      appBar: HideOnScrollAppBar(
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          toolbarHeight: 100,
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: isLargeScreen ? 24 : 16,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Money Vibe',
+                style: TextStyle(
+                  color: secondaryTextColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            Text(
-              'ตั้งค่า',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
+              Text(
+                'ตั้งค่า',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       drawer: isLargeScreen ? null : const AppDrawer(currentRoute: '/settings'),

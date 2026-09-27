@@ -20,6 +20,7 @@ import 'credit_card_bill_screen.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../transaction/transaction_form_screen.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class AccountListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -46,73 +47,75 @@ class _AccountListScreenState extends State<AccountListScreen> {
       drawer: isLargeScreen || !widget.showPrimaryNavigation
           ? null
           : const AppDrawer(currentRoute: '/accounts'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 100,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: isDarkMode
-            ? AppColors.darkBackground
-            : AppColors.background,
-        foregroundColor: isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary,
-        centerTitle: false,
-        titleSpacing: isLargeScreen ? 24 : 16,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'ภาพรวมการเงิน',
-              style: TextStyle(
-                color: isDarkMode
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              'บัญชี',
-              style: TextStyle(
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (_isReorderMode)
-            AppReorderDoneButton(
-              onPressed: () => setState(() => _isReorderMode = false),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Material(
-                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: AppColors.borderFor(isDarkMode),
-                    width: 1,
-                  ),
+      appBar: HideOnScrollAppBar(
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          toolbarHeight: 100,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          backgroundColor: isDarkMode
+              ? AppColors.darkBackground
+              : AppColors.background,
+          foregroundColor: isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary,
+          centerTitle: false,
+          titleSpacing: isLargeScreen ? 24 : 16,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'ภาพรวมการเงิน',
+                style: TextStyle(
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(Icons.more_horiz),
+              ),
+              Text(
+                'บัญชี',
+                style: TextStyle(
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
-                  onPressed: () => _showAppMenu(context),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-        ],
+            ],
+          ),
+          actions: [
+            if (_isReorderMode)
+              AppReorderDoneButton(
+                onPressed: () => setState(() => _isReorderMode = false),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Material(
+                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: AppColors.borderFor(isDarkMode),
+                      width: 1,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.more_horiz),
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                    onPressed: () => _showAppMenu(context),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
       body: Consumer2<AccountProvider, TransactionProvider>(
         builder: (context, accountProvider, txProvider, _) {

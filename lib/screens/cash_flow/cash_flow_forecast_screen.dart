@@ -20,6 +20,7 @@ import 'cash_flow_section.dart';
 import 'fixed_cash_flow_item_form_screen.dart';
 import 'liquid_account_picker_sheet.dart';
 import 'next_period_section.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 /// หน้ารายละเอียดของ Cash-flow forecast: ที่มาของตัวเลข, ติ๊ก paid mark,
 /// เลือก liquid account และจัดการรายการเงินเข้าออกประจำ
@@ -51,51 +52,53 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       drawer: isLargeScreen
           ? null
           : const AppDrawer(currentRoute: '/cash-flow'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 100,
-        backgroundColor: bgColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: isLargeScreen ? 24 : 16,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'การวางแผนการเงิน',
-              style: TextStyle(
-                color: AppColors.textSecondaryFor(isDarkMode),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+      appBar: HideOnScrollAppBar(
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          toolbarHeight: 100,
+          backgroundColor: bgColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: isLargeScreen ? 24 : 16,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'การวางแผนการเงิน',
+                style: TextStyle(
+                  color: AppColors.textSecondaryFor(isDarkMode),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            Text(
-              'คาดการณ์เงินคงเหลือ',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.textPrimaryFor(isDarkMode),
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
+              Text(
+                'คาดการณ์เงินคงเหลือ',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.textPrimaryFor(isDarkMode),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: AppBarActionButton(
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.textPrimaryFor(isDarkMode),
+                ),
+                tooltip: 'เพิ่มรายการเงินเข้าออก',
+                onPressed: () => _openItemForm(context),
               ),
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: AppBarActionButton(
-              icon: Icon(
-                Icons.add_rounded,
-                color: AppColors.textPrimaryFor(isDarkMode),
-              ),
-              tooltip: 'เพิ่มรายการเงินเข้าออก',
-              onPressed: () => _openItemForm(context),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: ListView(

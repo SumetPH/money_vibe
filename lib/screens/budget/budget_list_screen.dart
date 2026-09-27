@@ -18,6 +18,7 @@ import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class BudgetListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -252,76 +253,47 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               : widget.showPrimaryNavigation
               ? const AppDrawer(currentRoute: '/budgets')
               : null,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            toolbarHeight: 100,
-            backgroundColor: bgColor,
-            foregroundColor: textPrimary,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            centerTitle: false,
-            titleSpacing: isLargeScreen ? 24 : 16,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _isReorderMode ? 'งบประมาณ' : _formatBudgetTitle(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  _isReorderMode ? 'จัดเรียง' : 'งบประมาณ',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              if (_isReorderMode)
-                AppReorderDoneButton(
-                  onPressed: () => setState(() => _isReorderMode = false),
-                )
-              else ...[
-                Material(
-                  color: surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: AppColors.borderFor(isDarkMode),
-                      width: 1,
+          appBar: HideOnScrollAppBar(
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              toolbarHeight: 100,
+              backgroundColor: bgColor,
+              foregroundColor: textPrimary,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: false,
+              titleSpacing: isLargeScreen ? 24 : 16,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _isReorderMode ? 'งบประมาณ' : _formatBudgetTitle(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: const Icon(Icons.pie_chart_outline_rounded),
-                    color: textPrimary,
-                    tooltip: 'รายละเอียดกลุ่มงบประมาณ',
-                    onPressed: () => _showGroupDetailsBottomSheet(
-                      context,
-                      groupSummaries,
-                      periodLabel,
-                      totalBudget,
-                      totalSpent,
-                      totalAvailable,
-                      totalOverspent,
-                      overallProgress,
-                      isDarkMode,
+                  Text(
+                    _isReorderMode ? 'จัดเรียง' : 'งบประมาณ',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: Material(
+                ],
+              ),
+              actions: [
+                if (_isReorderMode)
+                  AppReorderDoneButton(
+                    onPressed: () => setState(() => _isReorderMode = false),
+                  )
+                else ...[
+                  Material(
                     color: surfaceColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadii.full),
@@ -332,16 +304,47 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: IconButton(
-                      icon: const Icon(Icons.more_horiz_rounded),
+                      icon: const Icon(Icons.pie_chart_outline_rounded),
                       color: textPrimary,
-                      tooltip: 'ตัวเลือกเพิ่มเติม',
-                      onPressed: () =>
-                          _showMenuBottomSheet(context, isDarkMode),
+                      tooltip: 'รายละเอียดกลุ่มงบประมาณ',
+                      onPressed: () => _showGroupDetailsBottomSheet(
+                        context,
+                        groupSummaries,
+                        periodLabel,
+                        totalBudget,
+                        totalSpent,
+                        totalAvailable,
+                        totalOverspent,
+                        overallProgress,
+                        isDarkMode,
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Material(
+                      color: surfaceColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.full),
+                        side: BorderSide(
+                          color: AppColors.borderFor(isDarkMode),
+                          width: 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        icon: const Icon(Icons.more_horiz_rounded),
+                        color: textPrimary,
+                        tooltip: 'ตัวเลือกเพิ่มเติม',
+                        onPressed: () =>
+                            _showMenuBottomSheet(context, isDarkMode),
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           body: SafeArea(
             bottom: false,

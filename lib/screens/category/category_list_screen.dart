@@ -16,6 +16,7 @@ import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -70,86 +71,88 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       drawer: isLargeScreen
           ? null
           : const AppDrawer(currentRoute: '/categories'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: bgColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: isLargeScreen ? 24 : 16,
-        toolbarHeight: 100,
-        leading: null,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'จัดการข้อมูล',
-              style: TextStyle(
-                color: textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+      appBar: HideOnScrollAppBar(
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: bgColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: isLargeScreen ? 24 : 16,
+          toolbarHeight: 100,
+          leading: null,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'จัดการข้อมูล',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-            Text(
-              'หมวดหมู่',
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
+              Text(
+                'หมวดหมู่',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+            ],
+          ),
+          actions: [
+            if (_isReorderMode)
+              AppReorderDoneButton(
+                onPressed: () => setState(() => _isReorderMode = false),
+              )
+            else ...[
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Material(
+                  color: surfaceColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: AppColors.borderFor(isDarkMode),
+                      width: 1,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.add_rounded, size: 22),
+                    color: textPrimary,
+                    tooltip: 'เพิ่มหมวดหมู่ใหม่',
+                    onPressed: () => _openForm(context, null),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Material(
+                  color: surfaceColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    side: BorderSide(
+                      color: AppColors.borderFor(isDarkMode),
+                      width: 1,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                    color: textPrimary,
+                    tooltip: 'ตัวเลือกเพิ่มเติม',
+                    onPressed: () => _showMenuBottomSheet(context),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
-        actions: [
-          if (_isReorderMode)
-            AppReorderDoneButton(
-              onPressed: () => setState(() => _isReorderMode = false),
-            )
-          else ...[
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: AppColors.borderFor(isDarkMode),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(Icons.add_rounded, size: 22),
-                  color: textPrimary,
-                  tooltip: 'เพิ่มหมวดหมู่ใหม่',
-                  onPressed: () => _openForm(context, null),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  side: BorderSide(
-                    color: AppColors.borderFor(isDarkMode),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(Icons.more_horiz_rounded, size: 20),
-                  color: textPrimary,
-                  tooltip: 'ตัวเลือกเพิ่มเติม',
-                  onPressed: () => _showMenuBottomSheet(context),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {

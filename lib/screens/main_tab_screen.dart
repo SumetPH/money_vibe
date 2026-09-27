@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/sync_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/hide_on_scroll_app_bar.dart';
 import 'account/account_list_screen.dart';
 import 'budget/budget_list_screen.dart';
 import 'transaction/transaction_form_screen.dart';
@@ -22,6 +23,7 @@ class MainTabScreen extends StatefulWidget {
 class _MainTabScreenState extends State<MainTabScreen> {
   late int _selectedTab;
   late final List<Widget> _tabs;
+  final _barsVisibility = BarsVisibility();
 
   @override
   void initState() {
@@ -35,9 +37,16 @@ class _MainTabScreenState extends State<MainTabScreen> {
     ];
   }
 
+  @override
+  void dispose() {
+    _barsVisibility.dispose();
+    super.dispose();
+  }
+
   void _selectTab(int index) {
     if (index == _selectedTab) return;
     setState(() => _selectedTab = index);
+    _barsVisibility.value = true;
     final syncProvider = context.read<SyncProvider>();
     if (!syncProvider.hasBaseline) return;
     syncProvider.checkAndSync().catchError((error) {
@@ -49,37 +58,49 @@ class _MainTabScreenState extends State<MainTabScreen> {
   Widget build(BuildContext context) {
     final isLargeScreen = MediaQuery.sizeOf(context).width >= 800;
 
-    return Scaffold(
-      // ให้เนื้อหาเลื่อนลอดใต้ bottom nav แบบกระจก
-      extendBody: true,
-      drawer: isLargeScreen
-          ? null
-          : AppDrawer(
-              currentRoute: _routeForTab(_selectedTab),
-              onSelectTab: (route) => _selectTab(switch (route) {
-                '/budgets' => 1,
-                '/transactions' => 2,
-                '/statistics' => 3,
-                _ => 0,
-              }),
-            ),
-      body: isLargeScreen
-          ? _tabs[_selectedTab]
-          : IndexedStack(index: _selectedTab, children: _tabs),
-      bottomNavigationBar: isLargeScreen
-          ? null
-          : Builder(
-              builder: (context) => AppBottomNavigation(
-                selectedIndex: _selectedTab,
-                onSelectTab: _selectTab,
-                onAdd: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TransactionFormScreen(),
+    return ChangeNotifierProvider.value(
+      value: _barsVisibility,
+      child: Scaffold(
+        // ให้เนื้อหาเลื่อนลอดใต้ bottom nav แบบกระจก
+        extendBody: true,
+        drawer: isLargeScreen
+            ? null
+            : AppDrawer(
+                currentRoute: _routeForTab(_selectedTab),
+                onSelectTab: (route) => _selectTab(switch (route) {
+                  '/budgets' => 1,
+                  '/transactions' => 2,
+                  '/statistics' => 3,
+                  _ => 0,
+                }),
+              ),
+        body: NotificationListener<UserScrollNotification>(
+          onNotification: _barsVisibility.handleScroll,
+          child: isLargeScreen
+              ? _tabs[_selectedTab]
+              : IndexedStack(index: _selectedTab, children: _tabs),
+        ),
+        bottomNavigationBar: isLargeScreen
+            ? null
+            : ValueListenableBuilder<bool>(
+                valueListenable: _barsVisibility,
+                builder: (context, isVisible, _) => AnimatedSlide(
+                  offset: isVisible ? Offset.zero : const Offset(0, 1.5),
+                  duration: hideOnScrollDuration,
+                  curve: Curves.easeOut,
+                  child: AppBottomNavigation(
+                    selectedIndex: _selectedTab,
+                    onSelectTab: _selectTab,
+                    onAdd: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TransactionFormScreen(),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 

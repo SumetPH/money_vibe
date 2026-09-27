@@ -17,6 +17,7 @@ import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -60,61 +61,63 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           drawer: isLargeScreen || !widget.showPrimaryNavigation
               ? null
               : const AppDrawer(currentRoute: '/statistics'),
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            leading: isLargeScreen || !widget.showPrimaryNavigation
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Material(
-                      color: surfaceColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                        side: BorderSide(
-                          color: AppColors.borderFor(isDarkMode),
-                          width: 1,
+          appBar: HideOnScrollAppBar(
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              leading: isLargeScreen || !widget.showPrimaryNavigation
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Material(
+                        color: surfaceColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.full),
+                          side: BorderSide(
+                            color: AppColors.borderFor(isDarkMode),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Builder(
-                        builder: (ctx) => IconButton(
-                          icon: Icon(Icons.menu, color: textColor),
-                          onPressed: () => Scaffold.of(ctx).openDrawer(),
+                        clipBehavior: Clip.antiAlias,
+                        child: Builder(
+                          builder: (ctx) => IconButton(
+                            icon: Icon(Icons.menu, color: textColor),
+                            onPressed: () => Scaffold.of(ctx).openDrawer(),
+                          ),
                         ),
                       ),
                     ),
+              leadingWidth: 64,
+              toolbarHeight: 100,
+              titleSpacing: isLargeScreen ? 24 : 16,
+              centerTitle: false,
+              backgroundColor: backgroundColor,
+              foregroundColor: textColor,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'การวิเคราะห์การเงิน',
+                    style: TextStyle(
+                      color: isDarkMode
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-            leadingWidth: 64,
-            toolbarHeight: 100,
-            titleSpacing: isLargeScreen ? 24 : 16,
-            centerTitle: false,
-            backgroundColor: backgroundColor,
-            foregroundColor: textColor,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'การวิเคราะห์การเงิน',
-                  style: TextStyle(
-                    color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  Text(
+                    'สถิติ',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                Text(
-                  'สถิติ',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           body: SafeArea(

@@ -18,6 +18,7 @@ import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -109,61 +110,63 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           ? '/accounts'
                           : '/transactions',
                     ),
-              appBar: AppBar(
-                automaticallyImplyLeading: false,
-                toolbarHeight: 100,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                backgroundColor: isDarkMode
-                    ? AppColors.darkBackground
-                    : AppColors.background,
-                foregroundColor: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-                centerTitle: false,
-                titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
-                leading: isFiltered ? const AppBackButton() : null,
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.title ?? _periodTitle(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+              appBar: HideOnScrollAppBar(
+                child: AppBar(
+                  automaticallyImplyLeading: false,
+                  toolbarHeight: 100,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  backgroundColor: isDarkMode
+                      ? AppColors.darkBackground
+                      : AppColors.background,
+                  foregroundColor: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                  centerTitle: false,
+                  titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
+                  leading: isFiltered ? const AppBackButton() : null,
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.title ?? _periodTitle(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'ธุรกรรม',
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
+                      Text(
+                        'ธุรกรรม',
+                        style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                    ],
+                  ),
+                  actions: [
+                    _HeaderAction(
+                      icon: Icons.add,
+                      onTap: _openAddTransactionForm,
+                      isDarkMode: isDarkMode,
                     ),
+                    _HeaderAction(
+                      icon: Icons.search,
+                      onTap: _showSearchSheet,
+                      isDarkMode: isDarkMode,
+                    ),
+                    const SizedBox(width: 12),
                   ],
                 ),
-                actions: [
-                  _HeaderAction(
-                    icon: Icons.add,
-                    onTap: _openAddTransactionForm,
-                    isDarkMode: isDarkMode,
-                  ),
-                  _HeaderAction(
-                    icon: Icons.search,
-                    onTap: _showSearchSheet,
-                    isDarkMode: isDarkMode,
-                  ),
-                  const SizedBox(width: 12),
-                ],
               ),
               body: CustomScrollView(
                 slivers: [

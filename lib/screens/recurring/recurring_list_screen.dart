@@ -15,6 +15,7 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 class RecurringListScreen extends StatefulWidget {
   const RecurringListScreen({super.key});
@@ -82,69 +83,71 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
           drawer: isLargeScreen
               ? null
               : const AppDrawer(currentRoute: '/recurring'),
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            toolbarHeight: 100,
-            backgroundColor: bgColor,
-            foregroundColor: textPrimary,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            centerTitle: false,
-            titleSpacing: isLargeScreen ? 24 : 16,
-            leading: null,
-            title: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'การวางแผนการเงิน',
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+          appBar: HideOnScrollAppBar(
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              toolbarHeight: 100,
+              backgroundColor: bgColor,
+              foregroundColor: textPrimary,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: false,
+              titleSpacing: isLargeScreen ? 24 : 16,
+              leading: null,
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'การวางแผนการเงิน',
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  'รายการประจำ',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
+                  Text(
+                    'รายการประจำ',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
+                ],
+              ),
+              actions: [
+                if (_isReorderMode)
+                  AppReorderDoneButton(
+                    onPressed: () => setState(() => _isReorderMode = false),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Material(
+                      color: surfaceColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.full),
+                        side: BorderSide(
+                          color: AppColors.borderFor(isDark),
+                          width: 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.more_horiz_rounded,
+                          size: 20,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                        ),
+                        onPressed: () => _showMenuBottomSheet(context, isDark),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            actions: [
-              if (_isReorderMode)
-                AppReorderDoneButton(
-                  onPressed: () => setState(() => _isReorderMode = false),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Material(
-                    color: surfaceColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.full),
-                      side: BorderSide(
-                        color: AppColors.borderFor(isDark),
-                        width: 1,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.more_horiz_rounded,
-                        size: 20,
-                        color: isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary,
-                      ),
-                      onPressed: () => _showMenuBottomSheet(context, isDark),
-                    ),
-                  ),
-                ),
-            ],
           ),
           body: SafeArea(
             child: list.isEmpty

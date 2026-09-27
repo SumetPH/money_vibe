@@ -23,6 +23,7 @@ import 'stock_trade_form_screen.dart';
 import '../account/holding_buy_form_screen.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/hide_on_scroll_app_bar.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -81,39 +82,41 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
       drawer: isLargeScreen
           ? null
           : const AppDrawer(currentRoute: '/trade-tracker'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 100,
-        backgroundColor: bgColor,
-        foregroundColor: textPrimary,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: isLargeScreen ? 24 : 16,
-        leading: null,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'พอร์ตการลงทุน',
-              style: TextStyle(
-                color: textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+      appBar: HideOnScrollAppBar(
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          toolbarHeight: 100,
+          backgroundColor: bgColor,
+          foregroundColor: textPrimary,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: isLargeScreen ? 24 : 16,
+          leading: null,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'พอร์ตการลงทุน',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            Text(
-              'บันทึกการลงทุน',
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
+              Text(
+                'บันทึกการลงทุน',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          actions: _buildAppBarActions(context),
         ),
-        actions: _buildAppBarActions(context),
       ),
       body: Consumer<AccountProvider>(
         builder: (context, accountProvider, _) {

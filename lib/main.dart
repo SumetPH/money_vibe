@@ -34,6 +34,7 @@ import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 import 'utils/web_safe_area_insets.dart';
 import 'widgets/app_sidebar.dart';
+import 'widgets/hide_on_scroll_app_bar.dart';
 
 void main() async {
   // Initialize and preserve native splash screen
@@ -231,7 +232,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
         GoRoute(
           path: '/recurring',
-          builder: (context, state) => const RecurringListScreen(),
+          builder: (context, state) =>
+              const HideOnScroll(child: RecurringListScreen()),
           routes: [
             GoRoute(
               path: ':id',
@@ -243,15 +245,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
         GoRoute(
           path: '/cash-flow',
-          builder: (context, state) => const CashFlowForecastScreen(),
+          builder: (context, state) =>
+              const HideOnScroll(child: CashFlowForecastScreen()),
         ),
         GoRoute(
           path: '/categories',
-          builder: (context, state) => const CategoryListScreen(),
+          builder: (context, state) =>
+              const HideOnScroll(child: CategoryListScreen()),
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
+          builder: (context, state) =>
+              const HideOnScroll(child: SettingsScreen()),
         ),
         GoRoute(
           path: '/statistics',
@@ -259,7 +264,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
         GoRoute(
           path: '/trade-tracker',
-          builder: (context, state) => const TradeTrackerScreen(),
+          builder: (context, state) =>
+              const HideOnScroll(child: TradeTrackerScreen()),
         ),
       ],
       redirect: (context, state) {
