@@ -298,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
-                          'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณ สถิติรายปี และคาดการณ์เงินคงเหลือ',
+                          'วันที่ ${settings.monthlyCycleStartDay} · ใช้กับงบประมาณและสถิติรายปี',
                           style: TextStyle(
                             color: secondaryTextColor,
                             fontSize: 13,

@@ -32,7 +32,7 @@ class NextPeriodHero extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'งวดถัดไป · จะเหลือถึง ${formatCashFlowDate(forecast.windowEnd)}',
+          'งวดถัดไป · หลังเคลียร์ยอด ${formatCashFlowDate(forecast.windowEnd)} จะเหลือ',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -51,8 +51,8 @@ class NextPeriodHero extends StatelessWidget {
         const SizedBox(height: 12),
         CashFlowTimeline(
           steps: [
-            CashFlowTimelineStep('เริ่มรอบ', forecast.windowStart),
-            CashFlowTimelineStep('วันสุดท้าย', forecast.windowEnd),
+            CashFlowTimelineStep('เริ่มงวด', forecast.windowStart),
+            CashFlowTimelineStep('วันเคลียร์', forecast.windowEnd),
           ],
           isDarkMode: isDarkMode,
         ),
@@ -89,7 +89,7 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'รวมยอดที่รูดไปแล้วแต่ยังไม่สรุป ณ วันนี้ แม้จะครบกำหนดหลังงวดถัดไป '
+    'ยอดที่รูดไปแล้วของบิลที่จะสรุปหลังวันเคลียร์ยอดของงวดนี้ '
     'ยอดที่จะรูดเพิ่มนับอยู่ในงบที่เหลือ',
     isDarkMode,
   ),
@@ -284,15 +284,8 @@ class _NextCardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    final statementDue = line.statementDueDate;
-    final unbilledDue = line.unbilledDueDate;
     final parts = [
-      if (statementDue != null)
-        'สรุปแล้ว ${formatAmount(line.statementAmount)} '
-            '(ครบ ${formatCashFlowDate(statementDue)})',
-      if (unbilledDue != null)
-        'ยังไม่สรุป ${formatAmount(line.unbilledAmount)} '
-            '(ครบ ${formatCashFlowDate(unbilledDue)})',
+      'ยังไม่สรุป · สรุปยอด ${formatCashFlowDate(line.statementDate)}',
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

@@ -100,25 +100,40 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
-          children: _buildForecast(
-            forecast,
-            watchNextPeriodForecast(context, forecast),
-            items,
-            isDarkMode,
-          ),
+          children: forecast == null
+              ? _buildWithoutAnchor(items, isDarkMode)
+              : _buildForecast(
+                  forecast,
+                  watchNextPeriodForecast(context, forecast),
+                  items,
+                  isDarkMode,
+                ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildForecast(
-    CashFlowForecast forecast,
-    NextPeriodForecast next,
+  List<Widget> _buildWithoutAnchor(
     List<FixedCashFlowItem> items,
     bool isDarkMode,
   ) => [
-    _buildTabs(),
-    if (_tab == _ForecastTab.next)
+    const _AnchorDayCard(),
+    cashFlowNote(
+      'ตั้งวันเคลียร์ยอด (วันที่เงินเดือนเข้าและจ่ายหนี้ต่าง ๆ) '
+      'แล้วเพิ่มรายการเงินเข้าออก เพื่อดูว่าหลังเคลียร์ทุกอย่างจะเหลือเงินเท่าไหร่',
+      isDarkMode,
+    ),
+    if (items.isNotEmpty) ..._itemListSection(items, isDarkMode),
+  ];
+
+  List<Widget> _buildForecast(
+    CashFlowForecast forecast,
+    NextPeriodForecast? next,
+    List<FixedCashFlowItem> items,
+    bool isDarkMode,
+  ) => [
+    if (next != null) _buildTabs(),
+    if (next != null && _tab == _ForecastTab.next)
       ..._buildNextTab(next, isDarkMode)
     else
       ..._buildCurrentTab(forecast, items, isDarkMode),
@@ -170,7 +185,7 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       isDarkMode: isDarkMode,
     ),
     cashFlowNote(
-      'นับเฉพาะบิลที่สรุปแล้วและครบกำหนดในงวดนี้ ที่เหลือไปอยู่ในงวดถัดไป',
+      'นับบิลที่สรุปก่อนวันเคลียร์ยอด บิลที่ยังไม่สรุปใช้ยอดที่รูดไปแล้วเป็นยอดประมาณ',
       isDarkMode,
     ),
 
@@ -191,10 +206,10 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       isDarkMode: isDarkMode,
     ),
 
-    const _CycleStartDayCard(),
+    const _AnchorDayCard(),
     cashFlowNote(
-      'งวดคือรอบเดือนเดียวกับงบประมาณและสถิติ แนะนำให้เริ่มวันหลังบัตรสรุปยอด '
-      'เช่น บัตรสรุปวันที่ 21 ให้เริ่มวันที่ 22',
+      'วันที่เงินเดือนเข้าและจ่ายหนี้ต่าง ๆ งวดจะเปลี่ยนเมื่อผ่านวันนี้ไป '
+      'ไม่ใช่วันสรุปยอดบัตร (ตั้งแยกในบัญชีบัตรแต่ละใบ)',
       isDarkMode,
     ),
   ];
@@ -251,7 +266,7 @@ class _SummaryHero extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'จะเหลือถึง ${formatCashFlowDate(forecast.windowEnd)}',
+          'หลังเคลียร์ยอด ${formatCashFlowDate(forecast.windowEnd)} จะเหลือ',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -295,8 +310,8 @@ class _SummaryHero extends StatelessWidget {
     return [
       CashFlowTimelineStep('วันนี้', today, isHighlighted: true),
       if (today != forecast.windowStart)
-        CashFlowTimelineStep('เริ่มรอบ', forecast.windowStart),
-      CashFlowTimelineStep('วันสุดท้าย', forecast.windowEnd),
+        CashFlowTimelineStep('เริ่มงวด', forecast.windowStart),
+      CashFlowTimelineStep('วันเคลียร์', forecast.windowEnd),
     ]..sort((a, b) => a.date.compareTo(b.date));
   }
 
@@ -399,11 +414,6 @@ class _OccurrenceRow extends StatelessWidget {
                           label: 'ครั้งเดียว',
                           color: AppColors.textSecondaryFor(isDarkMode),
                         ),
-                      if (line.isOverdueUnmarked)
-                        AppStatusChip(
-                          label: 'ยังไม่ติ๊ก',
-                          color: AppColors.saveButtonFor(isDarkMode),
-                        ),
                     ],
                   ),
                 ],
@@ -499,35 +509,35 @@ class _CardRow extends StatelessWidget {
   }
 }
 
-/// แถวตั้งวันเริ่มรอบเดือน (ค่าเดียวกับในการตั้งค่า ใช้ร่วมกับงบประมาณและสถิติ)
-class _CycleStartDayCard extends StatelessWidget {
-  const _CycleStartDayCard();
+/// แถวตั้งวันเคลียร์ยอด (forecast anchor day) ของการคาดการณ์ (เก็บในเครื่อง)
+class _AnchorDayCard extends StatelessWidget {
+  const _AnchorDayCard();
 
-  Future<void> _pick(BuildContext context, int current) async {
+  Future<void> _pick(BuildContext context, int? current) async {
     final pick = await showDayOfMonthPickerSheet(
       context: context,
-      title: 'วันเริ่มรอบรายเดือน',
+      title: 'เลือกวันเคลียร์ยอด',
       selectedDay: current,
+      clearLabel: 'ล้างวันเคลียร์ยอด',
     );
-    final day = pick?.day;
-    if (day == null || !context.mounted) return;
-    await context.read<SettingsProvider>().setMonthlyCycleStartDay(day);
+    if (pick == null || !context.mounted) return;
+    await context.read<SettingsProvider>().setCashFlowAnchorDay(pick.day);
   }
 
   @override
   Widget build(BuildContext context) {
-    final startDay = context.select<SettingsProvider, int>(
-      (s) => s.monthlyCycleStartDay,
+    final anchorDay = context.select<SettingsProvider, int?>(
+      (s) => s.cashFlowAnchorDay,
     );
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: AppInsetCard(
         children: [
           AppFormRow(
-            icon: Icons.event_repeat_rounded,
-            label: 'วันเริ่มรอบรายเดือน',
-            value: 'ทุกวันที่ $startDay',
-            onTap: () => _pick(context, startDay),
+            icon: Icons.event_available_rounded,
+            label: 'วันเคลียร์ยอด',
+            value: anchorDay == null ? 'ยังไม่ได้ตั้ง' : 'ทุกวันที่ $anchorDay',
+            onTap: () => _pick(context, anchorDay),
           ),
         ],
       ),

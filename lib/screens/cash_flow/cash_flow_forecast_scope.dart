@@ -51,24 +51,26 @@ List<FixedCashFlowItem> sortCashFlowItems(List<FixedCashFlowItem> items) {
 }
 
 /// คำนวณ forecast จาก provider ที่เกี่ยวข้อง และ rebuild เมื่อ provider เปลี่ยน
-CashFlowForecast watchCashFlowForecast(BuildContext context) {
+/// (null เมื่อยังไม่ได้ตั้งวันเคลียร์ยอด)
+CashFlowForecast? watchCashFlowForecast(BuildContext context) {
   final cashFlow = context.watch<CashFlowForecastProvider>();
   final accountProvider = context.watch<AccountProvider>();
   final transactions = context.watch<TransactionProvider>().transactions;
-  final startDay = context.select<SettingsProvider, int>(
-    (s) => s.monthlyCycleStartDay,
+  final anchorDay = context.select<SettingsProvider, int?>(
+    (s) => s.cashFlowAnchorDay,
   );
   return cashFlow.buildForecast(
     accounts: accountProvider.accounts,
     transactions: transactions,
     balanceInThb: (account) =>
         accountProvider.getBalanceInThb(account.id, transactions),
-    monthlyCycleStartDay: startDay,
+    anchorDay: anchorDay,
   );
 }
 
 /// คาดการณ์งวดถัดไปต่อจาก [current] และ rebuild เมื่อ provider เปลี่ยน
-NextPeriodForecast watchNextPeriodForecast(
+/// (null เมื่อยังไม่ได้ตั้งวันเคลียร์ยอด)
+NextPeriodForecast? watchNextPeriodForecast(
   BuildContext context,
   CashFlowForecast current,
 ) {
@@ -79,11 +81,16 @@ NextPeriodForecast watchNextPeriodForecast(
   final startDay = context.select<SettingsProvider, int>(
     (s) => s.monthlyCycleStartDay,
   );
+  final anchorDay = context.select<SettingsProvider, int?>(
+    (s) => s.cashFlowAnchorDay,
+  );
+  if (anchorDay == null) return null;
   return cashFlow.buildNextPeriod(
     current: current,
     accounts: accounts,
     transactions: transactions,
     budgets: budgets,
     monthlyCycleStartDay: startDay,
+    anchorDay: anchorDay,
   );
 }

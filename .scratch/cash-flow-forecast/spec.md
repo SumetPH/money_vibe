@@ -157,3 +157,12 @@ The pure "period containing today" rule made the current tab show a nearly finis
 ## Revision 2026-09-28 (c): forecast periods are the monthly cycle
 
 To keep a single setting, the forecast anchor day ("วันเริ่มงวด") is removed. Each forecast window is the monthly financial cycle containing today (the setting shared with budgets and statistics); the next window is the following cycle. With statements closing on the 21st, a cycle start of 22 lines budgets, card statements and forecast periods up. The forecast screen offers the cycle start day row for convenience; it edits the same setting. Items dated earlier in the cycle and not ticked still count and are flagged.
+
+## Revision 2026-09-28 (d): clear day
+
+The user settles everything on one day each month (salary arrives and debts are paid, e.g. the 30th). The forecast is rebuilt around that "clear day" (วันเคลียร์ยอด), which replaces the anchor-day and monthly-cycle windows above:
+
+- Current window: day after the previous clear day through the next clear day on or after today; it moves on once the clear day passes. Monthly items appear once (the occurrence on or before the clear day).
+- Cards in the current window: outstanding balance of closed statements, plus, for a statement closing before the clear day but not closed yet, unbilled spending so far as an estimate ("ยังไม่สรุปยอด"). Payment due dates no longer decide the window.
+- Next window: day after the clear day through the following clear day; it counts unbilled spending on statements closing after the current clear day, remaining budget (monthly cycle setting), savings plans and planned purchases.
+- The "ยังไม่ติ๊ก" chip is removed; unticked earlier items still count.

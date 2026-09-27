@@ -48,7 +48,7 @@ class _LiquidAccountPickerSheet extends StatelessWidget {
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    final lines = watchCashFlowForecast(context).liquidLines;
+    final lines = watchCashFlowForecast(context)?.liquidLines ?? const [];
 
     return SafeArea(
       child: Column(
