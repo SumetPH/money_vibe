@@ -126,3 +126,13 @@ User feedback after first use:
 - **Item form matches the recurring form**: shared `AppSegmentedTabs` (direction, schedule), `AppAmountHeroCard` with `CalculatorKeyboard` via `CalculatorKeyboardHost`, and `AppFormRow`; the recurring form now uses the same shared widgets. Text inputs in rows are right-aligned (including hints).
 - **Performance**: credit-card bill calculation sorts card transactions once and slices each cycle by binary search (forecast ~376 ms → ~14 ms on 20k transactions); output verified identical to the previous implementation.
 - **Entry point moved**: the forecast is no longer a card on the "แผน" (budget) tab. It is its own screen at route `/cash-flow`, listed under the "วางแผน" section of the drawer (after รายการประจำ) and in the wide-screen sidebar, with a main-tab style header and drawer like the recurring list. The review-warning chip moved into the summary hero.
+
+## Revision 2026-09-27: next forecast window
+
+User request: see the following period too, counting budgets, card spending so far, and things they want to buy.
+
+- A second hero, "งวดถัดไป", sits under the current summary and shows the **projected next leftover** (definition in `CONTEXT.md`). The current projected leftover is unchanged.
+- Budgets count as **remaining budget** of the current monthly cycle (expense budgets that are not hidden), not the next cycle's full budget.
+- Cards count closed statements due in the next window that the current window did not count, plus **unbilled spending** as of today when the open statement is due by the next window's end. Payments after the latest due date first settle the latest statement, and anything beyond that reduces the unbilled amount. Future card spending is not projected; the remaining budget covers it.
+- **Planned purchases** are a new list (`planned_purchases` table, `cash_flow` sync module) with name, amount and an include switch, managed from the forecast screen.
+- Out of scope: instalments, the next cycle's full budget, per-budget include switches, and projecting future card spending.

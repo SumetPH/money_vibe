@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/account_provider.dart';
+import '../../providers/budget_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -51,6 +52,33 @@ CashFlowForecast? watchCashFlowForecast(BuildContext context) {
     transactions: transactions,
     balanceInThb: (account) =>
         accountProvider.getBalanceInThb(account.id, transactions),
+    monthlyCycleStartDay: startDay,
+    anchorDay: anchorDay,
+  );
+}
+
+/// คาดการณ์งวดถัดไปต่อจาก [current] และ rebuild เมื่อ provider เปลี่ยน
+/// (null เมื่อยังไม่ได้ตั้งวันเงินเข้า)
+NextPeriodForecast? watchNextPeriodForecast(
+  BuildContext context,
+  CashFlowForecast current,
+) {
+  final cashFlow = context.watch<CashFlowForecastProvider>();
+  final accounts = context.watch<AccountProvider>().accounts;
+  final transactions = context.watch<TransactionProvider>().transactions;
+  final budgets = context.watch<BudgetProvider>().budgets;
+  final startDay = context.select<SettingsProvider, int>(
+    (s) => s.monthlyCycleStartDay,
+  );
+  final anchorDay = context.select<SettingsProvider, int?>(
+    (s) => s.cashFlowAnchorDay,
+  );
+  if (anchorDay == null) return null;
+  return cashFlow.buildNextPeriod(
+    current: current,
+    accounts: accounts,
+    transactions: transactions,
+    budgets: budgets,
     monthlyCycleStartDay: startDay,
     anchorDay: anchorDay,
   );

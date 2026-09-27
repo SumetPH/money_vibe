@@ -1,13 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/fixed_cash_flow_item.dart';
+import '../../models/planned_purchase.dart';
 import '../database_repository.dart';
 import '../supabase_repository.dart';
 
-/// Adapter สำหรับรายการเงินเข้าออกประจำและ paid mark บน Supabase
+/// Adapter สำหรับรายการเงินเข้าออกประจำ, paid mark และรายการอยากซื้อบน Supabase
 class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
   static const _itemsTable = 'fixed_cash_flow_items';
   static const _marksTable = 'fixed_cash_flow_paid_marks';
+  static const _purchasesTable = 'planned_purchases';
 
   final SupabaseRepository repo;
 
@@ -111,6 +113,56 @@ class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
         .delete()
         .eq('item_id', itemId)
         .eq('month', month)
+        .eq('user_id', currentUserId!);
+  }
+
+  @override
+  Future<List<PlannedPurchase>> getPlannedPurchases() async {
+    _requireAuth();
+    repo.log('Fetching planned purchases: $currentUserId');
+    final response = await client
+        .from(_purchasesTable)
+        .select()
+        .eq('user_id', currentUserId!)
+        .order('sort_order');
+    return (response as List)
+        .map(
+          (row) => PlannedPurchase.fromMap(
+            repo.normalizeRow(row as Map<String, dynamic>),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<void> insertPlannedPurchase(PlannedPurchase purchase) async {
+    _requireAuth();
+    repo.log('Inserting planned purchase: ${purchase.id}');
+    await client.from(_purchasesTable).insert({
+      ...purchase.toMap(),
+      'user_id': currentUserId,
+    });
+  }
+
+  @override
+  Future<void> updatePlannedPurchase(PlannedPurchase purchase) async {
+    _requireAuth();
+    repo.log('Updating planned purchase: ${purchase.id}');
+    await client
+        .from(_purchasesTable)
+        .update({...purchase.toMap(), 'user_id': currentUserId})
+        .eq('id', purchase.id)
+        .eq('user_id', currentUserId!);
+  }
+
+  @override
+  Future<void> deletePlannedPurchase(String id) async {
+    _requireAuth();
+    repo.log('Deleting planned purchase: $id');
+    await client
+        .from(_purchasesTable)
+        .delete()
+        .eq('id', id)
         .eq('user_id', currentUserId!);
   }
 }

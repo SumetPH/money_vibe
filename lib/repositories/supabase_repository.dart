@@ -12,6 +12,7 @@ import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 import '../models/fixed_cash_flow_item.dart';
+import '../models/planned_purchase.dart';
 import 'supabase_adapters/account_adapter.dart';
 import 'supabase_adapters/budget_adapter.dart';
 import 'supabase_adapters/cash_flow_adapter.dart';
@@ -396,6 +397,22 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<void> deleteFixedCashFlowPaidMark(String itemId, String month) =>
       _cashFlowAdapter.deleteFixedCashFlowPaidMark(itemId, month);
 
+  @override
+  Future<List<PlannedPurchase>> getPlannedPurchases() =>
+      _cashFlowAdapter.getPlannedPurchases();
+
+  @override
+  Future<void> insertPlannedPurchase(PlannedPurchase purchase) =>
+      _cashFlowAdapter.insertPlannedPurchase(purchase);
+
+  @override
+  Future<void> updatePlannedPurchase(PlannedPurchase purchase) =>
+      _cashFlowAdapter.updatePlannedPurchase(purchase);
+
+  @override
+  Future<void> deletePlannedPurchase(String id) =>
+      _cashFlowAdapter.deletePlannedPurchase(id);
+
   // ── Budgets ────────────────────────────────────────────────────────────────
 
   // ── Budgets (Delegated to Adapter) ────────────────────────────────────────
@@ -548,6 +565,23 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
         .eq('user_id', currentUserId!)
         .select();
     log('Deleted ${stockTrades.length} stock trades');
+
+    // ตารางที่ไม่มี foreign key แบบ cascade ไปยัง accounts จึงต้องลบเองตาม user_id
+    // (portfolio_annual_reports ไม่มี user_id แต่ถูกลบตาม accounts อยู่แล้ว;
+    // paid marks ลบก่อนรายการเงินเข้าออกที่อ้างถึง)
+    for (final table in const [
+      'stock_purchases',
+      'fixed_cash_flow_paid_marks',
+      'fixed_cash_flow_items',
+      'planned_purchases',
+    ]) {
+      final deleted = await client
+          .from(table)
+          .delete()
+          .eq('user_id', currentUserId!)
+          .select();
+      log('Deleted ${deleted.length} rows from $table');
+    }
 
     final budgets = await client
         .from('budgets')
