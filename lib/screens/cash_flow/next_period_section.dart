@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../main.dart';
+import '../../models/budget.dart';
 import '../../models/planned_purchase.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../services/cash_flow_forecast_service.dart';
@@ -63,6 +64,7 @@ class NextPeriodHero extends StatelessWidget {
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
         _metric('งบที่เหลือรอบนี้', -forecast.budgetTotal),
+        _metric('แผนออม', -forecast.savingsTotal),
         _metric('อยากซื้อ', -forecast.purchaseTotal),
       ],
     );
@@ -72,7 +74,7 @@ class NextPeriodHero extends StatelessWidget {
       CashFlowMetricRow(label: label, amount: amount, isDarkMode: isDarkMode);
 }
 
-/// รายละเอียดของงวดถัดไปต่อจากเงินเข้าออก: บัตรเครดิต, งบที่เหลือ และอยากซื้อ
+/// รายละเอียดของงวดถัดไปต่อจากเงินเข้าออก: บัตรเครดิต, งบที่เหลือ, แผนออม และอยากซื้อ
 /// (เรียงตาม metric ใน [NextPeriodHero])
 List<Widget> nextPeriodDetailSections(
   NextPeriodForecast forecast,
@@ -122,6 +124,21 @@ List<Widget> nextPeriodDetailSections(
   cashFlowNote(
     'ถือว่างบที่เหลือจะถูกใช้จนหมด ถ้ารายการเงินออกประจำซ้ำกับหมวดในงบ '
     'ให้เอาออกจากฝั่งใดฝั่งหนึ่ง',
+    isDarkMode,
+  ),
+
+  ...cashFlowSection(
+    title: 'แผนออม · -${formatAmount(forecast.savingsTotal)} บาท',
+    emptyText: 'ยังไม่มีแผนออมในงบประมาณ',
+    divider: const AppCardDivider(),
+    rows: [
+      for (final plan in forecast.savingsPlans)
+        _SavingsPlanRow(plan: plan, isDarkMode: isDarkMode),
+    ],
+    isDarkMode: isDarkMode,
+  ),
+  cashFlowNote(
+    'นับเต็มเป้าหมายของแต่ละแผน โดยถือว่ากันออมจากเงินงวดถัดไป',
     isDarkMode,
   ),
 ];
@@ -342,4 +359,40 @@ class _BudgetRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SavingsPlanRow extends StatelessWidget {
+  final Budget plan;
+  final bool isDarkMode;
+
+  const _SavingsPlanRow({required this.plan, required this.isDarkMode});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    child: Row(
+      children: [
+        Icon(plan.icon, size: 22, color: plan.color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            plan.name,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimaryFor(isDarkMode),
+            ),
+          ),
+        ),
+        Text(
+          formatAmount(-plan.amount, showSign: true),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.amountColor(-plan.amount, isDarkMode: isDarkMode),
+          ),
+        ),
+      ],
+    ),
+  );
 }

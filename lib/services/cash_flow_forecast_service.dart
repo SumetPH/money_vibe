@@ -92,6 +92,9 @@ class NextPeriodForecast {
   final List<CashFlowItemLine> itemLines;
   final List<NextCardLine> cardLines;
   final List<BudgetRemainingLine> budgetLines;
+
+  /// แผนออม (งบประเภทออม/ลงทุน) นับเต็มเป้าหมาย เพราะไม่มีการติดตามยอดที่ออมแล้ว
+  final List<Budget> savingsPlans;
   final List<PlannedPurchase> purchases;
 
   const NextPeriodForecast({
@@ -101,6 +104,7 @@ class NextPeriodForecast {
     required this.itemLines,
     required this.cardLines,
     required this.budgetLines,
+    required this.savingsPlans,
     required this.purchases,
   });
 
@@ -117,6 +121,8 @@ class NextPeriodForecast {
   double get budgetTotal =>
       budgetLines.fold(0.0, (sum, l) => sum + l.remaining);
 
+  double get savingsTotal => savingsPlans.fold(0.0, (sum, b) => sum + b.amount);
+
   double get purchaseTotal => purchases
       .where((p) => p.isIncluded)
       .fold(0.0, (sum, p) => sum + p.amount);
@@ -127,6 +133,7 @@ class NextPeriodForecast {
       outgoingTotal -
       cardTotal -
       budgetTotal -
+      savingsTotal -
       purchaseTotal;
 }
 
@@ -218,8 +225,8 @@ class CashFlowForecastService {
   }
 
   /// คาดการณ์งวดถัดไปต่อจาก [current] โดยนับเพิ่ม: รายการประจำของงวดถัดไป,
-  /// ยอดบัตรที่ครบกำหนดในงวดถัดไป (รวมยอดที่ยังไม่สรุป), งบที่เหลือของรอบเดือนนี้
-  /// และรายการอยากซื้อที่เปิดไว้
+  /// ยอดบัตรที่ครบกำหนดในงวดถัดไป (รวมยอดที่ยังไม่สรุป), งบที่เหลือของรอบเดือนนี้,
+  /// แผนออมเต็มเป้าหมาย และรายการอยากซื้อที่เปิดไว้
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
     required DateTime today,
@@ -257,6 +264,10 @@ class CashFlowForecastService {
         day,
         monthlyCycleStartDay,
       ),
+      savingsPlans: [
+        for (final budget in budgets)
+          if (budget.type == BudgetType.savings && !budget.isHidden) budget,
+      ],
       purchases: plannedPurchases,
     );
   }
