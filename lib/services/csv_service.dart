@@ -15,6 +15,7 @@ import '../models/stock_trade.dart';
 import '../services/database_manager.dart';
 import '../theme/app_colors.dart';
 import '../utils/csv_file_io.dart';
+import 'csv_backup_modules.dart';
 
 // Helper functions for IconData and Color
 IconData _parseIcon(dynamic value) {
@@ -50,6 +51,10 @@ class CsvService {
       'budgets_$timestamp.csv': await _exportBudgets(),
       'recurring_$timestamp.csv': await _exportRecurringTransactions(),
       'occurrences_$timestamp.csv': await _exportRecurringOccurrences(),
+      for (final module in csvBackupModules)
+        '${module.fileKey}_$timestamp.csv': await module.exportCsv(
+          _dbManager.repository,
+        ),
     };
 
     await saveCsvFiles(files, sharePositionOrigin: sharePositionOrigin);
@@ -57,6 +62,7 @@ class CsvService {
 
   /// Import data from CSV files
   /// Import order: accounts → categories → budgets → holdings → recurring → transactions → occurrences
+  /// → [csvBackupModules] (portfolio extras, cash-flow forecast)
   Future<ImportResult> importFromCsv() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -78,6 +84,7 @@ class CsvService {
     String? recurringContent;
     String? transactionsContent;
     String? occurrencesContent;
+    final moduleContents = <CsvBackupModule<Object>, String>{};
     List<String> errors = [];
 
     // อ่านไฟล์ทั้งหมดก่อน
@@ -88,7 +95,13 @@ class CsvService {
 
       debugPrint('CSV Service: Reading file: ${file.name}');
 
-      if (filename.contains('account')) {
+      // ตรวจโมดูลเสริมก่อน เพราะตัวจับคู่เดิมใช้ contains กว้าง ๆ
+      final module = csvBackupModules
+          .where((m) => m.matchesFile(filename))
+          .firstOrNull;
+      if (module != null) {
+        moduleContents[module] = content;
+      } else if (filename.contains('account')) {
         accountsContent = content;
       } else if (filename.contains('categor')) {
         categoriesContent = content;
@@ -209,6 +222,24 @@ class CsvService {
       }
     }
 
+    // โมดูลเสริมตามลำดับใน csvBackupModules
+    final moduleCounts = <String, int>{};
+    for (final module in csvBackupModules) {
+      final content = moduleContents[module];
+      if (content == null) continue;
+      try {
+        debugPrint('CSV Service: Importing ${module.fileKey}');
+        final result = await module.importCsv(_dbManager.repository, content);
+        moduleCounts[module.label] = result.imported;
+        if (result.failed > 0) {
+          errors.add('${module.label}: นำเข้าไม่ได้ ${result.failed} รายการ');
+        }
+      } catch (e) {
+        debugPrint('CSV Service: Error importing ${module.fileKey}: $e');
+        errors.add('${module.label}: $e');
+      }
+    }
+
     debugPrint(
       'CSV Service: Import complete - Accounts: $accountsCount, Categories: $categoriesCount, Transactions: $transactionsCount, Holdings: $holdingsCount, Budgets: $budgetsCount, Recurring Transactions: $recurringTransactionsCount, Recurring Occurrences: $recurringOccurrencesCount',
     );
@@ -221,6 +252,7 @@ class CsvService {
       budgetsCount: budgetsCount,
       recurringTransactionsCount: recurringTransactionsCount,
       recurringOccurrencesCount: recurringOccurrencesCount,
+      moduleCounts: moduleCounts,
       errors: errors,
     );
   }
@@ -249,6 +281,8 @@ class CsvService {
         'exchange_rate',
         'auto_update_rate',
         'statement_day',
+        'payment_due_day',
+        'is_excluded_from_cash_forecast',
       ],
     ];
 
@@ -270,6 +304,8 @@ class CsvService {
         account.exchangeRate,
         account.autoUpdateRate ? 1 : 0,
         account.statementDay ?? '',
+        account.paymentDueDay ?? '',
+        account.isExcludedFromCashForecast ? 1 : 0,
       ]);
     }
 
@@ -364,6 +400,7 @@ class CsvService {
         'trailing_stop_pct',
         'stop_loss_pct',
         'peak_profit_pct',
+        'portfolio_group',
       ],
     ];
 
@@ -383,6 +420,7 @@ class CsvService {
         holding.trailingStopPct,
         holding.stopLossPct,
         holding.peakProfitPct ?? '',
+        holding.portfolioGroup,
       ]);
     }
 
@@ -618,6 +656,12 @@ class CsvService {
           statementDay: row.length > 15
               ? int.tryParse(row[15]?.toString() ?? '')
               : null,
+          paymentDueDay: row.length > 16
+              ? int.tryParse(row[16]?.toString() ?? '')
+              : null,
+          isExcludedFromCashForecast:
+              row.length > 17 &&
+              (int.tryParse(row[17]?.toString() ?? '') ?? 0) == 1,
         ),
       );
     }
@@ -837,6 +881,7 @@ class CsvService {
               : (row.length > 12
                     ? double.tryParse(row[12]?.toString() ?? '')
                     : null),
+          portfolioGroup: row.length > 14 ? row[14]?.toString() ?? '' : '',
         ),
       );
     }
@@ -1190,6 +1235,9 @@ class ImportResult {
   final int budgetsCount;
   final int recurringTransactionsCount;
   final int recurringOccurrencesCount;
+
+  /// จำนวนที่นำเข้าของ [csvBackupModules] (key = label)
+  final Map<String, int> moduleCounts;
   final List<String> errors;
   final bool canceled;
 
@@ -1203,6 +1251,7 @@ class ImportResult {
     this.budgetsCount = 0,
     this.recurringTransactionsCount = 0,
     this.recurringOccurrencesCount = 0,
+    this.moduleCounts = const {},
     this.canceled = false,
   });
 
@@ -1215,6 +1264,7 @@ class ImportResult {
       budgetsCount = 0,
       recurringTransactionsCount = 0,
       recurringOccurrencesCount = 0,
+      moduleCounts = const {},
       errors = const [],
       canceled = true;
 
@@ -1227,7 +1277,8 @@ class ImportResult {
       stockTradesCount > 0 ||
       budgetsCount > 0 ||
       recurringTransactionsCount > 0 ||
-      recurringOccurrencesCount > 0;
+      recurringOccurrencesCount > 0 ||
+      moduleCounts.values.any((count) => count > 0);
 
   String get summary {
     if (canceled) return 'ยกเลิก';
@@ -1247,6 +1298,9 @@ class ImportResult {
     }
     if (recurringOccurrencesCount > 0) {
       parts.add('การเกิดรายการ $recurringOccurrencesCount รายการ');
+    }
+    for (final entry in moduleCounts.entries) {
+      if (entry.value > 0) parts.add('${entry.key} ${entry.value} รายการ');
     }
 
     var result = parts.join(' | ');

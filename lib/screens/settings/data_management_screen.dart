@@ -24,9 +24,33 @@ class DataManagementScreen extends StatefulWidget {
   State<DataManagementScreen> createState() => _DataManagementScreenState();
 }
 
+/// งานสำรอง/กู้คืน/ล้างข้อมูลที่กำลังทำ (ทำได้ทีละงาน)
+enum _DataTask {
+  export('กำลังส่งออก...'),
+  import('กำลังนำเข้า...'),
+  clear('กำลังล้างข้อมูล...');
+
+  final String loadingLabel;
+  const _DataTask(this.loadingLabel);
+}
+
 class _DataManagementScreenState extends State<DataManagementScreen> {
   bool _isTestingConnection = false;
   String? _connectionStatus;
+  _DataTask? _runningTask;
+
+  bool get _isBusy => _runningTask != null;
+
+  /// แสดง loading ระหว่าง [action] และกันไม่ให้เริ่มงานอื่นซ้อน
+  Future<void> _runTask(_DataTask task, Future<void> Function() action) async {
+    if (_isBusy) return;
+    setState(() => _runningTask = task);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _runningTask = null);
+    }
+  }
 
   Future<void> _testConnection() async {
     setState(() {
@@ -64,7 +88,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     }
   }
 
-  Future<void> _exportData() async {
+  Future<void> _exportData() => _runTask(_DataTask.export, () async {
     try {
       final RenderBox? box = context.findRenderObject() as RenderBox?;
       final Rect sharePositionOrigin = box != null
@@ -81,9 +105,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         ).showSnackBar(SnackBar(content: Text('ส่งออกไม่สำเร็จ: $e')));
       }
     }
-  }
+  });
 
-  Future<void> _importData() async {
+  Future<void> _importData() => _runTask(_DataTask.import, () async {
     try {
       final ImportResult result = await CsvService.instance.importFromCsv();
 
@@ -119,9 +143,10 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         ).showSnackBar(SnackBar(content: Text('นำเข้าไม่สำเร็จ: $e')));
       }
     }
-  }
+  });
 
   Future<void> _clearData() async {
+    if (_isBusy) return;
     final isDarkMode = context.read<SettingsProvider>().isDarkMode;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
@@ -165,7 +190,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                   '• งบประมาณทั้งหมด\n'
                   '• หมวดหมู่ทั้งหมด\n'
                   '• ธุรกรรมทั้งหมด\n'
-                  '• หลักทรัพย์ทั้งหมด',
+                  '• หลักทรัพย์และประวัติซื้อขายทั้งหมด\n'
+                  '• รายการเงินเข้าออกและรายการอยากซื้อทั้งหมด',
                   style: TextStyle(color: expenseColor),
                 ),
               ],
@@ -182,41 +208,53 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       isDestructive: true,
     );
 
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
+    await _runTask(_DataTask.clear, () async {
+      try {
+        final dbManager = DatabaseManager();
+        await dbManager.repository.clearAllData();
 
-    try {
-      final dbManager = DatabaseManager();
-      await dbManager.repository.clearAllData();
+        if (!mounted) return;
 
-      if (!mounted) return;
+        await context.read<SyncProvider>().initialize(
+          () => Future.wait([
+            accountProvider.reload(),
+            budgetProvider.reload(),
+            categoryProvider.reload(),
+            transactionProvider.reload(),
+            recurringProvider.reload(),
+            cashFlowProvider.reload(),
+          ]),
+        );
 
-      await context.read<SyncProvider>().initialize(
-        () => Future.wait([
-          accountProvider.reload(),
-          budgetProvider.reload(),
-          categoryProvider.reload(),
-          transactionProvider.reload(),
-          recurringProvider.reload(),
-          cashFlowProvider.reload(),
-        ]),
-      );
+        if (!mounted) return;
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ล้างข้อมูลเรียบร้อยแล้ว'),
-          backgroundColor: AppColors.income,
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('ล้างข้อมูลไม่สำเร็จ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ล้างข้อมูลเรียบร้อยแล้ว'),
+            backgroundColor: AppColors.income,
+          ),
+        );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('ล้างข้อมูลไม่สำเร็จ: $e')));
+        }
       }
-    }
+    });
   }
+
+  Widget _taskIcon(_DataTask task, IconData icon) => _runningTask == task
+      ? const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        )
+      : Icon(icon, size: 18);
+
+  Widget _taskLabel(_DataTask task, String label) =>
+      Text(_runningTask == task ? task.loadingLabel : label);
 
   @override
   Widget build(BuildContext context) {
@@ -237,205 +275,46 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
+    // กันออกจากหน้าระหว่างสำรอง/กู้คืน/ล้างข้อมูล
+    return PopScope(
+      canPop: !_isBusy,
+      child: Scaffold(
         backgroundColor: backgroundColor,
-        foregroundColor: textColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leadingWidth: 64,
-        leading: const AppBackButton(),
-        title: Text(
-          'จัดการข้อมูล',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
+        appBar: AppBar(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          leadingWidth: 64,
+          leading: const AppBackButton(),
+          title: Text(
+            'จัดการข้อมูล',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
           ),
         ),
-      ),
-      body: Consumer<DatabaseManager>(
-        builder: (context, dbManager, _) {
-          final showBuildDetails = dbManager.config?.isProduction == false;
+        body: Consumer<DatabaseManager>(
+          builder: (context, dbManager, _) {
+            final showBuildDetails = dbManager.config?.isProduction == false;
 
-          return SafeArea(
-            top: false,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildSectionTitle(
-                  'ฐานข้อมูล',
-                  textColor,
-                  secondaryTextColor,
-                  AppColors.accentFor(isDarkMode, themeColor),
-                ),
-                const SizedBox(height: 8),
-                AppInsetCard(
-                  margin: EdgeInsets.zero,
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.cloud,
-                              color: dbManager.isConfigured
-                                  ? Colors.blue
-                                  : Colors.grey,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Supabase (Cloud)',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    dbManager.isConfigured
-                                        ? 'เชื่อมต่อแล้ว'
-                                        : 'ยังไม่ได้ตั้งค่า',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: dbManager.isConfigured
-                                          ? incomeColor
-                                          : secondaryTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (showBuildDetails) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? AppColors.darkBackground
-                                  : AppColors.background,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: dividerColor),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildConfigRow(
-                                  label: 'Environment',
-                                  value:
-                                      dbManager.config?.environmentName ?? '-',
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                ),
-                                Divider(color: dividerColor, height: 20),
-                                _buildConfigRow(
-                                  label: 'Project',
-                                  value:
-                                      dbManager.config?.maskedSupabaseUrl ??
-                                      'ไม่ได้ตั้งค่า',
-                                  textColor: textColor,
-                                  secondaryTextColor: secondaryTextColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        if (dbManager.error != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: expenseColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              dbManager.error!,
-                              style: TextStyle(
-                                color: expenseColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed:
-                                dbManager.isConfigured && !_isTestingConnection
-                                ? _testConnection
-                                : null,
-                            icon: _isTestingConnection
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.network_check, size: 18),
-                            label: const Text('ทดสอบการเชื่อมต่อ'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: textColor,
-                            ),
-                          ),
-                        ),
-                        if (!dbManager.isConfigured) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'ค่า Supabase ต้องมากับ build เท่านั้น ผู้ใช้ไม่สามารถแก้จากในแอปได้',
-                            style: TextStyle(
-                              color: secondaryTextColor,
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                        if (_connectionStatus != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            _connectionStatus!,
-                            style: TextStyle(
-                              color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
-                                  ? incomeColor
-                                  : expenseColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-
-                if (authProvider.isLoggedIn) ...[
-                  const SizedBox(height: 24),
-
-                  // ========== SECTION: BACKUP/RESTORE ==========
+            return SafeArea(
+              top: false,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
                   _buildSectionTitle(
-                    'สำรองและกู้คืน',
+                    'ฐานข้อมูล',
                     textColor,
                     secondaryTextColor,
                     AppColors.accentFor(isDarkMode, themeColor),
                   ),
                   const SizedBox(height: 8),
-
-                  // CSV Export/Import
                   AppInsetCard(
                     margin: EdgeInsets.zero,
                     padding: const EdgeInsets.all(16),
@@ -446,9 +325,11 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                           Row(
                             children: [
                               Icon(
-                                Icons.insert_drive_file,
-                                color: incomeColor,
-                                size: 28,
+                                Icons.cloud,
+                                color: dbManager.isConfigured
+                                    ? Colors.blue
+                                    : Colors.grey,
+                                size: 32,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -456,18 +337,22 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'ส่งออก/นำเข้า (CSV)',
+                                      'Supabase (Cloud)',
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
                                         color: textColor,
                                       ),
                                     ),
                                     Text(
-                                      'รองรับข้าม Platform (Android ↔ iOS)',
+                                      dbManager.isConfigured
+                                          ? 'เชื่อมต่อแล้ว'
+                                          : 'ยังไม่ได้ตั้งค่า',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: secondaryTextColor,
+                                        color: dbManager.isConfigured
+                                            ? incomeColor
+                                            : secondaryTextColor,
                                       ),
                                     ),
                                   ],
@@ -475,138 +360,319 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: _exportData,
-                                  icon: const Icon(Icons.upload, size: 18),
-                                  label: const Text('Export'),
-                                ),
+                          if (showBuildDetails) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? AppColors.darkBackground
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: dividerColor),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: _importData,
-                                  icon: const Icon(Icons.download, size: 18),
-                                  label: const Text('Import'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.transfer,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildConfigRow(
+                                    label: 'Environment',
+                                    value:
+                                        dbManager.config?.environmentName ??
+                                        '-',
+                                    textColor: textColor,
+                                    secondaryTextColor: secondaryTextColor,
                                   ),
+                                  Divider(color: dividerColor, height: 20),
+                                  _buildConfigRow(
+                                    label: 'Project',
+                                    value:
+                                        dbManager.config?.maskedSupabaseUrl ??
+                                        'ไม่ได้ตั้งค่า',
+                                    textColor: textColor,
+                                    secondaryTextColor: secondaryTextColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          if (dbManager.error != null) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: expenseColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                dbManager.error!,
+                                style: TextStyle(
+                                  color: expenseColor,
+                                  fontSize: 12,
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  dbManager.isConfigured &&
+                                      !_isTestingConnection
+                                  ? _testConnection
+                                  : null,
+                              icon: _isTestingConnection
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.network_check, size: 18),
+                              label: const Text('ทดสอบการเชื่อมต่อ'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textColor,
+                              ),
+                            ),
                           ),
+                          if (!dbManager.isConfigured) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'ค่า Supabase ต้องมากับ build เท่านั้น ผู้ใช้ไม่สามารถแก้จากในแอปได้',
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                          if (_connectionStatus != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _connectionStatus!,
+                              style: TextStyle(
+                                color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
+                                    ? incomeColor
+                                    : expenseColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  if (authProvider.isLoggedIn) ...[
+                    const SizedBox(height: 24),
 
-                  // ========== SECTION: CLEAR DATA ==========
-                  _buildSectionTitle(
-                    'ล้างข้อมูล',
-                    textColor,
-                    secondaryTextColor,
-                    AppColors.accentFor(isDarkMode, themeColor),
-                  ),
-                  const SizedBox(height: 8),
-                  AppInsetCard(
-                    margin: EdgeInsets.zero,
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: expenseColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
+                    // ========== SECTION: BACKUP/RESTORE ==========
+                    _buildSectionTitle(
+                      'สำรองและกู้คืน',
+                      textColor,
+                      secondaryTextColor,
+                      AppColors.accentFor(isDarkMode, themeColor),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // CSV Export/Import
+                    AppInsetCard(
+                      margin: EdgeInsets.zero,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Icon(Icons.warning_amber, color: expenseColor),
+                                Icon(
+                                  Icons.insert_drive_file,
+                                  color: incomeColor,
+                                  size: 28,
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    'การล้างข้อมูลจะลบข้อมูลทั้งหมดอย่างถาวร และไม่สามารถกู้คืนได้',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: textColor,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'ส่งออก/นำเข้า (CSV)',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        'รองรับข้าม Platform (Android ↔ iOS)',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: _isBusy ? null : _exportData,
+                                    icon: _taskIcon(
+                                      _DataTask.export,
+                                      Icons.upload,
+                                    ),
+                                    label: _taskLabel(
+                                      _DataTask.export,
+                                      'Export',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: _isBusy ? null : _importData,
+                                    icon: _taskIcon(
+                                      _DataTask.import,
+                                      Icons.download,
+                                    ),
+                                    label: _taskLabel(
+                                      _DataTask.import,
+                                      'Import',
+                                    ),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: AppColors.transfer,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: _clearData,
-                              icon: const Icon(Icons.delete_forever, size: 18),
-                              label: const Text('ล้างข้อมูลทั้งหมด'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.expense,
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ========== SECTION: CLEAR DATA ==========
+                    _buildSectionTitle(
+                      'ล้างข้อมูล',
+                      textColor,
+                      secondaryTextColor,
+                      AppColors.accentFor(isDarkMode, themeColor),
+                    ),
+                    const SizedBox(height: 8),
+                    AppInsetCard(
+                      margin: EdgeInsets.zero,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: expenseColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber,
+                                    color: expenseColor,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'การล้างข้อมูลจะลบข้อมูลทั้งหมดอย่างถาวร และไม่สามารถกู้คืนได้',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: _isBusy ? null : _clearData,
+                                icon: _taskIcon(
+                                  _DataTask.clear,
+                                  Icons.delete_forever,
+                                ),
+                                label: _taskLabel(
+                                  _DataTask.clear,
+                                  'ล้างข้อมูลทั้งหมด',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.expense,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // ========== INFO SECTION ==========
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? AppColors.darkSurface.withAlpha(128)
+                          : AppColors.sectionHeader,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'คำแนะนำ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoItem(
+                          icon: Icons.cloud,
+                          title: 'Supabase',
+                          description:
+                              'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                        ),
+                        Divider(color: dividerColor, height: 24),
+                        _buildInfoItem(
+                          icon: Icons.help_outline,
+                          title: 'CSV Export/Import',
+                          description:
+                              'ใช้สำหรับสำรองข้อมูลส่วนตัว หรือย้ายข้อมูลระหว่างบัญชี',
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-
-                const SizedBox(height: 24),
-
-                // ========== INFO SECTION ==========
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurface.withAlpha(128)
-                        : AppColors.sectionHeader,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'คำแนะนำ',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoItem(
-                        icon: Icons.cloud,
-                        title: 'Supabase',
-                        description:
-                            'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                      Divider(color: dividerColor, height: 24),
-                      _buildInfoItem(
-                        icon: Icons.help_outline,
-                        title: 'CSV Export/Import',
-                        description:
-                            'ใช้สำหรับสำรองข้อมูลส่วนตัว หรือย้ายข้อมูลระหว่างบัญชี',
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
