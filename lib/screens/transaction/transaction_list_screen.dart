@@ -248,7 +248,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        24 + MediaQuery.paddingOf(context).bottom,
+                      ),
                       sliver: SliverList.builder(
                         itemCount: listData.groups.length,
                         itemBuilder: (context, i) {

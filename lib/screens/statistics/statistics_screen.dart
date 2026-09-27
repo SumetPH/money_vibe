@@ -118,8 +118,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ),
           body: SafeArea(
+            bottom: false,
             // แท็บเลื่อนไปพร้อมเนื้อหา (ไม่ sticky)
             child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom,
+              ),
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

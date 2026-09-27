@@ -50,6 +50,8 @@ class _MainTabScreenState extends State<MainTabScreen> {
     final isLargeScreen = MediaQuery.sizeOf(context).width >= 800;
 
     return Scaffold(
+      // ให้เนื้อหาเลื่อนลอดใต้ bottom nav แบบกระจก
+      extendBody: true,
       drawer: isLargeScreen
           ? null
           : AppDrawer(
