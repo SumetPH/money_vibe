@@ -11,9 +11,8 @@ import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_inset_card.dart';
 import 'cash_flow_forecast_scope.dart';
 import 'cash_flow_section.dart';
+import 'forecast_budget_picker_sheet.dart';
 import 'planned_purchase_form_screen.dart';
-
-const _iconRowDivider = AppCardDivider(indent: 60, endIndent: 16);
 
 /// สรุปยอดคาดการณ์งวดถัดไป
 class NextPeriodHero extends StatelessWidget {
@@ -52,7 +51,7 @@ class NextPeriodHero extends StatelessWidget {
         const SizedBox(height: 12),
         CashFlowTimeline(
           steps: [
-            CashFlowTimelineStep('เงินเข้า', forecast.windowStart),
+            CashFlowTimelineStep('เริ่มงวด', forecast.windowStart),
             CashFlowTimelineStep('วันสุดท้าย', forecast.windowEnd),
           ],
           isDarkMode: isDarkMode,
@@ -81,8 +80,7 @@ List<Widget> nextPeriodDetailSections(
 ) => [
   ...cashFlowSection(
     title: 'บัตรเครดิต · -${formatAmount(forecast.cardTotal)} บาท',
-    emptyText: 'ไม่มียอดบัตรที่ครบกำหนดในงวดถัดไป',
-    divider: _iconRowDivider,
+    emptyText: 'ไม่มียอดบัตรที่ต้องชำระเพิ่ม',
     rows: [
       for (final line in forecast.cardLines)
         _NextCardRow(line: line, isDarkMode: isDarkMode),
@@ -90,14 +88,14 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'รวมยอดที่รูดไปแล้วแต่ยังไม่สรุป ณ วันนี้ ยอดที่จะรูดเพิ่มนับอยู่ในงบที่เหลือ',
+    'รวมยอดที่รูดไปแล้วแต่ยังไม่สรุป ณ วันนี้ แม้จะครบกำหนดหลังงวดถัดไป '
+    'ยอดที่จะรูดเพิ่มนับอยู่ในงบที่เหลือ',
     isDarkMode,
   ),
 
   ...cashFlowSection(
     title: 'อยากซื้อ · -${formatAmount(forecast.purchaseTotal)} บาท',
     emptyText: '',
-    divider: const AppCardDivider(),
     rows: [
       for (final purchase in forecast.purchases)
         _PurchaseRow(purchase: purchase, isDarkMode: isDarkMode),
@@ -113,26 +111,42 @@ List<Widget> nextPeriodDetailSections(
   ...cashFlowSection(
     title: 'งบที่เหลือรอบนี้ · -${formatAmount(forecast.budgetTotal)} บาท',
     emptyText: 'ยังไม่มีงบรายจ่าย',
-    divider: const AppCardDivider(),
     rows: [
-      for (final line in forecast.budgetLines)
+      for (final line in forecast.budgetLines.where((l) => l.isIncluded))
         _BudgetRow(line: line, isDarkMode: isDarkMode),
+      if (forecast.budgetLines.isNotEmpty)
+        _BudgetSelectorRow(
+          type: BudgetType.expense,
+          includedCount: forecast.budgetLines.where((l) => l.isIncluded).length,
+          totalCount: forecast.budgetLines.length,
+          isDarkMode: isDarkMode,
+        ),
     ],
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'ถือว่างบที่เหลือจะถูกใช้จนหมด ถ้ารายการเงินออกประจำซ้ำกับหมวดในงบ '
-    'ให้เอาออกจากฝั่งใดฝั่งหนึ่ง',
+    'ถือว่างบที่เหลือจะถูกใช้จนหมด ถ้างบไหนซ้ำกับรายการเงินออกประจำ '
+    'ให้ปิดงบนั้นจากการคำนวณ',
     isDarkMode,
   ),
 
   ...cashFlowSection(
     title: 'แผนออม · -${formatAmount(forecast.savingsTotal)} บาท',
     emptyText: 'ยังไม่มีแผนออมในงบประมาณ',
-    divider: const AppCardDivider(),
     rows: [
-      for (final plan in forecast.savingsPlans)
+      for (final plan in forecast.savingsPlans.where(
+        (p) => !p.isExcludedFromCashForecast,
+      ))
         _SavingsPlanRow(plan: plan, isDarkMode: isDarkMode),
+      if (forecast.savingsPlans.isNotEmpty)
+        _BudgetSelectorRow(
+          type: BudgetType.savings,
+          includedCount: forecast.savingsPlans
+              .where((p) => !p.isExcludedFromCashForecast)
+              .length,
+          totalCount: forecast.savingsPlans.length,
+          isDarkMode: isDarkMode,
+        ),
     ],
     isDarkMode: isDarkMode,
   ),
@@ -266,12 +280,15 @@ class _NextCardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
+    final statementDue = line.statementDueDate;
+    final unbilledDue = line.unbilledDueDate;
     final parts = [
-      'ครบกำหนด ${formatCashFlowDate(line.dueDate)}',
-      if (line.statementAmount > 0)
-        'สรุปแล้ว ${formatAmount(line.statementAmount)}',
-      if (line.unbilledAmount > 0)
-        'ยังไม่สรุป ${formatAmount(line.unbilledAmount)}',
+      if (statementDue != null)
+        'สรุปแล้ว ${formatAmount(line.statementAmount)} '
+            '(ครบ ${formatCashFlowDate(statementDue)})',
+      if (unbilledDue != null)
+        'ยังไม่สรุป ${formatAmount(line.unbilledAmount)} '
+            '(ครบ ${formatCashFlowDate(unbilledDue)})',
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -402,5 +419,30 @@ class _SavingsPlanRow extends StatelessWidget {
         ),
       ],
     ),
+  );
+}
+
+class _BudgetSelectorRow extends StatelessWidget {
+  final BudgetType type;
+  final int includedCount;
+  final int totalCount;
+  final bool isDarkMode;
+
+  const _BudgetSelectorRow({
+    required this.type,
+    required this.includedCount,
+    required this.totalCount,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) => CashFlowSelectorRow(
+    label: type == BudgetType.savings
+        ? 'เลือกแผนออมที่นำมาคำนวณ'
+        : 'เลือกงบที่นำมาคำนวณ',
+    includedCount: includedCount,
+    totalCount: totalCount,
+    onTap: () => showForecastBudgetPickerSheet(context, type),
+    isDarkMode: isDarkMode,
   );
 }

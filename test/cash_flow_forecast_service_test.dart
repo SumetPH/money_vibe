@@ -4,8 +4,6 @@ import 'package:money_vibe/models/fixed_cash_flow_item.dart';
 import 'package:money_vibe/models/transaction.dart';
 import 'package:money_vibe/services/cash_flow_forecast_service.dart';
 
-const _cycleStartDay = 21;
-
 final _bank = Account(
   id: 'bank',
   name: 'Bank',
@@ -74,7 +72,6 @@ CashFlowForecast? _forecast({
   int? anchorDay = 30,
 }) => CashFlowForecastService.calculate(
   today: today,
-  monthlyCycleStartDay: _cycleStartDay,
   anchorDay: anchorDay,
   accounts: accounts ?? [_bank],
   balanceInThb: (account) => balances[account.id] ?? 0,
@@ -91,88 +88,87 @@ void main() {
       expect(forecast, isNull);
     });
 
-    test(
-      'before payday includes the salary and covers until the day before the following payday',
-      () {
-        final forecast = _forecast(today: DateTime(2026, 9, 25))!;
+    test('before payday covers the current pay period only', () {
+      final forecast = _forecast(
+        today: DateTime(2026, 9, 25),
+        marks: [_mark(_salary, '2026-08')],
+      )!;
 
-        expect(forecast.cycleAnchorDate, DateTime(2026, 9, 30));
+      expect(forecast.windowStart, DateTime(2026, 8, 30));
+      expect(forecast.windowEnd, DateTime(2026, 9, 29));
+      expect(forecast.projectedLeftover, 20000);
+    });
+
+    test('a new pay period starts on the money-in day', () {
+      final forecast = _forecast(today: DateTime(2026, 9, 30))!;
+
+      expect(forecast.windowStart, DateTime(2026, 9, 30));
+      expect(forecast.windowEnd, DateTime(2026, 10, 29));
+      expect(forecast.projectedLeftover, 70000);
+    });
+
+    test(
+      'keeps the same pay period until the day before the next money-in',
+      () {
+        final forecast = _forecast(
+          today: DateTime(2026, 10, 29),
+          balances: {'bank': 70000},
+          marks: [_mark(_salary, '2026-09')],
+        )!;
+
+        expect(forecast.windowStart, DateTime(2026, 9, 30));
         expect(forecast.windowEnd, DateTime(2026, 10, 29));
         expect(forecast.projectedLeftover, 70000);
       },
     );
 
-    test('after payday within the same cycle keeps the same window', () {
-      final forecast = _forecast(
-        today: DateTime(2026, 10, 1),
-        balances: {'bank': 70000},
-        marks: [_mark(_salary, '2026-09')],
-      )!;
-
-      expect(forecast.windowEnd, DateTime(2026, 10, 29));
-      expect(forecast.projectedLeftover, 70000);
-    });
-
-    test('rolls over to the next pay period when a new cycle starts', () {
-      final forecast = _forecast(
-        today: DateTime(2026, 10, 21),
-        marks: [_mark(_salary, '2026-09')],
-      )!;
-
-      expect(forecast.cycleAnchorDate, DateTime(2026, 10, 30));
-      expect(forecast.windowEnd, DateTime(2026, 11, 29));
-    });
-
-    test('clamps a day-31 payday to the last day of short months', () {
+    test('clamps a day-31 money-in day to the last day of short months', () {
       final forecast = _forecast(today: DateTime(2026, 10, 25), anchorDay: 31)!;
 
-      expect(forecast.cycleAnchorDate, DateTime(2026, 10, 31));
-      expect(forecast.windowEnd, DateTime(2026, 11, 29));
+      expect(forecast.windowStart, DateTime(2026, 9, 30));
+      expect(forecast.windowEnd, DateTime(2026, 10, 30));
     });
   });
 
   group('fixed cash-flow items', () {
-    test('counts an item twice when both occurrences fall in the window', () {
+    test('a monthly item appears once per pay period', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 22),
+        today: DateTime(2026, 10, 1),
         items: [_salary, _house],
       )!;
 
       final houseLines = forecast.itemLines.where((l) => l.item.id == 'house');
-      expect(houseLines.map((l) => l.date), [
-        DateTime(2026, 9, 25),
-        DateTime(2026, 10, 25),
-      ]);
-      expect(forecast.projectedLeftover, 20000 + 50000 - 30000);
+      expect(houseLines.map((l) => l.date), [DateTime(2026, 10, 25)]);
+      expect(forecast.projectedLeftover, 20000 + 50000 - 15000);
     });
 
     test('a paid mark removes only that month occurrence', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 26),
+        today: DateTime(2026, 10, 26),
         items: [_salary, _house],
-        marks: [_mark(_house, '2026-09')],
+        marks: [_mark(_house, '2026-10')],
       )!;
 
-      expect(forecast.projectedLeftover, 20000 + 50000 - 15000);
-      final septemberHouse = forecast.itemLines.firstWhere(
-        (l) => l.item.id == 'house' && l.date.month == 9,
+      expect(forecast.projectedLeftover, 20000 + 50000);
+      final octoberHouse = forecast.itemLines.firstWhere(
+        (l) => l.item.id == 'house',
       );
-      expect(septemberHouse.isMarked, isTrue);
-      expect(septemberHouse.isCounted, isFalse);
+      expect(octoberHouse.isMarked, isTrue);
+      expect(octoberHouse.isCounted, isFalse);
     });
 
     test('an unmarked item dated before today still counts and is flagged', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 27),
+        today: DateTime(2026, 10, 27),
         items: [_salary, _house],
       )!;
 
-      final septemberHouse = forecast.itemLines.firstWhere(
-        (l) => l.item.id == 'house' && l.date.month == 9,
+      final octoberHouse = forecast.itemLines.firstWhere(
+        (l) => l.item.id == 'house',
       );
-      expect(septemberHouse.isCounted, isTrue);
-      expect(septemberHouse.isOverdueUnmarked, isTrue);
-      expect(forecast.projectedLeftover, 20000 + 50000 - 30000);
+      expect(octoberHouse.isCounted, isTrue);
+      expect(octoberHouse.isOverdueUnmarked, isTrue);
+      expect(forecast.projectedLeftover, 20000 + 50000 - 15000);
     });
   });
 
@@ -187,7 +183,7 @@ void main() {
 
     test('counts a one-time item once when its date is in the window', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 25),
+        today: DateTime(2026, 10, 1),
         items: [_salary, bonus],
       )!;
 
@@ -198,7 +194,7 @@ void main() {
 
     test('ignores a one-time item dated after the window', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 25),
+        today: DateTime(2026, 10, 1),
         items: [
           _salary,
           bonus.copyWith(oneTimeDate: DateTime(2026, 11, 2)),
@@ -239,7 +235,7 @@ void main() {
       );
 
       final forecast = _forecast(
-        today: DateTime(2026, 9, 25),
+        today: DateTime(2026, 10, 1),
         accounts: [_bank, emergency, wallet, fund],
         balances: {
           'bank': 20000,
@@ -263,7 +259,7 @@ void main() {
       'subtracts the closed statement due in the window and ignores unbilled spending',
       () {
         final forecast = _forecast(
-          today: DateTime(2026, 9, 25),
+          today: DateTime(2026, 10, 1),
           accounts: [_bank, _card()],
           transactions: [
             _spend('card', DateTime(2026, 9, 10), 12000),
@@ -280,7 +276,7 @@ void main() {
 
     test('counts only the remaining amount of a partly paid statement', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 25),
+        today: DateTime(2026, 10, 1),
         accounts: [_bank, _card()],
         transactions: [
           _spend('card', DateTime(2026, 9, 10), 12000),
@@ -331,7 +327,6 @@ void main() {
         );
         final forecast = CashFlowForecastService.calculate(
           today: DateTime(2026, 9, 25),
-          monthlyCycleStartDay: 1,
           anchorDay: 1,
           accounts: [_bank, _card()],
           balanceInThb: (account) => account.id == 'bank' ? 20000 : 0,
@@ -350,7 +345,7 @@ void main() {
 
     test('flags a statement due in the window that has not closed yet', () {
       final forecast = _forecast(
-        today: DateTime(2026, 9, 25),
+        today: DateTime(2026, 10, 1),
         accounts: [_bank, _card(paymentDueDay: 28)],
         transactions: [_spend('card', DateTime(2026, 9, 23), 3000)],
       )!;

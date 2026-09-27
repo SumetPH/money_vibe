@@ -95,10 +95,7 @@ class AppInsetCard extends StatelessWidget {
 
 /// 1px divider between rows inside an [AppInsetCard].
 class AppCardDivider extends StatelessWidget {
-  final double indent;
-  final double endIndent;
-
-  const AppCardDivider({super.key, this.indent = 0, this.endIndent = 0});
+  const AppCardDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -109,8 +106,6 @@ class AppCardDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      indent: indent,
-      endIndent: endIndent,
       color: AppColors.borderFor(isDarkMode),
     );
   }

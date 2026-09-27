@@ -65,20 +65,25 @@ class BudgetRemainingLine {
 
   double get remaining =>
       CashFlowForecastService._positive(budget.amount - spent);
+
+  bool get isIncluded => !budget.isExcludedFromCashForecast;
 }
 
-/// ยอดบัตรเครดิตหนึ่งใบที่จะต้องชำระภายในงวดถัดไป
+/// ยอดบัตรเครดิตหนึ่งใบที่นับในงวดถัดไป: ทุกยอดที่งวดนี้ยังไม่ได้นับ
 class NextCardLine {
   final Account account;
-  final double statementAmount; // ยอดรอบที่สรุปแล้วแต่ครบกำหนดในงวดถัดไป
-  final double unbilledAmount; // ยอดที่ยังไม่สรุป ณ วันนี้
-  final DateTime dueDate;
+  final double statementAmount; // ยอดรอบที่สรุปแล้วแต่ครบกำหนดหลังงวดนี้
+  final DateTime? statementDueDate;
+  final double
+  unbilledAmount; // ยอดที่ยังไม่สรุป ณ วันนี้ (อาจครบกำหนดหลังงวดถัดไป)
+  final DateTime? unbilledDueDate;
 
   const NextCardLine({
     required this.account,
     required this.statementAmount,
+    required this.statementDueDate,
     required this.unbilledAmount,
-    required this.dueDate,
+    required this.unbilledDueDate,
   });
 
   double get total => statementAmount + unbilledAmount;
@@ -91,9 +96,10 @@ class NextPeriodForecast {
   final double startingLeftover;
   final List<CashFlowItemLine> itemLines;
   final List<NextCardLine> cardLines;
-  final List<BudgetRemainingLine> budgetLines;
+  final List<BudgetRemainingLine> budgetLines; // รวมงบที่ถูกตัดออก
 
   /// แผนออม (งบประเภทออม/ลงทุน) นับเต็มเป้าหมาย เพราะไม่มีการติดตามยอดที่ออมแล้ว
+  /// (รวมแผนที่ผู้ใช้ตัดออก เพื่อให้ UI เลือกได้)
   final List<Budget> savingsPlans;
   final List<PlannedPurchase> purchases;
 
@@ -118,10 +124,13 @@ class NextPeriodForecast {
 
   double get cardTotal => cardLines.fold(0.0, (sum, l) => sum + l.total);
 
-  double get budgetTotal =>
-      budgetLines.fold(0.0, (sum, l) => sum + l.remaining);
+  double get budgetTotal => budgetLines
+      .where((l) => l.isIncluded)
+      .fold(0.0, (sum, l) => sum + l.remaining);
 
-  double get savingsTotal => savingsPlans.fold(0.0, (sum, b) => sum + b.amount);
+  double get savingsTotal => savingsPlans
+      .where((b) => !b.isExcludedFromCashForecast)
+      .fold(0.0, (sum, b) => sum + b.amount);
 
   double get purchaseTotal => purchases
       .where((p) => p.isIncluded)
@@ -140,7 +149,6 @@ class NextPeriodForecast {
 class CashFlowForecast {
   final DateTime windowStart;
   final DateTime windowEnd;
-  final DateTime cycleAnchorDate;
   final List<LiquidBalanceLine> liquidLines;
   final List<CashFlowItemLine> itemLines;
   final List<CardObligationLine> cardLines;
@@ -151,7 +159,6 @@ class CashFlowForecast {
   const CashFlowForecast({
     required this.windowStart,
     required this.windowEnd,
-    required this.cycleAnchorDate,
     required this.liquidLines,
     required this.itemLines,
     required this.cardLines,
@@ -185,10 +192,9 @@ class CashFlowForecast {
 class CashFlowForecastService {
   static const _liquidTypes = {AccountType.cash, AccountType.bankAccount};
 
-  /// คืน null เมื่อยังไม่ได้ตั้งวันเงินเข้า ([anchorDay])
+  /// คืน null เมื่อยังไม่ได้ตั้งวันเริ่มงวด ([anchorDay])
   static CashFlowForecast? calculate({
     required DateTime today,
-    required int monthlyCycleStartDay,
     required int? anchorDay,
     required List<Account> accounts,
     required double Function(Account account) balanceInThb,
@@ -199,24 +205,14 @@ class CashFlowForecastService {
     if (anchorDay == null) return null;
 
     final day = _dayOf(today);
-    final cycle = monthlyCyclePeriod(
-      monthlyCycleReportingMonth(day, monthlyCycleStartDay),
-      monthlyCycleStartDay,
-    );
-    final windowStart = cycle.start;
-    final cycleAnchorDate = _firstAnchorOnOrAfter(anchorDay, windowStart);
-    final nextAnchorDate = clampedDayOfMonth(
-      cycleAnchorDate.year,
-      cycleAnchorDate.month + 1,
-      anchorDay,
-    );
-    final windowEnd = nextAnchorDate.subtract(const Duration(days: 1));
+    // งวด = วันเริ่มงวดล่าสุด (ไม่เกินวันนี้) ถึงวันก่อนวันเริ่มงวดครั้งถัดไป
+    final windowStart = _lastAnchorOnOrBefore(anchorDay, day);
+    final windowEnd = _periodEnd(windowStart, anchorDay);
     final cardBills = _cardBills(accounts, transactions, day);
 
     return CashFlowForecast(
       windowStart: windowStart,
       windowEnd: windowEnd,
-      cycleAnchorDate: cycleAnchorDate,
       liquidLines: _liquidLines(accounts, balanceInThb),
       itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
       cardLines: _cardLines(accounts, cardBills, windowEnd, day),
@@ -225,7 +221,7 @@ class CashFlowForecastService {
   }
 
   /// คาดการณ์งวดถัดไปต่อจาก [current] โดยนับเพิ่ม: รายการประจำของงวดถัดไป,
-  /// ยอดบัตรที่ครบกำหนดในงวดถัดไป (รวมยอดที่ยังไม่สรุป), งบที่เหลือของรอบเดือนนี้,
+  /// ยอดบัตรทั้งหมดที่งวดนี้ยังไม่ได้นับ (รวมยอดที่ยังไม่สรุป), งบที่เหลือของรอบเดือนนี้,
   /// แผนออมเต็มเป้าหมาย และรายการอยากซื้อที่เปิดไว้
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
@@ -240,12 +236,9 @@ class CashFlowForecastService {
     required List<PlannedPurchase> plannedPurchases,
   }) {
     final day = _dayOf(today);
-    final windowStart = current.windowEnd.add(const Duration(days: 1));
-    final windowEnd = clampedDayOfMonth(
-      windowStart.year,
-      windowStart.month + 1,
-      anchorDay,
-    ).subtract(const Duration(days: 1));
+    final end = current.windowEnd;
+    final windowStart = DateTime(end.year, end.month, end.day + 1);
+    final windowEnd = _periodEnd(windowStart, anchorDay);
 
     return NextPeriodForecast(
       windowStart: windowStart,
@@ -255,7 +248,7 @@ class CashFlowForecastService {
       cardLines: [
         for (final card in accounts)
           if (current.cardBills[card.id] case final bills?)
-            ?_nextCardLine(card, bills, current.windowEnd, windowEnd),
+            ?_nextCardLine(card, bills, current.windowEnd),
       ],
       budgetLines: _budgetLines(
         budgets,
@@ -309,7 +302,10 @@ class CashFlowForecastService {
         );
       }
     }
-    lines.sort((a, b) => a.date.compareTo(b.date));
+    lines.sort((a, b) {
+      final byDate = a.date.compareTo(b.date);
+      return byDate != 0 ? byDate : a.item.name.compareTo(b.item.name);
+    });
     return lines;
   }
 
@@ -395,7 +391,6 @@ class CashFlowForecastService {
     Account card,
     List<CreditCardBill> bills,
     DateTime windowEnd,
-    DateTime nextWindowEnd,
   ) {
     final openBill = bills.where((b) => b.isOpen).firstOrNull;
     final closedBills = bills.where((b) => !b.isOpen).toList();
@@ -408,7 +403,7 @@ class CashFlowForecastService {
     if (latest != null) {
       if (!latest.dueDate.isAfter(windowEnd)) {
         prepaid = _positive(prepaid - latest.remainingAmount);
-      } else if (!latest.dueDate.isAfter(nextWindowEnd)) {
+      } else {
         // ยอดค้างเลยกำหนดที่ยกมาถูกนับในงวดปัจจุบันแล้ว
         final overdueCounted = closedBills.length < 2
             ? 0.0
@@ -421,20 +416,21 @@ class CashFlowForecastService {
       }
     }
 
-    final unbilledAmount =
-        openBill != null && !openBill.dueDate.isAfter(nextWindowEnd)
-        ? _positive(openBill.expensesAmount - prepaid)
-        : 0.0;
+    // นับยอดที่ยังไม่สรุปแม้ครบกำหนดหลังงวดถัดไป เพื่อให้เห็นผลของบัตรที่รูดไปแล้ว
+    final unbilledAmount = openBill == null
+        ? 0.0
+        : _positive(openBill.expensesAmount - prepaid);
     if (statementAmount == 0 && unbilledAmount == 0) return null;
     return NextCardLine(
       account: card,
       statementAmount: statementAmount,
+      statementDueDate: statementAmount > 0 ? statementDue : null,
       unbilledAmount: unbilledAmount,
-      dueDate: unbilledAmount > 0 ? openBill!.dueDate : statementDue!,
+      unbilledDueDate: unbilledAmount > 0 ? openBill?.dueDate : null,
     );
   }
 
-  /// งบรายจ่าย (ไม่ซ่อน) ของรอบเดือนที่มี [today] อยู่
+  /// งบรายจ่าย (ไม่ซ่อน) ของรอบเดือนที่มี [today] อยู่ รวมงบที่ถูกตัดออก เพื่อให้ UI เลือกได้
   static List<BudgetRemainingLine> _budgetLines(
     List<Budget> budgets,
     List<Account> accounts,
@@ -462,10 +458,20 @@ class CashFlowForecastService {
     ];
   }
 
-  static DateTime _firstAnchorOnOrAfter(int anchorDay, DateTime from) {
-    final sameMonth = clampedDayOfMonth(from.year, from.month, anchorDay);
-    if (!sameMonth.isBefore(from)) return sameMonth;
-    return clampedDayOfMonth(from.year, from.month + 1, anchorDay);
+  static DateTime _lastAnchorOnOrBefore(int anchorDay, DateTime day) {
+    final sameMonth = clampedDayOfMonth(day.year, day.month, anchorDay);
+    if (!sameMonth.isAfter(day)) return sameMonth;
+    return clampedDayOfMonth(day.year, day.month - 1, anchorDay);
+  }
+
+  /// วันก่อนวันเริ่มงวดครั้งถัดจาก [periodStart]
+  static DateTime _periodEnd(DateTime periodStart, int anchorDay) {
+    final nextAnchor = clampedDayOfMonth(
+      periodStart.year,
+      periodStart.month + 1,
+      anchorDay,
+    );
+    return DateTime(nextAnchor.year, nextAnchor.month, nextAnchor.day - 1);
   }
 
   static double _positive(double value) {

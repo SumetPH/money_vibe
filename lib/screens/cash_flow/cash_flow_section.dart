@@ -10,7 +10,6 @@ import '../../widgets/app_inset_card.dart';
 List<Widget> cashFlowSection({
   required String title,
   required String emptyText,
-  required Widget divider,
   required List<Widget> rows,
   required bool isDarkMode,
 }) => [
@@ -31,7 +30,7 @@ List<Widget> cashFlowSection({
           ]
         : [
             for (var i = 0; i < rows.length; i++) ...[
-              if (i > 0) divider,
+              if (i > 0) const AppCardDivider(),
               rows[i],
             ],
           ],
@@ -207,6 +206,61 @@ class CashFlowTimeline extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// แถวท้ายการ์ดสำหรับเปิด sheet เลือกรายการที่นำมาคำนวณ เช่น "3 จาก 4"
+class CashFlowSelectorRow extends StatelessWidget {
+  final String label;
+  final int includedCount;
+  final int totalCount;
+  final VoidCallback onTap;
+  final bool isDarkMode;
+
+  const CashFlowSelectorRow({
+    super.key,
+    required this.label,
+    required this.includedCount,
+    required this.totalCount,
+    required this.onTap,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(Icons.tune_rounded, size: 20, color: textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimaryFor(isDarkMode),
+                ),
+              ),
+            ),
+            Text(
+              '$includedCount จาก $totalCount',
+              style: TextStyle(fontSize: 15, color: textSecondary),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: textSecondary.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

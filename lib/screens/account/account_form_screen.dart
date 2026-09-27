@@ -466,7 +466,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildPickerRow(
                         label: 'ชนิดบัญชี',
                         value: _selectedType.label,
@@ -475,7 +475,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       if (_selectedType.isPortfolio)
                         _buildReadOnlyRow(
                           label: 'สกุลเงิน',
@@ -498,7 +498,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildPickerRow(
                         label: 'เริ่มวันที่',
                         value: _formatThaiDate(_startDate),
@@ -522,7 +522,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildColorRow(
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
@@ -552,7 +552,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             textSecondaryColor: textSecondaryColor,
                           ),
                           if (!_autoUpdateRate) ...[
-                            const AppCardDivider(indent: 60, endIndent: 16),
+                            const AppCardDivider(),
                             _buildExchangeRateField(
                               textPrimaryColor: textPrimaryColor,
                               textSecondaryColor: textSecondaryColor,
@@ -590,7 +590,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
-                        const AppCardDivider(indent: 60, endIndent: 16),
+                        const AppCardDivider(),
                         _buildDayPickerRow(
                           icon: Icons.event_available_rounded,
                           label: 'วันครบกำหนดชำระ',
@@ -623,7 +623,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildSwitchRow(
                         label: 'ซ่อนบัญชีนี้',
                         subtitle: 'ซ่อนบัญชีนี้จากหน้ารายการบัญชีหลัก',

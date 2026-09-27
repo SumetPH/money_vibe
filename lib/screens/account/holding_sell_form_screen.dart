@@ -583,7 +583,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         ),
                         onTap: _pickOcrDate,
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       ListTile(
                         title: const Text('เวลา'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
@@ -622,7 +622,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _decimalInputFormatter(stockHoldingSharesDecimalPlaces),
                       ],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ราคาขาย (${widget.currencyCode})',
                       controller: _sellPriceController,
@@ -633,7 +633,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _decimalInputFormatter(stockHoldingPriceDecimalPlaces),
                       ],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'มูลค่าหุ้น (Gross ${widget.currencyCode})',
                       controller: _grossProceedsController,
@@ -645,7 +645,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _syncCashReceived();
                       },
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ยอดที่จะได้รับคืน (Net ${widget.currencyCode})',
                       controller: _cashReceivedController,
@@ -671,7 +671,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ภาษี (VAT ${widget.currencyCode})',
                       controller: _taxFeeController,
@@ -679,7 +679,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
                       controller: _exchangeFeeController,
@@ -707,7 +707,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                         _syncRemainingHoldingFromSharesSold();
                       },
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ต้นทุนรวมคงเหลือ (${widget.currencyCode})',
                       controller: _remainingTotalCostController,
@@ -716,7 +716,7 @@ class _HoldingSellFormScreenState extends State<HoldingSellFormScreen> {
                       errorText: _remainingTotalCostError,
                       inputFormatters: [_decimalInputFormatter(2)],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _SellNumberFieldRow(
                       label: 'ต้นทุนต่อหุ้นคงเหลือ (${widget.currencyCode})',
                       controller: _remainingCostBasisController,

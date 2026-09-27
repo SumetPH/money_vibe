@@ -256,7 +256,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     _buildPickerRow(
                       icon: Icons.account_tree_outlined,
                       label: 'หมวดหมู่หลัก',
@@ -278,7 +278,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     _buildColorRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,

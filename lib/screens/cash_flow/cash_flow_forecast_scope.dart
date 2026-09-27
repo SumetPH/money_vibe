@@ -36,14 +36,25 @@ String cashFlowScheduleLabel(FixedCashFlowItem item) {
       : 'ครั้งเดียว ${formatCashFlowDate(once)} ${once.year}';
 }
 
+/// เรียงรายการเงินเข้าออกทั้งหมด: รายการทุกเดือนตามวันที่ในเดือน แล้วรายการครั้งเดียวตามวันที่
+/// (วันเดียวกันเรียงตามชื่อ)
+List<FixedCashFlowItem> sortCashFlowItems(List<FixedCashFlowItem> items) {
+  int compare(FixedCashFlowItem a, FixedCashFlowItem b) {
+    if (a.isOneTime != b.isOneTime) return a.isOneTime ? 1 : -1;
+    final byDate = a.isOneTime
+        ? a.oneTimeDate!.compareTo(b.oneTimeDate!)
+        : a.dayOfMonth!.compareTo(b.dayOfMonth!);
+    return byDate != 0 ? byDate : a.name.compareTo(b.name);
+  }
+
+  return [...items]..sort(compare);
+}
+
 /// คำนวณ forecast จาก provider ที่เกี่ยวข้อง และ rebuild เมื่อ provider เปลี่ยน
 CashFlowForecast? watchCashFlowForecast(BuildContext context) {
   final cashFlow = context.watch<CashFlowForecastProvider>();
   final accountProvider = context.watch<AccountProvider>();
   final transactions = context.watch<TransactionProvider>().transactions;
-  final startDay = context.select<SettingsProvider, int>(
-    (s) => s.monthlyCycleStartDay,
-  );
   final anchorDay = context.select<SettingsProvider, int?>(
     (s) => s.cashFlowAnchorDay,
   );
@@ -52,13 +63,12 @@ CashFlowForecast? watchCashFlowForecast(BuildContext context) {
     transactions: transactions,
     balanceInThb: (account) =>
         accountProvider.getBalanceInThb(account.id, transactions),
-    monthlyCycleStartDay: startDay,
     anchorDay: anchorDay,
   );
 }
 
 /// คาดการณ์งวดถัดไปต่อจาก [current] และ rebuild เมื่อ provider เปลี่ยน
-/// (null เมื่อยังไม่ได้ตั้งวันเงินเข้า)
+/// (null เมื่อยังไม่ได้ตั้งวันเริ่มงวด)
 NextPeriodForecast? watchNextPeriodForecast(
   BuildContext context,
   CashFlowForecast current,

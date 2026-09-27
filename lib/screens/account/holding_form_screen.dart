@@ -571,7 +571,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       ],
                     ),
                   ),
-                  const AppCardDivider(indent: 16),
+                  const AppCardDivider(),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -613,7 +613,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       ],
                     ),
                   ),
-                  const AppCardDivider(indent: 16),
+                  const AppCardDivider(),
                   _HoldingNumberFieldRow(
                     label: 'จำนวนหุ้น',
                     controller: _sharesController,
@@ -622,7 +622,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     isDarkMode: isDarkMode,
                     inputFormatters: [_sevenDecimalInputFormatter],
                   ),
-                  const AppCardDivider(indent: 16),
+                  const AppCardDivider(),
                   _HoldingNumberFieldRow(
                     label: 'ราคาทุน (${widget.currencyCode})',
                     controller: _costController,
@@ -631,7 +631,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     isDarkMode: isDarkMode,
                     inputFormatters: [_fourDecimalInputFormatter],
                   ),
-                  const AppCardDivider(indent: 16),
+                  const AppCardDivider(),
                   _HoldingNumberFieldRow(
                     label: 'ราคาปัจจุบัน (${widget.currencyCode})',
                     controller: _priceController,
@@ -665,7 +665,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                     },
                   ),
                   if (_sellPlanEnabled) ...[
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _HoldingNumberFieldRow(
                       label: 'Take Profit %',
                       controller: _takeProfitController,
@@ -674,7 +674,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _takeProfitError,
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _HoldingNumberFieldRow(
                       label: 'Trailing Stop %',
                       controller: _trailingStopController,
@@ -683,7 +683,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _trailingStopError,
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _HoldingNumberFieldRow(
                       label: 'Stop Loss %',
                       controller: _stopLossController,
@@ -692,7 +692,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       isDarkMode: isDarkMode,
                       errorText: _stopLossError,
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _HoldingSwitchRow(
                       title: 'กำหนดกำไรสูงสุดเอง',
                       subtitle: _peakProfitStatusText(),
@@ -711,7 +711,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
                       },
                     ),
                     if (_manualPeakProfitEnabled) ...[
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _HoldingNumberFieldRow(
                         label: 'กำไรสูงสุด %',
                         controller: _peakProfitController,

@@ -457,7 +457,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                       onChanged: (_) => setState(() {}),
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     _buildInputFieldRow(
                       icon: Icons.folder_outlined,
                       label: 'กลุ่ม',
@@ -481,7 +481,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                       isDark: isDark,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     // Type Selector
                     _buildTypeSelectorRow(
                       surfaceColor: surfaceColor,
@@ -491,7 +491,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                     ),
                     // Categories picker (Only if expense type)
                     if (_selectedType == BudgetType.expense) ...[
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildPickerRow(
                         icon: Icons.category_outlined,
                         label: 'หมวดหมู่',
@@ -507,7 +507,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                         textSecondaryColor: textSecondaryColor,
                       ),
                     ],
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     // Hide Budget Switch (CupertinoSwitch)
                     _buildSwitchRow(
                       icon: Icons.visibility_off_outlined,
@@ -532,7 +532,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                       textSecondaryColor: textSecondaryColor,
                       isDark: isDark,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     _buildColorPickerRow(
                       surfaceColor: surfaceColor,
                       textPrimaryColor: textPrimaryColor,

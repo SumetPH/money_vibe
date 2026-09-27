@@ -23,6 +23,9 @@ class Budget {
   final BudgetType type;
   final bool isHidden;
 
+  /// ไม่นับในการคาดการณ์งวดถัดไปของ Cash-flow forecast
+  final bool isExcludedFromCashForecast;
+
   const Budget({
     required this.id,
     required this.name,
@@ -34,6 +37,7 @@ class Budget {
     this.groupName,
     this.type = BudgetType.expense,
     this.isHidden = false,
+    this.isExcludedFromCashForecast = false,
   });
 
   Budget copyWith({
@@ -48,6 +52,7 @@ class Budget {
     bool clearGroupName = false,
     BudgetType? type,
     bool? isHidden,
+    bool? isExcludedFromCashForecast,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -60,6 +65,8 @@ class Budget {
       groupName: clearGroupName ? null : (groupName ?? this.groupName),
       type: type ?? this.type,
       isHidden: isHidden ?? this.isHidden,
+      isExcludedFromCashForecast:
+          isExcludedFromCashForecast ?? this.isExcludedFromCashForecast,
     );
   }
 
@@ -75,6 +82,7 @@ class Budget {
       'group_name': groupName,
       'budget_type': type.name,
       'is_hidden': isHidden ? 1 : 0,
+      'is_excluded_from_cash_forecast': isExcludedFromCashForecast,
     };
   }
 
@@ -169,6 +177,8 @@ class Budget {
       groupName: groupName,
       type: type,
       isHidden: map['is_hidden'] == 1,
+      isExcludedFromCashForecast:
+          map['is_excluded_from_cash_forecast'] as bool? ?? false,
     );
   }
 }
