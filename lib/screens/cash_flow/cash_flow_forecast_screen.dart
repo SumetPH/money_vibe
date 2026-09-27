@@ -30,7 +30,7 @@ class CashFlowForecastScreen extends StatefulWidget {
   State<CashFlowForecastScreen> createState() => _CashFlowForecastScreenState();
 }
 
-enum _ForecastTab { current, next }
+enum _ForecastTab { current, next, manage }
 
 class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
   _ForecastTab _tab = _ForecastTab.current;
@@ -132,26 +132,36 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     List<FixedCashFlowItem> items,
     bool isDarkMode,
   ) => [
-    if (next != null) _buildTabs(),
-    if (next != null && _tab == _ForecastTab.next)
-      ..._buildNextTab(next, isDarkMode)
-    else
-      ..._buildCurrentTab(forecast, items, isDarkMode),
+    _buildTabs(hasNext: next != null),
+    ...switch (_tab) {
+      _ForecastTab.next when next != null => _buildNextTab(next, isDarkMode),
+      _ForecastTab.manage => _itemListSection(items, isDarkMode),
+      _ => _buildCurrentTab(forecast, isDarkMode),
+    },
   ];
 
-  Widget _buildTabs() => Padding(
+  Widget _buildTabs({required bool hasNext}) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
     child: AppSegmentedTabs(
       segments: [
         AppSegment(
           label: 'งวดนี้',
-          isSelected: _tab == _ForecastTab.current,
+          // แท็บงวดถัดไปหายไปชั่วคราวเมื่อยังคำนวณไม่ได้ จึงแสดงงวดนี้แทน
+          isSelected:
+              _tab == _ForecastTab.current ||
+              (_tab == _ForecastTab.next && !hasNext),
           onTap: () => setState(() => _tab = _ForecastTab.current),
         ),
+        if (hasNext)
+          AppSegment(
+            label: 'งวดถัดไป',
+            isSelected: _tab == _ForecastTab.next,
+            onTap: () => setState(() => _tab = _ForecastTab.next),
+          ),
         AppSegment(
-          label: 'งวดถัดไป',
-          isSelected: _tab == _ForecastTab.next,
-          onTap: () => setState(() => _tab = _ForecastTab.next),
+          label: 'จัดการ',
+          isSelected: _tab == _ForecastTab.manage,
+          onTap: () => setState(() => _tab = _ForecastTab.manage),
         ),
       ],
     ),
@@ -165,11 +175,7 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     ...nextPeriodDetailSections(next, isDarkMode),
   ];
 
-  List<Widget> _buildCurrentTab(
-    CashFlowForecast forecast,
-    List<FixedCashFlowItem> items,
-    bool isDarkMode,
-  ) => [
+  List<Widget> _buildCurrentTab(CashFlowForecast forecast, bool isDarkMode) => [
     _SummaryHero(forecast: forecast, isDarkMode: isDarkMode),
 
     ..._occurrenceSection(forecast.itemLines, isDarkMode),
@@ -188,8 +194,6 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       'นับบิลที่สรุปก่อนวันเคลียร์ยอด บิลที่ยังไม่สรุปใช้ยอดที่รูดไปแล้วเป็นยอดประมาณ',
       isDarkMode,
     ),
-
-    ..._itemListSection(items, isDarkMode),
 
     ...cashFlowSection(
       title: 'เงินในบัญชี · ${formatAmount(forecast.liquidTotal)} บาท',

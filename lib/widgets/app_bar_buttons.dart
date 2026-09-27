@@ -22,22 +22,27 @@ class AppCloseButton extends StatelessWidget {
       (s) => s.isDarkMode,
     );
 
-    return Center(
-      child: Material(
-        color: AppColors.surfaceFor(isDarkMode),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(color: AppColors.borderFor(isDarkMode)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: IconButton(
-          icon: Icon(
-            Icons.close,
-            size: 20,
-            color: AppColors.textPrimaryFor(isDarkMode),
+    // Left inset mirrors AppSaveButton's right padding so both edges balance.
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Material(
+          color: AppColors.surfaceFor(isDarkMode),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.full),
+            side: BorderSide(color: AppColors.borderFor(isDarkMode)),
           ),
-          tooltip: tooltip,
-          onPressed: onPressed,
+          clipBehavior: Clip.antiAlias,
+          child: IconButton(
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: AppColors.textPrimaryFor(isDarkMode),
+            ),
+            tooltip: tooltip,
+            onPressed: onPressed,
+          ),
         ),
       ),
     );
