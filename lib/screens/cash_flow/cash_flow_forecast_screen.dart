@@ -414,6 +414,11 @@ class _OccurrenceRow extends StatelessWidget {
                           label: 'ครั้งเดียว',
                           color: AppColors.textSecondaryFor(isDarkMode),
                         ),
+                      if (line.isOverdueUnmarked)
+                        AppStatusChip(
+                          label: 'ยังไม่ติ๊ก',
+                          color: AppColors.saveButtonFor(isDarkMode),
+                        ),
                     ],
                   ),
                 ],

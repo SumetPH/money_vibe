@@ -26,10 +26,14 @@ class CashFlowItemLine {
   final DateTime date;
   final bool isMarked;
 
+  /// ยังไม่ติ๊กทั้งที่วันที่ของรายการเลยวันนี้ไปแล้ว
+  final bool isOverdueUnmarked;
+
   const CashFlowItemLine({
     required this.item,
     required this.date,
     required this.isMarked,
+    required this.isOverdueUnmarked,
   });
 
   bool get isCounted => !isMarked;
@@ -208,7 +212,7 @@ class CashFlowForecastService {
       windowStart: windowStart,
       windowEnd: settleDate,
       liquidLines: _liquidLines(accounts, balanceInThb),
-      itemLines: _itemLines(items, paidMarks, windowStart, settleDate),
+      itemLines: _itemLines(items, paidMarks, windowStart, settleDate, day),
       cardLines: _cardLines(accounts, cardBills, settleDate, day),
       cardBills: cardBills,
     );
@@ -242,7 +246,7 @@ class CashFlowForecastService {
       windowStart: windowStart,
       windowEnd: windowEnd,
       startingLeftover: current.projectedLeftover,
-      itemLines: _itemLines(items, paidMarks, windowStart, windowEnd),
+      itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
       cardLines: [
         for (final card in accounts)
           if (current.cardBills[card.id] case final bills?)
@@ -281,6 +285,7 @@ class CashFlowForecastService {
     List<FixedCashFlowPaidMark> paidMarks,
     DateTime windowStart,
     DateTime windowEnd,
+    DateTime today,
   ) {
     final marked = {for (final m in paidMarks) '${m.itemId}|${m.month}'};
     final lines = <CashFlowItemLine>[];
@@ -289,7 +294,14 @@ class CashFlowForecastService {
         final isMarked = marked.contains(
           '${item.id}|${cashFlowMonthKey(date)}',
         );
-        lines.add(CashFlowItemLine(item: item, date: date, isMarked: isMarked));
+        lines.add(
+          CashFlowItemLine(
+            item: item,
+            date: date,
+            isMarked: isMarked,
+            isOverdueUnmarked: !isMarked && date.isBefore(today),
+          ),
+        );
       }
     }
     lines.sort((a, b) {

@@ -166,3 +166,7 @@ The user settles everything on one day each month (salary arrives and debts are 
 - Cards in the current window: outstanding balance of closed statements, plus, for a statement closing before the clear day but not closed yet, unbilled spending so far as an estimate ("ยังไม่สรุปยอด"). Payment due dates no longer decide the window.
 - Next window: day after the clear day through the following clear day; it counts unbilled spending on statements closing after the current clear day, remaining budget (monthly cycle setting), savings plans and planned purchases.
 - The "ยังไม่ติ๊ก" chip is removed; unticked earlier items still count.
+
+## Revision 2026-09-28 (e): "ยังไม่ติ๊ก" chip restored
+
+The "ยังไม่ติ๊ก" chip returns, shown only on an unticked item whose date is before today (in both the current and next window). It is a visual flag only; the item still counts and is not added to the warning count.
