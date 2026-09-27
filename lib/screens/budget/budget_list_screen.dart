@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/budget.dart';
-import '../../models/transaction.dart';
-import '../../models/account.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/account_provider.dart';
@@ -15,6 +13,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
+import '../../services/budget_spending_service.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
 import '../../widgets/app_switch.dart';
@@ -80,41 +79,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     );
   }
 
-  Map<String, double> _buildSpentByCategoryId(
-    List<AppTransaction> txs,
-    DateTimeRange period,
-    List<Account> accounts,
-  ) {
-    final spentByCategoryId = <String, double>{};
-
-    for (final tx in txs) {
-      if (tx.dateTime.isBefore(period.start) ||
-          tx.dateTime.isAfter(period.end)) {
-        continue;
-      }
-      if (!TransactionProvider.isActualExpense(tx, accounts)) continue;
-
-      final categoryId = tx.categoryId;
-      if (categoryId == null) continue;
-
-      spentByCategoryId[categoryId] =
-          (spentByCategoryId[categoryId] ?? 0.0) + tx.amount;
-    }
-
-    return spentByCategoryId;
-  }
-
-  double _getSpentFromCategoryTotals(
-    Budget budget,
-    Map<String, double> spentByCategoryId,
-  ) {
-    var spent = 0.0;
-    for (final categoryId in budget.categoryIds) {
-      spent += spentByCategoryId[categoryId] ?? 0.0;
-    }
-    return spent;
-  }
-
   List<_BudgetGroupSummary> _buildGroupSummaries({
     required List<Budget> budgets,
     required Map<String, double> spentByCategoryId,
@@ -149,7 +113,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
       var overspent = 0.0;
 
       for (final budget in entry.value) {
-        final budgetSpent = _getSpentFromCategoryTotals(
+        final budgetSpent = BudgetSpendingService.spentFor(
           budget,
           spentByCategoryId,
         );
@@ -245,17 +209,21 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             : AppColors.divider;
 
         // Summary calculations
-        final spentByCategoryId = _buildSpentByCategoryId(
-          allTx,
-          period,
-          accounts,
+        final spentByCategoryId = BudgetSpendingService.spentByCategoryId(
+          transactions: allTx,
+          start: period.start,
+          end: period.end,
+          accounts: accounts,
         );
         var totalBudget = 0.0;
         var totalSpent = 0.0;
         var totalAvailable = 0.0;
         var totalOverspent = 0.0;
         for (final budget in budgets) {
-          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
+          final spent = BudgetSpendingService.spentFor(
+            budget,
+            spentByCategoryId,
+          );
           final remaining = budget.amount - spent;
           totalBudget += budget.amount;
           totalSpent += spent;
@@ -576,7 +544,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         itemCount: budgets.length,
         itemBuilder: (context, i) {
           final budget = budgets[i];
-          final spent = _getSpentFromCategoryTotals(budget, spentByCategoryId);
+          final spent = BudgetSpendingService.spentFor(
+            budget,
+            spentByCategoryId,
+          );
           final isFirst = i == 0;
           final isLast = i == budgets.length - 1;
 
@@ -680,7 +651,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             itemCount: groupBudgets.length,
             itemBuilder: (context, index) {
               final budget = groupBudgets[index];
-              final spent = _getSpentFromCategoryTotals(
+              final spent = BudgetSpendingService.spentFor(
                 budget,
                 spentByCategoryId,
               );

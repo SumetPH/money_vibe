@@ -10,6 +10,7 @@ import '../models/stock_purchase.dart';
 import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 import '../models/fixed_cash_flow_item.dart';
+import '../models/planned_purchase.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -147,6 +148,11 @@ abstract class CashFlowRepositoryInterface {
   Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks();
   Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark);
   Future<void> deleteFixedCashFlowPaidMark(String itemId, String month);
+
+  Future<List<PlannedPurchase>> getPlannedPurchases();
+  Future<void> insertPlannedPurchase(PlannedPurchase purchase);
+  Future<void> updatePlannedPurchase(PlannedPurchase purchase);
+  Future<void> deletePlannedPurchase(String id);
 }
 
 /// Interface สำหรับจัดการข้อมูล Sync Log

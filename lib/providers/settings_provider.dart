@@ -32,7 +32,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
   int _monthlyCycleStartDay = 1;
-  int? _cashFlowAnchorDay; // null = ยังไม่ได้ตั้งวันตัดงวดคาดการณ์
+  int? _cashFlowAnchorDay; // null = ยังไม่ได้ตั้งวันเงินเข้าของการคาดการณ์
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
@@ -107,7 +107,7 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// วันตัดงวดของ Cash-flow forecast (เก็บในเครื่อง); null = ล้างค่า
+  /// วันเงินเข้า (anchor day) ของ Cash-flow forecast (เก็บในเครื่อง); null = ล้างค่า
   Future<void> setCashFlowAnchorDay(int? day) async {
     if (day != null && (day < 1 || day > 31)) {
       throw ArgumentError.value(day, 'day', 'must be between 1 and 31');

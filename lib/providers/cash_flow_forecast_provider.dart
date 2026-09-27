@@ -2,13 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/account.dart';
+import '../models/budget.dart';
 import '../models/fixed_cash_flow_item.dart';
+import '../models/planned_purchase.dart';
 import '../models/transaction.dart';
 import '../repositories/database_repository.dart';
 import '../services/cash_flow_forecast_service.dart';
 import '../services/database_manager.dart';
 
-/// State ของรายการเงินเข้าออกประจำและ paid mark สำหรับ Cash-flow forecast
+/// State ของรายการเงินเข้าออกประจำ, paid mark และรายการอยากซื้อสำหรับ Cash-flow forecast
 class CashFlowForecastProvider extends ChangeNotifier {
   static const _sortOrderStep = 10;
 
@@ -17,11 +19,14 @@ class CashFlowForecastProvider extends ChangeNotifier {
 
   final List<FixedCashFlowItem> _items = [];
   final List<FixedCashFlowPaidMark> _paidMarks = [];
+  final List<PlannedPurchase> _plannedPurchases = [];
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
   List<FixedCashFlowItem> get items => List.unmodifiable(_items);
   List<FixedCashFlowPaidMark> get paidMarks => List.unmodifiable(_paidMarks);
+  List<PlannedPurchase> get plannedPurchases =>
+      List.unmodifiable(_plannedPurchases);
 
   DatabaseRepository get _db => _dbManager.repository;
 
@@ -34,9 +39,11 @@ class CashFlowForecastProvider extends ChangeNotifier {
       final results = await Future.wait([
         _db.getFixedCashFlowItems(),
         _db.getFixedCashFlowPaidMarks(),
+        _db.getPlannedPurchases(),
       ]);
       final items = results[0] as List<FixedCashFlowItem>;
       final marks = results[1] as List<FixedCashFlowPaidMark>;
+      final purchases = results[2] as List<PlannedPurchase>;
       _items
         ..clear()
         ..addAll(
@@ -45,6 +52,11 @@ class CashFlowForecastProvider extends ChangeNotifier {
       _paidMarks
         ..clear()
         ..addAll(marks);
+      _plannedPurchases
+        ..clear()
+        ..addAll(
+          [...purchases]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
+        );
     } catch (e) {
       debugPrint('CashFlowForecastProvider: Init error: $e');
       rethrow;
@@ -76,6 +88,27 @@ class CashFlowForecastProvider extends ChangeNotifier {
     paidMarks: _paidMarks,
   );
 
+  NextPeriodForecast buildNextPeriod({
+    required CashFlowForecast current,
+    required List<Account> accounts,
+    required List<AppTransaction> transactions,
+    required List<Budget> budgets,
+    required int monthlyCycleStartDay,
+    required int anchorDay,
+    DateTime? today,
+  }) => CashFlowForecastService.calculateNextPeriod(
+    current: current,
+    today: today ?? DateTime.now(),
+    monthlyCycleStartDay: monthlyCycleStartDay,
+    anchorDay: anchorDay,
+    accounts: accounts,
+    transactions: transactions,
+    items: _items,
+    paidMarks: _paidMarks,
+    budgets: budgets,
+    plannedPurchases: _plannedPurchases,
+  );
+
   // ── Items ─────────────────────────────────────────────────────────────────
 
   /// เพิ่มรายการทุกเดือน ([dayOfMonth]) หรือครั้งเดียว ([oneTimeDate])
@@ -86,10 +119,7 @@ class CashFlowForecastProvider extends ChangeNotifier {
     int? dayOfMonth,
     DateTime? oneTimeDate,
   }) async {
-    final sortOrder = _items.isEmpty
-        ? 0
-        : _items.map((i) => i.sortOrder).reduce((a, b) => a > b ? a : b) +
-              _sortOrderStep;
+    final sortOrder = _nextSortOrder(_items.map((i) => i.sortOrder));
     final item = FixedCashFlowItem(
       id: _uuid.v4(),
       name: name,
@@ -147,6 +177,70 @@ class CashFlowForecastProvider extends ChangeNotifier {
 
   void _restoreItems(List<FixedCashFlowItem> previous) {
     _items
+      ..clear()
+      ..addAll(previous);
+    notifyListeners();
+  }
+
+  int _nextSortOrder(Iterable<int> sortOrders) => sortOrders.isEmpty
+      ? 0
+      : sortOrders.reduce((a, b) => a > b ? a : b) + _sortOrderStep;
+
+  // ── Planned purchases ─────────────────────────────────────────────────────
+
+  Future<void> addPlannedPurchase({
+    required String name,
+    required double amount,
+  }) async {
+    final purchase = PlannedPurchase(
+      id: _uuid.v4(),
+      name: name,
+      amount: amount,
+      sortOrder: _nextSortOrder(_plannedPurchases.map((p) => p.sortOrder)),
+    );
+    final previous = List<PlannedPurchase>.from(_plannedPurchases);
+    _plannedPurchases.add(purchase);
+    notifyListeners();
+    try {
+      await _db.insertPlannedPurchase(purchase);
+    } catch (e) {
+      debugPrint('CashFlowForecastProvider: Error adding purchase: $e');
+      _restorePurchases(previous);
+      rethrow;
+    }
+  }
+
+  /// ใช้ทั้งแก้ไขรายละเอียดและเปิด/ปิดการนับ ([PlannedPurchase.isIncluded])
+  Future<void> updatePlannedPurchase(PlannedPurchase updated) async {
+    final index = _plannedPurchases.indexWhere((p) => p.id == updated.id);
+    if (index == -1) return;
+    final previous = List<PlannedPurchase>.from(_plannedPurchases);
+    _plannedPurchases[index] = updated;
+    notifyListeners();
+    try {
+      await _db.updatePlannedPurchase(updated);
+    } catch (e) {
+      debugPrint('CashFlowForecastProvider: Error updating purchase: $e');
+      _restorePurchases(previous);
+      rethrow;
+    }
+  }
+
+  Future<void> deletePlannedPurchase(String id) async {
+    final previous = List<PlannedPurchase>.from(_plannedPurchases);
+    _plannedPurchases.removeWhere((p) => p.id == id);
+    notifyListeners();
+    try {
+      await _db.deletePlannedPurchase(id);
+    } catch (e) {
+      debugPrint('CashFlowForecastProvider: Error deleting purchase: $e');
+      _restorePurchases(previous);
+      rethrow;
+    }
+  }
+
+  void _restorePurchases(List<PlannedPurchase> previous) {
+    _plannedPurchases
       ..clear()
       ..addAll(previous);
     notifyListeners();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/fixed_cash_flow_item.dart';
+import '../../models/planned_purchase.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
@@ -10,25 +10,21 @@ import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_form_row.dart';
 import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/calculator_keyboard_host.dart';
-import '../../widgets/day_of_month_picker_sheet.dart';
-import 'cash_flow_forecast_scope.dart';
 import 'cash_flow_section.dart';
 
-/// ฟอร์มเพิ่ม/แก้ไขรายการเงินเข้าออก (ทุกเดือนหรือครั้งเดียว)
-class FixedCashFlowItemFormScreen extends StatefulWidget {
-  final FixedCashFlowItem? item;
+/// ฟอร์มเพิ่ม/แก้ไขรายการอยากซื้อ
+class PlannedPurchaseFormScreen extends StatefulWidget {
+  final PlannedPurchase? purchase;
 
-  const FixedCashFlowItemFormScreen({super.key, this.item});
+  const PlannedPurchaseFormScreen({super.key, this.purchase});
 
   @override
-  State<FixedCashFlowItemFormScreen> createState() =>
-      _FixedCashFlowItemFormScreenState();
+  State<PlannedPurchaseFormScreen> createState() =>
+      _PlannedPurchaseFormScreenState();
 }
 
-class _FixedCashFlowItemFormScreenState
-    extends State<FixedCashFlowItemFormScreen>
+class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
     with CalculatorKeyboardHost {
   static const _sectionHeaderPadding = EdgeInsets.fromLTRB(4, 16, 4, 6);
 
@@ -36,13 +32,9 @@ class _FixedCashFlowItemFormScreenState
   final _amountFocusNode = FocusNode();
   late final TextEditingController _nameController;
   late final TextEditingController _amountController;
-  late CashFlowDirection _direction;
-  late bool _isOneTime;
-  int? _dayOfMonth;
-  DateTime? _oneTimeDate;
   bool _isLoading = false;
 
-  bool get _isEditing => widget.item != null;
+  bool get _isEditing => widget.purchase != null;
 
   @override
   GlobalKey<ScaffoldState> get calculatorScaffoldKey => _scaffoldKey;
@@ -52,21 +44,19 @@ class _FixedCashFlowItemFormScreenState
   FocusNode get calculatorFocusNode => _amountFocusNode;
   @override
   Color get calculatorActionColor =>
-      _accentColor(context.read<SettingsProvider>().isDarkMode);
+      AppColors.expenseFor(context.read<SettingsProvider>().isDarkMode);
 
   @override
   void initState() {
     super.initState();
-    final item = widget.item;
-    _nameController = TextEditingController(text: item?.name ?? '');
+    final purchase = widget.purchase;
+    _nameController = TextEditingController(text: purchase?.name ?? '');
     _amountController = TextEditingController();
-    _direction = item?.direction ?? CashFlowDirection.outgoing;
-    _isOneTime = item?.isOneTime ?? false;
-    _dayOfMonth = item?.dayOfMonth;
-    _oneTimeDate = item?.oneTimeDate;
     attachCalculatorKeyboard();
     // ตั้งหลัง attach เพื่อให้ได้รูปแบบตัวเลขพร้อมคอมมา
-    if (item != null) _amountController.text = item.amount.toStringAsFixed(2);
+    if (purchase != null) {
+      _amountController.text = purchase.amount.toStringAsFixed(2);
+    }
   }
 
   @override
@@ -77,11 +67,6 @@ class _FixedCashFlowItemFormScreenState
     _amountController.dispose();
     super.dispose();
   }
-
-  Color _accentColor(bool isDarkMode) =>
-      _direction == CashFlowDirection.incoming
-      ? AppColors.incomeFor(isDarkMode)
-      : AppColors.expenseFor(isDarkMode);
 
   void _closeKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
@@ -94,55 +79,33 @@ class _FixedCashFlowItemFormScreenState
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// คืนข้อความ error ถ้าข้อมูลไม่ครบ
-  String? _validate(String name, double? amount) {
-    if (name.isEmpty) return 'กรุณากรอกชื่อรายการ';
-    if (amount == null || amount <= 0) return 'กรุณากรอกจำนวนเงินมากกว่า 0';
-    if (_isOneTime && _oneTimeDate == null) return 'กรุณาเลือกวันที่';
-    if (!_isOneTime && _dayOfMonth == null) return 'กรุณาเลือกวันที่ในเดือน';
-    return null;
-  }
-
   Future<void> _save() async {
     _closeKeyboard();
     final name = _nameController.text.trim();
     final amount = calculatorAmount;
-    final error = _validate(name, amount);
-    if (error != null) {
-      _showMessage(error);
+    if (name.isEmpty) {
+      _showMessage('กรุณากรอกชื่อรายการ');
+      return;
+    }
+    if (amount == null || amount <= 0) {
+      _showMessage('กรุณากรอกจำนวนเงินมากกว่า 0');
       return;
     }
 
     final provider = context.read<CashFlowForecastProvider>();
-    final dayOfMonth = _isOneTime ? null : _dayOfMonth;
-    final oneTimeDate = _isOneTime ? _oneTimeDate : null;
     setState(() => _isLoading = true);
     try {
-      final existing = widget.item;
+      final existing = widget.purchase;
       if (existing == null) {
-        await provider.addItem(
-          name: name,
-          amount: amount!,
-          direction: _direction,
-          dayOfMonth: dayOfMonth,
-          oneTimeDate: oneTimeDate,
-        );
+        await provider.addPlannedPurchase(name: name, amount: amount);
       } else {
-        await provider.updateItem(
-          FixedCashFlowItem(
-            id: existing.id,
-            name: name,
-            amount: amount!,
-            direction: _direction,
-            dayOfMonth: dayOfMonth,
-            oneTimeDate: oneTimeDate,
-            sortOrder: existing.sortOrder,
-          ),
+        await provider.updatePlannedPurchase(
+          existing.copyWith(name: name, amount: amount),
         );
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      debugPrint('FixedCashFlowItemForm: save error: $e');
+      debugPrint('PlannedPurchaseForm: save error: $e');
       if (mounted) _showMessage('บันทึกรายการไม่สำเร็จ กรุณาลองใหม่');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -150,52 +113,30 @@ class _FixedCashFlowItemFormScreenState
   }
 
   Future<void> _delete() async {
-    final item = widget.item;
-    if (item == null) return;
+    final purchase = widget.purchase;
+    if (purchase == null) return;
     _closeKeyboard();
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'ลบรายการ',
-      message: 'ต้องการลบ "${item.name}" และสถานะการติ๊กทั้งหมดของรายการนี้?',
+      message: 'ต้องการลบ "${purchase.name}" ออกจากรายการอยากซื้อ?',
       confirmLabel: 'ลบ',
       isDestructive: true,
     );
     if (!confirmed || !mounted) return;
     setState(() => _isLoading = true);
     try {
-      await context.read<CashFlowForecastProvider>().deleteItem(item.id);
+      await context.read<CashFlowForecastProvider>().deletePlannedPurchase(
+        purchase.id,
+      );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      debugPrint('FixedCashFlowItemForm: delete error: $e');
+      debugPrint('PlannedPurchaseForm: delete error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showMessage('ลบรายการไม่สำเร็จ กรุณาลองใหม่');
       }
     }
-  }
-
-  Future<void> _pickDayOfMonth() async {
-    _closeKeyboard();
-    final pick = await showDayOfMonthPickerSheet(
-      context: context,
-      title: 'เลือกวันที่ในเดือน',
-      selectedDay: _dayOfMonth,
-    );
-    if (pick == null || !mounted) return;
-    setState(() => _dayOfMonth = pick.day);
-  }
-
-  Future<void> _pickOneTimeDate() async {
-    _closeKeyboard();
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _oneTimeDate ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 5),
-    );
-    if (picked == null || !mounted) return;
-    setState(() => _oneTimeDate = picked);
   }
 
   @override
@@ -218,12 +159,10 @@ class _FixedCashFlowItemFormScreenState
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
             children: [
-              _buildDirectionTabs(),
-              const SizedBox(height: 14),
               AppAmountHeroCard(
                 controller: _amountController,
                 focusNode: _amountFocusNode,
-                accentColor: _accentColor(isDarkMode),
+                accentColor: AppColors.expenseFor(isDarkMode),
               ),
               const AppSectionHeader(
                 'ข้อมูลรายการ',
@@ -232,16 +171,6 @@ class _FixedCashFlowItemFormScreenState
               AppInsetCard(
                 margin: EdgeInsets.zero,
                 children: [_buildNameRow(isDarkMode)],
-              ),
-              const AppSectionHeader(
-                'กำหนดการ',
-                padding: _sectionHeaderPadding,
-              ),
-              _buildScheduleTabs(),
-              const SizedBox(height: 10),
-              AppInsetCard(
-                margin: EdgeInsets.zero,
-                children: [_buildScheduleRow()],
               ),
               if (_isEditing)
                 Padding(
@@ -273,7 +202,7 @@ class _FixedCashFlowItemFormScreenState
             },
     ),
     title: Text(
-      _isEditing ? 'แก้ไขรายการ' : 'เพิ่มรายการ',
+      _isEditing ? 'แก้ไขรายการอยากซื้อ' : 'เพิ่มรายการอยากซื้อ',
       style: TextStyle(
         color: AppColors.textPrimaryFor(isDarkMode),
         fontSize: 18,
@@ -283,39 +212,10 @@ class _FixedCashFlowItemFormScreenState
     actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
   );
 
-  Widget _buildDirectionTabs() => AppSegmentedTabs(
-    segments: [
-      for (final direction in const [
-        CashFlowDirection.outgoing,
-        CashFlowDirection.incoming,
-      ])
-        AppSegment(
-          label: direction.label,
-          isSelected: _direction == direction,
-          onTap: () => setState(() => _direction = direction),
-        ),
-    ],
-  );
-
-  Widget _buildScheduleTabs() => AppSegmentedTabs(
-    segments: [
-      AppSegment(
-        label: 'ทุกเดือน',
-        isSelected: !_isOneTime,
-        onTap: () => setState(() => _isOneTime = false),
-      ),
-      AppSegment(
-        label: 'ครั้งเดียว',
-        isSelected: _isOneTime,
-        onTap: () => setState(() => _isOneTime = true),
-      ),
-    ],
-  );
-
   Widget _buildNameRow(bool isDarkMode) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
     return AppFormRow(
-      icon: Icons.edit_note_rounded,
+      icon: Icons.shopping_bag_outlined,
       label: 'ชื่อ',
       trailing: TextField(
         controller: _nameController,
@@ -323,7 +223,7 @@ class _FixedCashFlowItemFormScreenState
         onTap: closeCalculatorKeyboard,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         decoration: InputDecoration(
-          hintText: 'เช่น ค่าบ้าน, โบนัส',
+          hintText: 'เช่น มือถือ, ตั๋วเครื่องบิน',
           hintTextDirection: TextDirection.rtl,
           hintStyle: TextStyle(
             color: textSecondary.withValues(alpha: 0.55),
@@ -342,26 +242,6 @@ class _FixedCashFlowItemFormScreenState
           color: AppColors.textPrimaryFor(isDarkMode),
         ),
       ),
-    );
-  }
-
-  Widget _buildScheduleRow() {
-    final date = _oneTimeDate;
-    if (_isOneTime) {
-      return AppFormRow(
-        icon: Icons.event_rounded,
-        label: 'วันที่',
-        value: date == null
-            ? 'เลือกวันที่'
-            : '${formatCashFlowDate(date)} ${date.year}',
-        onTap: _pickOneTimeDate,
-      );
-    }
-    return AppFormRow(
-      icon: Icons.calendar_today_rounded,
-      label: 'วันที่ในเดือน',
-      value: _dayOfMonth == null ? 'เลือกวัน' : 'ทุกวันที่ $_dayOfMonth',
-      onTap: _pickDayOfMonth,
     );
   }
 }
