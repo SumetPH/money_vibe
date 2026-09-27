@@ -28,7 +28,6 @@ const _salary = FixedCashFlowItem(
   amount: 50000,
   dayOfMonth: 30,
   direction: CashFlowDirection.incoming,
-  isPayday: true,
 );
 
 const _house = FixedCashFlowItem(
@@ -72,9 +71,11 @@ CashFlowForecast? _forecast({
   List<AppTransaction> transactions = const [],
   List<FixedCashFlowItem> items = const [_salary],
   List<FixedCashFlowPaidMark> marks = const [],
+  int? anchorDay = 30,
 }) => CashFlowForecastService.calculate(
   today: today,
   monthlyCycleStartDay: _cycleStartDay,
+  anchorDay: anchorDay,
   accounts: accounts ?? [_bank],
   balanceInThb: (account) => balances[account.id] ?? 0,
   transactions: transactions,
@@ -84,8 +85,8 @@ CashFlowForecast? _forecast({
 
 void main() {
   group('forecast window', () {
-    test('returns null when no payday item exists', () {
-      final forecast = _forecast(today: DateTime(2026, 9, 25), items: [_house]);
+    test('returns null when no anchor day is set', () {
+      final forecast = _forecast(today: DateTime(2026, 9, 25), anchorDay: null);
 
       expect(forecast, isNull);
     });
@@ -95,7 +96,7 @@ void main() {
       () {
         final forecast = _forecast(today: DateTime(2026, 9, 25))!;
 
-        expect(forecast.cyclePayday, DateTime(2026, 9, 30));
+        expect(forecast.cycleAnchorDate, DateTime(2026, 9, 30));
         expect(forecast.windowEnd, DateTime(2026, 10, 29));
         expect(forecast.projectedLeftover, 70000);
       },
@@ -118,17 +119,14 @@ void main() {
         marks: [_mark(_salary, '2026-09')],
       )!;
 
-      expect(forecast.cyclePayday, DateTime(2026, 10, 30));
+      expect(forecast.cycleAnchorDate, DateTime(2026, 10, 30));
       expect(forecast.windowEnd, DateTime(2026, 11, 29));
     });
 
     test('clamps a day-31 payday to the last day of short months', () {
-      final forecast = _forecast(
-        today: DateTime(2026, 10, 25),
-        items: [_salary.copyWith(dayOfMonth: 31)],
-      )!;
+      final forecast = _forecast(today: DateTime(2026, 10, 25), anchorDay: 31)!;
 
-      expect(forecast.cyclePayday, DateTime(2026, 10, 31));
+      expect(forecast.cycleAnchorDate, DateTime(2026, 10, 31));
       expect(forecast.windowEnd, DateTime(2026, 11, 29));
     });
   });
@@ -175,6 +173,49 @@ void main() {
       expect(septemberHouse.isCounted, isTrue);
       expect(septemberHouse.isOverdueUnmarked, isTrue);
       expect(forecast.projectedLeftover, 20000 + 50000 - 30000);
+    });
+  });
+
+  group('one-time items', () {
+    final bonus = FixedCashFlowItem(
+      id: 'bonus',
+      name: 'โบนัส',
+      amount: 30000,
+      oneTimeDate: DateTime(2026, 10, 15),
+      direction: CashFlowDirection.incoming,
+    );
+
+    test('counts a one-time item once when its date is in the window', () {
+      final forecast = _forecast(
+        today: DateTime(2026, 9, 25),
+        items: [_salary, bonus],
+      )!;
+
+      final bonusLines = forecast.itemLines.where((l) => l.item.id == 'bonus');
+      expect(bonusLines.map((l) => l.date), [DateTime(2026, 10, 15)]);
+      expect(forecast.projectedLeftover, 20000 + 50000 + 30000);
+    });
+
+    test('ignores a one-time item dated after the window', () {
+      final forecast = _forecast(
+        today: DateTime(2026, 9, 25),
+        items: [
+          _salary,
+          bonus.copyWith(oneTimeDate: DateTime(2026, 11, 2)),
+        ],
+      )!;
+
+      expect(forecast.itemLines.where((l) => l.item.id == 'bonus'), isEmpty);
+    });
+
+    test('a paid mark on the one-time month removes it', () {
+      final forecast = _forecast(
+        today: DateTime(2026, 10, 16),
+        items: [_salary, bonus],
+        marks: [_mark(_salary, '2026-09'), _mark(bonus, '2026-10')],
+      )!;
+
+      expect(forecast.projectedLeftover, 20000);
     });
   });
 
@@ -287,11 +328,11 @@ void main() {
           amount: 50000,
           dayOfMonth: 1,
           direction: CashFlowDirection.incoming,
-          isPayday: true,
         );
         final forecast = CashFlowForecastService.calculate(
           today: DateTime(2026, 9, 25),
           monthlyCycleStartDay: 1,
+          anchorDay: 1,
           accounts: [_bank, _card()],
           balanceInThb: (account) => account.id == 'bank' ? 20000 : 0,
           transactions: [_spend('card', DateTime(2026, 8, 10), 4000)],

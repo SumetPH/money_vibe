@@ -144,9 +144,6 @@ abstract class CashFlowRepositoryInterface {
   Future<void> updateFixedCashFlowItem(FixedCashFlowItem item);
   Future<void> deleteFixedCashFlowItem(String id);
 
-  /// ตั้ง [itemId] เป็น payday item เพียงรายการเดียว (null = ยกเลิกทั้งหมด)
-  Future<void> setPaydayItem(String? itemId);
-
   Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks();
   Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark);
   Future<void> deleteFixedCashFlowPaidMark(String itemId, String month);

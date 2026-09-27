@@ -22,6 +22,8 @@ Future<DayOfMonthPick?> showDayOfMonthPickerSheet({
 }) {
   return showAppModalBottomSheet<DayOfMonthPick>(
     context: context,
+    // ให้ sheet สูงตามเนื้อหา เพื่อแสดงครบทั้งเดือนโดยไม่ต้องเลื่อน
+    isScrollControlled: true,
     builder: (sheetContext) => Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
@@ -40,8 +42,9 @@ Future<DayOfMonthPick?> showDayOfMonthPickerSheet({
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppModalBottomSheetHeader(title: title),
-                Expanded(
+                Flexible(
                   child: GridView.builder(
+                    shrinkWrap: true,
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(

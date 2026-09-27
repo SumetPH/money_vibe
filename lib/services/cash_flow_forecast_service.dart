@@ -56,7 +56,7 @@ class CardObligationLine {
 class CashFlowForecast {
   final DateTime windowStart;
   final DateTime windowEnd;
-  final DateTime cyclePayday;
+  final DateTime cycleAnchorDate;
   final List<LiquidBalanceLine> liquidLines;
   final List<CashFlowItemLine> itemLines;
   final List<CardObligationLine> cardLines;
@@ -64,7 +64,7 @@ class CashFlowForecast {
   const CashFlowForecast({
     required this.windowStart,
     required this.windowEnd,
-    required this.cyclePayday,
+    required this.cycleAnchorDate,
     required this.liquidLines,
     required this.itemLines,
     required this.cardLines,
@@ -97,18 +97,18 @@ class CashFlowForecast {
 class CashFlowForecastService {
   static const _liquidTypes = {AccountType.cash, AccountType.bankAccount};
 
-  /// คืน null เมื่อยังไม่มี payday item
+  /// คืน null เมื่อยังไม่ได้ตั้งวันตัดงวด ([anchorDay])
   static CashFlowForecast? calculate({
     required DateTime today,
     required int monthlyCycleStartDay,
+    required int? anchorDay,
     required List<Account> accounts,
     required double Function(Account account) balanceInThb,
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
     required List<FixedCashFlowPaidMark> paidMarks,
   }) {
-    final payday = items.where((i) => i.isPayday).firstOrNull;
-    if (payday == null) return null;
+    if (anchorDay == null) return null;
 
     final day = _dayOf(today);
     final cycle = monthlyCyclePeriod(
@@ -116,17 +116,18 @@ class CashFlowForecastService {
       monthlyCycleStartDay,
     );
     final windowStart = cycle.start;
-    final cyclePayday = _firstOccurrenceOnOrAfter(payday, windowStart);
-    final nextPayday = payday.occurrenceIn(
-      cyclePayday.year,
-      cyclePayday.month + 1,
+    final cycleAnchorDate = _firstAnchorOnOrAfter(anchorDay, windowStart);
+    final nextAnchorDate = clampedDayOfMonth(
+      cycleAnchorDate.year,
+      cycleAnchorDate.month + 1,
+      anchorDay,
     );
-    final windowEnd = nextPayday.subtract(const Duration(days: 1));
+    final windowEnd = nextAnchorDate.subtract(const Duration(days: 1));
 
     return CashFlowForecast(
       windowStart: windowStart,
       windowEnd: windowEnd,
-      cyclePayday: cyclePayday,
+      cycleAnchorDate: cycleAnchorDate,
       liquidLines: _liquidLines(accounts, balanceInThb),
       itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
       cardLines: _cardLines(accounts, transactions, windowEnd, day),
@@ -156,23 +157,18 @@ class CashFlowForecastService {
     final marked = {for (final m in paidMarks) '${m.itemId}|${m.month}'};
     final lines = <CashFlowItemLine>[];
     for (final item in items) {
-      var month = DateTime(windowStart.year, windowStart.month);
-      while (!month.isAfter(windowEnd)) {
-        final date = item.occurrenceIn(month.year, month.month);
-        if (!date.isBefore(windowStart) && !date.isAfter(windowEnd)) {
-          final isMarked = marked.contains(
-            '${item.id}|${cashFlowMonthKey(date)}',
-          );
-          lines.add(
-            CashFlowItemLine(
-              item: item,
-              date: date,
-              isMarked: isMarked,
-              isOverdueUnmarked: !isMarked && date.isBefore(today),
-            ),
-          );
-        }
-        month = DateTime(month.year, month.month + 1);
+      for (final date in item.occurrencesBetween(windowStart, windowEnd)) {
+        final isMarked = marked.contains(
+          '${item.id}|${cashFlowMonthKey(date)}',
+        );
+        lines.add(
+          CashFlowItemLine(
+            item: item,
+            date: date,
+            isMarked: isMarked,
+            isOverdueUnmarked: !isMarked && date.isBefore(today),
+          ),
+        );
       }
     }
     lines.sort((a, b) => a.date.compareTo(b.date));
@@ -252,13 +248,10 @@ class CashFlowForecastService {
         : null;
   }
 
-  static DateTime _firstOccurrenceOnOrAfter(
-    FixedCashFlowItem item,
-    DateTime from,
-  ) {
-    final sameMonth = item.occurrenceIn(from.year, from.month);
+  static DateTime _firstAnchorOnOrAfter(int anchorDay, DateTime from) {
+    final sameMonth = clampedDayOfMonth(from.year, from.month, anchorDay);
     if (!sameMonth.isBefore(from)) return sameMonth;
-    return item.occurrenceIn(from.year, from.month + 1);
+    return clampedDayOfMonth(from.year, from.month + 1, anchorDay);
   }
 
   static double _positive(double value) {

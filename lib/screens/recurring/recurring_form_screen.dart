@@ -15,8 +15,10 @@ import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
-import '../../widgets/calculator_text_field_config.dart';
 import 'recurring_section.dart';
+import '../../widgets/app_amount_hero_card.dart';
+import '../../widgets/app_form_row.dart';
+import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
@@ -480,7 +482,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 children: [
                   _RecurringTypeSegmentedControl(
                     selectedType: _type,
-                    isDarkMode: isDark,
                     onChanged: (type) => setState(() {
                       _type = type;
                       _categoryId = null;
@@ -540,8 +541,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         _RowTile(
                           label: 'บัญชี',
                           value: selectedAccount?.name ?? 'เลือกบัญชี',
-                          surfaceColor: surfaceColor,
-                          textSecondary: textSecondary,
                           onTap: () =>
                               _pickAccount(accounts, isDestination: false),
                         ),
@@ -557,8 +556,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                                         : selectedToAccount)
                                     ?.name ??
                                 'เลือกบัญชี',
-                            surfaceColor: surfaceColor,
-                            textSecondary: textSecondary,
                             onTap: () => _type == TransactionType.debtTransfer
                                 ? _pickDebtAccount()
                                 : _pickAccount(accounts, isDestination: true),
@@ -573,8 +570,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                             value:
                                 selectedDebtAccount?.name ??
                                 'เลือกบัญชีหนี้สิน',
-                            surfaceColor: surfaceColor,
-                            textSecondary: textSecondary,
                             onTap: _pickDebtAccount,
                           ),
                           Divider(height: 1, color: dividerColor),
@@ -585,8 +580,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           _RowTile(
                             label: 'หมวดหมู่',
                             value: selectedCategory?.name ?? 'ไม่ได้เลือก',
-                            surfaceColor: surfaceColor,
-                            textSecondary: textSecondary,
                             onTap: () => _pickCategory(categories, isDark),
                           ),
                           Divider(height: 1, color: dividerColor),
@@ -598,8 +591,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           value: _dayOfMonth == 0
                               ? 'สิ้นเดือน'
                               : 'วันที่ $_dayOfMonth',
-                          surfaceColor: surfaceColor,
-                          textSecondary: textSecondary,
                           onTap: () => _pickDayOfMonth(isDark),
                         ),
                       ],
@@ -821,8 +812,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           _RowTile(
                             label: 'เวลาแจ้งเตือน',
                             value: _formatTime(_notificationTime),
-                            surfaceColor: surfaceColor,
-                            textSecondary: textSecondary,
                             onTap: () => _pickNotificationTime(isDark),
                           ),
                           Divider(height: 1, color: dividerColor),
@@ -1551,29 +1540,17 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
 class _RecurringTypeSegmentedControl extends StatelessWidget {
   final TransactionType selectedType;
-  final bool isDarkMode;
   final ValueChanged<TransactionType> onChanged;
   final VoidCallback onShowMore;
 
   const _RecurringTypeSegmentedControl({
     required this.selectedType,
-    required this.isDarkMode,
     required this.onChanged,
     required this.onShowMore,
   });
 
   @override
   Widget build(BuildContext context) {
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final primary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
     final isPrimary =
         selectedType == TransactionType.expense ||
         selectedType == TransactionType.income ||
@@ -1586,104 +1563,25 @@ class _RecurringTypeSegmentedControl extends StatelessWidget {
       _ => 'อื่นๆ ▾',
     };
 
-    return Material(
-      color: surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            _tab(
-              'รายจ่าย',
-              selectedType == TransactionType.expense,
-              TransactionType.expense,
-              selectedSurface,
-              primary,
-              secondary,
-            ),
-            _tab(
-              'รายรับ',
-              selectedType == TransactionType.income,
-              TransactionType.income,
-              selectedSurface,
-              primary,
-              secondary,
-            ),
-            _tab(
-              'โอน',
-              selectedType == TransactionType.transfer,
-              TransactionType.transfer,
-              selectedSurface,
-              primary,
-              secondary,
-            ),
-            Expanded(
-              child: _segment(
-                otherLabel,
-                !isPrimary,
-                selectedSurface,
-                primary,
-                secondary,
-                onShowMore,
-              ),
-            ),
-          ],
+    AppSegment tab(String label, TransactionType type) => AppSegment(
+      label: label,
+      isSelected: selectedType == type,
+      onTap: () => onChanged(type),
+    );
+
+    return AppSegmentedTabs(
+      segments: [
+        tab('รายจ่าย', TransactionType.expense),
+        tab('รายรับ', TransactionType.income),
+        tab('โอน', TransactionType.transfer),
+        AppSegment(
+          label: otherLabel,
+          isSelected: !isPrimary,
+          onTap: onShowMore,
         ),
-      ),
+      ],
     );
   }
-
-  Widget _tab(
-    String label,
-    bool isSelected,
-    TransactionType type,
-    Color selectedSurface,
-    Color primary,
-    Color secondary,
-  ) => Expanded(
-    child: _segment(
-      label,
-      isSelected,
-      selectedSurface,
-      primary,
-      secondary,
-      () => onChanged(type),
-    ),
-  );
-
-  Widget _segment(
-    String label,
-    bool isSelected,
-    Color selectedSurface,
-    Color primary,
-    Color secondary,
-    VoidCallback onTap,
-  ) => Material(
-    color: isSelected ? selectedSurface : Colors.transparent,
-    borderRadius: BorderRadius.circular(AppRadii.large),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? primary : secondary,
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 class _RecurringAmountHeroCard extends StatelessWidget {
@@ -1703,16 +1601,6 @@ class _RecurringAmountHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final surfaceVariant = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
     final typeColor = switch (type) {
       TransactionType.income || TransactionType.increaseBalance =>
         isDarkMode ? AppColors.darkIncome : AppColors.income,
@@ -1723,109 +1611,12 @@ class _RecurringAmountHeroCard extends StatelessWidget {
       TransactionType.debtTransfer =>
         isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer,
     };
-    final currency = selectedAccount?.currency == 'USD' ? 'USD' : 'THB';
 
-    return Material(
-      color: surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => amountFocusNode.requestFocus(),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'จำนวนเงิน',
-                    style: TextStyle(
-                      color: textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: surfaceVariant,
-                      borderRadius: BorderRadius.circular(AppRadii.small),
-                    ),
-                    child: Text(
-                      currency,
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(
-                    currency == 'USD' ? '\$ ' : '฿ ',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: typeColor,
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: amountController,
-                      focusNode: amountFocusNode,
-                      onTapOutside: (_) =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      readOnly: calculatorTextFieldReadOnly,
-                      showCursor: true,
-                      keyboardType: calculatorTextInputType,
-                      inputFormatters: calculatorTextInputFormatters,
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '0.00',
-                        hintStyle: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode
-                              ? AppColors.darkDivider
-                              : AppColors.divider,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        filled: false,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 6,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return AppAmountHeroCard(
+      controller: amountController,
+      focusNode: amountFocusNode,
+      accentColor: typeColor,
+      currencyCode: selectedAccount?.currency == 'USD' ? 'USD' : 'THB',
     );
   }
 }
@@ -1869,24 +1660,16 @@ class _ToggleRow extends StatelessWidget {
 class _RowTile extends StatelessWidget {
   final String label;
   final String value;
-  final Color surfaceColor;
-  final Color textSecondary;
   final VoidCallback onTap;
 
   const _RowTile({
     required this.label,
     required this.value,
-    required this.surfaceColor,
-    required this.textSecondary,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<SettingsProvider>().isDarkMode;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
     final icon = switch (label) {
       'บัญชี' => Icons.account_balance_wallet_outlined,
       'บัญชีปลายทาง' => Icons.input_rounded,
@@ -1897,54 +1680,6 @@ class _RowTile extends StatelessWidget {
       _ => Icons.tune_rounded,
     };
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: surfaceColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: textSecondary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadii.large),
-              ),
-              child: Icon(icon, color: textSecondary, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
-          ],
-        ),
-      ),
-    );
+    return AppFormRow(icon: icon, label: label, value: value, onTap: onTap);
   }
 }

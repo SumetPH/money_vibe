@@ -22,9 +22,8 @@ class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
     }
   }
 
-  /// is_payday เขียนผ่าน [setPaydayItem] เท่านั้น เพื่อไม่ชน unique index
   Map<String, dynamic> _itemToSupabase(FixedCashFlowItem item) => {
-    ...item.toMap()..remove('is_payday'),
+    ...item.toMap(),
     'user_id': currentUserId,
   };
 
@@ -72,24 +71,6 @@ class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
         .from(_itemsTable)
         .delete()
         .eq('id', id)
-        .eq('user_id', currentUserId!);
-  }
-
-  @override
-  Future<void> setPaydayItem(String? itemId) async {
-    _requireAuth();
-    repo.log('Setting payday item: $itemId');
-    // ต้องล้างของเดิมก่อน เพราะมี unique index ให้มี payday ได้รายการเดียว
-    await client
-        .from(_itemsTable)
-        .update({'is_payday': false})
-        .eq('user_id', currentUserId!)
-        .eq('is_payday', true);
-    if (itemId == null) return;
-    await client
-        .from(_itemsTable)
-        .update({'is_payday': true})
-        .eq('id', itemId)
         .eq('user_id', currentUserId!);
   }
 

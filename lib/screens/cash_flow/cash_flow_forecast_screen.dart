@@ -3,19 +3,20 @@ import 'package:provider/provider.dart';
 
 import '../../main.dart';
 import '../../models/fixed_cash_flow_item.dart';
-import '../../providers/account_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/cash_flow_forecast_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_bar_action_button.dart';
-import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_drawer.dart';
+import '../../widgets/app_form_row.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/day_of_month_picker_sheet.dart';
 import '../../widgets/app_status_chip.dart';
-import '../../widgets/app_switch.dart';
 import 'cash_flow_forecast_scope.dart';
 import 'fixed_cash_flow_item_form_screen.dart';
+import 'liquid_account_picker_sheet.dart';
 
 /// หน้ารายละเอียดของ Cash-flow forecast: ที่มาของตัวเลข, ติ๊ก paid mark,
 /// เลือก liquid account และจัดการรายการเงินเข้าออกประจำ
@@ -31,29 +32,54 @@ class CashFlowForecastScreen extends StatelessWidget {
     final items = context.watch<CashFlowForecastProvider>().items;
     final bgColor = AppColors.backgroundFor(isDarkMode);
 
+    final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+
     return Scaffold(
       backgroundColor: bgColor,
+      drawer: isLargeScreen
+          ? null
+          : const AppDrawer(currentRoute: '/cash-flow'),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
         backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
-        leadingWidth: 64,
-        leading: const AppBackButton(),
-        title: Text(
-          'คาดการณ์เงินคงเหลือ',
-          style: TextStyle(
-            color: AppColors.textPrimaryFor(isDarkMode),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+        centerTitle: false,
+        titleSpacing: isLargeScreen ? 24 : 16,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'การวางแผนการเงิน',
+              style: TextStyle(
+                color: AppColors.textSecondaryFor(isDarkMode),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'คาดการณ์เงินคงเหลือ',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.textPrimaryFor(isDarkMode),
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: AppBarActionButton(
-              icon: const Icon(Icons.add_rounded),
-              tooltip: 'เพิ่มรายการประจำ',
+              icon: Icon(
+                Icons.add_rounded,
+                color: AppColors.textPrimaryFor(isDarkMode),
+              ),
+              tooltip: 'เพิ่มรายการเงินเข้าออก',
               onPressed: () => _openItemForm(context),
             ),
           ),
@@ -63,22 +89,23 @@ class CashFlowForecastScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
           children: forecast == null
-              ? _buildWithoutPayday(items, isDarkMode)
+              ? _buildWithoutAnchor(items, isDarkMode)
               : _buildForecast(forecast, items, isDarkMode),
         ),
       ),
     );
   }
 
-  List<Widget> _buildWithoutPayday(
+  List<Widget> _buildWithoutAnchor(
     List<FixedCashFlowItem> items,
     bool isDarkMode,
   ) => [
+    const _AnchorDayCard(),
     _note(
       items.isEmpty
-          ? 'เพิ่มรายการเงินเข้าออกประจำ เช่น เงินเดือน ค่าบ้าน ค่ารถ '
-                'แล้วตั้งรายการเงินเดือนเพื่อดูว่าเงินพอชำระภาระจนถึงเงินเดือนงวดถัดไปไหม'
-          : 'ตั้งรายการเงินเข้ารายการหนึ่งเป็น "เงินเดือน" เพื่อเริ่มคาดการณ์',
+          ? 'ตั้งวันตัดงวด (เช่น วันที่เงินเข้า) แล้วเพิ่มรายการเงินเข้าออก '
+                'เช่น ค่าบ้าน ค่ารถ โบนัส เพื่อดูว่าเงินพอชำระภาระจนถึงงวดถัดไปไหม'
+          : 'ตั้งวันตัดงวดเพื่อเริ่มคาดการณ์',
       isDarkMode,
     ),
     if (items.isNotEmpty) ..._itemListSection(items, isDarkMode),
@@ -90,26 +117,7 @@ class CashFlowForecastScreen extends StatelessWidget {
     bool isDarkMode,
   ) => [
     _SummaryHero(forecast: forecast, isDarkMode: isDarkMode),
-    ..._section(
-      title: 'เงินในบัญชี · ${formatAmount(forecast.liquidTotal)} บาท',
-      emptyText: 'ยังไม่มีบัญชีเงินสดหรือบัญชีธนาคาร',
-      divider: _iconRowDivider,
-      rows: [
-        for (final line in forecast.liquidLines)
-          _LiquidRow(line: line, isDarkMode: isDarkMode),
-      ],
-      isDarkMode: isDarkMode,
-    ),
-    ..._section(
-      title: 'เงินเข้าออกประจำ (ติ๊กเมื่อเกิดขึ้นแล้ว)',
-      emptyText: 'ยังไม่มีรายการในช่วงนี้',
-      divider: const AppCardDivider(),
-      rows: [
-        for (final line in forecast.itemLines)
-          _OccurrenceRow(line: line, isDarkMode: isDarkMode),
-      ],
-      isDarkMode: isDarkMode,
-    ),
+
     ..._section(
       title: 'บัตรเครดิต · -${formatAmount(forecast.cardTotal)} บาท',
       emptyText: 'ไม่มียอดบัตรที่ต้องชำระในช่วงนี้',
@@ -121,10 +129,40 @@ class CashFlowForecastScreen extends StatelessWidget {
       isDarkMode: isDarkMode,
     ),
     _note(
-      'นับเฉพาะยอดบัตรที่สรุปแล้ว ยอดที่ใช้หลังวันสรุปยอดจะไปอยู่ในรอบถัดไป',
+      'นับเฉพาะยอดบัตรที่สรุปแล้ว ยอดหลังวันสรุปยอดจะไปอยู่ในรอบถัดไป',
       isDarkMode,
     ),
+
     ..._itemListSection(items, isDarkMode),
+
+    ..._section(
+      title: 'เงินเข้าออกในงวดนี้ (ติ๊กเมื่อเกิดขึ้นแล้ว)',
+      emptyText: 'ยังไม่มีรายการในช่วงนี้',
+      divider: const AppCardDivider(),
+      rows: [
+        for (final line in forecast.itemLines)
+          _OccurrenceRow(line: line, isDarkMode: isDarkMode),
+      ],
+      isDarkMode: isDarkMode,
+    ),
+
+    ..._section(
+      title: 'เงินในบัญชี · ${formatAmount(forecast.liquidTotal)} บาท',
+      emptyText: 'ยังไม่มีบัญชีเงินสดหรือบัญชีธนาคาร',
+      divider: _iconRowDivider,
+      rows: [
+        for (final line in forecast.liquidLines.where((l) => l.isIncluded))
+          LiquidAccountRow(line: line, isDarkMode: isDarkMode),
+        if (forecast.liquidLines.isNotEmpty)
+          _LiquidAccountSelectorRow(
+            lines: forecast.liquidLines,
+            isDarkMode: isDarkMode,
+          ),
+      ],
+      isDarkMode: isDarkMode,
+    ),
+
+    const _AnchorDayCard(),
   ];
 
   static const _iconRowDivider = AppCardDivider(indent: 60, endIndent: 16);
@@ -133,8 +171,8 @@ class CashFlowForecastScreen extends StatelessWidget {
     List<FixedCashFlowItem> items,
     bool isDarkMode,
   ) => _section(
-    title: 'รายการประจำทั้งหมด',
-    emptyText: 'ยังไม่มีรายการประจำ',
+    title: 'รายการเงินเข้าออกทั้งหมด',
+    emptyText: 'ยังไม่มีรายการ',
     divider: const AppCardDivider(),
     rows: [
       for (final item in items) _ItemRow(item: item, isDarkMode: isDarkMode),
@@ -211,8 +249,7 @@ class _SummaryHero extends StatelessWidget {
       children: [
         Text(
           'ช่วง ${formatCashFlowDate(forecast.windowStart)} – '
-          '${formatCashFlowDate(forecast.windowEnd)} · '
-          'เงินเดือน ${formatCashFlowDate(forecast.cyclePayday)}',
+          '${formatCashFlowDate(forecast.windowEnd)}',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -233,6 +270,16 @@ class _SummaryHero extends StatelessWidget {
         _metric('เงินเข้าที่ยังไม่ติ๊ก', forecast.incomingTotal),
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
+        if (forecast.warningCount > 0) ...[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppStatusChip(
+              label: '${forecast.warningCount} รายการต้องตรวจสอบ',
+              color: AppColors.saveButtonFor(isDarkMode),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -263,67 +310,50 @@ class _SummaryHero extends StatelessWidget {
   );
 }
 
-class _LiquidRow extends StatelessWidget {
-  final LiquidBalanceLine line;
+/// แถวเปิด sheet เลือกบัญชีที่นำมาคำนวณ
+class _LiquidAccountSelectorRow extends StatelessWidget {
+  final List<LiquidBalanceLine> lines;
   final bool isDarkMode;
 
-  const _LiquidRow({required this.line, required this.isDarkMode});
-
-  Future<void> _toggle(BuildContext context, bool isIncluded) async {
-    try {
-      await context.read<AccountProvider>().updateAccount(
-        line.account.copyWith(isExcludedFromCashForecast: !isIncluded),
-      );
-    } catch (e) {
-      debugPrint('CashFlowForecastScreen: toggle account error: $e');
-      if (context.mounted) {
-        _showError(context, 'บันทึกการตั้งค่าบัญชีไม่สำเร็จ');
-      }
-    }
-  }
+  const _LiquidAccountSelectorRow({
+    required this.lines,
+    required this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final textPrimary = AppColors.textPrimaryFor(isDarkMode);
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          AccountIconWidget(
-            account: line.account,
-            size: 32,
-            isDarkMode: isDarkMode,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  line.account.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: line.isIncluded
-                        ? textPrimary
-                        : textSecondary.withValues(alpha: 0.6),
-                  ),
+    final includedCount = lines.where((l) => l.isIncluded).length;
+    return InkWell(
+      onTap: () => showLiquidAccountPickerSheet(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(Icons.tune_rounded, size: 20, color: textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'เลือกบัญชีที่นำมาคำนวณ',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimaryFor(isDarkMode),
                 ),
-                Text(
-                  line.isIncluded
-                      ? '${formatAmount(line.balance)} บาท'
-                      : 'ไม่นับ · ${formatAmount(line.balance)} บาท',
-                  style: TextStyle(fontSize: 12, color: textSecondary),
-                ),
-              ],
+              ),
             ),
-          ),
-          AppSwitch(
-            value: line.isIncluded,
-            onChanged: (value) => _toggle(context, value),
-          ),
-        ],
+            Text(
+              '$includedCount จาก ${lines.length}',
+              style: TextStyle(fontSize: 15, color: textSecondary),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: textSecondary.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -399,10 +429,10 @@ class _OccurrenceRow extends StatelessWidget {
                         formatCashFlowDate(line.date),
                         style: TextStyle(fontSize: 12, color: textSecondary),
                       ),
-                      if (line.item.isPayday)
+                      if (line.item.isOneTime)
                         AppStatusChip(
-                          label: 'เงินเดือน',
-                          color: AppColors.incomeFor(isDarkMode),
+                          label: 'ครั้งเดียว',
+                          color: AppColors.textSecondaryFor(isDarkMode),
                         ),
                       if (line.isOverdueUnmarked)
                         AppStatusChip(
@@ -504,6 +534,44 @@ class _CardRow extends StatelessWidget {
   }
 }
 
+/// แถวตั้งวันตัดงวดของการคาดการณ์ (เก็บในเครื่อง)
+class _AnchorDayCard extends StatelessWidget {
+  const _AnchorDayCard();
+
+  Future<void> _pick(BuildContext context, int? current) async {
+    final pick = await showDayOfMonthPickerSheet(
+      context: context,
+      title: 'เลือกวันตัดงวด',
+      selectedDay: current,
+      clearLabel: 'ล้างวันตัดงวด',
+    );
+    if (pick == null || !context.mounted) return;
+    await context.read<SettingsProvider>().setCashFlowAnchorDay(pick.day);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final anchorDay = context.select<SettingsProvider, int?>(
+      (s) => s.cashFlowAnchorDay,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: AppInsetCard(
+        children: [
+          AppFormRow(
+            icon: Icons.event_repeat_rounded,
+            label: 'วันตัดงวด',
+            value: anchorDay == null
+                ? 'ยังไม่ได้ตั้ง · เช่น วันที่เงินเข้า'
+                : 'ทุกวันที่ $anchorDay · ดูถึงก่อนงวดถัดไป',
+            onTap: () => _pick(context, anchorDay),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ItemRow extends StatelessWidget {
   final FixedCashFlowItem item;
   final bool isDarkMode;
@@ -532,7 +600,7 @@ class _ItemRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'ทุกวันที่ ${item.dayOfMonth}',
+                    cashFlowScheduleLabel(item),
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondaryFor(isDarkMode),

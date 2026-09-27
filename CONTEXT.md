@@ -47,9 +47,9 @@
 - **Outstanding statement balance**: The part of a statement balance not yet paid within that statement's payment window.
 - **Unbilled spending**: Credit-card spending after the latest statement date; it belongs to a future statement and is not an obligation until that statement closes.
 - **Payment due date**: The date a credit-card statement must be paid, set per card as a day of the month and falling on the first such day after the statement date; when unset it is fifteen days after the statement date.
-- **Fixed cash-flow item**: A user-listed monthly amount of money coming in or going out on a given day of the month, independent of any Account and of recurring transactions. Credit-card payments are never fixed cash-flow items. _Avoid_: Recurring transaction, fixed cost
-- **Paid mark**: The user's confirmation that a fixed cash-flow item has happened for a specific calendar month; each month's occurrence is marked separately.
-- **Payday item**: The single incoming fixed cash-flow item the user designates as salary; its day anchors the forecast window.
-- **Cycle payday**: The payday item's occurrence that falls within the current monthly financial cycle.
-- **Forecast window**: From the start of the current monthly financial cycle through the day before the payday that follows the cycle payday; balances are taken as of today.
+- **Fixed cash-flow item**: A user-listed, predetermined amount of money coming in or going out, either monthly on a given day of the month or once on a specific date, independent of any Account and of recurring transactions. Credit-card payments are never fixed cash-flow items. _Avoid_: Recurring transaction, fixed cost
+- **Paid mark**: The user's confirmation that a fixed cash-flow item has happened for a specific calendar month; each month's occurrence is marked separately, and a one-time item is marked for the month of its date.
+- **Forecast anchor day**: The day of the month the user chooses to split forecast periods, typically when money arrives; it is not tied to any fixed cash-flow item. _Avoid_: Payday item, salary day
+- **Cycle anchor date**: The first forecast anchor day on or after the start of the current monthly financial cycle.
+- **Forecast window**: From the start of the current monthly financial cycle through the day before the forecast anchor day that follows the cycle anchor date; balances are taken as of today.
 - **Projected leftover**: Liquid account balances, plus unmarked incoming fixed cash-flow items, minus unmarked outgoing fixed cash-flow items and outstanding statement balances, all falling due within the forecast window; unmarked items and outstanding statement balances already past their date still count. A statement not yet closed contributes nothing.

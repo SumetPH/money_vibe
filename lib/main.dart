@@ -21,6 +21,7 @@ import 'screens/auth/setup_screen.dart';
 import 'screens/category/category_list_screen.dart';
 import 'screens/main_tab_screen.dart';
 import 'screens/recurring/recurring_list_screen.dart';
+import 'screens/cash_flow/cash_flow_forecast_screen.dart';
 import 'screens/recurring/recurring_detail_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/trade/trade_tracker_screen.dart';
@@ -239,6 +240,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
             ),
           ],
+        ),
+        GoRoute(
+          path: '/cash-flow',
+          builder: (context, state) => const CashFlowForecastScreen(),
         ),
         GoRoute(
           path: '/categories',

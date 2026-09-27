@@ -115,3 +115,14 @@ Vocabulary follows `CONTEXT.md` → "Cash-flow forecast". Rationale for a separa
 
 - The monthly cycle start day is stored locally in settings, so the window depends on the device's setting; this matches budgets and statistics today.
 - The monthly cycle start day (21) aligning with the statement day (20) is what makes the forecast roll over right after statements close; users with other combinations still get a correct, if less tidy, window.
+
+## Revision 2026-09-27 (supersedes payday-item decisions above)
+
+User feedback after first use:
+
+- **Forecast anchor day replaces the payday item.** The user picks a day of month on the forecast detail screen ("วันตัดงวด"); it is stored locally in `SettingsProvider` like the monthly cycle start day and is independent of any item. User stories 13, 14 and 32 now read "set / have not set a forecast anchor day". Cycle payday → **cycle anchor date**: the first anchor day on or after the current monthly cycle's start; the window ends the day before the following anchor day. No anchor day → no forecast. `is_payday`, its unique index and check are dropped.
+- **One-time items.** A fixed cash-flow item is either monthly (`day_of_month`) or one-time (`one_time_on`, a date), exactly one set (DB check). A one-time item counts once when its date is in the window; its paid mark uses its calendar month. The column is not named `*_date` because the row normalizer replaces null `*_date` values with the current time.
+- **Liquid-account selection** moved into a bottom sheet opened from the forecast screen.
+- **Item form matches the recurring form**: shared `AppSegmentedTabs` (direction, schedule), `AppAmountHeroCard` with `CalculatorKeyboard` via `CalculatorKeyboardHost`, and `AppFormRow`; the recurring form now uses the same shared widgets. Text inputs in rows are right-aligned (including hints).
+- **Performance**: credit-card bill calculation sorts card transactions once and slices each cycle by binary search (forecast ~376 ms → ~14 ms on 20k transactions); output verified identical to the previous implementation.
+- **Entry point moved**: the forecast is no longer a card on the "แผน" (budget) tab. It is its own screen at route `/cash-flow`, listed under the "วางแผน" section of the drawer (after รายการประจำ) and in the wide-screen sidebar, with a main-tab style header and drawer like the recurring list. The review-warning chip moved into the summary hero.

@@ -1,5 +1,5 @@
 -- Cash-flow forecast: per-card payment due day, liquid-account exclusion,
--- fixed cash-flow items and their monthly paid marks.
+-- fixed cash-flow items (monthly or one-time) and their monthly paid marks.
 
 ALTER TABLE public.accounts
     ADD COLUMN IF NOT EXISTS payment_due_day integer,
@@ -13,32 +13,32 @@ ALTER TABLE public.accounts
     ADD CONSTRAINT accounts_payment_due_day_check
         CHECK (payment_due_day IS NULL OR payment_due_day BETWEEN 1 AND 31);
 
+-- Items are monthly (day_of_month) or one-time (one_time_on), exactly one set.
+-- one_time_on is deliberately not named *_date: the app's row normalizer
+-- replaces null *_date values with the current time.
+-- The forecast anchor day is a local app setting, not stored here.
 CREATE TABLE IF NOT EXISTS public.fixed_cash_flow_items (
     id text primary key,
     user_id uuid not null references auth.users (id) on delete cascade,
     name text not null,
     amount numeric(15, 2) not null,
-    day_of_month integer not null,
+    day_of_month integer,
+    one_time_on date,
     direction text not null,
-    is_payday boolean not null default false,
     sort_order integer not null default 0,
     created_at timestamp without time zone default now(),
     updated_at timestamp without time zone default now(),
     CONSTRAINT fixed_cash_flow_items_amount_check CHECK (amount > 0),
     CONSTRAINT fixed_cash_flow_items_day_check
-        CHECK (day_of_month BETWEEN 1 AND 31),
+        CHECK (day_of_month IS NULL OR day_of_month BETWEEN 1 AND 31),
+    CONSTRAINT fixed_cash_flow_items_schedule_check
+        CHECK ((day_of_month IS NULL) <> (one_time_on IS NULL)),
     CONSTRAINT fixed_cash_flow_items_direction_check
-        CHECK (direction IN ('incoming', 'outgoing')),
-    CONSTRAINT fixed_cash_flow_items_payday_incoming_check
-        CHECK (NOT is_payday OR direction = 'incoming')
+        CHECK (direction IN ('incoming', 'outgoing'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_fixed_cash_flow_items_user_id
     ON public.fixed_cash_flow_items (user_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_fixed_cash_flow_items_one_payday
-    ON public.fixed_cash_flow_items (user_id)
-    WHERE is_payday;
 
 ALTER TABLE public.fixed_cash_flow_items ENABLE ROW LEVEL SECURITY;
 

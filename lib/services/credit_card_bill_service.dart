@@ -139,7 +139,9 @@ class CreditCardBillService {
     );
 
     // กรองธุรกรรมของบัตรนี้เท่านั้น (รองรับทั้งกรองมาแล้วและยังไม่กรอง)
-    final cardTransactions = filterCardTransactions(account.id, transactions);
+    // เรียงตามเวลาครั้งเดียว แล้วตัดช่วงวันด้วย binary search แทนการไล่ทุกรายการทุกรอบ
+    final cardTransactions = filterCardTransactions(account.id, transactions)
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     final bills = <CreditCardBill>[];
     // initialBalance ของ credit card เป็นค่าลบ (เช่น -5000 = ค้างอยู่ 5000 บาท)
@@ -172,7 +174,7 @@ class CreditCardBillService {
 
       // รายการใช้จ่ายในรอบ [startDate, statementDate] (inclusive ทั้งสองฝั่ง, เทียบระดับวัน)
       // รวม debtRepay/debtTransfer จากบัตร ให้นับเป็นยอดใช้ของบัตรด้วย
-      final expenses = cardTransactions.where((t) {
+      final expenses = _between(cardTransactions, startDay, endDay).where((t) {
         final d = _dayOf(t.dateTime);
         return (t.type == TransactionType.expense ||
                 t.type == TransactionType.debtRepay ||
@@ -186,18 +188,19 @@ class CreditCardBillService {
 
       // รายการชำระ: transfer/debtRepay/income เข้าบัตร ในช่วง [paymentStartDay, paymentEndDay]
       // ใช้ paymentStartDay เหมือนกันทุกประเภท เพื่อป้องกันนับซ้ำกับรอบก่อน
-      final payments = cardTransactions.where((t) {
-        final d = _dayOf(t.dateTime);
-        final isTransferPayment =
-            (t.type == TransactionType.transfer ||
-                t.type == TransactionType.debtRepay) &&
-            t.toAccountId == account.id;
-        final isIncomePayment =
-            t.type == TransactionType.income && t.accountId == account.id;
-        return (isTransferPayment || isIncomePayment) &&
-            !d.isBefore(paymentStartDay) &&
-            !d.isAfter(paymentEndDay);
-      }).toList();
+      final payments =
+          _between(cardTransactions, paymentStartDay, paymentEndDay).where((t) {
+            final d = _dayOf(t.dateTime);
+            final isTransferPayment =
+                (t.type == TransactionType.transfer ||
+                    t.type == TransactionType.debtRepay) &&
+                t.toAccountId == account.id;
+            final isIncomePayment =
+                t.type == TransactionType.income && t.accountId == account.id;
+            return (isTransferPayment || isIncomePayment) &&
+                !d.isBefore(paymentStartDay) &&
+                !d.isAfter(paymentEndDay);
+          }).toList();
 
       final totalPaid = _round(
         payments.fold<double>(0, (s, t) => s + t.amount),
@@ -282,33 +285,38 @@ class CreditCardBillService {
           : _dayOf(account.startDate);
       final openEndDay = effectiveNow;
 
-      final openExpenses = cardTransactions.where((t) {
-        final d = _dayOf(t.dateTime);
-        return (t.type == TransactionType.expense ||
-                t.type == TransactionType.debtRepay ||
-                t.type == TransactionType.debtTransfer) &&
-            t.accountId == account.id &&
-            !d.isBefore(openStartDay) &&
-            !d.isAfter(openEndDay);
-      }).toList();
+      final openExpenses = _between(cardTransactions, openStartDay, openEndDay)
+          .where((t) {
+            final d = _dayOf(t.dateTime);
+            return (t.type == TransactionType.expense ||
+                    t.type == TransactionType.debtRepay ||
+                    t.type == TransactionType.debtTransfer) &&
+                t.accountId == account.id &&
+                !d.isBefore(openStartDay) &&
+                !d.isAfter(openEndDay);
+          })
+          .toList();
 
       final openExpensesAmount = openExpenses.fold<double>(
         0,
         (s, t) => s + t.amount,
       );
 
-      final openPayments = cardTransactions.where((t) {
-        final d = _dayOf(t.dateTime);
-        final isTransferPayment =
-            (t.type == TransactionType.transfer ||
-                t.type == TransactionType.debtRepay) &&
-            t.toAccountId == account.id;
-        final isIncomePayment =
-            t.type == TransactionType.income && t.accountId == account.id;
-        return (isTransferPayment || isIncomePayment) &&
-            !d.isBefore(openPaymentStartDay) &&
-            !d.isAfter(openEndDay);
-      }).toList();
+      final openPayments =
+          _between(cardTransactions, openPaymentStartDay, openEndDay).where((
+            t,
+          ) {
+            final d = _dayOf(t.dateTime);
+            final isTransferPayment =
+                (t.type == TransactionType.transfer ||
+                    t.type == TransactionType.debtRepay) &&
+                t.toAccountId == account.id;
+            final isIncomePayment =
+                t.type == TransactionType.income && t.accountId == account.id;
+            return (isTransferPayment || isIncomePayment) &&
+                !d.isBefore(openPaymentStartDay) &&
+                !d.isAfter(openEndDay);
+          }).toList();
 
       final openTotalPaid = _round(
         openPayments.fold<double>(0, (s, t) => s + t.amount),
@@ -392,6 +400,32 @@ class CreditCardBillService {
   }
 
   static DateTime _dayOf(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+  /// รายการใน [sorted] (เรียงตามเวลา) ที่อยู่ในช่วงวัน [fromDay, toDay] inclusive
+  static List<AppTransaction> _between(
+    List<AppTransaction> sorted,
+    DateTime fromDay,
+    DateTime toDay,
+  ) {
+    final start = _lowerBound(sorted, fromDay);
+    final end = _lowerBound(sorted, toDay.add(const Duration(days: 1)));
+    return start < end ? sorted.sublist(start, end) : const [];
+  }
+
+  /// index แรกที่ dateTime >= [instant]
+  static int _lowerBound(List<AppTransaction> sorted, DateTime instant) {
+    var low = 0;
+    var high = sorted.length;
+    while (low < high) {
+      final mid = (low + high) >> 1;
+      if (sorted[mid].dateTime.isBefore(instant)) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
+  }
 
   static const _defaultPaymentDueDays = 15;
 

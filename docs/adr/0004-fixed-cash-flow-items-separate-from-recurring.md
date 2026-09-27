@@ -1,3 +1,5 @@
 # Fixed cash-flow items are separate from recurring transactions
 
 The cash-flow forecast reads its future income and obligations from a dedicated list of fixed cash-flow items rather than from recurring transactions. Recurring occurrences already track pending/done state and would avoid double counting for free, but tying the forecast to them forces every salary, mortgage or car payment to exist as a recurring transaction with an account and routing rules (liquid vs non-liquid, card payments, transfers). We accepted a manual paid mark per item per calendar month in exchange for a list that is independent of accounts and simple to fill in. Credit-card obligations are never list items; they come from outstanding statement balances.
+
+Items may also be one-time (a specific date) because not every expected inflow or outflow repeats. The forecast anchor day is a per-device setting rather than an item flag, so the forecast period does not depend on any single item existing.

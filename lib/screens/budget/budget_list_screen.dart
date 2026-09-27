@@ -16,7 +16,6 @@ import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../screens/transaction/transaction_list_screen.dart';
 import 'budget_form_screen.dart';
-import '../cash_flow/cash_flow_forecast_card.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_inset_card.dart';
 
@@ -417,19 +416,12 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           ),
           body: SafeArea(
             child: budgets.isEmpty
-                ? Column(
-                    children: [
-                      const CashFlowForecastCard(),
-                      Expanded(
-                        child: _buildEmptyState(
-                          surfaceColor: surfaceColor,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                          dividerColor: dividerColor,
-                          isDarkMode: isDarkMode,
-                        ),
-                      ),
-                    ],
+                ? _buildEmptyState(
+                    surfaceColor: surfaceColor,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                    dividerColor: dividerColor,
+                    isDarkMode: isDarkMode,
                   )
                 : _buildBudgetList(
                     context,
@@ -437,9 +429,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_isReorderMode)
-                          _buildReorderBanner(isDarkMode, incomeColor)
-                        else
-                          const CashFlowForecastCard(),
+                          _buildReorderBanner(isDarkMode, incomeColor),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: MonthlyCycleSelector(

@@ -19,6 +19,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _monthlyCycleStartDayKey = 'budget_start_day';
   static const _legacyStatisticsStartDayKey = 'statistics_start_day';
   static const _netWorthFilterKey = 'net_worth_filter_ids';
+  static const _cashFlowAnchorDayKey = 'cash_flow_anchor_day';
 
   String? _finnhubApiKey;
   bool _priceSourceFinnhub = false;
@@ -31,6 +32,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
   int _monthlyCycleStartDay = 1;
+  int? _cashFlowAnchorDay; // null = ยังไม่ได้ตั้งวันตัดงวดคาดการณ์
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
@@ -41,6 +43,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
   int get monthlyCycleStartDay => _monthlyCycleStartDay;
+  int? get cashFlowAnchorDay => _cashFlowAnchorDay;
   Set<String>? get netWorthFilterIds =>
       _netWorthFilterIds == null ? null : Set.unmodifiable(_netWorthFilterIds!);
 
@@ -72,6 +75,7 @@ class SettingsProvider extends ChangeNotifier {
         prefs.getInt(_monthlyCycleStartDayKey) ??
         prefs.getInt(_legacyStatisticsStartDayKey) ??
         1;
+    _cashFlowAnchorDay = prefs.getInt(_cashFlowAnchorDayKey);
     final filterJson = prefs.getString(_netWorthFilterKey);
     if (filterJson != null) {
       final list = jsonDecode(filterJson) as List;
@@ -100,6 +104,21 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_monthlyCycleStartDayKey, day);
     _monthlyCycleStartDay = day;
+    notifyListeners();
+  }
+
+  /// วันตัดงวดของ Cash-flow forecast (เก็บในเครื่อง); null = ล้างค่า
+  Future<void> setCashFlowAnchorDay(int? day) async {
+    if (day != null && (day < 1 || day > 31)) {
+      throw ArgumentError.value(day, 'day', 'must be between 1 and 31');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (day == null) {
+      await prefs.remove(_cashFlowAnchorDayKey);
+    } else {
+      await prefs.setInt(_cashFlowAnchorDayKey, day);
+    }
+    _cashFlowAnchorDay = day;
     notifyListeners();
   }
 

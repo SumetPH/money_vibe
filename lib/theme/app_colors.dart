@@ -60,6 +60,10 @@ class AppColors {
   static Color textSecondaryFor(bool isDarkMode) =>
       isDarkMode ? darkTextSecondary : textSecondary;
 
+  /// พื้นของช่องที่ถูกเลือกใน segmented tabs และป้ายสกุลเงิน
+  static Color selectedSegmentFor(bool isDarkMode) =>
+      isDarkMode ? darkSurfaceVariant : sectionHeader;
+
   static Color incomeFor(bool isDarkMode) => isDarkMode ? darkIncome : income;
 
   static Color expenseFor(bool isDarkMode) =>

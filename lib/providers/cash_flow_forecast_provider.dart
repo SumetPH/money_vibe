@@ -22,8 +22,6 @@ class CashFlowForecastProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<FixedCashFlowItem> get items => List.unmodifiable(_items);
   List<FixedCashFlowPaidMark> get paidMarks => List.unmodifiable(_paidMarks);
-  FixedCashFlowItem? get paydayItem =>
-      _items.where((i) => i.isPayday).firstOrNull;
 
   DatabaseRepository get _db => _dbManager.repository;
 
@@ -65,10 +63,12 @@ class CashFlowForecastProvider extends ChangeNotifier {
     required List<AppTransaction> transactions,
     required double Function(Account account) balanceInThb,
     required int monthlyCycleStartDay,
+    required int? anchorDay,
     DateTime? today,
   }) => CashFlowForecastService.calculate(
     today: today ?? DateTime.now(),
     monthlyCycleStartDay: monthlyCycleStartDay,
+    anchorDay: anchorDay,
     accounts: accounts,
     balanceInThb: balanceInThb,
     transactions: transactions,
@@ -78,12 +78,13 @@ class CashFlowForecastProvider extends ChangeNotifier {
 
   // ── Items ─────────────────────────────────────────────────────────────────
 
+  /// เพิ่มรายการทุกเดือน ([dayOfMonth]) หรือครั้งเดียว ([oneTimeDate])
   Future<void> addItem({
     required String name,
     required double amount,
-    required int dayOfMonth,
     required CashFlowDirection direction,
-    required bool isPayday,
+    int? dayOfMonth,
+    DateTime? oneTimeDate,
   }) async {
     final sortOrder = _items.isEmpty
         ? 0
@@ -94,6 +95,7 @@ class CashFlowForecastProvider extends ChangeNotifier {
       name: name,
       amount: amount,
       dayOfMonth: dayOfMonth,
+      oneTimeDate: oneTimeDate,
       direction: direction,
       sortOrder: sortOrder,
     );
@@ -102,7 +104,6 @@ class CashFlowForecastProvider extends ChangeNotifier {
     notifyListeners();
     try {
       await _db.insertFixedCashFlowItem(item);
-      if (isPayday) await _setPayday(item.id);
     } catch (e) {
       debugPrint('CashFlowForecastProvider: Error adding item: $e');
       _restoreItems(previous);
@@ -114,16 +115,10 @@ class CashFlowForecastProvider extends ChangeNotifier {
     final index = _items.indexWhere((i) => i.id == updated.id);
     if (index == -1) return;
     final previous = List<FixedCashFlowItem>.from(_items);
-    final wasPayday = previous[index].isPayday;
-    // รายการเงินออกเป็น payday ไม่ได้
-    final isPayday = updated.isPayday && updated.isIncoming;
-    _items[index] = updated.copyWith(isPayday: wasPayday);
+    _items[index] = updated;
     notifyListeners();
     try {
-      // ล้าง payday ก่อนเขียน เพราะ DB ห้าม payday ที่เป็นรายการเงินออก
-      if (!isPayday && wasPayday) await _setPayday(null);
-      await _db.updateFixedCashFlowItem(_items[index]);
-      if (isPayday && !wasPayday) await _setPayday(updated.id);
+      await _db.updateFixedCashFlowItem(updated);
     } catch (e) {
       debugPrint('CashFlowForecastProvider: Error updating item: $e');
       _restoreItems(previous);
@@ -148,14 +143,6 @@ class CashFlowForecastProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
-  }
-
-  Future<void> _setPayday(String? itemId) async {
-    await _db.setPaydayItem(itemId);
-    for (var i = 0; i < _items.length; i++) {
-      _items[i] = _items[i].copyWith(isPayday: _items[i].id == itemId);
-    }
-    notifyListeners();
   }
 
   void _restoreItems(List<FixedCashFlowItem> previous) {

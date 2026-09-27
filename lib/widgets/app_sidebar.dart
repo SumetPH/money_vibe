@@ -53,6 +53,11 @@ class AppSidebar extends StatefulWidget {
       route: '/recurring',
     ),
     SidebarItemData(
+      icon: Icons.savings_outlined,
+      label: 'คาดการณ์เงินคงเหลือ',
+      route: '/cash-flow',
+    ),
+    SidebarItemData(
       icon: Icons.category_outlined,
       label: 'หมวดหมู่',
       route: '/categories',

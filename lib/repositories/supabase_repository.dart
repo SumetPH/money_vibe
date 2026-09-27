@@ -385,10 +385,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _cashFlowAdapter.deleteFixedCashFlowItem(id);
 
   @override
-  Future<void> setPaydayItem(String? itemId) =>
-      _cashFlowAdapter.setPaydayItem(itemId);
-
-  @override
   Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks() =>
       _cashFlowAdapter.getFixedCashFlowPaidMarks();
 

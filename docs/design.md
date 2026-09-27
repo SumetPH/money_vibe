@@ -14,6 +14,8 @@
 | `AppBarActionButton`                                                  | ปุ่ม icon action อื่นบน AppBar                         | `lib/widgets/app_bar_action_button.dart`  |
 | `showAppConfirmDialog`                                                | `AlertDialog` สำหรับยืนยัน                             | `lib/widgets/app_confirm_dialog.dart`     |
 | `showAppModalBottomSheet`, `AppModalBottomSheetHeader`, `AppDraggableSheet` | `showModalBottomSheet` / `DraggableScrollableSheet` | `lib/widgets/app_modal_bottom_sheet.dart` |
+| `AppSegmentedTabs`, `AppAmountHeroCard`, `AppFormRow`, `CalculatorKeyboardHost` | segmented control, amount hero, แถวฟอร์มและการต่อคีย์บอร์ดเครื่องคิดเลขที่เขียนเองในฟอร์ม | `lib/widgets/app_segmented_tabs.dart`, `app_amount_hero_card.dart`, `app_form_row.dart`, `calculator_keyboard_host.dart` |
+| `showDayOfMonthPickerSheet`, `AppStatusChip` | grid เลือกวันที่ 1–31 และแคปซูลสถานะที่เขียนเองในหน้า | `lib/widgets/day_of_month_picker_sheet.dart`, `app_status_chip.dart` |
 | `AppColors.*For(isDarkMode)` และ `AppRadii`                           | `Color(0x…)` และ ternary สี dark/light ในหน้า          | `lib/theme/`                              |
 
 Color tokens ที่ใช้บ่อย: `backgroundFor`, `surfaceFor`, `textPrimaryFor`, `textSecondaryFor`, `expenseFor`, `borderFor` (ขอบการ์ด/ตัวแบ่ง, divider alpha 0.4), `switchInactiveFor`, `insetFillFor` (ช่องกรอก/segmented control ที่ยุบลงในการ์ด), `raisedFillFor` (ปุ่มรองบนการ์ด), `saveButtonFor`, `accentFor(isDarkMode, themeColor)` และ `onHeader`. Dialog ที่มีช่องกรอกหรือหลายตัวเลือก (เช่น แก้เงินสด, reset Peak, ลืมรหัสผ่าน) ใช้ `AlertDialog` ได้โดยใส่ `// design-check: allow <เหตุผล>` บรรทัดก่อนหน้า และใช้พื้น `surfaceFor`.

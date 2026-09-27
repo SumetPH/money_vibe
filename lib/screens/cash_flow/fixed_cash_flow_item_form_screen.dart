@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/fixed_cash_flow_item.dart';
@@ -7,13 +6,17 @@ import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_amount_hero_card.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_form_row.dart';
 import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_switch.dart';
+import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/calculator_keyboard_host.dart';
 import '../../widgets/day_of_month_picker_sheet.dart';
+import 'cash_flow_forecast_scope.dart';
 
-/// ฟอร์มเพิ่ม/แก้ไข Fixed cash-flow item
+/// ฟอร์มเพิ่ม/แก้ไขรายการเงินเข้าออก (ทุกเดือนหรือครั้งเดียว)
 class FixedCashFlowItemFormScreen extends StatefulWidget {
   final FixedCashFlowItem? item;
 
@@ -25,37 +28,65 @@ class FixedCashFlowItemFormScreen extends StatefulWidget {
 }
 
 class _FixedCashFlowItemFormScreenState
-    extends State<FixedCashFlowItemFormScreen> {
+    extends State<FixedCashFlowItemFormScreen>
+    with CalculatorKeyboardHost {
+  static const _sectionHeaderPadding = EdgeInsets.fromLTRB(4, 16, 4, 6);
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _amountFocusNode = FocusNode();
   late final TextEditingController _nameController;
   late final TextEditingController _amountController;
   late CashFlowDirection _direction;
+  late bool _isOneTime;
   int? _dayOfMonth;
-  late bool _isPayday;
+  DateTime? _oneTimeDate;
   bool _isLoading = false;
 
   bool get _isEditing => widget.item != null;
+
+  @override
+  GlobalKey<ScaffoldState> get calculatorScaffoldKey => _scaffoldKey;
+  @override
+  TextEditingController get calculatorController => _amountController;
+  @override
+  FocusNode get calculatorFocusNode => _amountFocusNode;
+  @override
+  Color get calculatorActionColor =>
+      _accentColor(context.read<SettingsProvider>().isDarkMode);
 
   @override
   void initState() {
     super.initState();
     final item = widget.item;
     _nameController = TextEditingController(text: item?.name ?? '');
-    _amountController = TextEditingController(
-      text: item == null ? '' : item.amount.toStringAsFixed(2),
-    );
+    _amountController = TextEditingController();
     _direction = item?.direction ?? CashFlowDirection.outgoing;
+    _isOneTime = item?.isOneTime ?? false;
     _dayOfMonth = item?.dayOfMonth;
-    _isPayday = item?.isPayday ?? false;
+    _oneTimeDate = item?.oneTimeDate;
+    attachCalculatorKeyboard();
+    // ตั้งหลัง attach เพื่อให้ได้รูปแบบตัวเลขพร้อมคอมมา
+    if (item != null) _amountController.text = item.amount.toStringAsFixed(2);
   }
 
   @override
   void dispose() {
+    detachCalculatorKeyboard();
+    _amountFocusNode.dispose();
     _nameController.dispose();
     _amountController.dispose();
     super.dispose();
   }
 
-  void _closeKeyboard() => FocusManager.instance.primaryFocus?.unfocus();
+  Color _accentColor(bool isDarkMode) =>
+      _direction == CashFlowDirection.incoming
+      ? AppColors.incomeFor(isDarkMode)
+      : AppColors.expenseFor(isDarkMode);
+
+  void _closeKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    closeCalculatorKeyboard();
+  }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(
@@ -67,14 +98,15 @@ class _FixedCashFlowItemFormScreenState
   String? _validate(String name, double? amount) {
     if (name.isEmpty) return 'กรุณากรอกชื่อรายการ';
     if (amount == null || amount <= 0) return 'กรุณากรอกจำนวนเงินมากกว่า 0';
-    if (_dayOfMonth == null) return 'กรุณาเลือกวันที่ของเดือน';
+    if (_isOneTime && _oneTimeDate == null) return 'กรุณาเลือกวันที่';
+    if (!_isOneTime && _dayOfMonth == null) return 'กรุณาเลือกวันที่ในเดือน';
     return null;
   }
 
   Future<void> _save() async {
     _closeKeyboard();
     final name = _nameController.text.trim();
-    final amount = double.tryParse(_amountController.text.replaceAll(',', ''));
+    final amount = calculatorAmount;
     final error = _validate(name, amount);
     if (error != null) {
       _showMessage(error);
@@ -82,7 +114,8 @@ class _FixedCashFlowItemFormScreenState
     }
 
     final provider = context.read<CashFlowForecastProvider>();
-    final isPayday = _isPayday && _direction == CashFlowDirection.incoming;
+    final dayOfMonth = _isOneTime ? null : _dayOfMonth;
+    final oneTimeDate = _isOneTime ? _oneTimeDate : null;
     setState(() => _isLoading = true);
     try {
       final existing = widget.item;
@@ -90,18 +123,20 @@ class _FixedCashFlowItemFormScreenState
         await provider.addItem(
           name: name,
           amount: amount!,
-          dayOfMonth: _dayOfMonth!,
           direction: _direction,
-          isPayday: isPayday,
+          dayOfMonth: dayOfMonth,
+          oneTimeDate: oneTimeDate,
         );
       } else {
         await provider.updateItem(
-          existing.copyWith(
+          FixedCashFlowItem(
+            id: existing.id,
             name: name,
-            amount: amount,
-            dayOfMonth: _dayOfMonth,
+            amount: amount!,
             direction: _direction,
-            isPayday: isPayday,
+            dayOfMonth: dayOfMonth,
+            oneTimeDate: oneTimeDate,
+            sortOrder: existing.sortOrder,
           ),
         );
       }
@@ -117,9 +152,10 @@ class _FixedCashFlowItemFormScreenState
   Future<void> _delete() async {
     final item = widget.item;
     if (item == null) return;
+    _closeKeyboard();
     final confirmed = await showAppConfirmDialog(
       context: context,
-      title: 'ลบรายการประจำ',
+      title: 'ลบรายการ',
       message: 'ต้องการลบ "${item.name}" และสถานะการติ๊กทั้งหมดของรายการนี้?',
       confirmLabel: 'ลบ',
       isDestructive: true,
@@ -138,15 +174,28 @@ class _FixedCashFlowItemFormScreenState
     }
   }
 
-  Future<void> _pickDay() async {
+  Future<void> _pickDayOfMonth() async {
     _closeKeyboard();
     final pick = await showDayOfMonthPickerSheet(
       context: context,
-      title: 'เลือกวันที่ของเดือน',
+      title: 'เลือกวันที่ในเดือน',
       selectedDay: _dayOfMonth,
     );
     if (pick == null || !mounted) return;
     setState(() => _dayOfMonth = pick.day);
+  }
+
+  Future<void> _pickOneTimeDate() async {
+    _closeKeyboard();
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _oneTimeDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _oneTimeDate = picked);
   }
 
   @override
@@ -157,35 +206,50 @@ class _FixedCashFlowItemFormScreenState
     final bgColor = AppColors.backgroundFor(isDarkMode);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: bgColor,
       appBar: _buildAppBar(bgColor, isDarkMode),
-      body: AbsorbPointer(
-        absorbing: _isLoading,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
-          children: [
-            AppInsetCard(
-              children: [
-                _DirectionSelector(
-                  value: _direction,
-                  isDarkMode: isDarkMode,
-                  onChanged: (d) => setState(() => _direction = d),
-                ),
-                const AppCardDivider(indent: 16),
-                _AmountField(
-                  controller: _amountController,
-                  isDarkMode: isDarkMode,
-                ),
-              ],
-            ),
-            const AppSectionHeader('ข้อมูลรายการ'),
-            _buildDetailsCard(isDarkMode),
-            if (_isEditing)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                child: _DeleteButton(onTap: _delete, isDarkMode: isDarkMode),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _closeKeyboard,
+        child: AbsorbPointer(
+          absorbing: _isLoading,
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+            children: [
+              _buildDirectionTabs(),
+              const SizedBox(height: 14),
+              AppAmountHeroCard(
+                controller: _amountController,
+                focusNode: _amountFocusNode,
+                accentColor: _accentColor(isDarkMode),
               ),
-          ],
+              const AppSectionHeader(
+                'ข้อมูลรายการ',
+                padding: _sectionHeaderPadding,
+              ),
+              AppInsetCard(
+                margin: EdgeInsets.zero,
+                children: [_buildNameRow(isDarkMode)],
+              ),
+              const AppSectionHeader(
+                'กำหนดการ',
+                padding: _sectionHeaderPadding,
+              ),
+              _buildScheduleTabs(),
+              const SizedBox(height: 10),
+              AppInsetCard(
+                margin: EdgeInsets.zero,
+                children: [_buildScheduleRow()],
+              ),
+              if (_isEditing)
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: _DeleteButton(onTap: _delete, isDarkMode: isDarkMode),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,7 +270,7 @@ class _FixedCashFlowItemFormScreenState
             },
     ),
     title: Text(
-      _isEditing ? 'แก้ไขรายการประจำ' : 'เพิ่มรายการประจำ',
+      _isEditing ? 'แก้ไขรายการ' : 'เพิ่มรายการ',
       style: TextStyle(
         color: AppColors.textPrimaryFor(isDarkMode),
         fontSize: 18,
@@ -216,273 +280,85 @@ class _FixedCashFlowItemFormScreenState
     actions: [AppSaveButton(onPressed: _save, isLoading: _isLoading)],
   );
 
-  Widget _buildDetailsCard(bool isDarkMode) {
-    final textPrimary = AppColors.textPrimaryFor(isDarkMode);
-    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    const divider = AppCardDivider(indent: 60, endIndent: 16);
-
-    return AppInsetCard(
-      children: [
-        _FormRow(
-          icon: Icons.edit_note_rounded,
-          label: 'ชื่อ',
-          isDarkMode: isDarkMode,
-          trailing: TextField(
-            controller: _nameController,
-            textAlign: TextAlign.right,
-            onTapOutside: (_) => _closeKeyboard(),
-            decoration: _plainDecoration(
-              'เช่น เงินเดือน, ค่าบ้าน',
-              textSecondary,
-            ),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
-            ),
-          ),
+  Widget _buildDirectionTabs() => AppSegmentedTabs(
+    segments: [
+      for (final direction in const [
+        CashFlowDirection.outgoing,
+        CashFlowDirection.incoming,
+      ])
+        AppSegment(
+          label: direction.label,
+          isSelected: _direction == direction,
+          onTap: () => setState(() => _direction = direction),
         ),
-        divider,
-        InkWell(
-          onTap: _pickDay,
-          child: _FormRow(
-            icon: Icons.calendar_today_rounded,
-            label: 'วันที่',
-            isDarkMode: isDarkMode,
-            trailing: _ChevronValue(
-              text: _dayOfMonth == null ? 'เลือกวัน' : 'ทุกวันที่ $_dayOfMonth',
-              isDarkMode: isDarkMode,
-            ),
-          ),
-        ),
-        if (_direction == CashFlowDirection.incoming) ...[
-          divider,
-          _FormRow(
-            icon: Icons.work_outline_rounded,
-            label: 'เป็นเงินเดือน',
-            description: 'ใช้วันนี้เป็นจุดอ้างอิงของการคาดการณ์',
-            isDarkMode: isDarkMode,
-            trailing: AppSwitch(
-              value: _isPayday,
-              onChanged: (v) => setState(() => _isPayday = v),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
+    ],
+  );
 
-class _ChevronValue extends StatelessWidget {
-  final String text;
-  final bool isDarkMode;
-
-  const _ChevronValue({required this.text, required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: textSecondary,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Icon(
-          Icons.chevron_right,
-          color: textSecondary.withValues(alpha: 0.5),
-          size: 18,
-        ),
-      ],
-    );
-  }
-}
-
-InputDecoration _plainDecoration(String hint, Color textSecondary) =>
-    InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(
-        color: textSecondary.withValues(alpha: 0.55),
-        fontSize: 14,
+  Widget _buildScheduleTabs() => AppSegmentedTabs(
+    segments: [
+      AppSegment(
+        label: 'ทุกเดือน',
+        isSelected: !_isOneTime,
+        onTap: () => setState(() => _isOneTime = false),
       ),
-      border: InputBorder.none,
-      enabledBorder: InputBorder.none,
-      focusedBorder: InputBorder.none,
-      filled: false,
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-    );
-
-class _FormRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? description;
-  final Widget trailing;
-  final bool isDarkMode;
-
-  const _FormRow({
-    required this.icon,
-    required this.label,
-    required this.trailing,
-    required this.isDarkMode,
-    this.description,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: textSecondary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadii.medium),
-            ),
-            child: Icon(icon, color: textSecondary, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimaryFor(isDarkMode),
-                  ),
-                ),
-                if (description != null)
-                  Text(
-                    description!,
-                    style: TextStyle(fontSize: 12, color: textSecondary),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Align(alignment: Alignment.centerRight, child: trailing),
-          ),
-        ],
+      AppSegment(
+        label: 'ครั้งเดียว',
+        isSelected: _isOneTime,
+        onTap: () => setState(() => _isOneTime = true),
       ),
-    );
-  }
-}
+    ],
+  );
 
-class _AmountField extends StatelessWidget {
-  final TextEditingController controller;
-  final bool isDarkMode;
-
-  const _AmountField({required this.controller, required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNameRow(bool isDarkMode) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: TextField(
-        controller: controller,
+    return AppFormRow(
+      icon: Icons.edit_note_rounded,
+      label: 'ชื่อ',
+      trailing: TextField(
+        controller: _nameController,
         textAlign: TextAlign.right,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-        ],
+        onTap: closeCalculatorKeyboard,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         decoration: InputDecoration(
-          hintText: '0.00',
+          hintText: 'เช่น ค่าบ้าน, โบนัส',
+          hintTextDirection: TextDirection.rtl,
           hintStyle: TextStyle(
-            color: textSecondary.withValues(alpha: 0.5),
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
+            color: textSecondary.withValues(alpha: 0.55),
+            fontSize: 15,
           ),
-          suffixText: ' บาท',
-          suffixStyle: TextStyle(color: textSecondary, fontSize: 15),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           filled: false,
           isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
         style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
           color: AppColors.textPrimaryFor(isDarkMode),
         ),
       ),
     );
   }
-}
 
-class _DirectionSelector extends StatelessWidget {
-  final CashFlowDirection value;
-  final bool isDarkMode;
-  final ValueChanged<CashFlowDirection> onChanged;
-
-  const _DirectionSelector({
-    required this.value,
-    required this.isDarkMode,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: AppColors.insetFillFor(isDarkMode),
-          borderRadius: BorderRadius.circular(AppRadii.large),
-        ),
-        child: Row(
-          children: [
-            for (final direction in CashFlowDirection.values)
-              Expanded(child: _segment(direction)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _segment(CashFlowDirection direction) {
-    final isSelected = direction == value;
-    final accent = direction == CashFlowDirection.incoming
-        ? AppColors.incomeFor(isDarkMode)
-        : AppColors.expenseFor(isDarkMode);
-    return InkWell(
-      onTap: () => onChanged(direction),
-      borderRadius: BorderRadius.circular(AppRadii.medium),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.raisedFillFor(isDarkMode)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.medium),
-        ),
-        child: Text(
-          direction.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: isSelected ? accent : AppColors.textSecondaryFor(isDarkMode),
-          ),
-        ),
-      ),
+  Widget _buildScheduleRow() {
+    final date = _oneTimeDate;
+    if (_isOneTime) {
+      return AppFormRow(
+        icon: Icons.event_rounded,
+        label: 'วันที่',
+        value: date == null
+            ? 'เลือกวันที่'
+            : '${formatCashFlowDate(date)} ${date.year}',
+        onTap: _pickOneTimeDate,
+      );
+    }
+    return AppFormRow(
+      icon: Icons.calendar_today_rounded,
+      label: 'วันที่ในเดือน',
+      value: _dayOfMonth == null ? 'เลือกวัน' : 'ทุกวันที่ $_dayOfMonth',
+      onTap: _pickDayOfMonth,
     );
   }
 }

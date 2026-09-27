@@ -137,6 +137,17 @@ class AppDrawer extends StatelessWidget {
                         textSecondary: textSecondary,
                         isDarkMode: isDarkMode,
                       ),
+                      _buildInnerDivider(isDarkMode),
+                      _DrawerRowItem(
+                        icon: Icons.savings_rounded,
+                        label: 'คาดการณ์เงินคงเหลือ',
+                        isSelected: currentRoute == '/cash-flow',
+                        onTap: () => _navigate(context, '/cash-flow'),
+                        accent: accent,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        isDarkMode: isDarkMode,
+                      ),
                     ],
                   ),
 
