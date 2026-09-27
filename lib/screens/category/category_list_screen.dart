@@ -165,6 +165,12 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       ),
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {
+          // Segmented control อยู่ใน list ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมรายการ
+          final segmentedControl = _buildSegmentedControl(
+            catProvider: catProvider,
+            surfaceColor: surfaceColor,
+            isDarkMode: isDarkMode,
+          );
           return SafeArea(
             child: Column(
               children: [
@@ -173,13 +179,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                   const AppReorderBanner(
                     message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
                   ),
-
-                // iOS Segmented Tab Control
-                _buildSegmentedControl(
-                  catProvider: catProvider,
-                  surfaceColor: surfaceColor,
-                  isDarkMode: isDarkMode,
-                ),
 
                 // Category List View
                 Expanded(
@@ -192,12 +191,14 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                         txProvider,
                         CategoryType.expense,
                         isDarkMode,
+                        segmentedControl,
                       ),
                       _buildCategoryList(
                         catProvider,
                         txProvider,
                         CategoryType.income,
                         isDarkMode,
+                        segmentedControl,
                       ),
                     ],
                   ),
@@ -319,6 +320,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     TransactionProvider txProvider,
     CategoryType type,
     bool isDarkMode,
+    Widget header,
   ) {
     final allTransactions = txProvider.transactions;
     final totalsByCategoryId = _buildCategoryTotals(allTransactions);
@@ -345,77 +347,86 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     }
 
     if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: textSecondary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.category_outlined,
-                  size: 32,
-                  color: textSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _searchQuery.isEmpty
-                    ? 'ยังไม่มีหมวดหมู่'
-                    : 'ไม่พบ "$_searchQuery"',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: textSecondary,
-                ),
-              ),
-              if (_searchQuery.isEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'กดปุ่ม + ด้านบนเพื่อเริ่มเพิ่มหมวดหมู่',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: textSecondary.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => _openForm(context, null),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.full),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          header,
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: textSecondary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+                    child: Icon(
+                      Icons.category_outlined,
+                      size: 32,
+                      color: textSecondary,
                     ),
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text(
-                    'เพิ่มหมวดหมู่',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'ยังไม่มีหมวดหมู่'
+                        : 'ไม่พบ "$_searchQuery"',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
                   ),
-                ),
-              ],
-            ],
+                  if (_searchQuery.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'กดปุ่ม + ด้านบนเพื่อเริ่มเพิ่มหมวดหมู่',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textSecondary.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _openForm(context, null),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDarkMode
+                            ? AppColors.darkFabYellow
+                            : AppColors.fabYellow,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.full),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text(
+                        'เพิ่มหมวดหมู่',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       );
     }
 
     return ListView(
-      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
+        header,
+        const SizedBox(height: 4),
         // Metric Summary Capsule / Tile (when not reordering)
         if (!_isReorderMode)
           _buildMetricSummaryCard(

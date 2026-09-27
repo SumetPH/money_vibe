@@ -135,7 +135,7 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     _buildTabs(hasNext: next != null),
     ...switch (_tab) {
       _ForecastTab.next when next != null => _buildNextTab(next, isDarkMode),
-      _ForecastTab.manage => _itemListSection(items, isDarkMode),
+      _ForecastTab.manage => _buildManageTab(items, isDarkMode),
       _ => _buildCurrentTab(forecast, isDarkMode),
     },
   ];
@@ -209,13 +209,19 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       ],
       isDarkMode: isDarkMode,
     ),
+  ];
 
+  List<Widget> _buildManageTab(
+    List<FixedCashFlowItem> items,
+    bool isDarkMode,
+  ) => [
     const _AnchorDayCard(),
     cashFlowNote(
       'วันที่เงินเดือนเข้าและจ่ายหนี้ต่าง ๆ งวดจะเปลี่ยนเมื่อผ่านวันนี้ไป '
       'ไม่ใช่วันสรุปยอดบัตร (ตั้งแยกในบัญชีบัตรแต่ละใบ)',
       isDarkMode,
     ),
+    ..._itemListSection(items, isDarkMode),
   ];
 
   List<Widget> _occurrenceSection(
@@ -538,18 +544,15 @@ class _AnchorDayCard extends StatelessWidget {
     final anchorDay = context.select<SettingsProvider, int?>(
       (s) => s.cashFlowAnchorDay,
     );
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: AppInsetCard(
-        children: [
-          AppFormRow(
-            icon: Icons.event_available_rounded,
-            label: 'วันเคลียร์ยอด',
-            value: anchorDay == null ? 'ยังไม่ได้ตั้ง' : 'ทุกวันที่ $anchorDay',
-            onTap: () => _pick(context, anchorDay),
-          ),
-        ],
-      ),
+    return AppInsetCard(
+      children: [
+        AppFormRow(
+          icon: Icons.event_available_rounded,
+          label: 'วันเคลียร์ยอด',
+          value: anchorDay == null ? 'ยังไม่ได้ตั้ง' : 'ทุกวันที่ $anchorDay',
+          onTap: () => _pick(context, anchorDay),
+        ),
+      ],
     );
   }
 }
