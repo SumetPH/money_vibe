@@ -9,6 +9,7 @@ import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'recurring_form_screen.dart';
@@ -114,30 +115,35 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ],
             ),
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Material(
-                  color: surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: AppColors.borderFor(isDark),
-                      width: 1,
+              if (_isReorderMode)
+                AppReorderDoneButton(
+                  onPressed: () => setState(() => _isReorderMode = false),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Material(
+                    color: surfaceColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      side: BorderSide(
+                        color: AppColors.borderFor(isDark),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.more_horiz_rounded,
-                      size: 20,
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.more_horiz_rounded,
+                        size: 20,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                      ),
+                      onPressed: () => _showMenuBottomSheet(context, isDark),
                     ),
-                    onPressed: () => _showMenuBottomSheet(context, isDark),
                   ),
                 ),
-              ),
             ],
           ),
           body: SafeArea(
@@ -167,6 +173,12 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                   )
                 : ReorderableListView.builder(
                     buildDefaultDragHandles: false,
+                    header: _isReorderMode
+                        ? const AppReorderBanner(
+                            message:
+                                'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับรายการประจำ',
+                          )
+                        : null,
                     onReorderItem: _isReorderMode
                         ? provider.reorderRecurringGroups
                         : (_, _) {},
@@ -432,8 +444,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               trailing: AppSwitch(
                                 value: _isReorderMode,
                                 onChanged: (v) {
-                                  setStateModal(() => _isReorderMode = v);
                                   setState(() => _isReorderMode = v);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),
@@ -476,8 +488,9 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               ),
                               trailing: AppSwitch(
                                 value: rtp.showHiddenRecurring,
-                                onChanged: (v) {
+                                onChanged: (_) {
                                   rtp.toggleShowHiddenRecurring();
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

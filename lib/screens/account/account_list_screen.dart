@@ -9,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_drawer.dart';
@@ -85,27 +86,32 @@ class _AccountListScreenState extends State<AccountListScreen> {
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Material(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.full),
-                side: BorderSide(
-                  color: AppColors.borderFor(isDarkMode),
-                  width: 1,
+          if (_isReorderMode)
+            AppReorderDoneButton(
+              onPressed: () => setState(() => _isReorderMode = false),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Material(
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  side: BorderSide(
+                    color: AppColors.borderFor(isDarkMode),
+                    width: 1,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  icon: const Icon(Icons.more_horiz),
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                  onPressed: () => _showAppMenu(context),
                 ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: IconButton(
-                icon: const Icon(Icons.more_horiz),
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.textPrimary,
-                onPressed: () => _showAppMenu(context),
-              ),
             ),
-          ),
         ],
       ),
       body: Consumer2<AccountProvider, TransactionProvider>(
@@ -132,6 +138,13 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
           return CustomScrollView(
             slivers: [
+              if (isReorderMode)
+                const SliverToBoxAdapter(
+                  child: AppReorderBanner(
+                    message:
+                        'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับกลุ่มและบัญชี',
+                  ),
+                ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 sliver: SliverToBoxAdapter(
@@ -492,8 +505,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
                               trailing: AppSwitch(
                                 value: _isReorderMode,
                                 onChanged: (value) {
-                                  setStateModal(() => _isReorderMode = value);
                                   setState(() => _isReorderMode = value);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),
@@ -536,8 +549,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
                               ),
                               trailing: AppSwitch(
                                 value: showHiddenAccounts,
-                                onChanged: (value) {
+                                onChanged: (_) {
                                   accountProvider.toggleShowHiddenAccounts();
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),
@@ -1117,13 +1131,34 @@ class _AccountItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        account.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimaryColor,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              account.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimaryColor,
+                              ),
+                            ),
+                          ),
+                          if (account.isHidden) ...[
+                            const SizedBox(width: 6),
+                            Tooltip(
+                              message: 'บัญชีนี้ถูกซ่อน',
+                              child: Icon(
+                                Icons.visibility_off_outlined,
+                                size: 16,
+                                color: isDarkMode
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(

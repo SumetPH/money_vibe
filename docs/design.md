@@ -15,6 +15,7 @@
 | `showAppConfirmDialog`                                                | `AlertDialog` สำหรับยืนยัน                             | `lib/widgets/app_confirm_dialog.dart`     |
 | `showAppModalBottomSheet`, `AppModalBottomSheetHeader`, `AppDraggableSheet` | `showModalBottomSheet` / `DraggableScrollableSheet` | `lib/widgets/app_modal_bottom_sheet.dart` |
 | `AppSegmentedTabs`, `AppAmountHeroCard`, `AppFormRow`, `CalculatorKeyboardHost` | segmented control, amount hero, แถวฟอร์มและการต่อคีย์บอร์ดเครื่องคิดเลขที่เขียนเองในฟอร์ม | `lib/widgets/app_segmented_tabs.dart`, `app_amount_hero_card.dart`, `app_form_row.dart`, `calculator_keyboard_host.dart` |
+| `AppReorderDoneButton`, `AppReorderBanner` | ปุ่ม `เสร็จสิ้น` บน AppBar และ banner คำแนะนำในโหมดจัดเรียง (สวิตช์ในเมนูเปลี่ยนโหมดแล้วปิด sheet ทันที) | `lib/widgets/app_reorder_mode.dart` |
 | `showDayOfMonthPickerSheet`, `AppStatusChip` | grid เลือกวันที่ 1–31 และแคปซูลสถานะที่เขียนเองในหน้า | `lib/widgets/day_of_month_picker_sheet.dart`, `app_status_chip.dart` |
 | `AppColors.*For(isDarkMode)` และ `AppRadii`                           | `Color(0x…)` และ ternary สี dark/light ในหน้า          | `lib/theme/`                              |
 

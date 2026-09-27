@@ -9,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../transaction/transaction_list_screen.dart';
@@ -115,43 +116,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
         ),
         actions: [
           if (_isReorderMode)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Material(
-                  color: isDarkMode ? AppColors.darkIncome : AppColors.income,
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => setState(() => _isReorderMode = false),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 7,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_rounded,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'เสร็จสิ้น',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            AppReorderDoneButton(
+              onPressed: () => setState(() => _isReorderMode = false),
             )
           else ...[
             Padding(
@@ -203,7 +169,10 @@ class _CategoryListScreenState extends State<CategoryListScreen>
             child: Column(
               children: [
                 // Reorder Mode Active Banner
-                if (_isReorderMode) _buildReorderBanner(isDarkMode),
+                if (_isReorderMode)
+                  const AppReorderBanner(
+                    message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
+                  ),
 
                 // iOS Segmented Tab Control
                 _buildSegmentedControl(
@@ -237,36 +206,6 @@ class _CategoryListScreenState extends State<CategoryListScreen>
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildReorderBanner(bool isDarkMode) {
-    final activeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: activeColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        border: Border.all(color: activeColor.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.swap_vert_rounded, color: activeColor, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: activeColor,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -813,11 +752,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                               trailing: AppSwitch(
                                 value: _isReorderMode,
                                 onChanged: (value) {
-                                  setStateModal(() => _isReorderMode = value);
                                   setState(() => _isReorderMode = value);
-                                  if (value) {
-                                    Navigator.pop(context);
-                                  }
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

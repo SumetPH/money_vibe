@@ -10,6 +10,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/monthly_cycle_selector.dart';
@@ -242,9 +243,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final dividerColor = isDarkMode
             ? AppColors.darkDivider
             : AppColors.divider;
-        final incomeColor = isDarkMode
-            ? AppColors.darkIncome
-            : AppColors.income;
 
         // Summary calculations
         final spentByCategoryId = _buildSpentByCategoryId(
@@ -321,45 +319,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             ),
             actions: [
               if (_isReorderMode)
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: incomeColor,
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => setState(() => _isReorderMode = false),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.check_rounded,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'เสร็จสิ้น',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                AppReorderDoneButton(
+                  onPressed: () => setState(() => _isReorderMode = false),
                 )
               else ...[
                 Material(
@@ -429,7 +390,10 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_isReorderMode)
-                          _buildReorderBanner(isDarkMode, incomeColor),
+                          const AppReorderBanner(
+                            message:
+                                'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับงบประมาณ',
+                          ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: MonthlyCycleSelector(
@@ -472,34 +436,6 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           bottomNavigationBar: null,
         );
       },
-    );
-  }
-
-  Widget _buildReorderBanner(bool isDarkMode, Color incomeColor) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: incomeColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        border: Border.all(color: incomeColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, size: 18, color: incomeColor),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'โหมดจัดเรียงลำดับ: ลากที่ไอคอนจัดเรียงเพื่อสลับตำแหน่งงบประมาณ',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: incomeColor,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1023,8 +959,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                               trailing: AppSwitch(
                                 value: _isReorderMode,
                                 onChanged: (v) {
-                                  setStateModal(() => _isReorderMode = v);
                                   setState(() => _isReorderMode = v);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),
@@ -1069,7 +1005,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                 value: budgetProvider.showHiddenBudgets,
                                 onChanged: (_) {
                                   budgetProvider.toggleShowHiddenBudgets();
-                                  setStateModal(() {});
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

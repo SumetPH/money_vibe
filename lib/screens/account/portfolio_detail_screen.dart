@@ -53,7 +53,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   late final AnimationController _refreshIconController;
   late final TabController _tabController;
   bool _isRefreshing = false;
-  bool _isReorderMode = false;
   Map<String, String> _groupSortTypes =
       {}; // Key: groupName, Value: 'value' หรือ 'pnl'
   List<String> _groupOrder = [];
@@ -1237,52 +1236,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                                 isDarkMode,
                               );
                             },
-                          ),
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
-                          ListTile(
-                            tileColor: isDarkMode
-                                ? AppColors.darkSurface
-                                : AppColors.surface,
-                            leading: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: textColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.reorder_rounded,
-                                color: textColor,
-                                size: 20,
-                              ),
-                            ),
-                            title: Text(
-                              'โหมดจัดเรียงลำดับหุ้น',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'แสดงปุ่มลากเพื่อสลับลำดับหุ้นในแต่ละกลุ่ม',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSecondary,
-                              ),
-                            ),
-                            trailing: AppSwitch(
-                              value: _isReorderMode,
-                              onChanged: (value) {
-                                setStateModal(() => _isReorderMode = value);
-                                setState(() => _isReorderMode = value);
-                              },
-                            ),
                           ),
                         ],
                       ),
