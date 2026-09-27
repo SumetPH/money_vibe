@@ -344,6 +344,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             ],
           ),
           body: SafeArea(
+            bottom: false,
             child: budgets.isEmpty
                 ? _buildEmptyState(
                     surfaceColor: surfaceColor,
@@ -516,6 +517,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         buildDefaultDragHandles: false,
         onReorderItem: _isReorderMode
             ? (oldIndex, newIndex) =>
@@ -696,6 +698,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
 
     return ReorderableListView.builder(
       header: listHeader,
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       buildDefaultDragHandles: false,
       onReorderItem: _isReorderMode
           ? budgetProvider.reorderBudgetGroups
