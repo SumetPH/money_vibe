@@ -22,6 +22,7 @@ import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
 import '../account/holding_buy_form_screen.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -41,9 +42,8 @@ class TradeTrackerScreen extends StatefulWidget {
   State<TradeTrackerScreen> createState() => _TradeTrackerScreenState();
 }
 
-class _TradeTrackerScreenState extends State<TradeTrackerScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
+  int _selectedTab = 0;
   late StockPriceService _priceService;
   _TradePnlFilter _pnlFilter = _TradePnlFilter.all;
   String? _portfolioId;
@@ -52,8 +52,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_handleTabChanged);
     _priceService = _buildPriceService();
   }
 
@@ -64,21 +62,9 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   }
 
   @override
-  void dispose() {
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _handleTabChanged() {
-    if (!mounted || _tabController.indexIsChanging) return;
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final tabBar = _buildTabBar(isDarkMode);
+    final tabBar = _buildTabBar();
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
     final bgColor = isDarkMode
         ? AppColors.darkBackground
@@ -167,118 +153,75 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
               );
 
           return SafeArea(
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _tabController,
-              children: [
-                _YearlyTradeTab(
-                  header: tabBar,
-                  trades: accountProvider.stockTrades,
-                  selectedYear: _selectedYear,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
-                  isDarkMode: isDarkMode,
-                ),
-                _SaleHistoryTab(
-                  header: tabBar,
-                  trades: trades,
-                  isDarkMode: isDarkMode,
-                  portfolioNameOf: (trade) =>
-                      accountProvider.findById(trade.portfolioId)?.name ??
-                      'พอร์ตหุ้น',
-                  onEdit: (trade) => _openTradeForm(context, trade),
-                  onDelete: (trade) => _confirmDeleteTrade(context, trade),
-                ),
-                _PurchaseHistoryTab(
-                  header: tabBar,
-                  purchases: accountProvider.stockPurchases,
-                  isDarkMode: isDarkMode,
-                  portfolioNameOf: (purchase) =>
-                      accountProvider.findById(purchase.portfolioId)?.name ??
-                      'พอร์ตหุ้น',
-                  onEdit: (purchase) =>
-                      _openPurchaseHistoryForm(context, purchase),
-                  onDelete: (purchase) =>
-                      _confirmDeletePurchase(context, purchase),
-                ),
-                _AnnualTaxTab(
-                  header: tabBar,
-                  trades: accountProvider.stockTrades,
-                  annualReports: accountProvider.portfolioAnnualReports,
-                  selectedYear: _selectedYear,
-                  principalAvailableForYearUsd: principalAvailableForYearUsd,
-                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                  onYearChanged: (year) => setState(() => _selectedYear = year),
-                  isDarkMode: isDarkMode,
-                ),
-              ],
-            ),
+            // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+            child: [
+              _YearlyTradeTab(
+                header: tabBar,
+                trades: accountProvider.stockTrades,
+                selectedYear: _selectedYear,
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                isDarkMode: isDarkMode,
+              ),
+              _SaleHistoryTab(
+                header: tabBar,
+                trades: trades,
+                isDarkMode: isDarkMode,
+                portfolioNameOf: (trade) =>
+                    accountProvider.findById(trade.portfolioId)?.name ??
+                    'พอร์ตหุ้น',
+                onEdit: (trade) => _openTradeForm(context, trade),
+                onDelete: (trade) => _confirmDeleteTrade(context, trade),
+              ),
+              _PurchaseHistoryTab(
+                header: tabBar,
+                purchases: accountProvider.stockPurchases,
+                isDarkMode: isDarkMode,
+                portfolioNameOf: (purchase) =>
+                    accountProvider.findById(purchase.portfolioId)?.name ??
+                    'พอร์ตหุ้น',
+                onEdit: (purchase) =>
+                    _openPurchaseHistoryForm(context, purchase),
+                onDelete: (purchase) =>
+                    _confirmDeletePurchase(context, purchase),
+              ),
+              _AnnualTaxTab(
+                header: tabBar,
+                trades: accountProvider.stockTrades,
+                annualReports: accountProvider.portfolioAnnualReports,
+                selectedYear: _selectedYear,
+                principalAvailableForYearUsd: principalAvailableForYearUsd,
+                principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                isDarkMode: isDarkMode,
+              ),
+            ][_selectedTab],
           );
         },
       ),
     );
   }
 
+  static const _tabLabels = ['สรุป', 'ขาย', 'ซื้อ', 'ภาษีไทย'];
+
   // แถบแท็บอยู่ใน scroll ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมเนื้อหา
-  Widget _buildTabBar(bool isDarkMode) {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicator: BoxDecoration(
-              color: isDarkMode
-                  ? AppColors.darkSurfaceVariant
-                  : AppColors.sectionHeader,
-              borderRadius: BorderRadius.circular(AppRadii.large),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: isDarkMode ? 0.2 : 0.05,
-                  ),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+  Widget _buildTabBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: AppSegmentedTabs(
+        segments: [
+          for (final (index, label) in _tabLabels.indexed)
+            AppSegment(
+              label: label,
+              isSelected: _selectedTab == index,
+              onTap: () => setState(() => _selectedTab = index),
             ),
-            splashBorderRadius: BorderRadius.circular(AppRadii.large),
-            dividerColor: Colors.transparent,
-            labelColor: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
-            unselectedLabelColor: isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.textSecondary,
-            labelStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-            tabs: const [
-              Tab(text: 'สรุป'),
-              Tab(text: 'ขาย'),
-              Tab(text: 'ซื้อ'),
-              Tab(text: 'ภาษีไทย'),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 
   List<Widget> _buildAppBarActions(BuildContext context) {
-    switch (_tabController.index) {
+    switch (_selectedTab) {
       case 0:
         return [
           _buildAppBarAction(

@@ -20,6 +20,7 @@ import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -611,7 +612,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   // 1. iOS Type Selector (Segmented Tabs)
                   _TypeSegmentedControl(
                     selectedType: _type,
-                    isDarkMode: isDarkMode,
                     onChanged: _selectType,
                     onShowMore: () => _showAllTypePicker(context),
                   ),
@@ -952,30 +952,17 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _TypeSegmentedControl extends StatelessWidget {
   final TransactionType selectedType;
-  final bool isDarkMode;
   final ValueChanged<TransactionType> onChanged;
   final VoidCallback onShowMore;
 
   const _TypeSegmentedControl({
     required this.selectedType,
-    required this.isDarkMode,
     required this.onChanged,
     required this.onShowMore,
   });
 
   @override
   Widget build(BuildContext context) {
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final primary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
     // Check if the current type is one of the 3 primary ones
     final isPrimary =
         selectedType == TransactionType.expense ||
@@ -990,86 +977,29 @@ class _TypeSegmentedControl extends StatelessWidget {
       _ => 'อื่นๆ ▾',
     };
 
-    return Material(
-      color: surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            _buildTab(
-              label: 'รายจ่าย',
-              isSelected: selectedType == TransactionType.expense,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.expense),
-            ),
-            _buildTab(
-              label: 'รายรับ',
-              isSelected: selectedType == TransactionType.income,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.income),
-            ),
-            _buildTab(
-              label: 'โอน',
-              isSelected: selectedType == TransactionType.transfer,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.transfer),
-            ),
-            _buildTab(
-              label: otherLabel,
-              isSelected: !isPrimary,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: onShowMore,
-            ),
-          ],
+    return AppSegmentedTabs(
+      segments: [
+        AppSegment(
+          label: 'รายจ่าย',
+          isSelected: selectedType == TransactionType.expense,
+          onTap: () => onChanged(TransactionType.expense),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTab({
-    required String label,
-    required bool isSelected,
-    required Color selectedSurface,
-    required Color primary,
-    required Color secondary,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: isSelected ? selectedSurface : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isSelected ? primary : secondary,
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
+        AppSegment(
+          label: 'รายรับ',
+          isSelected: selectedType == TransactionType.income,
+          onTap: () => onChanged(TransactionType.income),
         ),
-      ),
+        AppSegment(
+          label: 'โอน',
+          isSelected: selectedType == TransactionType.transfer,
+          onTap: () => onChanged(TransactionType.transfer),
+        ),
+        AppSegment(
+          label: otherLabel,
+          isSelected: !isPrimary,
+          onTap: onShowMore,
+        ),
+      ],
     );
   }
 }

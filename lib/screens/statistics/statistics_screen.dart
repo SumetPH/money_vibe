@@ -16,6 +16,7 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -29,7 +30,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedTab = 0;
   int? _selectedYear;
-  List<String> tabLable = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
+  static const _tabLabels = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +52,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
-        final secondary = isDarkMode
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-        final selectedSurface = isDarkMode
-            ? AppColors.darkSurfaceVariant
-            : AppColors.sectionHeader;
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -131,60 +126,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Material(
-                      color: surfaceColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                        side: BorderSide(
-                          color: AppColors.borderFor(isDarkMode),
-                          width: 1,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Row(
-                          children: tabLable.map((value) {
-                            final isSelected =
-                                _selectedTab == tabLable.indexOf(value);
-                            return Expanded(
-                              child: Material(
-                                color: isSelected
-                                    ? selectedSurface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadii.large,
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedTab = tabLable.indexOf(value);
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    child: Text(
-                                      value,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? textColor
-                                            : secondary,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
+                    child: AppSegmentedTabs(
+                      segments: [
+                        for (final (index, label) in _tabLabels.indexed)
+                          AppSegment(
+                            label: label,
+                            isSelected: _selectedTab == index,
+                            onTap: () => setState(() => _selectedTab = index),
+                          ),
+                      ],
                     ),
                   ),
                   // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง

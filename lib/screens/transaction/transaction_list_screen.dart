@@ -17,6 +17,7 @@ import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -217,11 +218,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     sliver: SliverToBoxAdapter(
-                      child: _TransactionTypeTabs(
-                        selected: _typeFilter,
-                        isDarkMode: isDarkMode,
-                        onChanged: (value) =>
-                            setState(() => _typeFilter = value),
+                      child: AppSegmentedTabs(
+                        segments: [
+                          for (final value in _TransactionTypeFilter.values)
+                            AppSegment(
+                              label: value.label,
+                              isSelected: _typeFilter == value,
+                              onTap: () => setState(() => _typeFilter = value),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -1000,72 +1005,6 @@ class _SummaryAmount extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TransactionTypeTabs extends StatelessWidget {
-  final _TransactionTypeFilter selected;
-  final bool isDarkMode;
-  final ValueChanged<_TransactionTypeFilter> onChanged;
-
-  const _TransactionTypeTabs({
-    required this.selected,
-    required this.isDarkMode,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final primary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return Material(
-      color: surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Row(
-          children: _TransactionTypeFilter.values.map((value) {
-            final isSelected = selected == value;
-            return Expanded(
-              child: Material(
-                color: isSelected ? selectedSurface : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadii.large),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => onChanged(value),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      value.label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isSelected ? primary : secondary,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
     );
   }
 }

@@ -11,6 +11,7 @@ import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -225,11 +226,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 // 1. Type Selector (Segmented Control)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildTypeSelector(
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
-                    isDarkMode: isDarkMode,
-                  ),
+                  child: _buildTypeSelector(),
                 ),
                 const SizedBox(height: 12),
 
@@ -321,110 +318,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     );
   }
 
-  Widget _buildTypeSelector({
-    required Color surfaceColor,
-    required Color dividerColor,
-    required bool isDarkMode,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
+  Widget _buildTypeSelector() {
+    return AppSegmentedTabs(
+      segments: [
+        AppSegment(
+          label: 'หมวดหมู่รายจ่าย',
+          isSelected: _type == CategoryType.expense,
+          onTap: () => _onTypeChanged(CategoryType.expense),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTypeButton(
-              type: CategoryType.expense,
-              title: 'หมวดหมู่รายจ่าย',
-              isSelected: _type == CategoryType.expense,
-              accentColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              isDarkMode: isDarkMode,
-            ),
-          ),
-          Expanded(
-            child: _buildTypeButton(
-              type: CategoryType.income,
-              title: 'หมวดหมู่รายรับ',
-              isSelected: _type == CategoryType.income,
-              accentColor: isDarkMode ? AppColors.darkIncome : AppColors.income,
-              isDarkMode: isDarkMode,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeButton({
-    required CategoryType type,
-    required String title,
-    required bool isSelected,
-    required Color accentColor,
-    required bool isDarkMode,
-  }) {
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return InkWell(
-      onTap: () => _onTypeChanged(type),
-      borderRadius: BorderRadius.circular(AppRadii.large),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.large),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
-                ]
-              : null,
+        AppSegment(
+          label: 'หมวดหมู่รายรับ',
+          isSelected: _type == CategoryType.income,
+          onTap: () => _onTypeChanged(CategoryType.income),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? accentColor
-                    : accentColor.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? textPrimary : textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 

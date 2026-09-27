@@ -49,6 +49,10 @@ check 'Use AppColors.borderFor for card and divider borders' \
   'AppColors\.darkDivider(\.withValues\(alpha: 0\.4\)|[[:space:]]*:[[:space:]]*AppColors\.divider\)[[:space:]]*\.withValues)' \
   $(files_except '^$')
 
+check 'Use AppSegmentedTabs instead of TabBar / TabBarView / SegmentedButton' \
+  '(^|[^A-Za-z0-9_])(TabBar|TabBarView|SegmentedButton|CupertinoSlidingSegmentedControl)\(' \
+  $(files_except 'lib/widgets/app_segmented_tabs\.dart')
+
 check 'Use AppColors tokens instead of hard-coded Color(0x...) values' \
   'Color\(0x[0-9A-Fa-f]+\)' $(files_except '^$')
 

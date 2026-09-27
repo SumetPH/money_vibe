@@ -15,6 +15,7 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -23,23 +24,14 @@ class CategoryListScreen extends StatefulWidget {
   State<CategoryListScreen> createState() => _CategoryListScreenState();
 }
 
-class _CategoryListScreenState extends State<CategoryListScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _CategoryListScreenState extends State<CategoryListScreen> {
   int _currentIndex = 0;
   bool _isReorderMode = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -48,17 +40,13 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       _currentIndex == 0 ? CategoryType.expense : CategoryType.income;
 
   void _selectTab(int index) {
-    if (_isReorderMode) {
-      _tabController.animateTo(_currentIndex);
-      return;
-    }
+    if (_isReorderMode) return;
 
     setState(() {
       _currentIndex = index;
       _searchQuery = '';
       _searchController.clear();
     });
-    _tabController.animateTo(index);
   }
 
   @override
@@ -166,11 +154,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {
           // Segmented control อยู่ใน list ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมรายการ
-          final segmentedControl = _buildSegmentedControl(
-            catProvider: catProvider,
-            surfaceColor: surfaceColor,
-            isDarkMode: isDarkMode,
-          );
+          final segmentedControl = _buildSegmentedControl();
           return SafeArea(
             child: Column(
               children: [
@@ -181,26 +165,14 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                   ),
 
                 // Category List View
+                // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
                 Expanded(
-                  child: TabBarView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _tabController,
-                    children: [
-                      _buildCategoryList(
-                        catProvider,
-                        txProvider,
-                        CategoryType.expense,
-                        isDarkMode,
-                        segmentedControl,
-                      ),
-                      _buildCategoryList(
-                        catProvider,
-                        txProvider,
-                        CategoryType.income,
-                        isDarkMode,
-                        segmentedControl,
-                      ),
-                    ],
+                  child: _buildCategoryList(
+                    catProvider,
+                    txProvider,
+                    _currentType,
+                    isDarkMode,
+                    segmentedControl,
                   ),
                 ),
               ],
@@ -211,106 +183,22 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     );
   }
 
-  Widget _buildSegmentedControl({
-    required CategoryProvider catProvider,
-    required Color surfaceColor,
-    required bool isDarkMode,
-  }) {
-    final expenseCount = catProvider.expenseCategories.length;
-    final incomeCount = catProvider.incomeCategories.length;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSegmentButton(
-              index: 0,
-              title: 'รายจ่าย',
-              count: expenseCount,
-              isSelected: _currentIndex == 0,
-              accentColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              isDarkMode: isDarkMode,
-            ),
+  Widget _buildSegmentedControl() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: AppSegmentedTabs(
+        segments: [
+          AppSegment(
+            label: 'รายจ่าย',
+            isSelected: _currentIndex == 0,
+            onTap: () => _selectTab(0),
           ),
-          Expanded(
-            child: _buildSegmentButton(
-              index: 1,
-              title: 'รายรับ',
-              count: incomeCount,
-              isSelected: _currentIndex == 1,
-              accentColor: isDarkMode ? AppColors.darkIncome : AppColors.income,
-              isDarkMode: isDarkMode,
-            ),
+          AppSegment(
+            label: 'รายรับ',
+            isSelected: _currentIndex == 1,
+            onTap: () => _selectTab(1),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSegmentButton({
-    required int index,
-    required String title,
-    required int count,
-    required bool isSelected,
-    required Color accentColor,
-    required bool isDarkMode,
-  }) {
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return InkWell(
-      onTap: () => _selectTab(index),
-      borderRadius: BorderRadius.circular(AppRadii.large),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.large),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? textPrimary : textSecondary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

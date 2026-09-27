@@ -16,6 +16,7 @@ import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final Budget? budget;
@@ -847,98 +848,26 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               color: textPrimaryColor,
             ),
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: AppColors.insetFillFor(isDark),
-              borderRadius: BorderRadius.circular(AppRadii.large),
-            ),
-            child: Row(
-              children: [
-                _buildSegmentButton(
-                  type: BudgetType.expense,
-                  title: 'รายจ่าย',
+          const SizedBox(width: 16),
+          Expanded(
+            child: AppSegmentedTabs(
+              segments: [
+                AppSegment(
+                  label: 'รายจ่าย',
                   isSelected: _selectedType == BudgetType.expense,
-                  isDark: isDark,
-                  accentColor: isDark
-                      ? AppColors.darkExpense
-                      : AppColors.expense,
+                  onTap: () =>
+                      setState(() => _selectedType = BudgetType.expense),
                 ),
-                _buildSegmentButton(
-                  type: BudgetType.savings,
-                  title: 'เงินออม',
+                AppSegment(
+                  label: 'เงินออม',
                   isSelected: _selectedType == BudgetType.savings,
-                  isDark: isDark,
-                  accentColor: isDark ? AppColors.darkIncome : AppColors.income,
+                  onTap: () =>
+                      setState(() => _selectedType = BudgetType.savings),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSegmentButton({
-    required BudgetType type,
-    required String title,
-    required bool isSelected,
-    required bool isDark,
-    required Color accentColor,
-  }) {
-    return InkWell(
-      onTap: () => setState(() => _selectedType = type),
-      borderRadius: BorderRadius.circular(AppRadii.medium),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.darkSurfaceVariant : Colors.white)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.medium),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? accentColor
-                    : accentColor.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? (isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary)
-                    : (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
