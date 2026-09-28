@@ -32,108 +32,101 @@ class AppBottomNavigation extends StatelessWidget {
     final fabColor = AppColors.fabFor(isDarkMode, settingsProvider.themeColor);
     final onFab = AppColors.onFabFor(isDarkMode, settingsProvider.themeColor);
 
-    // ลอยเหนือขอบล่าง: เว้นตาม safe area (home indicator) และอย่างน้อย 12
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: surface.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          border: Border.all(
-            color: dividerColor.withValues(alpha: 0.4),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    // แถบชิดขอบล่างเต็มความกว้าง: พื้นกระจกลากลงถึง home indicator
+    return ClipRect(
+      // Frosted glass: เบลอเนื้อหาที่เลื่อนอยู่ใต้แถบ (ต้องใช้คู่กับ extendBody)
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: surface.withValues(alpha: 0.72),
+            border: Border(
+              top: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
             ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        // Frosted glass: เบลอเนื้อหาที่เลื่อนอยู่ใต้ capsule (ต้องใช้คู่กับ extendBody)
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Material(
-            color: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _item(
-                      icon: Icons.account_balance_wallet_rounded,
-                      label: 'บัญชี',
-                      selected: selectedIndex == 0,
-                      accent: accent,
-                      inactive: inactive,
-                      onTap: () => onSelectTab(0),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _item(
+                        icon: Icons.account_balance_wallet_rounded,
+                        label: 'บัญชี',
+                        selected: selectedIndex == 0,
+                        accent: accent,
+                        inactive: inactive,
+                        onTap: () => onSelectTab(0),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _item(
-                      icon: Icons.donut_large_rounded,
-                      label: 'แผน',
-                      selected: selectedIndex == 1,
-                      accent: accent,
-                      inactive: inactive,
-                      onTap: () => onSelectTab(1),
+                    Expanded(
+                      child: _item(
+                        icon: Icons.donut_large_rounded,
+                        label: 'แผน',
+                        selected: selectedIndex == 1,
+                        accent: accent,
+                        inactive: inactive,
+                        onTap: () => onSelectTab(1),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 52,
-                      child: Center(
-                        child: Material(
-                          color: fabColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadii.full),
-                            side: BorderSide(
-                              color: AppColors.borderFor(isDarkMode),
-                              width: 1,
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: Center(
+                          child: Material(
+                            color: fabColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.full,
+                              ),
+                              side: BorderSide(
+                                color: AppColors.borderFor(isDarkMode),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: IconButton(
-                            tooltip: 'เพิ่มรายการ',
-                            onPressed: onAdd,
-                            icon: Icon(
-                              Icons.add_rounded,
-                              color: onFab,
-                              size: 26,
-                            ),
-                            constraints: const BoxConstraints.tightFor(
-                              width: 46,
-                              height: 46,
+                            clipBehavior: Clip.antiAlias,
+                            child: IconButton(
+                              tooltip: 'เพิ่มรายการ',
+                              onPressed: onAdd,
+                              icon: Icon(
+                                Icons.add_rounded,
+                                color: onFab,
+                                size: 26,
+                              ),
+                              constraints: const BoxConstraints.tightFor(
+                                width: 46,
+                                height: 46,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: _item(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'รายการ',
-                      selected: selectedIndex == 2,
-                      accent: accent,
-                      inactive: inactive,
-                      onTap: () => onSelectTab(2),
+                    Expanded(
+                      child: _item(
+                        icon: Icons.receipt_long_rounded,
+                        label: 'รายการ',
+                        selected: selectedIndex == 2,
+                        accent: accent,
+                        inactive: inactive,
+                        onTap: () => onSelectTab(2),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _item(
-                      icon: Icons.query_stats_rounded,
-                      label: 'สถิติ',
-                      selected: selectedIndex == 3,
-                      accent: accent,
-                      inactive: inactive,
-                      onTap: () => onSelectTab(3),
+                    Expanded(
+                      child: _item(
+                        icon: Icons.query_stats_rounded,
+                        label: 'สถิติ',
+                        selected: selectedIndex == 3,
+                        accent: accent,
+                        inactive: inactive,
+                        onTap: () => onSelectTab(3),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
