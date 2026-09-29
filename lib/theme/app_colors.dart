@@ -124,6 +124,14 @@ class AppColors {
     Color(0xFF1565C0),
     Color(0xFF00BCD4),
     Color(0xFFCDDC39),
+    Color(0xFF3F51B5),
+    Color(0xFF673AB7),
+    Color(0xFFFFC107),
+    Color(0xFF2E7D32),
+    Color(0xFF00695C),
+    Color(0xFFAD1457),
+    Color(0xFF37474F),
+    Color(0xFF9E9E9E),
   ];
 
   static const List<Color> darkAccountColors = [
@@ -166,6 +174,26 @@ class AppColors {
     Icons.sports_esports,
     Icons.music_note,
     Icons.fitness_center,
+    Icons.local_grocery_store,
+    Icons.local_cafe,
+    Icons.fastfood,
+    Icons.local_gas_station,
+    Icons.directions_bus,
+    Icons.train,
+    Icons.electric_bolt,
+    Icons.water_drop,
+    Icons.wifi,
+    Icons.receipt_long,
+    Icons.payments,
+    Icons.attach_money,
+    Icons.trending_up,
+    Icons.card_giftcard,
+    Icons.child_care,
+    Icons.favorite,
+    Icons.movie,
+    Icons.beach_access,
+    Icons.checkroom,
+    Icons.build,
   ];
 
   static IconData iconFromCodePoint(Object? codePoint) =>
