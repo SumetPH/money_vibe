@@ -11,6 +11,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
@@ -404,12 +405,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                 _openForm(context, null);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -449,12 +445,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                                 },
                               ),
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,

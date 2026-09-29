@@ -12,6 +12,7 @@ import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
@@ -1031,7 +1032,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
     showAppModalBottomSheet(
@@ -1062,7 +1062,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 Navigator.pop(context);
               },
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             Expanded(
               child: ListView.separated(
                 controller: sc,

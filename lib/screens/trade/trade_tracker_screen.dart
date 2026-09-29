@@ -16,6 +16,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_list_screen.dart';
@@ -990,7 +991,6 @@ class _PurchaseListItem extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     showAppModalBottomSheet<void>(
       context: context,
@@ -1021,7 +1021,7 @@ class _PurchaseListItem extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Divider(height: 1, color: dividerColor),
+              const AppCardDivider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.edit_outlined, color: textColor),
@@ -1034,7 +1034,7 @@ class _PurchaseListItem extends StatelessWidget {
                   onEdit();
                 },
               ),
-              Divider(height: 1, color: dividerColor),
+              const AppCardDivider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.delete_outline, color: dangerColor),
@@ -3203,7 +3203,6 @@ class _TradeListItem extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     final pnlColor = AppColors.getAmountColor(trade.realizedPnlUsd, isDarkMode);
     final thumbnailColor = isDarkMode
@@ -3339,7 +3338,7 @@ class _TradeListItem extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   const SizedBox(height: 12),
                   _TradeDetailRow(
                     label: 'จำนวน',
@@ -3365,10 +3364,7 @@ class _TradeListItem extends StatelessWidget {
                       (trade.brokerFeeUsd != null &&
                           trade.brokerFeeUsd! > 0)) ...[
                     const SizedBox(height: 10),
-                    Divider(
-                      height: 1,
-                      color: dividerColor.withValues(alpha: 0.5),
-                    ),
+                    const AppCardDivider(),
                     const SizedBox(height: 10),
                     if (trade.grossProceedsUsd != null)
                       _TradeDetailRow(
@@ -3397,7 +3393,7 @@ class _TradeListItem extends StatelessWidget {
                       ),
                   ],
                   const SizedBox(height: 10),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.edit_outlined, color: textColor),
@@ -3407,7 +3403,7 @@ class _TradeListItem extends StatelessWidget {
                       onEdit();
                     },
                   ),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.delete_outline, color: dangerColor),

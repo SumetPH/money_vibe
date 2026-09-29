@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
@@ -605,12 +606,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                                 _openForm(context, null);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -906,12 +902,7 @@ class _CategoryItem extends StatelessWidget {
                             onTap();
                           },
                         ),
-                        Divider(
-                          height: 1,
-                          indent: 58,
-                          endIndent: 16,
-                          color: dividerColor.withValues(alpha: 0.3),
-                        ),
+                        const AppCardDivider(),
                         ListTile(
                           leading: Container(
                             width: 34,

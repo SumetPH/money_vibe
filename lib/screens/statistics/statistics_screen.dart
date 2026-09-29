@@ -12,6 +12,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
@@ -218,9 +219,6 @@ class _YearlyBarChart extends StatelessWidget {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
 
         final monthlyData = _calculateMonthlyStats(
           txProvider.transactions,
@@ -316,7 +314,7 @@ class _YearlyBarChart extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Divider(height: 1, color: dividerColor),
+                        const AppCardDivider(),
                       ],
                     ),
                   ),

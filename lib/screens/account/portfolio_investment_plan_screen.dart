@@ -11,6 +11,7 @@ import '../../models/investment_plan.dart';
 import '../../models/stock_holding.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_confirm_dialog.dart';
@@ -276,12 +277,7 @@ class _PortfolioInvestmentPlanScreenState
             ),
           ),
         ),
-        Divider(
-          height: 1,
-          indent: 16,
-          endIndent: 16,
-          color: dividerColor.withValues(alpha: 0.4),
-        ),
+        const AppCardDivider(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           child: Row(
@@ -491,12 +487,7 @@ class _PortfolioInvestmentPlanScreenState
             ),
           ),
           for (var i = 0; i < activeRows.length; i++) ...[
-            Divider(
-              height: 1,
-              indent: 16,
-              endIndent: 16,
-              color: dividerColor.withValues(alpha: 0.3),
-            ),
+            const AppCardDivider(),
             _buildTargetRow(
               holding: _holdingForRow(activeRows[i]),
               row: activeRows[i],
@@ -641,9 +632,6 @@ class _PortfolioInvestmentPlanScreenState
     final secondaryColor = widget.isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = widget.isDarkMode
-        ? AppColors.darkDivider
-        : AppColors.divider;
     final accentColor = widget.isDarkMode
         ? AppColors.darkIncome
         : AppColors.income;
@@ -712,10 +700,7 @@ class _PortfolioInvestmentPlanScreenState
                         ],
                       ),
                     ),
-                    Divider(
-                      height: 1,
-                      color: dividerColor.withValues(alpha: 0.4),
-                    ),
+                    const AppCardDivider(),
                     Expanded(
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -854,13 +839,7 @@ class _PortfolioInvestmentPlanScreenState
     return Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0)
-            Divider(
-              height: 1,
-              indent: 16,
-              endIndent: 16,
-              color: dividerColor.withValues(alpha: 0.3),
-            ),
+          if (i > 0) const AppCardDivider(),
           _RebalanceRow(
             row: rows[i],
             currencyCode: widget.account.currencyCodeLabel,
@@ -996,20 +975,9 @@ class _PortfolioInvestmentPlanScreenState
             ),
           )
         else ...[
-          Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            color: dividerColor.withValues(alpha: 0.4),
-          ),
+          const AppCardDivider(),
           for (var i = 0; i < recommendedRows.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: dividerColor.withValues(alpha: 0.3),
-              ),
+            if (i > 0) const AppCardDivider(),
             _RecommendationRow(
               row: recommendedRows[i],
               plannedTotalAfterBuy:
@@ -1407,12 +1375,9 @@ class _RebalanceRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(
-                    height: 1,
-                    color: dividerColor.withValues(alpha: 0.2),
-                  ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: AppCardDivider(),
                 ),
                 Row(
                   children: [

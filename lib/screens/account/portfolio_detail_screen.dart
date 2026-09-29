@@ -17,6 +17,7 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
@@ -1082,12 +1083,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               );
                             },
                           ),
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.add_circle_outline_rounded,
                             iconColor: textColor,
@@ -1110,12 +1106,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             },
                           ),
                           if (widget.account.isUsPortfolio) ...[
-                            Divider(
-                              height: 1,
-                              indent: 64,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             _buildMenuSheetTile(
                               icon: Icons.edit_document,
                               iconColor: textColor,
@@ -1139,12 +1130,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               },
                             ),
                           ],
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.auto_awesome_rounded,
                             iconColor: isDarkMode
@@ -1169,12 +1155,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               );
                             },
                           ),
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.account_tree_outlined,
                             iconColor: textColor,
@@ -1909,8 +1890,7 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
             ),
           ),
 
-          // ── Divider ──
-          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
+          const AppCardDivider(),
 
           // ── 2. Middle Stats: Cost, Stocks Value, Unrealized PnL ──
           Padding(
@@ -2045,8 +2025,7 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
             ),
           ),
 
-          // ── Divider ──
-          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
+          const AppCardDivider(),
 
           // ── 3. Bottom Row: Cash in Broker ──
           InkWell(

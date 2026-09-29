@@ -13,6 +13,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
@@ -1042,7 +1043,6 @@ class _AmountHeroCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final fromCurrency = selectedAccount?.currency == 'USD' ? 'USD' : 'THB';
     final toCurrency = selectedToAccount?.currency == 'USD' ? 'USD' : 'THB';
@@ -1185,9 +1185,9 @@ class _AmountHeroCard extends StatelessWidget {
 
               // Cross-currency conversion field
               if (isCrossCurrency) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: dividerColor),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: AppCardDivider(),
                 ),
                 Row(
                   children: [
@@ -1368,7 +1368,6 @@ class _SelectionGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final bool isDebtRepay = type == TransactionType.debtRepay;
     final bool isDebtTransfer = type == TransactionType.debtTransfer;
@@ -1416,7 +1415,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 2. Payment Source Account
             _SelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีที่ใช้ชำระ',
@@ -1455,7 +1454,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1504,7 +1503,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 2. To Debt Account
             _SelectionRow(
               title: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สินปลายทาง',
@@ -1534,7 +1533,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1583,7 +1582,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // Transfer: To Account
             _SelectionRow(
               title: selectedToAccount?.name ?? 'เลือกบัญชีปลายทาง',
@@ -1678,7 +1677,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // Row 2: Category
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1838,7 +1837,6 @@ class _MetaInfoCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
       decoration: BoxDecoration(
@@ -1903,7 +1901,7 @@ class _MetaInfoCard extends StatelessWidget {
               ),
             ),
           ),
-          Divider(height: 1, color: dividerColor),
+          const AppCardDivider(),
           // Row 2: Note
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

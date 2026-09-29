@@ -14,6 +14,7 @@ import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_segmented_tabs.dart';
 
@@ -431,7 +432,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Divider(height: 1, color: dividerColor),
+                          const AppCardDivider(),
                           const SizedBox(height: 12),
                           // Details grid
                           _DetailRow(
@@ -544,7 +545,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
                           ],
                           // ── Summary ───────────────────────────────────────────
                           const SizedBox(height: 12),
-                          Divider(height: 1, color: dividerColor),
+                          const AppCardDivider(),
                           const SizedBox(height: 12),
                           _RemainingSummary(
                             upcoming: upcoming,
@@ -1272,10 +1273,7 @@ class _RemainingSummary extends StatelessWidget {
           ],
           // Divider (only show if has end date)
           if (hasEndDate) ...[
-            Divider(
-              height: 1,
-              color: isDark ? AppColors.darkDivider : AppColors.divider,
-            ),
+            const AppCardDivider(),
             const SizedBox(height: 8),
             // Total
             Row(

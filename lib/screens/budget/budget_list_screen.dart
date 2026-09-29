@@ -893,12 +893,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                 _openForm(context, null);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -938,12 +933,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                 },
                               ),
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,

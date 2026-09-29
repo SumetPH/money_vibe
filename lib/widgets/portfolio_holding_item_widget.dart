@@ -5,6 +5,7 @@ import '../models/stock_holding.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../main.dart';
+import 'app_inset_card.dart';
 import 'app_modal_bottom_sheet.dart';
 import 'app_confirm_dialog.dart';
 
@@ -385,12 +386,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         widget.onEdit();
                       },
                     ),
-                    Divider(
-                      height: 1,
-                      indent: 58,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
+                    const AppCardDivider(),
                     ListTile(
                       leading: Container(
                         width: 34,
@@ -414,12 +410,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         widget.onBuy();
                       },
                     ),
-                    Divider(
-                      height: 1,
-                      indent: 58,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
+                    const AppCardDivider(),
                     ListTile(
                       leading: Container(
                         width: 34,
@@ -443,12 +434,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         widget.onSell();
                       },
                     ),
-                    Divider(
-                      height: 1,
-                      indent: 58,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
+                    const AppCardDivider(),
                     ListTile(
                       leading: Container(
                         width: 34,
@@ -475,12 +461,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       },
                     ),
                     if (widget.onClearLogo != null) ...[
-                      Divider(
-                        height: 1,
-                        indent: 58,
-                        endIndent: 16,
-                        color: dividerColor.withValues(alpha: 0.3),
-                      ),
+                      const AppCardDivider(),
                       ListTile(
                         leading: Container(
                           width: 34,
@@ -507,12 +488,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                         },
                       ),
                     ],
-                    Divider(
-                      height: 1,
-                      indent: 58,
-                      endIndent: 16,
-                      color: dividerColor.withValues(alpha: 0.3),
-                    ),
+                    const AppCardDivider(),
                     ListTile(
                       leading: Container(
                         width: 34,

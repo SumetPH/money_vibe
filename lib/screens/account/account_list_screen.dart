@@ -11,6 +11,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/group_header.dart';
@@ -470,12 +471,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                 _openAddAccountForm(context);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -515,12 +511,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                 },
                               ),
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -607,9 +598,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
         final textSecondary = isDarkMode
             ? AppColors.darkTextSecondary
             : AppColors.textSecondary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
 
         return SafeArea(
           child: SingleChildScrollView(
@@ -629,7 +617,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     isBold: true,
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: dividerColor),
+                  const AppCardDivider(),
                   const SizedBox(height: 16),
 
                   // Main Summary
@@ -647,7 +635,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     fontSize: 16,
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: dividerColor),
+                  const AppCardDivider(),
                   const SizedBox(height: 16),
 
                   // Breakdown Header
@@ -1340,7 +1328,6 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final accentColor = isDarkMode
         ? AppColors.darkFabYellow
         : AppColors.fabYellow;
@@ -1469,7 +1456,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                           checkColor: Colors.black,
                           controlAffinity: ListTileControlAffinity.trailing,
                         ),
-                      Divider(height: 1, color: dividerColor),
+                      const AppCardDivider(),
                     ],
                 ],
               ),
