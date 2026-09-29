@@ -271,16 +271,16 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 AppSectionHeader('รูปลักษณ์'),
                 AppInsetCard(
                   children: [
-                    _buildIconRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
+                    IconPickerFormRow(
+                      icon: _selectedIcon,
+                      color: _selectedColor,
+                      onTap: _pickIcon,
                     ),
                     const AppCardDivider(),
-                    _buildColorRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
+                    ColorPickerFormRow(
+                      label: 'สีประจำหมวด',
+                      color: _selectedColor,
+                      onTap: _pickColor,
                     ),
                   ],
                 ),
@@ -550,129 +550,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: textSecondaryColor,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIconRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickIcon,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(
-                Icons.category_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(_selectedIcon, color: _selectedColor, size: 20),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: textSecondaryColor,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(
-                Icons.color_lens_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'สีประจำหมวด',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-                boxShadow: [
-                  BoxShadow(
-                    color: _selectedColor.withValues(alpha: 0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 6),
             Icon(
               Icons.chevron_right_rounded,
               color: textSecondaryColor,

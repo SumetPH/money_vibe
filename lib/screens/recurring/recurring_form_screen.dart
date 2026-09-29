@@ -703,84 +703,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           ),
                         ),
                         Divider(height: 1, color: dividerColor),
-                        InkWell(
+                        IconPickerFormRow(
+                          icon: _icon,
+                          color: _color,
                           onTap: _pickIcon,
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'ไอคอน',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: _color.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.large,
-                                    ),
-                                  ),
-                                  child: Icon(_icon, color: _color, size: 26),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                         Divider(height: 1, color: dividerColor),
-                        InkWell(
-                          onTap: _pickColor,
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'สี',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: _color,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.large,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        ColorPickerFormRow(color: _color, onTap: _pickColor),
                       ],
                     ),
                   ),

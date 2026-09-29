@@ -528,18 +528,16 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
                 AppSectionHeader('รูปลักษณ์'),
                 AppInsetCard(
                   children: [
-                    _buildIconPickerRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
-                      isDark: isDark,
+                    IconPickerFormRow(
+                      icon: _selectedIcon,
+                      color: _selectedColor,
+                      onTap: _pickIcon,
                     ),
                     const AppCardDivider(),
-                    _buildColorPickerRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
-                      isDark: isDark,
+                    ColorPickerFormRow(
+                      label: 'สีประจำงบประมาณ',
+                      color: _selectedColor,
+                      onTap: _pickColor,
                     ),
                   ],
                 ),
@@ -977,140 +975,6 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
           ),
           AppSwitch(value: value, onChanged: onChanged),
         ],
-      ),
-    );
-  }
-
-  Widget _buildIconPickerRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-    required bool isDark,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickIcon,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(_selectedIcon, color: _selectedColor, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ไอคอน',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: textPrimaryColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'เลือกไอคอนสำหรับงบประมาณ',
-                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-                border: Border.all(
-                  color: _selectedColor.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-              ),
-              child: Icon(_selectedIcon, color: _selectedColor, size: 20),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorPickerRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-    required bool isDark,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'สีประจำงบประมาณ',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: textPrimaryColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'เลือกโทนสีเพื่อการแยกแยะ',
-                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-                border: Border.all(
-                  color: (isDark ? Colors.white : Colors.black).withValues(
-                    alpha: 0.2,
-                  ),
-                  width: 1.5,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-            ),
-          ],
-        ),
       ),
     );
   }

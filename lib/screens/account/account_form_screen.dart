@@ -519,14 +519,19 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   AppInsetCard(
                     margin: EdgeInsets.zero,
                     children: [
-                      _buildIconRow(
-                        textPrimaryColor: textPrimaryColor,
-                        textSecondaryColor: textSecondaryColor,
+                      IconPickerFormRow(
+                        icon: _selectedIcon,
+                        color: _selectedColor,
+                        onTap: _pickIcon,
+                        preview: _isUploadedIcon
+                            ? _buildCustomIconPreview()
+                            : null,
                       ),
                       const AppCardDivider(),
-                      _buildColorRow(
-                        textPrimaryColor: textPrimaryColor,
-                        textSecondaryColor: textSecondaryColor,
+                      ColorPickerFormRow(
+                        label: 'สีประจำบัญชี',
+                        color: _selectedColor,
+                        onTap: _pickColor,
                       ),
                     ],
                   ),
@@ -929,156 +934,30 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  Widget _buildIconRow({
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      onTap: _pickIcon,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.palette_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
-              _buildCustomIconPreview()
-            else
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 22),
-              ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Check if the currently selected icon URL is a stored icon
   bool get _isUploadedIcon =>
       _selectedIconUrl.isNotEmpty &&
       AccountIconStorageService().isStoredIconUrl(_selectedIconUrl);
 
   Widget _buildCustomIconPreview() {
+    final fallback = IconPickerPreview(
+      icon: _selectedIcon,
+      color: _selectedColor,
+    );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadii.medium),
       child: CachedNetworkImage(
         imageUrl: _selectedIconUrl,
-        width: 36,
-        height: 36,
+        width: pickerPreviewSize,
+        height: pickerPreviewSize,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
+        placeholder: (context, url) => PickerPreviewBox(
+          color: _selectedColor.withValues(alpha: 0.15),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
-        errorWidget: (context, url, error) => Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(_selectedIcon, color: _selectedColor, size: 22),
-        ),
+        errorWidget: (context, url, error) => fallback,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
-      ),
-    );
-  }
-
-  Widget _buildColorRow({
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      onTap: _pickColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.color_lens_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'สีประจำบัญชี',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: _selectedColor.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-              size: 18,
-            ),
-          ],
-        ),
       ),
     );
   }

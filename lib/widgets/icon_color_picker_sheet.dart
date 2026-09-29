@@ -4,7 +4,13 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+import 'app_form_row.dart';
 import 'app_modal_bottom_sheet.dart';
+
+/// ขนาดกล่อง preview ท้ายแถว icon/color picker
+const pickerPreviewSize = 36.0;
+const _previewIconSize = 20.0;
+const _previewTintAlpha = 0.15;
 
 const _iconGridColumns = 5;
 const _colorGridColumns = 4;
@@ -93,6 +99,122 @@ Future<Color?> showColorPickerSheet({
       },
     ),
   );
+}
+
+/// แถวฟอร์มที่เปิด [showIconPickerSheet]; [preview] ใช้แทนไอคอน เช่นรูปที่อัปโหลด
+class IconPickerFormRow extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final Widget? preview;
+
+  const IconPickerFormRow({
+    super.key,
+    this.label = 'ไอคอน',
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.preview,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFormRow(
+      icon: Icons.category_outlined,
+      label: label,
+      onTap: onTap,
+      trailing: _PickerRowTrailing(
+        preview: preview ?? IconPickerPreview(icon: icon, color: color),
+      ),
+    );
+  }
+}
+
+/// แถวฟอร์มที่เปิด [showColorPickerSheet]
+class ColorPickerFormRow extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const ColorPickerFormRow({
+    super.key,
+    this.label = 'สี',
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFormRow(
+      icon: Icons.color_lens_outlined,
+      label: label,
+      onTap: onTap,
+      trailing: _PickerRowTrailing(preview: PickerPreviewBox(color: color)),
+    );
+  }
+}
+
+/// ไอคอนบนพื้นสีจาง ขนาดเท่า preview ของแถว picker
+class IconPickerPreview extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const IconPickerPreview({super.key, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return PickerPreviewBox(
+      color: color.withValues(alpha: _previewTintAlpha),
+      child: Icon(icon, color: color, size: _previewIconSize),
+    );
+  }
+}
+
+/// กล่องมุมมน [pickerPreviewSize] สำหรับ preview ท้ายแถว picker
+class PickerPreviewBox extends StatelessWidget {
+  final Color color;
+  final Widget? child;
+
+  const PickerPreviewBox({super.key, required this.color, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: pickerPreviewSize,
+      height: pickerPreviewSize,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadii.medium),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _PickerRowTrailing extends StatelessWidget {
+  final Widget preview;
+
+  const _PickerRowTrailing({required this.preview});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.select<SettingsProvider, bool>(
+      (s) => s.isDarkMode,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        preview,
+        const SizedBox(width: 8),
+        Icon(
+          Icons.chevron_right_rounded,
+          color: AppColors.textSecondaryFor(isDarkMode),
+          size: 20,
+        ),
+      ],
+    );
+  }
 }
 
 typedef _PickerItemBuilder =
