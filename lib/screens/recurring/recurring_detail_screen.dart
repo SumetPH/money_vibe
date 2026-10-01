@@ -14,7 +14,9 @@ import '../../screens/transaction/transaction_form_screen.dart';
 import 'recurring_form_screen.dart';
 import 'recurring_section.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class RecurringDetailScreen extends StatefulWidget {
   final RecurringTransaction recurring;
@@ -25,22 +27,14 @@ class RecurringDetailScreen extends StatefulWidget {
   State<RecurringDetailScreen> createState() => _RecurringDetailScreenState();
 }
 
-class _RecurringDetailScreenState extends State<RecurringDetailScreen>
-    with SingleTickerProviderStateMixin {
+class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
   late RecurringTransaction _recurring;
-  late TabController _tabController;
+  int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
     _recurring = widget.recurring;
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   static const _thaiMonths = [
@@ -438,7 +432,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Divider(height: 1, color: dividerColor),
+                          const AppCardDivider(),
                           const SizedBox(height: 12),
                           // Details grid
                           _DetailRow(
@@ -551,7 +545,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                           ],
                           // ── Summary ───────────────────────────────────────────
                           const SizedBox(height: 12),
-                          Divider(height: 1, color: dividerColor),
+                          const AppCardDivider(),
                           const SizedBox(height: 12),
                           _RemainingSummary(
                             upcoming: upcoming,
@@ -572,67 +566,26 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen>
                   const SizedBox(height: 12),
 
                   // ── Tab bar ──────────────────────────────────────────────────
-                  SizedBox(
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.darkSurface
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          border: Border.all(
-                            color: AppColors.borderFor(isDark),
-                          ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: AppSegmentedTabs(
+                      segments: [
+                        AppSegment(
+                          label: 'รายการที่จะเกิดขึ้น (${upcoming.length})',
+                          isSelected: _selectedTab == 0,
+                          onTap: () => setState(() => _selectedTab = 0),
                         ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicator: BoxDecoration(
-                            color: isDark
-                                ? AppColors.darkSurfaceVariant
-                                : AppColors.sectionHeader,
-                            borderRadius: BorderRadius.circular(AppRadii.large),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(
-                                  alpha: isDark ? 0.2 : 0.05,
-                                ),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          splashBorderRadius: BorderRadius.circular(
-                            AppRadii.large,
-                          ),
-                          dividerColor: Colors.transparent,
-                          labelColor: textPrimary,
-                          unselectedLabelColor: textSecondary,
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          unselectedLabelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          tabs: [
-                            Tab(
-                              text: 'รายการที่จะเกิดขึ้น (${upcoming.length})',
-                            ),
-                            Tab(text: 'รายการที่ผ่านมา (${past.length})'),
-                          ],
+                        AppSegment(
+                          label: 'รายการที่ผ่านมา (${past.length})',
+                          isSelected: _selectedTab == 1,
+                          onTap: () => setState(() => _selectedTab = 1),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  AnimatedBuilder(
-                    animation: _tabController,
-                    builder: (context, _) {
-                      final isUpcomingTab = _tabController.index == 0;
+                  Builder(
+                    builder: (context) {
+                      final isUpcomingTab = _selectedTab == 0;
                       final dates = isUpcomingTab ? upcoming : past;
                       if (dates.isEmpty) {
                         return _EmptyState(
@@ -1320,10 +1273,7 @@ class _RemainingSummary extends StatelessWidget {
           ],
           // Divider (only show if has end date)
           if (hasEndDate) ...[
-            Divider(
-              height: 1,
-              color: isDark ? AppColors.darkDivider : AppColors.divider,
-            ),
+            const AppCardDivider(),
             const SizedBox(height: 8),
             // Total
             Row(

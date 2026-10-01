@@ -10,6 +10,8 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -224,11 +226,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 // 1. Type Selector (Segmented Control)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildTypeSelector(
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
-                    isDarkMode: isDarkMode,
-                  ),
+                  child: _buildTypeSelector(),
                 ),
                 const SizedBox(height: 12),
 
@@ -256,7 +254,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                       textPrimaryColor: textPrimaryColor,
                       textSecondaryColor: textSecondaryColor,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
+                    const AppCardDivider(),
                     _buildPickerRow(
                       icon: Icons.account_tree_outlined,
                       label: 'หมวดหมู่หลัก',
@@ -273,16 +271,16 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 AppSectionHeader('รูปลักษณ์'),
                 AppInsetCard(
                   children: [
-                    _buildIconRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
+                    IconPickerFormRow(
+                      icon: _selectedIcon,
+                      color: _selectedColor,
+                      onTap: _pickIcon,
                     ),
-                    const AppCardDivider(indent: 60, endIndent: 16),
-                    _buildColorRow(
-                      surfaceColor: surfaceColor,
-                      textPrimaryColor: textPrimaryColor,
-                      textSecondaryColor: textSecondaryColor,
+                    const AppCardDivider(),
+                    ColorPickerFormRow(
+                      label: 'สีประจำหมวด',
+                      color: _selectedColor,
+                      onTap: _pickColor,
                     ),
                   ],
                 ),
@@ -320,110 +318,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     );
   }
 
-  Widget _buildTypeSelector({
-    required Color surfaceColor,
-    required Color dividerColor,
-    required bool isDarkMode,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
+  Widget _buildTypeSelector() {
+    return AppSegmentedTabs(
+      segments: [
+        AppSegment(
+          label: 'หมวดหมู่รายจ่าย',
+          isSelected: _type == CategoryType.expense,
+          onTap: () => _onTypeChanged(CategoryType.expense),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTypeButton(
-              type: CategoryType.expense,
-              title: 'หมวดหมู่รายจ่าย',
-              isSelected: _type == CategoryType.expense,
-              accentColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              isDarkMode: isDarkMode,
-            ),
-          ),
-          Expanded(
-            child: _buildTypeButton(
-              type: CategoryType.income,
-              title: 'หมวดหมู่รายรับ',
-              isSelected: _type == CategoryType.income,
-              accentColor: isDarkMode ? AppColors.darkIncome : AppColors.income,
-              isDarkMode: isDarkMode,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeButton({
-    required CategoryType type,
-    required String title,
-    required bool isSelected,
-    required Color accentColor,
-    required bool isDarkMode,
-  }) {
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return InkWell(
-      onTap: () => _onTypeChanged(type),
-      borderRadius: BorderRadius.circular(AppRadii.large),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.large),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
-                ]
-              : null,
+        AppSegment(
+          label: 'หมวดหมู่รายรับ',
+          isSelected: _type == CategoryType.income,
+          onTap: () => _onTypeChanged(CategoryType.income),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? accentColor
-                    : accentColor.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? textPrimary : textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 
@@ -642,129 +550,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: textSecondaryColor,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIconRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickIcon,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(
-                Icons.category_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(_selectedIcon, color: _selectedColor, size: 20),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: textSecondaryColor,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorRow({
-    required Color surfaceColor,
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      onTap: _pickColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-              ),
-              child: Icon(
-                Icons.color_lens_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'สีประจำหมวด',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(AppRadii.medium),
-                boxShadow: [
-                  BoxShadow(
-                    color: _selectedColor.withValues(alpha: 0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 6),
             Icon(
               Icons.chevron_right_rounded,
               color: textSecondaryColor,
@@ -1022,137 +807,24 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     );
   }
 
-  void _pickIcon() {
-    showAppModalBottomSheet(
+  Future<void> _pickIcon() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode
-              ? AppColors.darkBackground
-              : AppColors.background;
-          final textSecondaryColor = isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary;
-
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.65,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppModalBottomSheetHeader(title: 'เลือกไอคอนหมวดหมู่'),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: AppColors.accountIcons.length,
-                      itemBuilder: (_, i) {
-                        final icon = AppColors.accountIcons[i];
-                        final selected = icon == _selectedIcon;
-
-                        return Material(
-                          color: selected
-                              ? _selectedColor.withValues(alpha: 0.15)
-                              : bgColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadii.large),
-                            side: selected
-                                ? BorderSide(color: _selectedColor, width: 2)
-                                : BorderSide.none,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _selectedIcon = icon);
-                              Navigator.pop(context);
-                            },
-                            child: Icon(
-                              icon,
-                              color: selected
-                                  ? _selectedColor
-                                  : textSecondaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      title: 'เลือกไอคอนหมวดหมู่',
+      selectedIcon: _selectedIcon,
+      accentColor: _selectedColor,
     );
+    if (icon == null || !mounted) return;
+    setState(() => _selectedIcon = icon);
   }
 
-  void _pickColor() {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกสีประจำหมวด'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountColors.length,
-                  itemBuilder: (_, i) {
-                    final color = AppColors.accountColors[i];
-                    final selected =
-                        color.toARGB32() == _selectedColor.toARGB32();
-
-                    return Material(
-                      color: color,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.large),
-                        side: selected
-                            ? const BorderSide(color: Colors.white, width: 2.5)
-                            : BorderSide.none,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: selected
-                            ? const Icon(
-                                Icons.check_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'เลือกสีประจำหมวด',
+      selectedColor: _selectedColor,
     );
+    if (color == null || !mounted) return;
+    setState(() => _selectedColor = color);
   }
 }

@@ -25,6 +25,8 @@ class CashFlowItemLine {
   final FixedCashFlowItem item;
   final DateTime date;
   final bool isMarked;
+
+  /// ยังไม่ติ๊กทั้งที่วันที่ของรายการเลยวันนี้ไปแล้ว
   final bool isOverdueUnmarked;
 
   const CashFlowItemLine({
@@ -65,23 +67,23 @@ class BudgetRemainingLine {
 
   double get remaining =>
       CashFlowForecastService._positive(budget.amount - spent);
+
+  bool get isIncluded => !budget.isExcludedFromCashForecast;
 }
 
-/// ยอดบัตรเครดิตหนึ่งใบที่จะต้องชำระภายในงวดถัดไป
+/// ยอดที่ยังไม่สรุปของบัตรหนึ่งใบ ซึ่งสรุปหลังวันเคลียร์ยอดของงวดนี้ จึงไปอยู่งวดถัดไป
 class NextCardLine {
   final Account account;
-  final double statementAmount; // ยอดรอบที่สรุปแล้วแต่ครบกำหนดในงวดถัดไป
-  final double unbilledAmount; // ยอดที่ยังไม่สรุป ณ วันนี้
-  final DateTime dueDate;
+  final double unbilledAmount; // ยอดที่รูดไปแล้ว ณ วันนี้
+  final DateTime statementDate;
 
   const NextCardLine({
     required this.account,
-    required this.statementAmount,
     required this.unbilledAmount,
-    required this.dueDate,
+    required this.statementDate,
   });
 
-  double get total => statementAmount + unbilledAmount;
+  double get total => unbilledAmount;
 }
 
 /// คาดการณ์งวดถัดไป เริ่มจาก projected leftover ของงวดนี้
@@ -91,7 +93,11 @@ class NextPeriodForecast {
   final double startingLeftover;
   final List<CashFlowItemLine> itemLines;
   final List<NextCardLine> cardLines;
-  final List<BudgetRemainingLine> budgetLines;
+  final List<BudgetRemainingLine> budgetLines; // รวมงบที่ถูกตัดออก
+
+  /// แผนออม (งบประเภทออม/ลงทุน) นับเต็มเป้าหมาย เพราะไม่มีการติดตามยอดที่ออมแล้ว
+  /// (รวมแผนที่ผู้ใช้ตัดออก เพื่อให้ UI เลือกได้)
+  final List<Budget> savingsPlans;
   final List<PlannedPurchase> purchases;
 
   const NextPeriodForecast({
@@ -101,6 +107,7 @@ class NextPeriodForecast {
     required this.itemLines,
     required this.cardLines,
     required this.budgetLines,
+    required this.savingsPlans,
     required this.purchases,
   });
 
@@ -114,8 +121,13 @@ class NextPeriodForecast {
 
   double get cardTotal => cardLines.fold(0.0, (sum, l) => sum + l.total);
 
-  double get budgetTotal =>
-      budgetLines.fold(0.0, (sum, l) => sum + l.remaining);
+  double get budgetTotal => budgetLines
+      .where((l) => l.isIncluded)
+      .fold(0.0, (sum, l) => sum + l.remaining);
+
+  double get savingsTotal => savingsPlans
+      .where((b) => !b.isExcludedFromCashForecast)
+      .fold(0.0, (sum, b) => sum + b.amount);
 
   double get purchaseTotal => purchases
       .where((p) => p.isIncluded)
@@ -127,13 +139,13 @@ class NextPeriodForecast {
       outgoingTotal -
       cardTotal -
       budgetTotal -
+      savingsTotal -
       purchaseTotal;
 }
 
 class CashFlowForecast {
   final DateTime windowStart;
   final DateTime windowEnd;
-  final DateTime cycleAnchorDate;
   final List<LiquidBalanceLine> liquidLines;
   final List<CashFlowItemLine> itemLines;
   final List<CardObligationLine> cardLines;
@@ -144,7 +156,6 @@ class CashFlowForecast {
   const CashFlowForecast({
     required this.windowStart,
     required this.windowEnd,
-    required this.cycleAnchorDate,
     required this.liquidLines,
     required this.itemLines,
     required this.cardLines,
@@ -168,9 +179,8 @@ class CashFlowForecast {
   double get projectedLeftover =>
       liquidTotal + incomingTotal - outgoingTotal - cardTotal;
 
-  /// จำนวนรายการที่ผู้ใช้ควรตรวจ: ยังไม่ติ๊กทั้งที่เลยวัน, บัตรเลยกำหนด, บัตรยังไม่สรุปยอด
+  /// จำนวนบัตรที่ผู้ใช้ควรตรวจ: เลยกำหนด หรือนับจากยอดที่ยังไม่สรุป
   int get warningCount =>
-      itemLines.where((l) => l.isOverdueUnmarked).length +
       cardLines.where((l) => l.isOverdue || l.hasUnclosedStatement).length;
 }
 
@@ -178,10 +188,10 @@ class CashFlowForecast {
 class CashFlowForecastService {
   static const _liquidTypes = {AccountType.cash, AccountType.bankAccount};
 
-  /// คืน null เมื่อยังไม่ได้ตั้งวันเงินเข้า ([anchorDay])
+  /// งวด = วันถัดจากวันเคลียร์ยอดครั้งก่อน ถึงวันเคลียร์ยอดครั้งถัดไป (ตั้งแต่วันนี้)
+  /// ([anchorDay] = วันเคลียร์ยอด เช่น วันเงินเดือนออกและจ่ายหนี้); คืน null เมื่อยังไม่ได้ตั้ง
   static CashFlowForecast? calculate({
     required DateTime today,
-    required int monthlyCycleStartDay,
     required int? anchorDay,
     required List<Account> accounts,
     required double Function(Account account) balanceInThb,
@@ -192,34 +202,25 @@ class CashFlowForecastService {
     if (anchorDay == null) return null;
 
     final day = _dayOf(today);
-    final cycle = monthlyCyclePeriod(
-      monthlyCycleReportingMonth(day, monthlyCycleStartDay),
-      monthlyCycleStartDay,
+    final settleDate = _firstAnchorOnOrAfter(anchorDay, day);
+    final windowStart = _dayAfter(
+      clampedDayOfMonth(settleDate.year, settleDate.month - 1, anchorDay),
     );
-    final windowStart = cycle.start;
-    final cycleAnchorDate = _firstAnchorOnOrAfter(anchorDay, windowStart);
-    final nextAnchorDate = clampedDayOfMonth(
-      cycleAnchorDate.year,
-      cycleAnchorDate.month + 1,
-      anchorDay,
-    );
-    final windowEnd = nextAnchorDate.subtract(const Duration(days: 1));
     final cardBills = _cardBills(accounts, transactions, day);
 
     return CashFlowForecast(
       windowStart: windowStart,
-      windowEnd: windowEnd,
-      cycleAnchorDate: cycleAnchorDate,
+      windowEnd: settleDate,
       liquidLines: _liquidLines(accounts, balanceInThb),
-      itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
-      cardLines: _cardLines(accounts, cardBills, windowEnd, day),
+      itemLines: _itemLines(items, paidMarks, windowStart, settleDate, day),
+      cardLines: _cardLines(accounts, cardBills, settleDate, day),
       cardBills: cardBills,
     );
   }
 
-  /// คาดการณ์งวดถัดไปต่อจาก [current] โดยนับเพิ่ม: รายการประจำของงวดถัดไป,
-  /// ยอดบัตรที่ครบกำหนดในงวดถัดไป (รวมยอดที่ยังไม่สรุป), งบที่เหลือของรอบเดือนนี้
-  /// และรายการอยากซื้อที่เปิดไว้
+  /// คาดการณ์งวดถัดไป (ถึงวันเคลียร์ยอดครั้งถัดไป) ต่อจาก [current] โดยนับเพิ่ม:
+  /// รายการประจำของงวดถัดไป, ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้,
+  /// งบที่เหลือของรอบเดือนนี้, แผนออมเต็มเป้าหมาย และรายการอยากซื้อที่เปิดไว้
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
     required DateTime today,
@@ -233,12 +234,13 @@ class CashFlowForecastService {
     required List<PlannedPurchase> plannedPurchases,
   }) {
     final day = _dayOf(today);
-    final windowStart = current.windowEnd.add(const Duration(days: 1));
+    final settleDate = current.windowEnd;
+    final windowStart = _dayAfter(settleDate);
     final windowEnd = clampedDayOfMonth(
-      windowStart.year,
-      windowStart.month + 1,
+      settleDate.year,
+      settleDate.month + 1,
       anchorDay,
-    ).subtract(const Duration(days: 1));
+    );
 
     return NextPeriodForecast(
       windowStart: windowStart,
@@ -248,7 +250,7 @@ class CashFlowForecastService {
       cardLines: [
         for (final card in accounts)
           if (current.cardBills[card.id] case final bills?)
-            ?_nextCardLine(card, bills, current.windowEnd, windowEnd),
+            ?_nextCardLine(card, bills, settleDate),
       ],
       budgetLines: _budgetLines(
         budgets,
@@ -257,6 +259,10 @@ class CashFlowForecastService {
         day,
         monthlyCycleStartDay,
       ),
+      savingsPlans: [
+        for (final budget in budgets)
+          if (budget.type == BudgetType.savings && !budget.isHidden) budget,
+      ],
       purchases: plannedPurchases,
     );
   }
@@ -298,7 +304,10 @@ class CashFlowForecastService {
         );
       }
     }
-    lines.sort((a, b) => a.date.compareTo(b.date));
+    lines.sort((a, b) {
+      final byDate = a.date.compareTo(b.date);
+      return byDate != 0 ? byDate : a.item.name.compareTo(b.item.name);
+    });
     return lines;
   }
 
@@ -323,107 +332,89 @@ class CashFlowForecastService {
   static List<CardObligationLine> _cardLines(
     List<Account> accounts,
     Map<String, List<CreditCardBill>> cardBills,
-    DateTime windowEnd,
+    DateTime settleDate,
     DateTime today,
   ) => [
     for (final card in accounts)
       if (cardBills[card.id] case final bills?)
-        ?_cardLine(card, bills, windowEnd, today),
+        ?_cardLine(card, bills, settleDate, today),
   ];
 
+  /// หนี้บัตรที่ต้องเคลียร์ในวันเคลียร์ยอด: ยอดค้างของบิลที่สรุปแล้ว
+  /// และยอดที่รูดไปแล้วของบิลที่จะสรุปก่อนวันเคลียร์ยอด (ยังไม่สรุป)
   static CardObligationLine? _cardLine(
     Account card,
     List<CreditCardBill> bills,
-    DateTime windowEnd,
+    DateTime settleDate,
     DateTime today,
   ) {
-    final openBill = bills.where((b) => b.isOpen).firstOrNull;
-    // bills เรียงใหม่ → เก่า; รอบที่ปิดล่าสุดมียอดค้างของรอบก่อน ๆ ยกมาแล้ว
-    final closedBills = bills.where((b) => !b.isOpen).toList();
-    final hasUnclosedStatement =
-        openBill != null && !openBill.dueDate.isAfter(windowEnd);
-    final obligation = closedBills.isEmpty
-        ? null
-        : _closedObligation(closedBills, openBill, windowEnd);
+    final split = _splitBills(bills);
+    final openBill = split.openBill;
+    final isUnclosedBeforeSettle =
+        openBill != null && openBill.statementDate.isBefore(settleDate);
+    final unbilled = isUnclosedBeforeSettle ? split.unbilledAmount : 0.0;
+    final outstanding = split.statementAmount + unbilled;
+    if (outstanding == 0) return null;
 
-    if (obligation == null && !hasUnclosedStatement) return null;
+    final latestDue = split.latestClosed?.dueDate;
     return CardObligationLine(
       account: card,
-      outstanding: obligation?.amount ?? 0,
-      dueDate: obligation?.dueDate ?? openBill?.dueDate,
-      isOverdue: obligation != null && obligation.dueDate.isBefore(today),
-      hasUnclosedStatement: hasUnclosedStatement,
+      outstanding: outstanding,
+      dueDate: split.statementAmount > 0 ? latestDue : openBill?.dueDate,
+      isOverdue:
+          split.statementAmount > 0 &&
+          latestDue != null &&
+          latestDue.isBefore(today),
+      hasUnclosedStatement: unbilled > 0,
     );
   }
 
-  /// ยอดค้างของรอบที่ปิดแล้วที่ต้องจ่ายภายใน window (null = ไม่มี)
-  static ({double amount, DateTime dueDate})? _closedObligation(
-    List<CreditCardBill> closedBills,
-    CreditCardBill? openBill,
-    DateTime windowEnd,
-  ) {
-    final latest = closedBills.first;
-    if (!latest.dueDate.isAfter(windowEnd)) {
-      // การชำระหลัง due date ของรอบล่าสุดถูกนับเข้ารอบเปิด จึงหักออกที่นี่
-      final amount = _positive(
-        latest.remainingAmount - (openBill?.paidAmount ?? 0),
-      );
-      return amount > 0 ? (amount: amount, dueDate: latest.dueDate) : null;
-    }
-    // รอบล่าสุดครบกำหนดหลัง window: นับเฉพาะยอดค้างเลยกำหนดที่ยกมา
-    // (การชำระในช่วงชำระของรอบล่าสุดหักยอดยกมาก่อน)
-    if (closedBills.length < 2) return null;
-    final overdue = _positive(latest.carriedOverAmount - latest.paidAmount);
-    return overdue > 0
-        ? (amount: overdue, dueDate: closedBills[1].dueDate)
-        : null;
-  }
-
-  /// ยอดบัตรที่ต้องชำระในงวดถัดไป ([windowEnd] คือวันสิ้นสุดงวดปัจจุบัน)
+  /// ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้ (ไปอยู่งวดถัดไป)
   static NextCardLine? _nextCardLine(
     Account card,
     List<CreditCardBill> bills,
-    DateTime windowEnd,
-    DateTime nextWindowEnd,
+    DateTime settleDate,
   ) {
-    final openBill = bills.where((b) => b.isOpen).firstOrNull;
-    final closedBills = bills.where((b) => !b.isOpen).toList();
-    final latest = closedBills.firstOrNull;
-    // การชำระหลัง due date ของรอบล่าสุด ส่วนที่เกินยอดรอบล่าสุดถือเป็นการจ่ายล่วงหน้าให้รอบที่ยังเปิด
-    var prepaid = openBill?.paidAmount ?? 0;
-    var statementAmount = 0.0;
-    DateTime? statementDue;
-
-    if (latest != null) {
-      if (!latest.dueDate.isAfter(windowEnd)) {
-        prepaid = _positive(prepaid - latest.remainingAmount);
-      } else if (!latest.dueDate.isAfter(nextWindowEnd)) {
-        // ยอดค้างเลยกำหนดที่ยกมาถูกนับในงวดปัจจุบันแล้ว
-        final overdueCounted = closedBills.length < 2
-            ? 0.0
-            : _positive(latest.carriedOverAmount - latest.paidAmount);
-        statementAmount = _positive(
-          latest.remainingAmount - prepaid - overdueCounted,
-        );
-        prepaid = 0;
-        statementDue = latest.dueDate;
-      }
+    final split = _splitBills(bills);
+    final openBill = split.openBill;
+    if (openBill == null || openBill.statementDate.isBefore(settleDate)) {
+      return null;
     }
-
-    final unbilledAmount =
-        openBill != null && !openBill.dueDate.isAfter(nextWindowEnd)
-        ? _positive(openBill.expensesAmount - prepaid)
-        : 0.0;
-    if (statementAmount == 0 && unbilledAmount == 0) return null;
+    if (split.unbilledAmount == 0) return null;
     return NextCardLine(
       account: card,
-      statementAmount: statementAmount,
-      unbilledAmount: unbilledAmount,
-      dueDate: unbilledAmount > 0 ? openBill!.dueDate : statementDue!,
+      unbilledAmount: split.unbilledAmount,
+      statementDate: openBill.statementDate,
     );
   }
 
-  /// งบรายจ่าย (ไม่ซ่อน) ของรอบเดือนที่มี [today] อยู่
+  /// แยกยอดบัตร ณ วันนี้เป็นยอดค้างของบิลที่สรุปแล้ว และยอดที่รูดไปแล้วของบิลที่ยังเปิดอยู่
+  static ({
+    double statementAmount,
+    double unbilledAmount,
+    CreditCardBill? latestClosed,
+    CreditCardBill? openBill,
+  })
+  _splitBills(List<CreditCardBill> bills) {
+    final openBill = bills.where((b) => b.isOpen).firstOrNull;
+    // bills เรียงใหม่ → เก่า; รอบที่ปิดล่าสุดมียอดค้างของรอบก่อน ๆ ยกมาแล้ว
+    final latest = bills.where((b) => !b.isOpen).firstOrNull;
+    // การชำระหลัง due date ของรอบล่าสุดถูกนับเข้ารอบเปิด: หักยอดค้างรอบล่าสุดก่อน
+    // ส่วนที่เกินถือเป็นการจ่ายล่วงหน้าให้รอบที่ยังเปิด
+    final paidAfterDue = openBill?.paidAmount ?? 0;
+    final latestRemaining = latest?.remainingAmount ?? 0;
+    final prepaid = _positive(paidAfterDue - latestRemaining);
+    return (
+      statementAmount: _positive(latestRemaining - paidAfterDue),
+      unbilledAmount: openBill == null
+          ? 0
+          : _positive(openBill.expensesAmount - prepaid),
+      latestClosed: latest,
+      openBill: openBill,
+    );
+  }
+
+  /// งบรายจ่าย (ไม่ซ่อน) ของรอบเดือนที่มี [today] อยู่ รวมงบที่ถูกตัดออก เพื่อให้ UI เลือกได้
   static List<BudgetRemainingLine> _budgetLines(
     List<Budget> budgets,
     List<Account> accounts,
@@ -456,6 +447,8 @@ class CashFlowForecastService {
     if (!sameMonth.isBefore(from)) return sameMonth;
     return clampedDayOfMonth(from.year, from.month + 1, anchorDay);
   }
+
+  static DateTime _dayAfter(DateTime d) => DateTime(d.year, d.month, d.day + 1);
 
   static double _positive(double value) {
     final rounded = (value * 100).roundToDouble() / 100;

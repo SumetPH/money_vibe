@@ -13,6 +13,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
@@ -20,6 +21,7 @@ import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -611,7 +613,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   // 1. iOS Type Selector (Segmented Tabs)
                   _TypeSegmentedControl(
                     selectedType: _type,
-                    isDarkMode: isDarkMode,
                     onChanged: _selectType,
                     onShowMore: () => _showAllTypePicker(context),
                   ),
@@ -952,30 +953,17 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _TypeSegmentedControl extends StatelessWidget {
   final TransactionType selectedType;
-  final bool isDarkMode;
   final ValueChanged<TransactionType> onChanged;
   final VoidCallback onShowMore;
 
   const _TypeSegmentedControl({
     required this.selectedType,
-    required this.isDarkMode,
     required this.onChanged,
     required this.onShowMore,
   });
 
   @override
   Widget build(BuildContext context) {
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final primary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
     // Check if the current type is one of the 3 primary ones
     final isPrimary =
         selectedType == TransactionType.expense ||
@@ -990,86 +978,29 @@ class _TypeSegmentedControl extends StatelessWidget {
       _ => 'อื่นๆ ▾',
     };
 
-    return Material(
-      color: surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            _buildTab(
-              label: 'รายจ่าย',
-              isSelected: selectedType == TransactionType.expense,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.expense),
-            ),
-            _buildTab(
-              label: 'รายรับ',
-              isSelected: selectedType == TransactionType.income,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.income),
-            ),
-            _buildTab(
-              label: 'โอน',
-              isSelected: selectedType == TransactionType.transfer,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: () => onChanged(TransactionType.transfer),
-            ),
-            _buildTab(
-              label: otherLabel,
-              isSelected: !isPrimary,
-              selectedSurface: selectedSurface,
-              primary: primary,
-              secondary: secondary,
-              onTap: onShowMore,
-            ),
-          ],
+    return AppSegmentedTabs(
+      segments: [
+        AppSegment(
+          label: 'รายจ่าย',
+          isSelected: selectedType == TransactionType.expense,
+          onTap: () => onChanged(TransactionType.expense),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTab({
-    required String label,
-    required bool isSelected,
-    required Color selectedSurface,
-    required Color primary,
-    required Color secondary,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: isSelected ? selectedSurface : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadii.large),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isSelected ? primary : secondary,
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
+        AppSegment(
+          label: 'รายรับ',
+          isSelected: selectedType == TransactionType.income,
+          onTap: () => onChanged(TransactionType.income),
         ),
-      ),
+        AppSegment(
+          label: 'โอน',
+          isSelected: selectedType == TransactionType.transfer,
+          onTap: () => onChanged(TransactionType.transfer),
+        ),
+        AppSegment(
+          label: otherLabel,
+          isSelected: !isPrimary,
+          onTap: onShowMore,
+        ),
+      ],
     );
   }
 }
@@ -1112,7 +1043,6 @@ class _AmountHeroCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final fromCurrency = selectedAccount?.currency == 'USD' ? 'USD' : 'THB';
     final toCurrency = selectedToAccount?.currency == 'USD' ? 'USD' : 'THB';
@@ -1255,9 +1185,9 @@ class _AmountHeroCard extends StatelessWidget {
 
               // Cross-currency conversion field
               if (isCrossCurrency) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: dividerColor),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: AppCardDivider(),
                 ),
                 Row(
                   children: [
@@ -1438,7 +1368,6 @@ class _SelectionGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final bool isDebtRepay = type == TransactionType.debtRepay;
     final bool isDebtTransfer = type == TransactionType.debtTransfer;
@@ -1486,7 +1415,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 2. Payment Source Account
             _SelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีที่ใช้ชำระ',
@@ -1525,7 +1454,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1574,7 +1503,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 2. To Debt Account
             _SelectionRow(
               title: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สินปลายทาง',
@@ -1604,7 +1533,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: onPickDebtAccount,
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // 3. Category (Optional)
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1653,7 +1582,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // Transfer: To Account
             _SelectionRow(
               title: selectedToAccount?.name ?? 'เลือกบัญชีปลายทาง',
@@ -1748,7 +1677,7 @@ class _SelectionGroupCard extends StatelessWidget {
               onTap: () => onPickAccount(false),
               isDarkMode: isDarkMode,
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             // Row 2: Category
             _SelectionRow(
               title: selectedCategory?.name ?? 'เลือกหมวดหมู่',
@@ -1908,7 +1837,6 @@ class _MetaInfoCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
       decoration: BoxDecoration(
@@ -1973,7 +1901,7 @@ class _MetaInfoCard extends StatelessWidget {
               ),
             ),
           ),
-          Divider(height: 1, color: dividerColor),
+          const AppCardDivider(),
           // Row 2: Note
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

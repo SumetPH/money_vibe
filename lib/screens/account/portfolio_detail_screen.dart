@@ -17,6 +17,7 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/portfolio_holding_item_widget.dart';
@@ -28,6 +29,7 @@ import 'portfolio_investment_plan_screen.dart';
 import '../trade/broker_report_list_screen.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -39,7 +41,7 @@ class PortfolioDetailScreen extends StatefulWidget {
 }
 
 class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   // Finnhub free tier จำกัดต่อนาที จึงเว้นระยะให้รอบท้ายพ้นช่วง rate limit
   static const List<Duration> _logoBackfillDelays = [
     Duration(seconds: 2),
@@ -51,7 +53,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   late StockPriceService _priceService;
   late StockLogoStorageService _logoStorageService;
   late final AnimationController _refreshIconController;
-  late final TabController _tabController;
+  int _selectedTab = 0;
   bool _isRefreshing = false;
   Map<String, String> _groupSortTypes =
       {}; // Key: groupName, Value: 'value' หรือ 'pnl'
@@ -67,14 +69,12 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
   }
 
   @override
   void dispose() {
     _refreshIconController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -331,61 +331,22 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurface
-                        : AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                    border: Border.all(color: AppColors.borderFor(isDarkMode)),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicator: BoxDecoration(
-                      color: isDarkMode
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.sectionHeader,
-                      borderRadius: BorderRadius.circular(AppRadii.large),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDarkMode ? 0.2 : 0.05,
-                          ),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    splashBorderRadius: BorderRadius.circular(AppRadii.large),
-                    dividerColor: Colors.transparent,
-                    labelColor: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.textPrimary,
-                    unselectedLabelColor: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
-                    labelStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    tabs: const [
-                      Tab(text: 'พอร์ต'),
-                      // Tab(text: 'หุ้นทั้งหมด'),
-                      Tab(text: 'แผนการลงทุน'),
-                    ],
-                  ),
+                child: AppSegmentedTabs(
+                  segments: [
+                    for (final (index, label) in const [
+                      'พอร์ต',
+                      'แผนการลงทุน',
+                    ].indexed)
+                      AppSegment(
+                        label: label,
+                        isSelected: _selectedTab == index,
+                        onTap: () => setState(() => _selectedTab = index),
+                      ),
+                  ],
                 ),
               ),
-              AnimatedBuilder(
-                animation: _tabController,
-                builder: (context, _) => _tabController.index == 0
+              Builder(
+                builder: (context) => _selectedTab == 0
                     ? _buildPortfolioTab(
                         context,
                         provider,
@@ -1122,12 +1083,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               );
                             },
                           ),
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.add_circle_outline_rounded,
                             iconColor: textColor,
@@ -1150,12 +1106,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                             },
                           ),
                           if (widget.account.isUsPortfolio) ...[
-                            Divider(
-                              height: 1,
-                              indent: 64,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             _buildMenuSheetTile(
                               icon: Icons.edit_document,
                               iconColor: textColor,
@@ -1179,12 +1130,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               },
                             ),
                           ],
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.auto_awesome_rounded,
                             iconColor: isDarkMode
@@ -1209,12 +1155,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                               );
                             },
                           ),
-                          Divider(
-                            height: 1,
-                            indent: 64,
-                            endIndent: 16,
-                            color: dividerColor.withValues(alpha: 0.3),
-                          ),
+                          const AppCardDivider(),
                           _buildMenuSheetTile(
                             icon: Icons.account_tree_outlined,
                             iconColor: textColor,
@@ -1949,8 +1890,7 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
             ),
           ),
 
-          // ── Divider ──
-          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
+          const AppCardDivider(),
 
           // ── 2. Middle Stats: Cost, Stocks Value, Unrealized PnL ──
           Padding(
@@ -2085,8 +2025,7 @@ class _HeroPortfolioSummaryCard extends StatelessWidget {
             ),
           ),
 
-          // ── Divider ──
-          Divider(height: 1, color: dividerColor.withValues(alpha: 0.3)),
+          const AppCardDivider(),
 
           // ── 3. Bottom Row: Cash in Broker ──
           InkWell(

@@ -16,12 +16,14 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/group_header.dart';
 import 'broker_report_list_screen.dart';
 import 'stock_trade_form_screen.dart';
 import '../account/holding_buy_form_screen.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 enum _TradePnlFilter { all, profit, loss }
 
@@ -41,9 +43,8 @@ class TradeTrackerScreen extends StatefulWidget {
   State<TradeTrackerScreen> createState() => _TradeTrackerScreenState();
 }
 
-class _TradeTrackerScreenState extends State<TradeTrackerScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
+  int _selectedTab = 0;
   late StockPriceService _priceService;
   _TradePnlFilter _pnlFilter = _TradePnlFilter.all;
   String? _portfolioId;
@@ -52,8 +53,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_handleTabChanged);
     _priceService = _buildPriceService();
   }
 
@@ -64,20 +63,9 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
   }
 
   @override
-  void dispose() {
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _handleTabChanged() {
-    if (!mounted || _tabController.indexIsChanging) return;
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
+    final tabBar = _buildTabBar();
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
     final bgColor = isDarkMode
         ? AppColors.darkBackground
@@ -128,164 +116,113 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
         ),
         actions: _buildAppBarActions(context),
       ),
-      body: Column(
-        children: [
-          Container(
-            height: 50,
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  indicator: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurfaceVariant
-                        : AppColors.sectionHeader,
-                    borderRadius: BorderRadius.circular(AppRadii.large),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: isDarkMode ? 0.2 : 0.05,
-                        ),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  splashBorderRadius: BorderRadius.circular(AppRadii.large),
-                  dividerColor: Colors.transparent,
-                  labelColor: isDarkMode
-                      ? AppColors.darkTextPrimary
-                      : AppColors.textPrimary,
-                  unselectedLabelColor: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: const [
-                    Tab(text: 'สรุป'),
-                    Tab(text: 'ขาย'),
-                    Tab(text: 'ซื้อ'),
-                    Tab(text: 'ภาษีไทย'),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Consumer<AccountProvider>(
-              builder: (context, accountProvider, _) {
-                final transactions = context
-                    .watch<TransactionProvider>()
-                    .transactions;
-                final trades = _filteredTrades(accountProvider.stockTrades);
-                final portfolioAccounts = accountProvider.accounts
-                    .where((account) => account.isPortfolio)
-                    .toList();
-                final principalAvailableForYearUsd = portfolioAccounts.fold(
-                  0.0,
-                  (sum, portfolio) {
-                    final previousPrincipal = accountProvider
-                        .getRemainingPrincipalPool(
-                          portfolio.id,
-                          transactions,
-                          targetYear: _selectedYear - 1,
-                        );
-                    final currentYearInflow = accountProvider
-                        .getPortfolioAnnualReportsForPortfolio(portfolio.id)
-                        .where((report) => report.year == _selectedYear)
-                        .fold(
-                          0.0,
-                          (reportSum, report) => reportSum + report.inflowUsd,
-                        );
-                    return sum + previousPrincipal + currentYearInflow;
-                  },
-                );
-                final principalQuotaRemainingUsd = portfolioAccounts
-                    .where((account) => account.isPortfolio)
-                    .fold(
-                      0.0,
-                      (sum, portfolio) =>
-                          sum +
-                          accountProvider.getRemainingPrincipalPool(
-                            portfolio.id,
-                            transactions,
-                            targetYear: _selectedYear,
-                          ),
-                    );
+      body: Consumer<AccountProvider>(
+        builder: (context, accountProvider, _) {
+          final transactions = context
+              .watch<TransactionProvider>()
+              .transactions;
+          final trades = _filteredTrades(accountProvider.stockTrades);
+          final portfolioAccounts = accountProvider.accounts
+              .where((account) => account.isPortfolio)
+              .toList();
+          final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
+            sum,
+            portfolio,
+          ) {
+            final previousPrincipal = accountProvider.getRemainingPrincipalPool(
+              portfolio.id,
+              transactions,
+              targetYear: _selectedYear - 1,
+            );
+            final currentYearInflow = accountProvider
+                .getPortfolioAnnualReportsForPortfolio(portfolio.id)
+                .where((report) => report.year == _selectedYear)
+                .fold(0.0, (reportSum, report) => reportSum + report.inflowUsd);
+            return sum + previousPrincipal + currentYearInflow;
+          });
+          final principalQuotaRemainingUsd = portfolioAccounts
+              .where((account) => account.isPortfolio)
+              .fold(
+                0.0,
+                (sum, portfolio) =>
+                    sum +
+                    accountProvider.getRemainingPrincipalPool(
+                      portfolio.id,
+                      transactions,
+                      targetYear: _selectedYear,
+                    ),
+              );
 
-                return SafeArea(
-                  child: TabBarView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _tabController,
-                    children: [
-                      _YearlyTradeTab(
-                        trades: accountProvider.stockTrades,
-                        selectedYear: _selectedYear,
-                        onYearChanged: (year) =>
-                            setState(() => _selectedYear = year),
-                        isDarkMode: isDarkMode,
-                      ),
-                      _SaleHistoryTab(
-                        trades: trades,
-                        isDarkMode: isDarkMode,
-                        portfolioNameOf: (trade) =>
-                            accountProvider.findById(trade.portfolioId)?.name ??
-                            'พอร์ตหุ้น',
-                        onEdit: (trade) => _openTradeForm(context, trade),
-                        onDelete: (trade) =>
-                            _confirmDeleteTrade(context, trade),
-                      ),
-                      _PurchaseHistoryTab(
-                        purchases: accountProvider.stockPurchases,
-                        isDarkMode: isDarkMode,
-                        portfolioNameOf: (purchase) =>
-                            accountProvider
-                                .findById(purchase.portfolioId)
-                                ?.name ??
-                            'พอร์ตหุ้น',
-                        onEdit: (purchase) =>
-                            _openPurchaseHistoryForm(context, purchase),
-                        onDelete: (purchase) =>
-                            _confirmDeletePurchase(context, purchase),
-                      ),
-                      _AnnualTaxTab(
-                        trades: accountProvider.stockTrades,
-                        annualReports: accountProvider.portfolioAnnualReports,
-                        selectedYear: _selectedYear,
-                        principalAvailableForYearUsd:
-                            principalAvailableForYearUsd,
-                        principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                        onYearChanged: (year) =>
-                            setState(() => _selectedYear = year),
-                        isDarkMode: isDarkMode,
-                      ),
-                    ],
-                  ),
-                );
-              },
+          return SafeArea(
+            // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+            child: [
+              _YearlyTradeTab(
+                header: tabBar,
+                trades: accountProvider.stockTrades,
+                selectedYear: _selectedYear,
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                isDarkMode: isDarkMode,
+              ),
+              _SaleHistoryTab(
+                header: tabBar,
+                trades: trades,
+                isDarkMode: isDarkMode,
+                portfolioNameOf: (trade) =>
+                    accountProvider.findById(trade.portfolioId)?.name ??
+                    'พอร์ตหุ้น',
+                onEdit: (trade) => _openTradeForm(context, trade),
+                onDelete: (trade) => _confirmDeleteTrade(context, trade),
+              ),
+              _PurchaseHistoryTab(
+                header: tabBar,
+                purchases: accountProvider.stockPurchases,
+                isDarkMode: isDarkMode,
+                portfolioNameOf: (purchase) =>
+                    accountProvider.findById(purchase.portfolioId)?.name ??
+                    'พอร์ตหุ้น',
+                onEdit: (purchase) =>
+                    _openPurchaseHistoryForm(context, purchase),
+                onDelete: (purchase) =>
+                    _confirmDeletePurchase(context, purchase),
+              ),
+              _AnnualTaxTab(
+                header: tabBar,
+                trades: accountProvider.stockTrades,
+                annualReports: accountProvider.portfolioAnnualReports,
+                selectedYear: _selectedYear,
+                principalAvailableForYearUsd: principalAvailableForYearUsd,
+                principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                isDarkMode: isDarkMode,
+              ),
+            ][_selectedTab],
+          );
+        },
+      ),
+    );
+  }
+
+  static const _tabLabels = ['สรุป', 'ขาย', 'ซื้อ', 'ภาษีไทย'];
+
+  // แถบแท็บอยู่ใน scroll ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมเนื้อหา
+  Widget _buildTabBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: AppSegmentedTabs(
+        segments: [
+          for (final (index, label) in _tabLabels.indexed)
+            AppSegment(
+              label: label,
+              isSelected: _selectedTab == index,
+              onTap: () => setState(() => _selectedTab = index),
             ),
-          ),
         ],
       ),
     );
   }
 
   List<Widget> _buildAppBarActions(BuildContext context) {
-    switch (_tabController.index) {
+    switch (_selectedTab) {
       case 0:
         return [
           _buildAppBarAction(
@@ -702,6 +639,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen>
 }
 
 class _SaleHistoryTab extends StatelessWidget {
+  final Widget header;
   final List<StockTrade> trades;
   final bool isDarkMode;
   final String Function(StockTrade trade) portfolioNameOf;
@@ -709,6 +647,7 @@ class _SaleHistoryTab extends StatelessWidget {
   final ValueChanged<StockTrade> onDelete;
 
   const _SaleHistoryTab({
+    required this.header,
     required this.trades,
     required this.isDarkMode,
     required this.portfolioNameOf,
@@ -725,7 +664,9 @@ class _SaleHistoryTab extends StatelessWidget {
     final feeSummary = _FeeSummary.fromTrades(trades);
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
@@ -758,6 +699,7 @@ class _SaleHistoryTab extends StatelessWidget {
 }
 
 class _PurchaseHistoryTab extends StatelessWidget {
+  final Widget header;
   final List<StockPurchase> purchases;
   final bool isDarkMode;
   final String Function(StockPurchase purchase) portfolioNameOf;
@@ -765,6 +707,7 @@ class _PurchaseHistoryTab extends StatelessWidget {
   final ValueChanged<StockPurchase> onDelete;
 
   const _PurchaseHistoryTab({
+    required this.header,
     required this.purchases,
     required this.isDarkMode,
     required this.portfolioNameOf,
@@ -780,7 +723,9 @@ class _PurchaseHistoryTab extends StatelessWidget {
     final sections = _groupPurchasesByMonth(purchases);
     final feeSummary = _FeeSummary.fromPurchases(purchases);
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: _FeeSummaryPanel(summary: feeSummary, isDarkMode: isDarkMode),
@@ -1046,7 +991,6 @@ class _PurchaseListItem extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     showAppModalBottomSheet<void>(
       context: context,
@@ -1077,7 +1021,7 @@ class _PurchaseListItem extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Divider(height: 1, color: dividerColor),
+              const AppCardDivider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.edit_outlined, color: textColor),
@@ -1090,7 +1034,7 @@ class _PurchaseListItem extends StatelessWidget {
                   onEdit();
                 },
               ),
-              Divider(height: 1, color: dividerColor),
+              const AppCardDivider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.delete_outline, color: dangerColor),
@@ -1112,12 +1056,14 @@ class _PurchaseListItem extends StatelessWidget {
 }
 
 class _YearlyTradeTab extends StatelessWidget {
+  final Widget header;
   final List<StockTrade> trades;
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
   final bool isDarkMode;
 
   const _YearlyTradeTab({
+    required this.header,
     required this.trades,
     required this.selectedYear,
     required this.onYearChanged,
@@ -1139,7 +1085,9 @@ class _YearlyTradeTab extends StatelessWidget {
     final monthlySummaries = _monthlySummaries(yearTrades);
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(
           child: _YearSelector(
             selectedYear: selectedYear,
@@ -1204,6 +1152,7 @@ class _YearlyTradeTab extends StatelessWidget {
 }
 
 class _AnnualTaxTab extends StatelessWidget {
+  final Widget header;
   final List<StockTrade> trades;
   final List<PortfolioAnnualReport> annualReports;
   final int selectedYear;
@@ -1213,6 +1162,7 @@ class _AnnualTaxTab extends StatelessWidget {
   final bool isDarkMode;
 
   const _AnnualTaxTab({
+    required this.header,
     required this.trades,
     required this.annualReports,
     required this.selectedYear,
@@ -1243,7 +1193,9 @@ class _AnnualTaxTab extends StatelessWidget {
     );
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: _YearSelector(
@@ -3251,7 +3203,6 @@ class _TradeListItem extends StatelessWidget {
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final dangerColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     final pnlColor = AppColors.getAmountColor(trade.realizedPnlUsd, isDarkMode);
     final thumbnailColor = isDarkMode
@@ -3387,7 +3338,7 @@ class _TradeListItem extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   const SizedBox(height: 12),
                   _TradeDetailRow(
                     label: 'จำนวน',
@@ -3413,10 +3364,7 @@ class _TradeListItem extends StatelessWidget {
                       (trade.brokerFeeUsd != null &&
                           trade.brokerFeeUsd! > 0)) ...[
                     const SizedBox(height: 10),
-                    Divider(
-                      height: 1,
-                      color: dividerColor.withValues(alpha: 0.5),
-                    ),
+                    const AppCardDivider(),
                     const SizedBox(height: 10),
                     if (trade.grossProceedsUsd != null)
                       _TradeDetailRow(
@@ -3445,7 +3393,7 @@ class _TradeListItem extends StatelessWidget {
                       ),
                   ],
                   const SizedBox(height: 10),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.edit_outlined, color: textColor),
@@ -3455,7 +3403,7 @@ class _TradeListItem extends StatelessWidget {
                       onEdit();
                     },
                   ),
-                  Divider(height: 1, color: dividerColor),
+                  const AppCardDivider(),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.delete_outline, color: dangerColor),

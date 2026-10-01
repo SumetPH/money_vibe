@@ -136,3 +136,37 @@ User request: see the following period too, counting budgets, card spending so f
 - Cards count closed statements due in the next window that the current window did not count, plus **unbilled spending** as of today when the open statement is due by the next window's end. Payments after the latest due date first settle the latest statement, and anything beyond that reduces the unbilled amount. Future card spending is not projected; the remaining budget covers it.
 - **Planned purchases** are a new list (`planned_purchases` table, `cash_flow` sync module) with name, amount and an include switch, managed from the forecast screen.
 - Out of scope: instalments, the next cycle's full budget, per-budget include switches, and projecting future card spending.
+
+## Revision 2026-09-28: pay periods follow the money-in day only
+
+User feedback: with a monthly cycle starting on the 1st and money arriving on the 30th, the window ran 1 Sep – 29 Oct, so an item "every 15th" appeared as both 15 Sep and 15 Oct and felt wrong.
+
+- Each forecast window is one pay period: from the latest money-in day (forecast anchor day) on or before today to the day before the next one. The monthly financial cycle no longer shapes it; it is used only for the remaining budget. "Cycle anchor date" is removed.
+- The next window is the following pay period.
+- The next period counts every card amount the current window did not: closed statements due later and all unbilled spending as of today, even when due after the next window. Each card row shows the due date of each part.
+- Budgets and savings plans can be excluded from the next period individually (`budgets.is_excluded_from_cash_forecast`), like liquid accounts.
+
+## Revision 2026-09-28 (b): the current tab shows the upcoming pay period
+
+The pure "period containing today" rule made the current tab show a nearly finished period before payday, while the user wants to see whether the upcoming start day's money covers everything.
+
+- The current window is still exactly one pay period, but it is the one starting at the first anchor day on or after the current monthly cycle start. It rolls to the next pay period when a new monthly cycle starts; with statements closing on the 21st and money on the 30th, the cycle start day should be 22.
+- Before the period starts, items from today up to the start count and are shown in a separate "ก่อนเริ่มงวด" group; older unticked items are ignored.
+- The UI label for the anchor day is "วันเริ่มงวด".
+
+## Revision 2026-09-28 (c): forecast periods are the monthly cycle
+
+To keep a single setting, the forecast anchor day ("วันเริ่มงวด") is removed. Each forecast window is the monthly financial cycle containing today (the setting shared with budgets and statistics); the next window is the following cycle. With statements closing on the 21st, a cycle start of 22 lines budgets, card statements and forecast periods up. The forecast screen offers the cycle start day row for convenience; it edits the same setting. Items dated earlier in the cycle and not ticked still count and are flagged.
+
+## Revision 2026-09-28 (d): clear day
+
+The user settles everything on one day each month (salary arrives and debts are paid, e.g. the 30th). The forecast is rebuilt around that "clear day" (วันเคลียร์ยอด), which replaces the anchor-day and monthly-cycle windows above:
+
+- Current window: day after the previous clear day through the next clear day on or after today; it moves on once the clear day passes. Monthly items appear once (the occurrence on or before the clear day).
+- Cards in the current window: outstanding balance of closed statements, plus, for a statement closing before the clear day but not closed yet, unbilled spending so far as an estimate ("ยังไม่สรุปยอด"). Payment due dates no longer decide the window.
+- Next window: day after the clear day through the following clear day; it counts unbilled spending on statements closing after the current clear day, remaining budget (monthly cycle setting), savings plans and planned purchases.
+- The "ยังไม่ติ๊ก" chip is removed; unticked earlier items still count.
+
+## Revision 2026-09-28 (e): "ยังไม่ติ๊ก" chip restored
+
+The "ยังไม่ติ๊ก" chip returns, shown only on an unticked item whose date is before today (in both the current and next window). It is a visual flag only; the item still counts and is not added to the warning count.

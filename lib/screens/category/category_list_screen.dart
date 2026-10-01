@@ -11,10 +11,12 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'category_form_screen.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -23,23 +25,14 @@ class CategoryListScreen extends StatefulWidget {
   State<CategoryListScreen> createState() => _CategoryListScreenState();
 }
 
-class _CategoryListScreenState extends State<CategoryListScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _CategoryListScreenState extends State<CategoryListScreen> {
   int _currentIndex = 0;
   bool _isReorderMode = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -48,17 +41,13 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       _currentIndex == 0 ? CategoryType.expense : CategoryType.income;
 
   void _selectTab(int index) {
-    if (_isReorderMode) {
-      _tabController.animateTo(_currentIndex);
-      return;
-    }
+    if (_isReorderMode) return;
 
     setState(() {
       _currentIndex = index;
       _searchQuery = '';
       _searchController.clear();
     });
-    _tabController.animateTo(index);
   }
 
   @override
@@ -165,6 +154,8 @@ class _CategoryListScreenState extends State<CategoryListScreen>
       ),
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {
+          // Segmented control อยู่ใน list ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมรายการ
+          final segmentedControl = _buildSegmentedControl();
           return SafeArea(
             child: Column(
               children: [
@@ -174,32 +165,15 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                     message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
                   ),
 
-                // iOS Segmented Tab Control
-                _buildSegmentedControl(
-                  catProvider: catProvider,
-                  surfaceColor: surfaceColor,
-                  isDarkMode: isDarkMode,
-                ),
-
                 // Category List View
+                // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
                 Expanded(
-                  child: TabBarView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _tabController,
-                    children: [
-                      _buildCategoryList(
-                        catProvider,
-                        txProvider,
-                        CategoryType.expense,
-                        isDarkMode,
-                      ),
-                      _buildCategoryList(
-                        catProvider,
-                        txProvider,
-                        CategoryType.income,
-                        isDarkMode,
-                      ),
-                    ],
+                  child: _buildCategoryList(
+                    catProvider,
+                    txProvider,
+                    _currentType,
+                    isDarkMode,
+                    segmentedControl,
                   ),
                 ),
               ],
@@ -210,106 +184,22 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     );
   }
 
-  Widget _buildSegmentedControl({
-    required CategoryProvider catProvider,
-    required Color surfaceColor,
-    required bool isDarkMode,
-  }) {
-    final expenseCount = catProvider.expenseCategories.length;
-    final incomeCount = catProvider.incomeCategories.length;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSegmentButton(
-              index: 0,
-              title: 'รายจ่าย',
-              count: expenseCount,
-              isSelected: _currentIndex == 0,
-              accentColor: isDarkMode
-                  ? AppColors.darkExpense
-                  : AppColors.expense,
-              isDarkMode: isDarkMode,
-            ),
+  Widget _buildSegmentedControl() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: AppSegmentedTabs(
+        segments: [
+          AppSegment(
+            label: 'รายจ่าย',
+            isSelected: _currentIndex == 0,
+            onTap: () => _selectTab(0),
           ),
-          Expanded(
-            child: _buildSegmentButton(
-              index: 1,
-              title: 'รายรับ',
-              count: incomeCount,
-              isSelected: _currentIndex == 1,
-              accentColor: isDarkMode ? AppColors.darkIncome : AppColors.income,
-              isDarkMode: isDarkMode,
-            ),
+          AppSegment(
+            label: 'รายรับ',
+            isSelected: _currentIndex == 1,
+            onTap: () => _selectTab(1),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSegmentButton({
-    required int index,
-    required String title,
-    required int count,
-    required bool isSelected,
-    required Color accentColor,
-    required bool isDarkMode,
-  }) {
-    final selectedSurface = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    return InkWell(
-      onTap: () => _selectTab(index),
-      borderRadius: BorderRadius.circular(AppRadii.large),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.large),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? textPrimary : textSecondary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -319,6 +209,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     TransactionProvider txProvider,
     CategoryType type,
     bool isDarkMode,
+    Widget header,
   ) {
     final allTransactions = txProvider.transactions;
     final totalsByCategoryId = _buildCategoryTotals(allTransactions);
@@ -345,77 +236,86 @@ class _CategoryListScreenState extends State<CategoryListScreen>
     }
 
     if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: textSecondary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.category_outlined,
-                  size: 32,
-                  color: textSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _searchQuery.isEmpty
-                    ? 'ยังไม่มีหมวดหมู่'
-                    : 'ไม่พบ "$_searchQuery"',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: textSecondary,
-                ),
-              ),
-              if (_searchQuery.isEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'กดปุ่ม + ด้านบนเพื่อเริ่มเพิ่มหมวดหมู่',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: textSecondary.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => _openForm(context, null),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode
-                        ? AppColors.darkFabYellow
-                        : AppColors.fabYellow,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.full),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          header,
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: textSecondary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+                    child: Icon(
+                      Icons.category_outlined,
+                      size: 32,
+                      color: textSecondary,
                     ),
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text(
-                    'เพิ่มหมวดหมู่',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'ยังไม่มีหมวดหมู่'
+                        : 'ไม่พบ "$_searchQuery"',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
                   ),
-                ),
-              ],
-            ],
+                  if (_searchQuery.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'กดปุ่ม + ด้านบนเพื่อเริ่มเพิ่มหมวดหมู่',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textSecondary.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _openForm(context, null),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDarkMode
+                            ? AppColors.darkFabYellow
+                            : AppColors.fabYellow,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.full),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text(
+                        'เพิ่มหมวดหมู่',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       );
     }
 
     return ListView(
-      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
+        header,
+        const SizedBox(height: 4),
         // Metric Summary Capsule / Tile (when not reordering)
         if (!_isReorderMode)
           _buildMetricSummaryCard(
@@ -706,12 +606,7 @@ class _CategoryListScreenState extends State<CategoryListScreen>
                                 _openForm(context, null);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -1007,12 +902,7 @@ class _CategoryItem extends StatelessWidget {
                             onTap();
                           },
                         ),
-                        Divider(
-                          height: 1,
-                          indent: 58,
-                          endIndent: 16,
-                          color: dividerColor.withValues(alpha: 0.3),
-                        ),
+                        const AppCardDivider(),
                         ListTile(
                           leading: Container(
                             width: 34,

@@ -12,6 +12,7 @@ import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_inset_card.dart';
 
 // ฟังก์ชันระดับ top-level สำหรับ compute() isolate
 class _BillParams {
@@ -420,7 +421,6 @@ class _HeroSummaryCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final hasPending = totalUnpaid > 0;
     final statusColor = hasPending
@@ -537,7 +537,7 @@ class _HeroSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Divider(height: 1, color: dividerColor),
+          const AppCardDivider(),
           const SizedBox(height: 14),
 
           // Breakdown: Open Cycle vs Past Bills
@@ -563,7 +563,11 @@ class _HeroSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(width: 1, height: 32, color: dividerColor),
+              Container(
+                width: 1,
+                height: 32,
+                color: AppColors.borderFor(isDarkMode),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -629,7 +633,6 @@ class _BillItemCard extends StatelessWidget {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     final openBillColor = isDarkMode
         ? AppColors.darkTransfer
@@ -728,9 +731,9 @@ class _BillItemCard extends StatelessWidget {
                   ],
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1, color: dividerColor),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: AppCardDivider(),
               ),
 
               // Financial Amounts Row
@@ -829,12 +832,9 @@ class _BillItemCard extends StatelessWidget {
                         ),
                       if (bill.remainingAmount != 0 &&
                           bill.carriedOverAmount != 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Divider(
-                            height: 1,
-                            color: dividerColor.withValues(alpha: 0.5),
-                          ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: AppCardDivider(),
                         ),
                       if (bill.carriedOverAmount != 0)
                         Row(

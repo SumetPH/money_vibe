@@ -344,6 +344,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
             ],
           ),
           body: SafeArea(
+            bottom: false,
             child: budgets.isEmpty
                 ? _buildEmptyState(
                     surfaceColor: surfaceColor,
@@ -516,6 +517,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         buildDefaultDragHandles: false,
         onReorderItem: _isReorderMode
             ? (oldIndex, newIndex) =>
@@ -696,6 +698,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
 
     return ReorderableListView.builder(
       header: listHeader,
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       buildDefaultDragHandles: false,
       onReorderItem: _isReorderMode
           ? budgetProvider.reorderBudgetGroups
@@ -890,12 +893,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                 _openForm(context, null);
                               },
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,
@@ -935,12 +933,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                                 },
                               ),
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 58,
-                              endIndent: 16,
-                              color: dividerColor.withValues(alpha: 0.3),
-                            ),
+                            const AppCardDivider(),
                             ListTile(
                               leading: Container(
                                 width: 34,

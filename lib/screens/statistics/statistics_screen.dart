@@ -12,10 +12,12 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_segmented_tabs.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -29,7 +31,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedTab = 0;
   int? _selectedYear;
-  List<String> tabLable = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
+  static const _tabLabels = ['ทรัพย์สิน', 'รายปี', 'รายจ่าย', 'รายรับ'];
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +53,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
-        final secondary = isDarkMode
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-        final selectedSurface = isDarkMode
-            ? AppColors.darkSurfaceVariant
-            : AppColors.sectionHeader;
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
 
@@ -123,80 +119,49 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ),
           body: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Material(
-                    color: surfaceColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                      side: BorderSide(
-                        color: AppColors.borderFor(isDarkMode),
-                        width: 1,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Row(
-                        children: tabLable.map((value) {
-                          final isSelected =
-                              _selectedTab == tabLable.indexOf(value);
-                          return Expanded(
-                            child: Material(
-                              color: isSelected
-                                  ? selectedSurface
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.large,
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTab = tabLable.indexOf(value);
-                                  });
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Text(
-                                    value,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isSelected ? textColor : secondary,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+            bottom: false,
+            // แท็บเลื่อนไปพร้อมเนื้อหา (ไม่ sticky)
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom,
+              ),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: AppSegmentedTabs(
+                      segments: [
+                        for (final (index, label) in _tabLabels.indexed)
+                          AppSegment(
+                            label: label,
+                            isSelected: _selectedTab == index,
+                            onTap: () => setState(() => _selectedTab = index),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-                Expanded(
-                  child: IndexedStack(
-                    index: _selectedTab,
-                    children: [
-                      _NetWorthLineChart(),
-                      _YearlyBarChart(
-                        selectedYear: selectedYear,
-                        onYearChanged: (year) =>
-                            setState(() => _selectedYear = year),
-                      ),
-                      _CategoryPieChart(type: CategoryType.expense),
-                      _CategoryPieChart(type: CategoryType.income),
-                    ],
+                  // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
+                  // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
+                  ...[
+                    _NetWorthLineChart(),
+                    _YearlyBarChart(
+                      selectedYear: selectedYear,
+                      onYearChanged: (year) =>
+                          setState(() => _selectedYear = year),
+                    ),
+                    _CategoryPieChart(type: CategoryType.expense),
+                    _CategoryPieChart(type: CategoryType.income),
+                  ].indexed.map(
+                    (entry) => Visibility(
+                      visible: entry.$1 == _selectedTab,
+                      maintainState: true,
+                      child: entry.$2,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -254,9 +219,6 @@ class _YearlyBarChart extends StatelessWidget {
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
 
         final monthlyData = _calculateMonthlyStats(
           txProvider.transactions,
@@ -284,7 +246,7 @@ class _YearlyBarChart extends StatelessWidget {
             ? incomeColor
             : expenseColor;
 
-        return SingleChildScrollView(
+        return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             children: [
@@ -352,7 +314,7 @@ class _YearlyBarChart extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Divider(height: 1, color: dividerColor),
+                        const AppCardDivider(),
                       ],
                     ),
                   ),
@@ -1144,7 +1106,7 @@ class _CategoryPieChart extends StatelessWidget {
           );
         }
 
-        return SingleChildScrollView(
+        return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1549,7 +1511,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
             ? (change / startNetWorth.abs()) * 100
             : 0;
 
-        return SingleChildScrollView(
+        return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

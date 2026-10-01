@@ -566,7 +566,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         ),
                         onTap: _pickOcrDate,
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       ListTile(
                         title: const Text('เวลา'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
@@ -601,12 +601,12 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         onTap: () => _selectPortfolio(isDarkMode: isDarkMode),
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyTickerFieldRow(
                         controller: _ticker,
                         isDarkMode: isDarkMode,
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                     ],
                     _BuyNumberFieldRow(
                       label: 'จำนวนที่ซื้อ',
@@ -615,7 +615,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(7)],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _BuyNumberFieldRow(
                       label: 'ราคาซื้อ ($_currencyCode)',
                       controller: _price,
@@ -623,7 +623,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       isDarkMode: isDarkMode,
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
-                    const AppCardDivider(indent: 16),
+                    const AppCardDivider(),
                     _BuyNumberFieldRow(
                       label: 'มูลค่าหุ้น (Gross $_currencyCode)',
                       controller: _gross,
@@ -636,7 +636,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       },
                     ),
                     if (!_isHistoryEdit) ...[
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyNumberFieldRow(
                         label: 'ยอดที่จ่าย (Net $_currencyCode)',
                         controller: _cash,
@@ -664,7 +664,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyNumberFieldRow(
                         label: 'ภาษี (VAT $_currencyCode)',
                         controller: _taxFee,
@@ -672,7 +672,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyNumberFieldRow(
                         label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
                         controller: _exchangeFee,
@@ -698,7 +698,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                           _syncCostBasisFromTotal();
                         },
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyNumberFieldRow(
                         label: 'ต้นทุนรวม ($_currencyCode)',
                         controller: _resultTotalCost,
@@ -706,7 +706,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         isDarkMode: isDarkMode,
                         inputFormatters: [_decimalInputFormatter(2)],
                       ),
-                      const AppCardDivider(indent: 16),
+                      const AppCardDivider(),
                       _BuyNumberFieldRow(
                         label: 'ต้นทุนต่อหุ้น ($_currencyCode)',
                         controller: _resultCostBasis,
@@ -763,7 +763,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                           ),
                         ),
                         if (_sellPlanEnabled) ...[
-                          const AppCardDivider(indent: 16),
+                          const AppCardDivider(),
                           _BuyNumberFieldRow(
                             label: 'Take Profit (%)',
                             controller: _takeProfit,
@@ -771,7 +771,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             isDarkMode: isDarkMode,
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
-                          const AppCardDivider(indent: 16),
+                          const AppCardDivider(),
                           _BuyNumberFieldRow(
                             label: 'Trailing Stop (%)',
                             controller: _trailingStop,
@@ -779,7 +779,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             isDarkMode: isDarkMode,
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
-                          const AppCardDivider(indent: 16),
+                          const AppCardDivider(),
                           _BuyNumberFieldRow(
                             label: 'Stop Loss (%)',
                             controller: _stopLoss,

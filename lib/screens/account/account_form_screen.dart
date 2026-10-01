@@ -19,6 +19,7 @@ import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -466,7 +467,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildPickerRow(
                         label: 'ชนิดบัญชี',
                         value: _selectedType.label,
@@ -475,7 +476,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       if (_selectedType.isPortfolio)
                         _buildReadOnlyRow(
                           label: 'สกุลเงิน',
@@ -498,7 +499,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildPickerRow(
                         label: 'เริ่มวันที่',
                         value: _formatThaiDate(_startDate),
@@ -518,14 +519,19 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                   AppInsetCard(
                     margin: EdgeInsets.zero,
                     children: [
-                      _buildIconRow(
-                        textPrimaryColor: textPrimaryColor,
-                        textSecondaryColor: textSecondaryColor,
+                      IconPickerFormRow(
+                        icon: _selectedIcon,
+                        color: _selectedColor,
+                        onTap: _pickIcon,
+                        preview: _isUploadedIcon
+                            ? _buildCustomIconPreview()
+                            : null,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
-                      _buildColorRow(
-                        textPrimaryColor: textPrimaryColor,
-                        textSecondaryColor: textSecondaryColor,
+                      const AppCardDivider(),
+                      ColorPickerFormRow(
+                        label: 'สีประจำบัญชี',
+                        color: _selectedColor,
+                        onTap: _pickColor,
                       ),
                     ],
                   ),
@@ -552,7 +558,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                             textSecondaryColor: textSecondaryColor,
                           ),
                           if (!_autoUpdateRate) ...[
-                            const AppCardDivider(indent: 60, endIndent: 16),
+                            const AppCardDivider(),
                             _buildExchangeRateField(
                               textPrimaryColor: textPrimaryColor,
                               textSecondaryColor: textSecondaryColor,
@@ -590,7 +596,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                           textPrimaryColor: textPrimaryColor,
                           textSecondaryColor: textSecondaryColor,
                         ),
-                        const AppCardDivider(indent: 60, endIndent: 16),
+                        const AppCardDivider(),
                         _buildDayPickerRow(
                           icon: Icons.event_available_rounded,
                           label: 'วันครบกำหนดชำระ',
@@ -623,7 +629,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
-                      const AppCardDivider(indent: 60, endIndent: 16),
+                      const AppCardDivider(),
                       _buildSwitchRow(
                         label: 'ซ่อนบัญชีนี้',
                         subtitle: 'ซ่อนบัญชีนี้จากหน้ารายการบัญชีหลัก',
@@ -928,156 +934,30 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     );
   }
 
-  Widget _buildIconRow({
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      onTap: _pickIcon,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.palette_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'ไอคอน',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            if (_selectedIconUrl.isNotEmpty && _isUploadedIcon)
-              _buildCustomIconPreview()
-            else
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(_selectedIcon, color: _selectedColor, size: 22),
-              ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Check if the currently selected icon URL is a stored icon
   bool get _isUploadedIcon =>
       _selectedIconUrl.isNotEmpty &&
       AccountIconStorageService().isStoredIconUrl(_selectedIconUrl);
 
   Widget _buildCustomIconPreview() {
+    final fallback = IconPickerPreview(
+      icon: _selectedIcon,
+      color: _selectedColor,
+    );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadii.medium),
       child: CachedNetworkImage(
         imageUrl: _selectedIconUrl,
-        width: 36,
-        height: 36,
+        width: pickerPreviewSize,
+        height: pickerPreviewSize,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
+        placeholder: (context, url) => PickerPreviewBox(
+          color: _selectedColor.withValues(alpha: 0.15),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
-        errorWidget: (context, url, error) => Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: _selectedColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(_selectedIcon, color: _selectedColor, size: 22),
-        ),
+        errorWidget: (context, url, error) => fallback,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
-      ),
-    );
-  }
-
-  Widget _buildColorRow({
-    required Color textPrimaryColor,
-    required Color textSecondaryColor,
-  }) {
-    return InkWell(
-      onTap: _pickColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: textSecondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.color_lens_outlined,
-                color: textSecondaryColor,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'สีประจำบัญชี',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: _selectedColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: _selectedColor.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right,
-              color: textSecondaryColor.withValues(alpha: 0.5),
-              size: 18,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1708,139 +1588,28 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     }
   }
 
-  void _showIconGrid() {
-    showAppModalBottomSheet(
+  Future<void> _showIconGrid() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, _) {
-          final isDarkMode = settingsProvider.isDarkMode;
-          final bgColor = isDarkMode
-              ? AppColors.darkBackground
-              : AppColors.background;
-          final textSecondaryColor = isDarkMode
-              ? AppColors.darkTextSecondary
-              : AppColors.textSecondary;
-
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.65,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: AppColors.accountIcons.length,
-                      itemBuilder: (_, i) {
-                        final icon = AppColors.accountIcons[i];
-                        final selected = icon == _selectedIcon;
-                        return Material(
-                          color: selected
-                              ? _selectedColor.withValues(alpha: 0.2)
-                              : bgColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: selected
-                                ? BorderSide(color: _selectedColor, width: 2)
-                                : BorderSide.none,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedIcon = icon;
-                                _selectedIconUrl = '';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Icon(
-                              icon,
-                              color: selected
-                                  ? _selectedColor
-                                  : textSecondaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      title: 'เลือกไอคอน',
+      selectedIcon: _selectedIcon,
+      accentColor: _selectedColor,
     );
+    if (icon == null || !mounted) return;
+    setState(() {
+      _selectedIcon = icon;
+      _selectedIconUrl = '';
+    });
   }
 
-  void _pickColor() {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกสี'),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemCount: AppColors.accountColors.length,
-                  itemBuilder: (_, i) {
-                    final color = AppColors.accountColors[i];
-                    final selected =
-                        color.toARGB32() == _selectedColor.toARGB32();
-                    return Material(
-                      color: color,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: selected
-                            ? const BorderSide(color: Colors.black45, width: 2)
-                            : BorderSide.none,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _selectedColor = color);
-                          Navigator.pop(context);
-                        },
-                        child: selected
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'เลือกสี',
+      selectedColor: _selectedColor,
     );
+    if (color == null || !mounted) return;
+    setState(() => _selectedColor = color);
   }
 
   String _formatThaiDate(DateTime date) {

@@ -12,6 +12,7 @@ import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
+import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
@@ -22,6 +23,7 @@ import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/icon_color_picker_sheet.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -701,84 +703,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                           ),
                         ),
                         Divider(height: 1, color: dividerColor),
-                        InkWell(
-                          onTap: () => _pickIcon(isDark),
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'ไอคอน',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: _color.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.large,
-                                    ),
-                                  ),
-                                  child: Icon(_icon, color: _color, size: 26),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
+                        IconPickerFormRow(
+                          icon: _icon,
+                          color: _color,
+                          onTap: _pickIcon,
                         ),
                         Divider(height: 1, color: dividerColor),
-                        InkWell(
-                          onTap: () => _pickColor(isDark),
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'สี',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: _color,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.large,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        ColorPickerFormRow(color: _color, onTap: _pickColor),
                       ],
                     ),
                   ),
@@ -1030,7 +961,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     final textColor = isDark
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
-    final dividerColor = isDark ? AppColors.darkDivider : AppColors.divider;
     final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
 
     showAppModalBottomSheet(
@@ -1061,7 +991,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                 Navigator.pop(context);
               },
             ),
-            Divider(height: 1, color: dividerColor),
+            const AppCardDivider(),
             Expanded(
               child: ListView.separated(
                 controller: sc,
@@ -1426,113 +1356,25 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     setState(() => _notificationTime = picked);
   }
 
-  void _pickIcon(bool isDark) {
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.background;
-    final textSecondary = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    showAppModalBottomSheet(
+  Future<void> _pickIcon() async {
+    final icon = await showIconPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกไอคอน'),
-            Expanded(
-              child: GridView.builder(
-                controller: sc,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountIcons.length,
-                itemBuilder: (_, i) {
-                  final icon = AppColors.accountIcons[i];
-                  final selected = icon == _icon;
-                  return Material(
-                    color: selected ? _color.withValues(alpha: 0.15) : bgColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: selected
-                          ? BorderSide(color: _color, width: 2)
-                          : BorderSide.none,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _icon = icon);
-                        Navigator.pop(context);
-                      },
-                      child: Icon(
-                        icon,
-                        color: selected ? _color : textSecondary,
-                        size: 24,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'เลือกไอคอน',
+      selectedIcon: _icon,
+      accentColor: _color,
     );
+    if (icon == null || !mounted) return;
+    setState(() => _icon = icon);
   }
 
-  void _pickColor(bool isDark) {
-    showAppModalBottomSheet(
+  Future<void> _pickColor() async {
+    final color = await showColorPickerSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกสี'),
-            Expanded(
-              child: GridView.builder(
-                controller: sc,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: AppColors.accountColors.length,
-                itemBuilder: (_, i) {
-                  final color = AppColors.accountColors[i];
-                  final selected = color.toARGB32() == _color.toARGB32();
-                  return Material(
-                    color: color,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: selected
-                          ? const BorderSide(color: Colors.black45, width: 2)
-                          : BorderSide.none,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _color = color);
-                        Navigator.pop(context);
-                      },
-                      child: selected
-                          ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 20,
-                            )
-                          : null,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: 'เลือกสี',
+      selectedColor: _color,
     );
+    if (color == null || !mounted) return;
+    setState(() => _color = color);
   }
 }
 

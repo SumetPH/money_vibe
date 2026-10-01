@@ -38,8 +38,9 @@ class AppSegmentedTabs extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(6),
         child: Row(
+          spacing: 4,
           children: [
             for (final segment in segments)
               Expanded(child: _segment(segment, isDarkMode)),
