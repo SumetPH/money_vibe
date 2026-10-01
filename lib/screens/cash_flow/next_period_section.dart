@@ -78,6 +78,14 @@ List<Widget> nextPeriodDetailSections(
   NextPeriodForecast forecast,
   bool isDarkMode,
 ) => [
+  ...forecastPurchaseSections(
+    forecast.purchases,
+    forecast.purchaseTotal,
+    isDarkMode,
+    note:
+        'ติ๊กเพื่อกันเงินซื้อในงวดถัดไป แยกจากงวดนี้ ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
+  ),
+
   ...cashFlowSection(
     title:
         'บัตรเครดิต · ${formatAmount(-forecast.cardTotal, showSign: true)} บาท',
@@ -94,20 +102,13 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode,
   ),
 
-  ...forecastPurchaseSections(
-    forecast.purchases,
-    forecast.purchaseTotal,
-    isDarkMode,
-    note:
-        'ติ๊กเพื่อกันเงินซื้อในงวดถัดไป แยกจากงวดนี้ ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
-  ),
-
   ...forecastBudgetSections(
     forecast.budgetLines,
     forecast.savingsPlans,
     forecast.budgetTotal,
     forecast.savingsTotal,
     isDarkMode,
+    isNextPeriod: true,
   ),
 ];
 
@@ -144,8 +145,9 @@ List<Widget> forecastBudgetSections(
   List<BudgetRemainingLine> savingsPlans,
   double budgetTotal,
   double savingsTotal,
-  bool isDarkMode,
-) => [
+  bool isDarkMode, {
+  bool isNextPeriod = false,
+}) => [
   ...cashFlowSection(
     title: 'งบรายจ่าย · ${formatAmount(-budgetTotal, showSign: true)} บาท',
     emptyText: 'ยังไม่มีงบรายจ่าย',
@@ -155,6 +157,7 @@ List<Widget> forecastBudgetSections(
       if (budgetLines.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.expense,
+          isNextPeriod: isNextPeriod,
           includedCount: budgetLines
               .where((l) => l.isIncluded)
               .map((l) => l.budget.id)
@@ -168,7 +171,7 @@ List<Widget> forecastBudgetSections(
   ),
   cashFlowNote(
     'ถือว่างบที่เหลือจะถูกใช้จนหมด ถ้างบไหนซ้ำกับรายการเงินออกประจำ '
-    'ให้ปิดงบนั้นจากการคำนวณ',
+    'ให้ปิดงบนั้นจากการคำนวณ เลือกงบแยกกันในแต่ละงวด',
     isDarkMode,
   ),
 
@@ -181,6 +184,7 @@ List<Widget> forecastBudgetSections(
       if (savingsPlans.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.savings,
+          isNextPeriod: isNextPeriod,
           includedCount: savingsPlans
               .where((p) => p.isIncluded)
               .map((p) => p.budget.id)
@@ -442,12 +446,14 @@ class _BudgetRow extends StatelessWidget {
 
 class _BudgetSelectorRow extends StatelessWidget {
   final BudgetType type;
+  final bool isNextPeriod;
   final int includedCount;
   final int totalCount;
   final bool isDarkMode;
 
   const _BudgetSelectorRow({
     required this.type,
+    required this.isNextPeriod,
     required this.includedCount,
     required this.totalCount,
     required this.isDarkMode,
@@ -460,7 +466,11 @@ class _BudgetSelectorRow extends StatelessWidget {
         : 'เลือกงบที่นำมาคำนวณ',
     includedCount: includedCount,
     totalCount: totalCount,
-    onTap: () => showForecastBudgetPickerSheet(context, type),
+    onTap: () => showForecastBudgetPickerSheet(
+      context,
+      type,
+      isNextPeriod: isNextPeriod,
+    ),
     isDarkMode: isDarkMode,
   );
 }

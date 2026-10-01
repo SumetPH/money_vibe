@@ -180,6 +180,15 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
 
     ..._occurrenceSection(forecast.itemLines, isDarkMode),
 
+    ...forecastPurchaseSections(
+      forecast.purchases,
+      forecast.purchaseTotal,
+      isDarkMode,
+      isCurrent: true,
+      note:
+          'ติ๊กเพื่อกันเงินซื้อในงวดนี้ แยกจากงวดถัดไป ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
+    ),
+
     ...cashFlowSection(
       title:
           'บัตรเครดิต · ${formatAmount(-forecast.cardTotal, showSign: true)} บาท',
@@ -201,15 +210,6 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       forecast.budgetTotal,
       forecast.savingsTotal,
       isDarkMode,
-    ),
-
-    ...forecastPurchaseSections(
-      forecast.purchases,
-      forecast.purchaseTotal,
-      isDarkMode,
-      isCurrent: true,
-      note:
-          'ติ๊กเพื่อกันเงินซื้อในงวดนี้ แยกจากงวดถัดไป ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
     ),
 
     ...cashFlowSection(

@@ -139,6 +139,57 @@ void main() {
     );
   });
 
+  test('budgets have independent current and next selections', () {
+    const food = Budget(
+      id: 'food',
+      name: 'Food',
+      amount: 10000,
+      categoryIds: ['food'],
+      icon: Icons.restaurant,
+      color: Colors.blue,
+    );
+    final budgets = [
+      food.copyWith(isExcludedFromCashForecast: true),
+      food.copyWith(id: 'travel', isExcludedFromNextCashForecast: true),
+    ];
+    final current = CashFlowForecastService.calculate(
+      today: DateTime(2026, 10, 1),
+      anchorDay: 30,
+      monthlyCycleStartDay: 21,
+      accounts: [_bank],
+      balanceInThb: (_) => 20000,
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: budgets,
+    )!;
+    final next = CashFlowForecastService.calculateNextPeriod(
+      current: current,
+      today: DateTime(2026, 10, 1),
+      monthlyCycleStartDay: 21,
+      anchorDay: 30,
+      accounts: [_bank],
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: budgets,
+      plannedPurchases: [],
+    );
+
+    expect(
+      current.budgetLines.where((l) => l.isIncluded).map((l) => l.budget.id),
+      ['travel'],
+    );
+    expect(
+      next.budgetLines.where((l) => l.isIncluded).map((l) => l.budget.id),
+      ['food'],
+    );
+    expect(
+      Budget.fromMap(budgets.last.toMap()).isExcludedFromNextCashForecast,
+      isTrue,
+    );
+  });
+
   test('reserves budget cycles once, including future cycles and savings', () {
     const expense = Budget(
       id: 'food',
@@ -160,9 +211,17 @@ void main() {
     final budgets = [
       expense,
       savings,
-      expense.copyWith(id: 'excluded', isExcludedFromCashForecast: true),
+      expense.copyWith(
+        id: 'excluded',
+        isExcludedFromCashForecast: true,
+        isExcludedFromNextCashForecast: true,
+      ),
       expense.copyWith(id: 'hidden', isHidden: true),
-      savings.copyWith(id: 'saving-excluded', isExcludedFromCashForecast: true),
+      savings.copyWith(
+        id: 'saving-excluded',
+        isExcludedFromCashForecast: true,
+        isExcludedFromNextCashForecast: true,
+      ),
     ];
     final card = _card();
     final transactions = [

@@ -11,24 +11,32 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 
 /// Sheet เลือกงบ ([BudgetType.expense]) หรือแผนออม ([BudgetType.savings])
-/// ที่นำมาคำนวณในทั้งสองงวด; บันทึกทันทีเมื่อสลับสวิตช์
+/// ที่นำมาคำนวณในงวดนี้หรืองวดถัดไป ([isNextPeriod]) แยกกัน; บันทึกทันทีเมื่อสลับสวิตช์
 Future<void> showForecastBudgetPickerSheet(
   BuildContext context,
-  BudgetType type,
-) {
+  BudgetType type, {
+  required bool isNextPeriod,
+}) {
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _ForecastBudgetPickerSheet(type: type),
+    builder: (_) =>
+        _ForecastBudgetPickerSheet(type: type, isNextPeriod: isNextPeriod),
   );
 }
 
 class _ForecastBudgetPickerSheet extends StatelessWidget {
   final BudgetType type;
+  final bool isNextPeriod;
 
-  const _ForecastBudgetPickerSheet({required this.type});
+  const _ForecastBudgetPickerSheet({
+    required this.type,
+    required this.isNextPeriod,
+  });
 
   bool get _isSavings => type == BudgetType.savings;
+
+  String get _periodLabel => isNextPeriod ? 'งวดถัดไป' : 'งวดนี้';
 
   Future<void> _toggle(
     BuildContext context,
@@ -37,7 +45,9 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
   ) async {
     try {
       await context.read<BudgetProvider>().updateBudget(
-        budget.copyWith(isExcludedFromCashForecast: !isIncluded),
+        isNextPeriod
+            ? budget.copyWith(isExcludedFromNextCashForecast: !isIncluded)
+            : budget.copyWith(isExcludedFromCashForecast: !isIncluded),
       );
     } catch (e) {
       debugPrint('ForecastBudgetPickerSheet: toggle budget error: $e');
@@ -66,14 +76,16 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppModalBottomSheetHeader(
-            title: _isSavings ? 'แผนออมที่นำมาคำนวณ' : 'งบที่นำมาคำนวณ',
+            title: _isSavings
+                ? 'แผนออมที่นำมาคำนวณ$_periodLabel'
+                : 'งบที่นำมาคำนวณ$_periodLabel',
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Text(
               _isSavings
-                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินในทั้งสองงวด'
-                  : 'ปิดงบที่ไม่ต้องการนับ เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
+                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินใน$_periodLabel'
+                  : 'ปิดงบที่ไม่ต้องการนับใน$_periodLabel เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -92,6 +104,9 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
                       if (i > 0) const AppCardDivider(),
                       _BudgetToggleRow(
                         budget: budgets[i],
+                        isIncluded: isNextPeriod
+                            ? !budgets[i].isExcludedFromNextCashForecast
+                            : !budgets[i].isExcludedFromCashForecast,
                         isDarkMode: isDarkMode,
                         onChanged: (value) =>
                             _toggle(context, budgets[i], value),
@@ -110,11 +125,13 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
 
 class _BudgetToggleRow extends StatelessWidget {
   final Budget budget;
+  final bool isIncluded;
   final bool isDarkMode;
   final ValueChanged<bool> onChanged;
 
   const _BudgetToggleRow({
     required this.budget,
+    required this.isIncluded,
     required this.isDarkMode,
     required this.onChanged,
   });
@@ -122,7 +139,6 @@ class _BudgetToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    final isIncluded = !budget.isExcludedFromCashForecast;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
       child: Row(

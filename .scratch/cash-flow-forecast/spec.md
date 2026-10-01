@@ -186,3 +186,8 @@ The "ยังไม่ติ๊ก" chip returns, shown only on an unticked ite
 - Each forecast tab displays that list with an independent inclusion selection.
 - Deduct current selections from the current leftover; carry that balance forward and deduct next selections for the next window. Selecting the same purchase in both windows reserves it twice.
 - Preserve existing `is_included` as the next-window selection; new `is_included_current` defaults to false. Include both selections in CSV backup/restore.
+
+## Revision 2026-10-01: independent budget selections
+
+- Budget and savings-plan inclusion is chosen separately in the current and next tabs; the picker sheet edits only the tab it was opened from.
+- Existing `is_excluded_from_cash_forecast` stays the current-window selection; new `is_excluded_from_next_cash_forecast` is initialised from it so existing forecasts do not change. Include both in CSV backup/restore (older backups copy the current value to the next window).

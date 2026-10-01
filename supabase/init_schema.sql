@@ -29,3 +29,4 @@
 \ir migrations/20260927180000_create_planned_purchases.sql
 \ir migrations/20260928090000_add_cash_forecast_exclusion_to_budgets.sql
 \ir migrations/20261001090000_add_current_period_planned_purchase_selection.sql
+\ir migrations/20261001120000_add_next_period_budget_forecast_exclusion.sql

@@ -65,17 +65,23 @@ class BudgetRemainingLine {
   final DateTime cycleStart;
   final DateTime cycleEnd;
 
+  /// อยู่ใน forecast งวดถัดไป (ใช้การเลือกงบของงวดถัดไป)
+  final bool isNextPeriod;
+
   const BudgetRemainingLine({
     required this.budget,
     required this.spent,
     required this.cycleStart,
     required this.cycleEnd,
+    this.isNextPeriod = false,
   });
 
   double get remaining =>
       CashFlowForecastService._positive(budget.amount - spent);
 
-  bool get isIncluded => !budget.isExcludedFromCashForecast;
+  bool get isIncluded => isNextPeriod
+      ? !budget.isExcludedFromNextCashForecast
+      : !budget.isExcludedFromCashForecast;
 }
 
 /// ยอดที่ยังไม่สรุปของบัตรหนึ่งใบ ซึ่งสรุปหลังวันเคลียร์ยอดของงวดนี้ จึงไปอยู่งวดถัดไป
@@ -316,6 +322,7 @@ class CashFlowForecastService {
         windowStart,
         windowEnd,
         BudgetType.expense,
+        isNextPeriod: true,
       ),
       savingsPlans: _budgetLines(
         budgets,
@@ -326,6 +333,7 @@ class CashFlowForecastService {
         windowStart,
         windowEnd,
         BudgetType.savings,
+        isNextPeriod: true,
       ),
       purchases: plannedPurchases,
     );
@@ -487,8 +495,9 @@ class CashFlowForecastService {
     int monthlyCycleStartDay,
     DateTime windowStart,
     DateTime windowEnd,
-    BudgetType type,
-  ) {
+    BudgetType type, {
+    bool isNextPeriod = false,
+  }) {
     final lines = <BudgetRemainingLine>[];
     var month = monthlyCycleReportingMonth(today, monthlyCycleStartDay);
     while (true) {
@@ -517,6 +526,7 @@ class CashFlowForecastService {
               spent: BudgetSpendingService.spentFor(budget, spentByCategoryId),
               cycleStart: cycle.start,
               cycleEnd: cycleEnd,
+              isNextPeriod: isNextPeriod,
             ),
           );
         }
