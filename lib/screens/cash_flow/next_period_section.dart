@@ -94,20 +94,12 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode,
   ),
 
-  ...cashFlowSection(
-    title:
-        'อยากซื้อ · ${formatAmount(-forecast.purchaseTotal, showSign: true)} บาท',
-    emptyText: '',
-    rows: [
-      for (final purchase in forecast.purchases)
-        _PurchaseRow(purchase: purchase, isDarkMode: isDarkMode),
-      _AddPurchaseRow(isDarkMode: isDarkMode),
-    ],
-    isDarkMode: isDarkMode,
-  ),
-  cashFlowNote(
-    'ติ๊กรายการที่จะซื้อเพื่อดูว่าเงินงวดถัดไปจะเหลือเท่าไหร่',
+  ...forecastPurchaseSections(
+    forecast.purchases,
+    forecast.purchaseTotal,
     isDarkMode,
+    note:
+        'ติ๊กเพื่อกันเงินซื้อในงวดถัดไป แยกจากงวดนี้ ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
   ),
 
   ...forecastBudgetSections(
@@ -117,6 +109,34 @@ List<Widget> nextPeriodDetailSections(
     forecast.savingsTotal,
     isDarkMode,
   ),
+];
+
+List<Widget> forecastPurchaseSections(
+  List<PlannedPurchase> purchases,
+  double purchaseTotal,
+  bool isDarkMode, {
+  required String note,
+  bool isCurrent = false,
+  bool isManage = false,
+}) => [
+  ...cashFlowSection(
+    title: isManage
+        ? 'รายการอยากซื้อทั้งหมด'
+        : 'อยากซื้อ · ${formatAmount(-purchaseTotal, showSign: true)} บาท',
+    emptyText: 'ยังไม่มีรายการอยากซื้อ เพิ่มได้ที่แท็บจัดการ',
+    rows: [
+      for (final purchase in purchases)
+        _PurchaseRow(
+          purchase: purchase,
+          isDarkMode: isDarkMode,
+          isCurrent: isCurrent,
+          isManage: isManage,
+        ),
+      if (isManage) _AddPurchaseRow(isDarkMode: isDarkMode),
+    ],
+    isDarkMode: isDarkMode,
+  ),
+  cashFlowNote(note, isDarkMode),
 ];
 
 List<Widget> forecastBudgetSections(
@@ -190,13 +210,22 @@ void _openPurchaseForm(BuildContext context, [PlannedPurchase? purchase]) {
 class _PurchaseRow extends StatelessWidget {
   final PlannedPurchase purchase;
   final bool isDarkMode;
+  final bool isCurrent;
+  final bool isManage;
 
-  const _PurchaseRow({required this.purchase, required this.isDarkMode});
+  const _PurchaseRow({
+    required this.purchase,
+    required this.isDarkMode,
+    required this.isCurrent,
+    required this.isManage,
+  });
 
   Future<void> _toggle(BuildContext context, bool isIncluded) async {
     try {
       await context.read<CashFlowForecastProvider>().updatePlannedPurchase(
-        purchase.copyWith(isIncluded: isIncluded),
+        isCurrent
+            ? purchase.copyWith(isIncludedCurrent: isIncluded)
+            : purchase.copyWith(isIncluded: isIncluded),
       );
     } catch (e) {
       debugPrint('NextPeriodSection: toggle purchase error: $e');
@@ -211,26 +240,36 @@ class _PurchaseRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    final isIncluded = purchase.isIncluded;
+    final isIncluded =
+        isManage ||
+        (isCurrent ? purchase.isIncludedCurrent : purchase.isIncluded);
     return InkWell(
-      onTap: () => _openPurchaseForm(context, purchase),
+      onTap: () => isManage
+          ? _openPurchaseForm(context, purchase)
+          : _toggle(context, !isIncluded),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 6, 16, 6),
         child: Row(
           children: [
             // ติ๊กแบบเดียวกับแถวเงินเข้าออก: ติ๊ก = นับในการคาดการณ์
-            IconButton(
-              tooltip: isIncluded ? 'ไม่นับรายการนี้' : 'นับรายการนี้',
-              onPressed: () => _toggle(context, !isIncluded),
-              icon: Icon(
-                isIncluded
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: isIncluded
-                    ? AppColors.incomeFor(isDarkMode)
-                    : textSecondary.withValues(alpha: 0.6),
+            if (isManage)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(Icons.shopping_bag_outlined, color: textSecondary),
+              )
+            else
+              IconButton(
+                tooltip: isIncluded ? 'ไม่นับรายการนี้' : 'นับรายการนี้',
+                onPressed: () => _toggle(context, !isIncluded),
+                icon: Icon(
+                  isIncluded
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: isIncluded
+                      ? AppColors.incomeFor(isDarkMode)
+                      : textSecondary.withValues(alpha: 0.6),
+                ),
               ),
-            ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(

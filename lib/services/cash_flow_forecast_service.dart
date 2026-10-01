@@ -158,6 +158,7 @@ class CashFlowForecast {
   final List<CardObligationLine> cardLines;
   final List<BudgetRemainingLine> budgetLines;
   final List<BudgetRemainingLine> savingsPlans;
+  final List<PlannedPurchase> purchases;
 
   /// บิลของบัตรแต่ละใบ (key = account id) เก็บไว้ใช้ต่อในงวดถัดไป
   final Map<String, List<CreditCardBill>> cardBills;
@@ -171,6 +172,7 @@ class CashFlowForecast {
     this.cardBills = const {},
     this.budgetLines = const [],
     this.savingsPlans = const [],
+    this.purchases = const [],
   });
 
   double get liquidTotal => liquidLines
@@ -195,13 +197,18 @@ class CashFlowForecast {
       .where((l) => l.isIncluded)
       .fold(0.0, (sum, l) => sum + l.budget.amount);
 
+  double get purchaseTotal => purchases
+      .where((p) => p.isIncludedCurrent)
+      .fold(0.0, (sum, p) => sum + p.amount);
+
   double get projectedLeftover =>
       liquidTotal +
       incomingTotal -
       outgoingTotal -
       cardTotal -
       budgetTotal -
-      savingsTotal;
+      savingsTotal -
+      purchaseTotal;
 
   /// จำนวนบัตรที่ผู้ใช้ควรตรวจ: เลยกำหนด หรือนับจากยอดที่ยังไม่สรุป
   int get warningCount =>
@@ -223,6 +230,7 @@ class CashFlowForecastService {
     required List<FixedCashFlowItem> items,
     required List<FixedCashFlowPaidMark> paidMarks,
     List<Budget> budgets = const [],
+    List<PlannedPurchase> plannedPurchases = const [],
     int monthlyCycleStartDay = 1,
   }) {
     if (anchorDay == null) return null;
@@ -241,6 +249,7 @@ class CashFlowForecastService {
       itemLines: _itemLines(items, paidMarks, windowStart, settleDate, day),
       cardLines: _cardLines(accounts, cardBills, settleDate, day),
       cardBills: cardBills,
+      purchases: plannedPurchases,
       budgetLines: _budgetLines(
         budgets,
         accounts,
@@ -266,7 +275,7 @@ class CashFlowForecastService {
 
   /// คาดการณ์งวดถัดไป (ถึงวันเคลียร์ยอดครั้งถัดไป) ต่อจาก [current] โดยนับเพิ่ม:
   /// รายการประจำของงวดถัดไป, ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้,
-  /// งบและแผนออมของรอบที่สิ้นสุดในงวดถัดไป และรายการอยากซื้อที่เปิดไว้
+  /// งบและแผนออมของรอบที่สิ้นสุดในงวดถัดไป; หักรายการอยากซื้อที่เลือกสำหรับงวดถัดไป
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
     required DateTime today,

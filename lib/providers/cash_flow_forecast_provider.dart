@@ -82,6 +82,7 @@ class CashFlowForecastProvider extends ChangeNotifier {
     today: today ?? DateTime.now(),
     anchorDay: anchorDay,
     budgets: budgets,
+    plannedPurchases: _plannedPurchases,
     monthlyCycleStartDay: monthlyCycleStartDay,
     accounts: accounts,
     balanceInThb: balanceInThb,

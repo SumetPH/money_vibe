@@ -1,10 +1,10 @@
-/// รายการที่อยากซื้อ ใช้ลองดูผลกระทบต่อ Cash-flow forecast งวดถัดไป
-/// ([isIncluded] = นับในการคาดการณ์หรือไม่)
+/// รายการอยากซื้อชุดเดียวกัน เลือกนับแยกงวดนี้และงวดถัดไป
 class PlannedPurchase {
   final String id;
   final String name;
   final double amount;
-  final bool isIncluded;
+  final bool isIncluded; // งวดถัดไป (คงสถานะเดิม)
+  final bool isIncludedCurrent;
   final int sortOrder;
 
   const PlannedPurchase({
@@ -12,6 +12,7 @@ class PlannedPurchase {
     required this.name,
     required this.amount,
     this.isIncluded = true,
+    this.isIncludedCurrent = false,
     this.sortOrder = 0,
   });
 
@@ -19,12 +20,14 @@ class PlannedPurchase {
     String? name,
     double? amount,
     bool? isIncluded,
+    bool? isIncludedCurrent,
     int? sortOrder,
   }) => PlannedPurchase(
     id: id,
     name: name ?? this.name,
     amount: amount ?? this.amount,
     isIncluded: isIncluded ?? this.isIncluded,
+    isIncludedCurrent: isIncludedCurrent ?? this.isIncludedCurrent,
     sortOrder: sortOrder ?? this.sortOrder,
   );
 
@@ -33,6 +36,7 @@ class PlannedPurchase {
     'name': name,
     'amount': amount,
     'is_included': isIncluded,
+    'is_included_current': isIncludedCurrent,
     'sort_order': sortOrder,
   };
 
@@ -41,6 +45,7 @@ class PlannedPurchase {
     name: m['name'] as String,
     amount: (m['amount'] as num).toDouble(),
     isIncluded: m['is_included'] as bool? ?? true,
+    isIncludedCurrent: m['is_included_current'] as bool? ?? false,
     sortOrder: m['sort_order'] as int? ?? 0,
   );
 }

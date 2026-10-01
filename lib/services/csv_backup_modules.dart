@@ -243,6 +243,7 @@ final List<CsvBackupModule<Object>> csvBackupModules = [
       'name': CsvCell.text,
       'amount': CsvCell.number,
       'is_included': CsvCell.boolean,
+      'is_included_current': CsvCell.boolean,
       'sort_order': CsvCell.integer,
     },
     load: (repo) => repo.getPlannedPurchases(),

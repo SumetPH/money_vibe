@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:money_vibe/models/budget.dart';
+import 'package:money_vibe/models/planned_purchase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_vibe/models/account.dart';
 import 'package:money_vibe/models/fixed_cash_flow_item.dart';
@@ -83,6 +84,61 @@ CashFlowForecast? _forecast({
 );
 
 void main() {
+  test('planned purchases have independent current and next selections', () {
+    const purchases = [
+      PlannedPurchase(
+        id: 'phone',
+        name: 'Phone',
+        amount: 5000,
+        isIncluded: false,
+        isIncludedCurrent: true,
+      ),
+      PlannedPurchase(id: 'next', name: 'Next', amount: 3000),
+      PlannedPurchase(id: 'off', name: 'Off', amount: 2000, isIncluded: false),
+    ];
+    final current = CashFlowForecastService.calculate(
+      today: DateTime(2026, 10, 1),
+      anchorDay: 30,
+      accounts: [_bank],
+      balanceInThb: (_) => 20000,
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      plannedPurchases: purchases,
+    )!;
+    final next = CashFlowForecastService.calculateNextPeriod(
+      current: current,
+      today: DateTime(2026, 10, 1),
+      monthlyCycleStartDay: 21,
+      anchorDay: 30,
+      accounts: [_bank],
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: [],
+      plannedPurchases: purchases,
+    );
+    expect(current.purchases, purchases);
+    expect(current.purchaseTotal, 5000);
+    expect(current.projectedLeftover, 15000);
+    expect(next.purchases, purchases);
+    expect(next.startingLeftover, 15000);
+    expect(next.purchaseTotal, 3000);
+    expect(next.projectedLeftover, 12000);
+    final toggled = purchases.first.copyWith(isIncluded: true);
+    expect(toggled.isIncludedCurrent, isTrue);
+    expect(PlannedPurchase.fromMap(toggled.toMap()).isIncludedCurrent, isTrue);
+    expect(
+      PlannedPurchase.fromMap({
+        'id': 'legacy',
+        'name': 'Legacy',
+        'amount': 100,
+        'is_included': true,
+      }).isIncludedCurrent,
+      isFalse,
+    );
+  });
+
   test('reserves budget cycles once, including future cycles and savings', () {
     const expense = Budget(
       id: 'food',
