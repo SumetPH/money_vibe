@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -508,7 +509,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                                         ),
                                       ),
                                       Text(
-                                        'รองรับข้าม Platform (Android ↔ iOS)',
+                                        kIsWeb
+                                            ? 'เว็บดาวน์โหลด ZIP รวม CSV · แตกไฟล์ก่อนนำเข้า'
+                                            : 'รองรับข้าม Platform (Android ↔ iOS)',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: secondaryTextColor,
