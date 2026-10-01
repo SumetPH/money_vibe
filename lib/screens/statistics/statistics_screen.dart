@@ -2133,10 +2133,19 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     final firstMonth = sortedMonthKeys.first;
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month);
+    final allAccountsById = {
+      for (final account in accounts) account.id: account,
+    };
     final balancesByAccountId = <String, double>{};
     for (final account in effectiveAccounts) {
       balancesByAccountId[account.id] = account.isPortfolio
-          ? accountProvider.getBalance(account.id, const <AppTransaction>[])
+          ? _portfolioOpeningBalance(
+              account,
+              accountProvider,
+              relevantTransactions,
+              allAccountsById,
+              now,
+            )
           : account.initialBalance;
     }
 
@@ -2157,6 +2166,7 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
         _applyBalanceDelta(
           relevantTransactions[txIndex],
           effectiveAccountsById,
+          allAccountsById,
           balancesByAccountId,
         );
         txIndex++;
@@ -2177,30 +2187,82 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
     return result;
   }
 
+  /// Portfolio has no transaction history of its value, so back-calculate the
+  /// opening balance from the current value minus net flows up to now. This
+  /// keeps transfers in/out of a portfolio net-zero on the chart.
+  double _portfolioOpeningBalance(
+    Account portfolio,
+    AccountProvider accountProvider,
+    List<AppTransaction> transactions,
+    Map<String, Account> allAccountsById,
+    DateTime now,
+  ) {
+    final currentValue = accountProvider.getBalance(
+      portfolio.id,
+      const <AppTransaction>[],
+    );
+    final netFlow = transactions
+        .where((tx) => !tx.dateTime.isAfter(now))
+        .fold(
+          0.0,
+          (sum, tx) => sum + _accountDelta(tx, portfolio.id, allAccountsById),
+        );
+    return currentValue - netFlow;
+  }
+
   void _applyBalanceDelta(
     AppTransaction tx,
     Map<String, Account> effectiveAccountsById,
+    Map<String, Account> allAccountsById,
     Map<String, double> balancesByAccountId,
   ) {
-    final fromAccount = effectiveAccountsById[tx.accountId];
-    if (fromAccount != null && !fromAccount.isPortfolio) {
-      final current = balancesByAccountId[tx.accountId] ?? 0.0;
-      final delta =
-          tx.type == TransactionType.income ||
-              tx.type == TransactionType.increaseBalance
-          ? tx.amount
-          : -tx.amount;
-      balancesByAccountId[tx.accountId] = current + delta;
+    final touchedIds = {tx.accountId, ?tx.toAccountId};
+    for (final accountId in touchedIds) {
+      if (!effectiveAccountsById.containsKey(accountId)) continue;
+      balancesByAccountId[accountId] =
+          (balancesByAccountId[accountId] ?? 0.0) +
+          _accountDelta(tx, accountId, allAccountsById);
     }
+  }
 
-    final toAccountId = tx.toAccountId;
-    if (toAccountId == null || !tx.type.usesDestinationAccount) return;
+  /// Balance change of [accountId] caused by [tx], in the account's currency.
+  double _accountDelta(
+    AppTransaction tx,
+    String accountId,
+    Map<String, Account> allAccountsById,
+  ) {
+    var delta = 0.0;
+    if (tx.accountId == accountId) {
+      final isIncreasing =
+          tx.type == TransactionType.income ||
+          tx.type == TransactionType.increaseBalance;
+      delta += isIncreasing ? tx.amount : -tx.amount;
+    }
+    if (tx.toAccountId == accountId && tx.type.usesDestinationAccount) {
+      delta += _destinationAmount(tx, allAccountsById);
+    }
+    return delta;
+  }
 
-    final toAccount = effectiveAccountsById[toAccountId];
-    if (toAccount == null || toAccount.isPortfolio) return;
+  double _destinationAmount(
+    AppTransaction tx,
+    Map<String, Account> allAccountsById,
+  ) {
+    final toAmount = tx.toAmount;
+    if (toAmount != null) return toAmount;
 
-    balancesByAccountId[toAccountId] =
-        (balancesByAccountId[toAccountId] ?? 0.0) + (tx.toAmount ?? tx.amount);
+    // Legacy cross-currency rows have no toAmount. Regular accounts keep the
+    // raw amount (same as getBalance); portfolios convert so the
+    // back-calculated history is not inflated by the wrong currency.
+    final from = allAccountsById[tx.accountId];
+    final to = allAccountsById[tx.toAccountId];
+    if (from == null || to == null || !to.isPortfolio) return tx.amount;
+    if (from.currency == to.currency) return tx.amount;
+
+    final amountInThb = from.currency == 'USD'
+        ? tx.amount * from.exchangeRate
+        : tx.amount;
+    return to.currency == 'USD' ? amountInThb / to.exchangeRate : amountInThb;
   }
 
   List<_NetWorthData> _filterNetWorthData(
