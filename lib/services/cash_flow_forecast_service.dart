@@ -58,12 +58,19 @@ class CardObligationLine {
   });
 }
 
-/// งบประมาณหนึ่งรายการในรอบเดือนปัจจุบัน ส่วนที่เหลือถือว่าจะถูกใช้จนหมด
+/// งบประมาณหนึ่งรายการในรอบที่ระบุ ส่วนที่เหลือถือว่าจะถูกใช้จนหมด
 class BudgetRemainingLine {
   final Budget budget;
   final double spent;
+  final DateTime cycleStart;
+  final DateTime cycleEnd;
 
-  const BudgetRemainingLine({required this.budget, required this.spent});
+  const BudgetRemainingLine({
+    required this.budget,
+    required this.spent,
+    required this.cycleStart,
+    required this.cycleEnd,
+  });
 
   double get remaining =>
       CashFlowForecastService._positive(budget.amount - spent);
@@ -97,7 +104,7 @@ class NextPeriodForecast {
 
   /// แผนออม (งบประเภทออม/ลงทุน) นับเต็มเป้าหมาย เพราะไม่มีการติดตามยอดที่ออมแล้ว
   /// (รวมแผนที่ผู้ใช้ตัดออก เพื่อให้ UI เลือกได้)
-  final List<Budget> savingsPlans;
+  final List<BudgetRemainingLine> savingsPlans;
   final List<PlannedPurchase> purchases;
 
   const NextPeriodForecast({
@@ -126,8 +133,8 @@ class NextPeriodForecast {
       .fold(0.0, (sum, l) => sum + l.remaining);
 
   double get savingsTotal => savingsPlans
-      .where((b) => !b.isExcludedFromCashForecast)
-      .fold(0.0, (sum, b) => sum + b.amount);
+      .where((l) => l.isIncluded)
+      .fold(0.0, (sum, l) => sum + l.budget.amount);
 
   double get purchaseTotal => purchases
       .where((p) => p.isIncluded)
@@ -149,6 +156,8 @@ class CashFlowForecast {
   final List<LiquidBalanceLine> liquidLines;
   final List<CashFlowItemLine> itemLines;
   final List<CardObligationLine> cardLines;
+  final List<BudgetRemainingLine> budgetLines;
+  final List<BudgetRemainingLine> savingsPlans;
 
   /// บิลของบัตรแต่ละใบ (key = account id) เก็บไว้ใช้ต่อในงวดถัดไป
   final Map<String, List<CreditCardBill>> cardBills;
@@ -160,6 +169,8 @@ class CashFlowForecast {
     required this.itemLines,
     required this.cardLines,
     this.cardBills = const {},
+    this.budgetLines = const [],
+    this.savingsPlans = const [],
   });
 
   double get liquidTotal => liquidLines
@@ -176,8 +187,21 @@ class CashFlowForecast {
 
   double get cardTotal => cardLines.fold(0.0, (sum, l) => sum + l.outstanding);
 
+  double get budgetTotal => budgetLines
+      .where((l) => l.isIncluded)
+      .fold(0.0, (sum, l) => sum + l.remaining);
+
+  double get savingsTotal => savingsPlans
+      .where((l) => l.isIncluded)
+      .fold(0.0, (sum, l) => sum + l.budget.amount);
+
   double get projectedLeftover =>
-      liquidTotal + incomingTotal - outgoingTotal - cardTotal;
+      liquidTotal +
+      incomingTotal -
+      outgoingTotal -
+      cardTotal -
+      budgetTotal -
+      savingsTotal;
 
   /// จำนวนบัตรที่ผู้ใช้ควรตรวจ: เลยกำหนด หรือนับจากยอดที่ยังไม่สรุป
   int get warningCount =>
@@ -198,6 +222,8 @@ class CashFlowForecastService {
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
     required List<FixedCashFlowPaidMark> paidMarks,
+    List<Budget> budgets = const [],
+    int monthlyCycleStartDay = 1,
   }) {
     if (anchorDay == null) return null;
 
@@ -215,12 +241,32 @@ class CashFlowForecastService {
       itemLines: _itemLines(items, paidMarks, windowStart, settleDate, day),
       cardLines: _cardLines(accounts, cardBills, settleDate, day),
       cardBills: cardBills,
+      budgetLines: _budgetLines(
+        budgets,
+        accounts,
+        transactions,
+        day,
+        monthlyCycleStartDay,
+        day,
+        settleDate,
+        BudgetType.expense,
+      ),
+      savingsPlans: _budgetLines(
+        budgets,
+        accounts,
+        transactions,
+        day,
+        monthlyCycleStartDay,
+        day,
+        settleDate,
+        BudgetType.savings,
+      ),
     );
   }
 
   /// คาดการณ์งวดถัดไป (ถึงวันเคลียร์ยอดครั้งถัดไป) ต่อจาก [current] โดยนับเพิ่ม:
   /// รายการประจำของงวดถัดไป, ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้,
-  /// งบที่เหลือของรอบเดือนนี้, แผนออมเต็มเป้าหมาย และรายการอยากซื้อที่เปิดไว้
+  /// งบและแผนออมของรอบที่สิ้นสุดในงวดถัดไป และรายการอยากซื้อที่เปิดไว้
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
     required DateTime today,
@@ -258,11 +304,20 @@ class CashFlowForecastService {
         transactions,
         day,
         monthlyCycleStartDay,
+        windowStart,
+        windowEnd,
+        BudgetType.expense,
       ),
-      savingsPlans: [
-        for (final budget in budgets)
-          if (budget.type == BudgetType.savings && !budget.isHidden) budget,
-      ],
+      savingsPlans: _budgetLines(
+        budgets,
+        accounts,
+        transactions,
+        day,
+        monthlyCycleStartDay,
+        windowStart,
+        windowEnd,
+        BudgetType.savings,
+      ),
       purchases: plannedPurchases,
     );
   }
@@ -414,32 +469,52 @@ class CashFlowForecastService {
     );
   }
 
-  /// งบรายจ่าย (ไม่ซ่อน) ของรอบเดือนที่มี [today] อยู่ รวมงบที่ถูกตัดออก เพื่อให้ UI เลือกได้
+  /// จัดงบตามวันสิ้นสุดรอบ: รอบปัจจุบันหักยอดใช้จริง รอบอนาคตกันเต็มจำนวน
   static List<BudgetRemainingLine> _budgetLines(
     List<Budget> budgets,
     List<Account> accounts,
     List<AppTransaction> transactions,
     DateTime today,
     int monthlyCycleStartDay,
+    DateTime windowStart,
+    DateTime windowEnd,
+    BudgetType type,
   ) {
-    final cycle = monthlyCyclePeriod(
-      monthlyCycleReportingMonth(today, monthlyCycleStartDay),
-      monthlyCycleStartDay,
-    );
-    final spentByCategoryId = BudgetSpendingService.spentByCategoryId(
-      transactions: transactions,
-      start: cycle.start,
-      end: cycle.endExclusive.subtract(const Duration(microseconds: 1)),
-      accounts: accounts,
-    );
-    return [
-      for (final budget in budgets)
-        if (budget.type == BudgetType.expense && !budget.isHidden)
-          BudgetRemainingLine(
-            budget: budget,
-            spent: BudgetSpendingService.spentFor(budget, spentByCategoryId),
-          ),
-    ];
+    final lines = <BudgetRemainingLine>[];
+    var month = monthlyCycleReportingMonth(today, monthlyCycleStartDay);
+    while (true) {
+      final cycle = monthlyCyclePeriod(month, monthlyCycleStartDay);
+      final cycleEnd = DateTime(
+        cycle.endExclusive.year,
+        cycle.endExclusive.month,
+        cycle.endExclusive.day - 1,
+      );
+      if (cycleEnd.isAfter(windowEnd)) break;
+      if (!cycleEnd.isBefore(windowStart)) {
+        final spentByCategoryId =
+            type == BudgetType.expense && !cycle.start.isAfter(today)
+            ? BudgetSpendingService.spentByCategoryId(
+                transactions: transactions,
+                start: cycle.start,
+                end: _dayAfter(today).subtract(const Duration(microseconds: 1)),
+                accounts: accounts,
+              )
+            : <String, double>{};
+        for (final budget in budgets) {
+          if (budget.type != type || budget.isHidden) continue;
+          lines.add(
+            BudgetRemainingLine(
+              budget: budget,
+              spent: BudgetSpendingService.spentFor(budget, spentByCategoryId),
+              cycleStart: cycle.start,
+              cycleEnd: cycleEnd,
+            ),
+          );
+        }
+      }
+      month = DateTime(month.year, month.month + 1);
+    }
+    return lines;
   }
 
   static DateTime _firstAnchorOnOrAfter(int anchorDay, DateTime from) {

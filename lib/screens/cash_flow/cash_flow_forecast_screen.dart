@@ -168,7 +168,7 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
   );
 
   // ลำดับ section ของทั้งสองแท็บเรียงตาม metric ใน hero:
-  // เงินในบัญชี → เงินเข้าออก → บัตรเครดิต → (งวดถัดไป: งบที่เหลือ → อยากซื้อ)
+  // เงินในบัญชี → เงินเข้าออก → บัตรเครดิต → งบรายจ่าย → แผนออม → อยากซื้อ
   List<Widget> _buildNextTab(NextPeriodForecast next, bool isDarkMode) => [
     NextPeriodHero(forecast: next, isDarkMode: isDarkMode),
     ..._occurrenceSection(next.itemLines, isDarkMode),
@@ -192,6 +192,14 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     ),
     cashFlowNote(
       'นับบิลที่สรุปก่อนวันเคลียร์ยอด บิลที่ยังไม่สรุปใช้ยอดที่รูดไปแล้วเป็นยอดประมาณ',
+      isDarkMode,
+    ),
+
+    ...forecastBudgetSections(
+      forecast.budgetLines,
+      forecast.savingsPlans,
+      forecast.budgetTotal,
+      forecast.savingsTotal,
       isDarkMode,
     ),
 
@@ -299,6 +307,8 @@ class _SummaryHero extends StatelessWidget {
         _metric('เงินเข้าที่ยังไม่ติ๊ก', forecast.incomingTotal),
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
+        _metric('งบรายจ่าย', -forecast.budgetTotal),
+        _metric('แผนออม', -forecast.savingsTotal),
         if (forecast.warningCount > 0) ...[
           const SizedBox(height: 10),
           Align(

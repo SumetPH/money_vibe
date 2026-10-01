@@ -61,7 +61,7 @@ class NextPeriodHero extends StatelessWidget {
         _metric('เงินเข้าที่ยังไม่ติ๊ก', forecast.incomingTotal),
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
-        _metric('งบที่เหลือรอบนี้', -forecast.budgetTotal),
+        _metric('งบรายจ่าย', -forecast.budgetTotal),
         _metric('แผนออม', -forecast.savingsTotal),
         _metric('อยากซื้อ', -forecast.purchaseTotal),
       ],
@@ -110,18 +110,37 @@ List<Widget> nextPeriodDetailSections(
     isDarkMode,
   ),
 
+  ...forecastBudgetSections(
+    forecast.budgetLines,
+    forecast.savingsPlans,
+    forecast.budgetTotal,
+    forecast.savingsTotal,
+    isDarkMode,
+  ),
+];
+
+List<Widget> forecastBudgetSections(
+  List<BudgetRemainingLine> budgetLines,
+  List<BudgetRemainingLine> savingsPlans,
+  double budgetTotal,
+  double savingsTotal,
+  bool isDarkMode,
+) => [
   ...cashFlowSection(
-    title:
-        'งบที่เหลือรอบนี้ · ${formatAmount(-forecast.budgetTotal, showSign: true)} บาท',
+    title: 'งบรายจ่าย · ${formatAmount(-budgetTotal, showSign: true)} บาท',
     emptyText: 'ยังไม่มีงบรายจ่าย',
     rows: [
-      for (final line in forecast.budgetLines.where((l) => l.isIncluded))
+      for (final line in budgetLines.where((l) => l.isIncluded))
         _BudgetRow(line: line, isDarkMode: isDarkMode),
-      if (forecast.budgetLines.isNotEmpty)
+      if (budgetLines.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.expense,
-          includedCount: forecast.budgetLines.where((l) => l.isIncluded).length,
-          totalCount: forecast.budgetLines.length,
+          includedCount: budgetLines
+              .where((l) => l.isIncluded)
+              .map((l) => l.budget.id)
+              .toSet()
+              .length,
+          totalCount: budgetLines.map((l) => l.budget.id).toSet().length,
           isDarkMode: isDarkMode,
         ),
     ],
@@ -134,28 +153,27 @@ List<Widget> nextPeriodDetailSections(
   ),
 
   ...cashFlowSection(
-    title:
-        'แผนออม · ${formatAmount(-forecast.savingsTotal, showSign: true)} บาท',
+    title: 'แผนออม · ${formatAmount(-savingsTotal, showSign: true)} บาท',
     emptyText: 'ยังไม่มีแผนออมในงบประมาณ',
     rows: [
-      for (final plan in forecast.savingsPlans.where(
-        (p) => !p.isExcludedFromCashForecast,
-      ))
-        _SavingsPlanRow(plan: plan, isDarkMode: isDarkMode),
-      if (forecast.savingsPlans.isNotEmpty)
+      for (final plan in savingsPlans.where((p) => p.isIncluded))
+        _BudgetRow(line: plan, isDarkMode: isDarkMode),
+      if (savingsPlans.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.savings,
-          includedCount: forecast.savingsPlans
-              .where((p) => !p.isExcludedFromCashForecast)
+          includedCount: savingsPlans
+              .where((p) => p.isIncluded)
+              .map((p) => p.budget.id)
+              .toSet()
               .length,
-          totalCount: forecast.savingsPlans.length,
+          totalCount: savingsPlans.map((p) => p.budget.id).toSet().length,
           isDarkMode: isDarkMode,
         ),
     ],
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'นับเต็มเป้าหมายของแต่ละแผน โดยถือว่ากันออมจากเงินงวดถัดไป',
+    'กันออมเต็มเป้าหมายตามรอบที่แสดง เพราะยังไม่มีการติดตามยอดออมแล้ว',
     isDarkMode,
   ),
 ];
@@ -359,8 +377,8 @@ class _BudgetRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'ใช้ไป ${formatAmount(line.spent)} จาก '
-                  '${formatAmount(line.budget.amount)}',
+                  '${formatCashFlowDate(line.cycleStart)} – ${formatCashFlowDate(line.cycleEnd)} ${line.cycleEnd.year}\n'
+                  '${line.budget.type == BudgetType.savings ? 'เป้าหมาย ${formatAmount(line.budget.amount)}' : 'ใช้ไป ${formatAmount(line.spent)} จาก ${formatAmount(line.budget.amount)}'}',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondaryFor(isDarkMode),
@@ -381,42 +399,6 @@ class _BudgetRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SavingsPlanRow extends StatelessWidget {
-  final Budget plan;
-  final bool isDarkMode;
-
-  const _SavingsPlanRow({required this.plan, required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(
-      children: [
-        Icon(plan.icon, size: 22, color: plan.color),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            plan.name,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimaryFor(isDarkMode),
-            ),
-          ),
-        ),
-        Text(
-          formatAmount(-plan.amount, showSign: true),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppColors.amountColor(-plan.amount, isDarkMode: isDarkMode),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 class _BudgetSelectorRow extends StatelessWidget {
