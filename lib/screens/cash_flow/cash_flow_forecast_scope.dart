@@ -65,6 +65,10 @@ CashFlowForecast? watchCashFlowForecast(BuildContext context) {
     balanceInThb: (account) =>
         accountProvider.getBalanceInThb(account.id, transactions),
     anchorDay: anchorDay,
+    budgets: context.watch<BudgetProvider>().budgets,
+    monthlyCycleStartDay: context.select<SettingsProvider, int>(
+      (s) => s.monthlyCycleStartDay,
+    ),
   );
 }
 

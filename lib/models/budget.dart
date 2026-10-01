@@ -23,7 +23,7 @@ class Budget {
   final BudgetType type;
   final bool isHidden;
 
-  /// ไม่นับในการคาดการณ์งวดถัดไปของ Cash-flow forecast
+  /// ไม่นับในการคาดการณ์เงินคงเหลือของ Cash-flow forecast
   final bool isExcludedFromCashForecast;
 
   const Budget({

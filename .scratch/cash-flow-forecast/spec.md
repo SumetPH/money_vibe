@@ -170,3 +170,19 @@ The user settles everything on one day each month (salary arrives and debts are 
 ## Revision 2026-09-28 (e): "ยังไม่ติ๊ก" chip restored
 
 The "ยังไม่ติ๊ก" chip returns, shown only on an unticked item whose date is before today (in both the current and next window). It is a visual flag only; the item still counts and is not added to the warning count.
+
+## Revision 2026-10-01: budget cycle ends determine the forecast window
+
+- Allocate each active or future monthly financial cycle to the forecast window containing its last day. Ignore cycles that ended before today.
+- Expense budgets in the active cycle reserve the remaining amount after actual spending through today, floored at zero; future cycles reserve the full amount.
+- Savings targets use the same cycle allocation and reserve the full amount because savings progress is not tracked.
+- The next forecast starts from the current projected leftover after its budget/savings deductions, without deducting those same cycles again.
+- Hidden budgets stay hidden; inclusion choices apply to both windows. Show budget cycle dates in both tabs.
+- Example on 1 October with cycle start 21 and clear day 30: the current forecast reserves remaining budgets and savings for 21 September–20 October; the next forecast reserves full budgets and savings for 21 October–20 November.
+
+## Revision 2026-10-01: independent planned-purchase selections
+
+- Manage one shared list at the Manage tab: add, edit and delete there.
+- Each forecast tab displays that list with an independent inclusion selection.
+- Deduct current selections from the current leftover; carry that balance forward and deduct next selections for the next window. Selecting the same purchase in both windows reserves it twice.
+- Preserve existing `is_included` as the next-window selection; new `is_included_current` defaults to false. Include both selections in CSV backup/restore.

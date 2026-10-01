@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:money_vibe/models/budget.dart';
+import 'package:money_vibe/models/planned_purchase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_vibe/models/account.dart';
 import 'package:money_vibe/models/fixed_cash_flow_item.dart';
@@ -81,6 +84,230 @@ CashFlowForecast? _forecast({
 );
 
 void main() {
+  test('planned purchases have independent current and next selections', () {
+    const purchases = [
+      PlannedPurchase(
+        id: 'phone',
+        name: 'Phone',
+        amount: 5000,
+        isIncluded: false,
+        isIncludedCurrent: true,
+      ),
+      PlannedPurchase(id: 'next', name: 'Next', amount: 3000),
+      PlannedPurchase(id: 'off', name: 'Off', amount: 2000, isIncluded: false),
+    ];
+    final current = CashFlowForecastService.calculate(
+      today: DateTime(2026, 10, 1),
+      anchorDay: 30,
+      accounts: [_bank],
+      balanceInThb: (_) => 20000,
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      plannedPurchases: purchases,
+    )!;
+    final next = CashFlowForecastService.calculateNextPeriod(
+      current: current,
+      today: DateTime(2026, 10, 1),
+      monthlyCycleStartDay: 21,
+      anchorDay: 30,
+      accounts: [_bank],
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: [],
+      plannedPurchases: purchases,
+    );
+    expect(current.purchases, purchases);
+    expect(current.purchaseTotal, 5000);
+    expect(current.projectedLeftover, 15000);
+    expect(next.purchases, purchases);
+    expect(next.startingLeftover, 15000);
+    expect(next.purchaseTotal, 3000);
+    expect(next.projectedLeftover, 12000);
+    final toggled = purchases.first.copyWith(isIncluded: true);
+    expect(toggled.isIncludedCurrent, isTrue);
+    expect(PlannedPurchase.fromMap(toggled.toMap()).isIncludedCurrent, isTrue);
+    expect(
+      PlannedPurchase.fromMap({
+        'id': 'legacy',
+        'name': 'Legacy',
+        'amount': 100,
+        'is_included': true,
+      }).isIncludedCurrent,
+      isFalse,
+    );
+  });
+
+  test('reserves budget cycles once, including future cycles and savings', () {
+    const expense = Budget(
+      id: 'food',
+      name: 'Food',
+      amount: 10000,
+      categoryIds: ['food'],
+      icon: Icons.restaurant,
+      color: Colors.blue,
+    );
+    const savings = Budget(
+      id: 'saving',
+      name: 'Saving',
+      amount: 2000,
+      categoryIds: [],
+      type: BudgetType.savings,
+      icon: Icons.savings,
+      color: Colors.blue,
+    );
+    final budgets = [
+      expense,
+      savings,
+      expense.copyWith(id: 'excluded', isExcludedFromCashForecast: true),
+      expense.copyWith(id: 'hidden', isHidden: true),
+      savings.copyWith(id: 'saving-excluded', isExcludedFromCashForecast: true),
+    ];
+    final card = _card();
+    final transactions = [
+      AppTransaction(
+        id: 'food-spend',
+        type: TransactionType.expense,
+        amount: 3000,
+        accountId: card.id,
+        categoryId: 'food',
+        dateTime: DateTime(2026, 9, 25),
+      ),
+    ];
+    final accounts = [_bank, card];
+    for (final scenario in [
+      (
+        today: DateTime(2026, 9, 25),
+        currentBudget: 0.0,
+        nextBudget: 7000.0,
+        currentSavings: 0.0,
+        nextSavings: 2000.0,
+      ),
+      (
+        today: DateTime(2026, 10, 1),
+        currentBudget: 7000.0,
+        nextBudget: 10000.0,
+        currentSavings: 2000.0,
+        nextSavings: 2000.0,
+      ),
+      (
+        today: DateTime(2026, 10, 20),
+        currentBudget: 7000.0,
+        nextBudget: 10000.0,
+        currentSavings: 2000.0,
+        nextSavings: 2000.0,
+      ),
+      (
+        today: DateTime(2026, 10, 21),
+        currentBudget: 0.0,
+        nextBudget: 10000.0,
+        currentSavings: 0.0,
+        nextSavings: 2000.0,
+      ),
+      (
+        today: DateTime(2026, 10, 31),
+        currentBudget: 10000.0,
+        nextBudget: 10000.0,
+        currentSavings: 2000.0,
+        nextSavings: 2000.0,
+      ),
+    ]) {
+      final current = CashFlowForecastService.calculate(
+        today: scenario.today,
+        anchorDay: 30,
+        monthlyCycleStartDay: 21,
+        accounts: accounts,
+        balanceInThb: (_) => 20000,
+        transactions: transactions,
+        items: [],
+        paidMarks: [],
+        budgets: budgets,
+      )!;
+      final next = CashFlowForecastService.calculateNextPeriod(
+        current: current,
+        today: scenario.today,
+        monthlyCycleStartDay: 21,
+        anchorDay: 30,
+        accounts: accounts,
+        transactions: transactions,
+        items: [],
+        paidMarks: [],
+        budgets: budgets,
+        plannedPurchases: [],
+      );
+      expect(
+        current.budgetTotal,
+        scenario.currentBudget,
+        reason: '${scenario.today} current',
+      );
+      expect(
+        next.budgetTotal,
+        scenario.nextBudget,
+        reason: '${scenario.today} next',
+      );
+      expect(current.savingsTotal, scenario.currentSavings);
+      expect(next.savingsTotal, scenario.nextSavings);
+      expect(next.startingLeftover, current.projectedLeftover);
+      expect(
+        next.projectedLeftover,
+        current.projectedLeftover -
+            next.cardTotal -
+            scenario.nextBudget -
+            scenario.nextSavings,
+      );
+      if (scenario.today == DateTime(2026, 10, 1)) {
+        expect(current.budgetLines.first.cycleStart, DateTime(2026, 9, 21));
+        expect(current.budgetLines.first.cycleEnd, DateTime(2026, 10, 20));
+        expect(next.budgetLines.first.cycleStart, DateTime(2026, 10, 21));
+        expect(next.budgetLines.first.cycleEnd, DateTime(2026, 11, 20));
+        expect(
+          current.projectedLeftover,
+          current.liquidTotal - 3000 - 7000 - 2000,
+        );
+      }
+    }
+    final overspent = CashFlowForecastService.calculate(
+      today: DateTime(2026, 10, 1),
+      anchorDay: 30,
+      monthlyCycleStartDay: 21,
+      accounts: accounts,
+      balanceInThb: (_) => 20000,
+      transactions: [transactions.first.copyWith(amount: 12000)],
+      items: [],
+      paidMarks: [],
+      budgets: budgets,
+    )!;
+    expect(overspent.budgetTotal, 0);
+    // A day-30 clear window may include two calendar-month ends after February.
+    final shortMonth = CashFlowForecastService.calculate(
+      today: DateTime(2026, 3, 1),
+      anchorDay: 30,
+      monthlyCycleStartDay: 1,
+      accounts: accounts,
+      balanceInThb: (_) => 20000,
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: budgets,
+    )!;
+    final afterShortMonth = CashFlowForecastService.calculateNextPeriod(
+      current: shortMonth,
+      today: DateTime(2026, 3, 1),
+      monthlyCycleStartDay: 1,
+      anchorDay: 30,
+      accounts: accounts,
+      transactions: [],
+      items: [],
+      paidMarks: [],
+      budgets: budgets,
+      plannedPurchases: [],
+    );
+    expect(shortMonth.budgetTotal, 0);
+    expect(afterShortMonth.budgetTotal, 20000);
+    expect(afterShortMonth.savingsTotal, 4000);
+  });
+
   group('forecast window', () {
     test('returns null when no clear day is set', () {
       final forecast = _forecast(today: DateTime(2026, 9, 25), anchorDay: null);

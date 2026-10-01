@@ -11,7 +11,7 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 
 /// Sheet เลือกงบ ([BudgetType.expense]) หรือแผนออม ([BudgetType.savings])
-/// ที่นำมาคำนวณในงวดถัดไป; บันทึกทันทีเมื่อสลับสวิตช์
+/// ที่นำมาคำนวณในทั้งสองงวด; บันทึกทันทีเมื่อสลับสวิตช์
 Future<void> showForecastBudgetPickerSheet(
   BuildContext context,
   BudgetType type,
@@ -72,7 +72,7 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Text(
               _isSavings
-                  ? 'ปิดแผนออมที่งวดถัดไปยังไม่ต้องกันเงิน'
+                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินในทั้งสองงวด'
                   : 'ปิดงบที่ไม่ต้องการนับ เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
               textAlign: TextAlign.center,
               style: TextStyle(
