@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
@@ -944,21 +945,34 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       icon: _selectedIcon,
       color: _selectedColor,
     );
+    final placeholder = PickerPreviewBox(
+      color: _selectedColor.withValues(alpha: 0.15),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    );
+    // Match AccountIconWidget's workaround for Web image lifetime.
+    final image = kIsWeb
+        ? Image.network(
+            _selectedIconUrl,
+            width: pickerPreviewSize,
+            height: pickerPreviewSize,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : placeholder,
+            errorBuilder: (context, error, stackTrace) => fallback,
+          )
+        : CachedNetworkImage(
+            imageUrl: _selectedIconUrl,
+            width: pickerPreviewSize,
+            height: pickerPreviewSize,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => placeholder,
+            errorWidget: (context, url, error) => fallback,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+          );
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadii.medium),
-      child: CachedNetworkImage(
-        imageUrl: _selectedIconUrl,
-        width: pickerPreviewSize,
-        height: pickerPreviewSize,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => PickerPreviewBox(
-          color: _selectedColor.withValues(alpha: 0.15),
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        ),
-        errorWidget: (context, url, error) => fallback,
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
-      ),
+      child: image,
     );
   }
 

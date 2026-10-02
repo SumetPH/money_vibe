@@ -1,5 +1,6 @@
 import 'package:csv/csv.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -919,18 +920,37 @@ class _PurchaseListItem extends StatelessWidget {
                     )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadii.small),
-                      child: CachedNetworkImage(
-                        imageUrl: purchase.logoUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => _TickerFallback(
-                          ticker: purchase.ticker,
-                          color: thumbnailColor,
-                        ),
-                        errorWidget: (context, url, error) => _TickerFallback(
-                          ticker: purchase.ticker,
-                          color: thumbnailColor,
-                        ),
-                      ),
+                      child: kIsWeb
+                          // Match the account icon workaround for Web image lifetime.
+                          ? Image.network(
+                              purchase.logoUrl,
+                              fit: BoxFit.contain,
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                  ? child
+                                  : _TickerFallback(
+                                      ticker: purchase.ticker,
+                                      color: thumbnailColor,
+                                    ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _TickerFallback(
+                                    ticker: purchase.ticker,
+                                    color: thumbnailColor,
+                                  ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: purchase.logoUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) => _TickerFallback(
+                                ticker: purchase.ticker,
+                                color: thumbnailColor,
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  _TickerFallback(
+                                    ticker: purchase.ticker,
+                                    color: thumbnailColor,
+                                  ),
+                            ),
                     ),
             ),
             const SizedBox(width: 12),
@@ -3081,20 +3101,38 @@ class _TradeListItem extends StatelessWidget {
                   ? _TickerFallback(ticker: trade.ticker, color: thumbnailColor)
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadii.small),
-                      child: CachedNetworkImage(
-                        imageUrl: trade.logoUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (_, _) => _TickerFallback(
-                          ticker: trade.ticker,
-                          color: thumbnailColor,
-                        ),
-                        errorWidget: (_, _, _) => _TickerFallback(
-                          ticker: trade.ticker,
-                          color: thumbnailColor,
-                        ),
-                        fadeInDuration: Duration.zero,
-                        fadeOutDuration: Duration.zero,
-                      ),
+                      child: kIsWeb
+                          // Match the account icon workaround for Web image lifetime.
+                          ? Image.network(
+                              trade.logoUrl,
+                              fit: BoxFit.contain,
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                  ? child
+                                  : _TickerFallback(
+                                      ticker: trade.ticker,
+                                      color: thumbnailColor,
+                                    ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _TickerFallback(
+                                    ticker: trade.ticker,
+                                    color: thumbnailColor,
+                                  ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: trade.logoUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (_, _) => _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              ),
+                              errorWidget: (_, _, _) => _TickerFallback(
+                                ticker: trade.ticker,
+                                color: thumbnailColor,
+                              ),
+                              fadeInDuration: Duration.zero,
+                              fadeOutDuration: Duration.zero,
+                            ),
                     ),
             ),
             const SizedBox(width: 12),
@@ -3242,20 +3280,41 @@ class _TradeListItem extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(
                                   AppRadii.small,
                                 ),
-                                child: CachedNetworkImage(
-                                  imageUrl: trade.logoUrl,
-                                  fit: BoxFit.contain,
-                                  placeholder: (_, _) => _TickerFallback(
-                                    ticker: trade.ticker,
-                                    color: thumbnailColor,
-                                  ),
-                                  errorWidget: (_, _, _) => _TickerFallback(
-                                    ticker: trade.ticker,
-                                    color: thumbnailColor,
-                                  ),
-                                  fadeInDuration: Duration.zero,
-                                  fadeOutDuration: Duration.zero,
-                                ),
+                                child: kIsWeb
+                                    // Match the account icon workaround for Web image lifetime.
+                                    ? Image.network(
+                                        trade.logoUrl,
+                                        fit: BoxFit.contain,
+                                        loadingBuilder:
+                                            (context, child, progress) =>
+                                                progress == null
+                                                ? child
+                                                : _TickerFallback(
+                                                    ticker: trade.ticker,
+                                                    color: thumbnailColor,
+                                                  ),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                _TickerFallback(
+                                                  ticker: trade.ticker,
+                                                  color: thumbnailColor,
+                                                ),
+                                      )
+                                    : CachedNetworkImage(
+                                        imageUrl: trade.logoUrl,
+                                        fit: BoxFit.contain,
+                                        placeholder: (_, _) => _TickerFallback(
+                                          ticker: trade.ticker,
+                                          color: thumbnailColor,
+                                        ),
+                                        errorWidget: (_, _, _) =>
+                                            _TickerFallback(
+                                              ticker: trade.ticker,
+                                              color: thumbnailColor,
+                                            ),
+                                        fadeInDuration: Duration.zero,
+                                        fadeOutDuration: Duration.zero,
+                                      ),
                               ),
                       ),
                       const SizedBox(width: 12),
