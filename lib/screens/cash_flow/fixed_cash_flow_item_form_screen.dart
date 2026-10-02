@@ -12,15 +12,20 @@ import '../../widgets/app_form_row.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/calculator_keyboard_host.dart';
-import '../../widgets/day_of_month_picker_sheet.dart';
-import 'cash_flow_forecast_scope.dart';
 import 'cash_flow_section.dart';
 
-/// ฟอร์มเพิ่ม/แก้ไขรายการเงินเข้าออก (ทุกเดือนหรือครั้งเดียว)
+/// ฟอร์มเพิ่ม/แก้ไขรายการเงินเข้าออกในลิสต์จำลองของงวด (ย้ายงวดได้)
 class FixedCashFlowItemFormScreen extends StatefulWidget {
   final FixedCashFlowItem? item;
 
-  const FixedCashFlowItemFormScreen({super.key, this.item});
+  /// งวดของรายการใหม่ (รายการที่แก้ไขใช้งวดของตัวเอง)
+  final CashFlowPeriod initialPeriod;
+
+  const FixedCashFlowItemFormScreen({
+    super.key,
+    this.item,
+    this.initialPeriod = CashFlowPeriod.current,
+  });
 
   @override
   State<FixedCashFlowItemFormScreen> createState() =>
@@ -37,9 +42,7 @@ class _FixedCashFlowItemFormScreenState
   late final TextEditingController _nameController;
   late final TextEditingController _amountController;
   late CashFlowDirection _direction;
-  late bool _isOneTime;
-  int? _dayOfMonth;
-  DateTime? _oneTimeDate;
+  late CashFlowPeriod _period;
   bool _isLoading = false;
 
   bool get _isEditing => widget.item != null;
@@ -61,9 +64,7 @@ class _FixedCashFlowItemFormScreenState
     _nameController = TextEditingController(text: item?.name ?? '');
     _amountController = TextEditingController();
     _direction = item?.direction ?? CashFlowDirection.outgoing;
-    _isOneTime = item?.isOneTime ?? false;
-    _dayOfMonth = item?.dayOfMonth;
-    _oneTimeDate = item?.oneTimeDate;
+    _period = item?.period ?? widget.initialPeriod;
     attachCalculatorKeyboard();
     // ตั้งหลัง attach เพื่อให้ได้รูปแบบตัวเลขพร้อมคอมมา
     if (item != null) _amountController.text = item.amount.toStringAsFixed(2);
@@ -98,8 +99,6 @@ class _FixedCashFlowItemFormScreenState
   String? _validate(String name, double? amount) {
     if (name.isEmpty) return 'กรุณากรอกชื่อรายการ';
     if (amount == null || amount <= 0) return 'กรุณากรอกจำนวนเงินมากกว่า 0';
-    if (_isOneTime && _oneTimeDate == null) return 'กรุณาเลือกวันที่';
-    if (!_isOneTime && _dayOfMonth == null) return 'กรุณาเลือกวันที่ในเดือน';
     return null;
   }
 
@@ -114,8 +113,6 @@ class _FixedCashFlowItemFormScreenState
     }
 
     final provider = context.read<CashFlowForecastProvider>();
-    final dayOfMonth = _isOneTime ? null : _dayOfMonth;
-    final oneTimeDate = _isOneTime ? _oneTimeDate : null;
     setState(() => _isLoading = true);
     try {
       final existing = widget.item;
@@ -124,19 +121,15 @@ class _FixedCashFlowItemFormScreenState
           name: name,
           amount: amount!,
           direction: _direction,
-          dayOfMonth: dayOfMonth,
-          oneTimeDate: oneTimeDate,
+          period: _period,
         );
       } else {
         await provider.updateItem(
-          FixedCashFlowItem(
-            id: existing.id,
+          existing.copyWith(
             name: name,
-            amount: amount!,
+            amount: amount,
             direction: _direction,
-            dayOfMonth: dayOfMonth,
-            oneTimeDate: oneTimeDate,
-            sortOrder: existing.sortOrder,
+            period: _period,
           ),
         );
       }
@@ -156,7 +149,7 @@ class _FixedCashFlowItemFormScreenState
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'ลบรายการ',
-      message: 'ต้องการลบ "${item.name}" และสถานะการติ๊กทั้งหมดของรายการนี้?',
+      message: 'ต้องการลบ "${item.name}" ออกจาก${item.period.label}?',
       confirmLabel: 'ลบ',
       isDestructive: true,
     );
@@ -172,30 +165,6 @@ class _FixedCashFlowItemFormScreenState
         _showMessage('ลบรายการไม่สำเร็จ กรุณาลองใหม่');
       }
     }
-  }
-
-  Future<void> _pickDayOfMonth() async {
-    _closeKeyboard();
-    final pick = await showDayOfMonthPickerSheet(
-      context: context,
-      title: 'เลือกวันที่ในเดือน',
-      selectedDay: _dayOfMonth,
-    );
-    if (pick == null || !mounted) return;
-    setState(() => _dayOfMonth = pick.day);
-  }
-
-  Future<void> _pickOneTimeDate() async {
-    _closeKeyboard();
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _oneTimeDate ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 5),
-    );
-    if (picked == null || !mounted) return;
-    setState(() => _oneTimeDate = picked);
   }
 
   @override
@@ -233,15 +202,16 @@ class _FixedCashFlowItemFormScreenState
                 margin: EdgeInsets.zero,
                 children: [_buildNameRow(isDarkMode)],
               ),
-              const AppSectionHeader(
-                'กำหนดการ',
-                padding: _sectionHeaderPadding,
+              cashFlowNote(
+                'ใส่เฉพาะเงินเข้า หรือรายจ่ายที่จ่ายจากบัญชีโดยตรง '
+                'ไม่ต้องใส่รายการที่รูดบัตร จ่ายบัตร หรืออยู่ในงบ/แผนออมแล้ว '
+                'เพราะนับให้อยู่แล้ว',
+                isDarkMode,
               ),
-              _buildScheduleTabs(),
-              const SizedBox(height: 10),
-              AppInsetCard(
-                margin: EdgeInsets.zero,
-                children: [_buildScheduleRow()],
+              const AppSectionHeader('งวด', padding: _sectionHeaderPadding),
+              buildCashFlowPeriodTabs(
+                _period,
+                (period) => setState(() => _period = period),
               ),
               if (_isEditing)
                 Padding(
@@ -297,21 +267,6 @@ class _FixedCashFlowItemFormScreenState
     ],
   );
 
-  Widget _buildScheduleTabs() => AppSegmentedTabs(
-    segments: [
-      AppSegment(
-        label: 'ทุกเดือน',
-        isSelected: !_isOneTime,
-        onTap: () => setState(() => _isOneTime = false),
-      ),
-      AppSegment(
-        label: 'ครั้งเดียว',
-        isSelected: _isOneTime,
-        onTap: () => setState(() => _isOneTime = true),
-      ),
-    ],
-  );
-
   Widget _buildNameRow(bool isDarkMode) {
     final textSecondary = AppColors.textSecondaryFor(isDarkMode);
     return AppFormRow(
@@ -342,26 +297,6 @@ class _FixedCashFlowItemFormScreenState
           color: AppColors.textPrimaryFor(isDarkMode),
         ),
       ),
-    );
-  }
-
-  Widget _buildScheduleRow() {
-    final date = _oneTimeDate;
-    if (_isOneTime) {
-      return AppFormRow(
-        icon: Icons.event_rounded,
-        label: 'วันที่',
-        value: date == null
-            ? 'เลือกวันที่'
-            : '${formatCashFlowDate(date)} ${date.year}',
-        onTap: _pickOneTimeDate,
-      );
-    }
-    return AppFormRow(
-      icon: Icons.calendar_today_rounded,
-      label: 'วันที่ในเดือน',
-      value: _dayOfMonth == null ? 'เลือกวัน' : 'ทุกวันที่ $_dayOfMonth',
-      onTap: _pickDayOfMonth,
     );
   }
 }

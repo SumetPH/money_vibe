@@ -6,7 +6,6 @@ import '../../providers/budget_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../models/fixed_cash_flow_item.dart';
 import '../../services/cash_flow_forecast_service.dart';
 
 const _thaiShortMonths = [
@@ -27,28 +26,6 @@ const _thaiShortMonths = [
 /// เช่น "29 ต.ค."
 String formatCashFlowDate(DateTime date) =>
     '${date.day} ${_thaiShortMonths[date.month - 1]}';
-
-/// เช่น "ทุกวันที่ 25" หรือ "ครั้งเดียว 15 ต.ค. 2026"
-String cashFlowScheduleLabel(FixedCashFlowItem item) {
-  final once = item.oneTimeDate;
-  return once == null
-      ? 'ทุกวันที่ ${item.dayOfMonth}'
-      : 'ครั้งเดียว ${formatCashFlowDate(once)} ${once.year}';
-}
-
-/// เรียงรายการเงินเข้าออกทั้งหมด: รายการทุกเดือนตามวันที่ในเดือน แล้วรายการครั้งเดียวตามวันที่
-/// (วันเดียวกันเรียงตามชื่อ)
-List<FixedCashFlowItem> sortCashFlowItems(List<FixedCashFlowItem> items) {
-  int compare(FixedCashFlowItem a, FixedCashFlowItem b) {
-    if (a.isOneTime != b.isOneTime) return a.isOneTime ? 1 : -1;
-    final byDate = a.isOneTime
-        ? a.oneTimeDate!.compareTo(b.oneTimeDate!)
-        : a.dayOfMonth!.compareTo(b.dayOfMonth!);
-    return byDate != 0 ? byDate : a.name.compareTo(b.name);
-  }
-
-  return [...items]..sort(compare);
-}
 
 /// คำนวณ forecast จาก provider ที่เกี่ยวข้อง และ rebuild เมื่อ provider เปลี่ยน
 /// (null เมื่อยังไม่ได้ตั้งวันเคลียร์ยอด)

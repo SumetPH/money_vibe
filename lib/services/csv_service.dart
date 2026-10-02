@@ -501,8 +501,6 @@ class CsvService {
         'group_name',
         'budget_type',
         'is_hidden',
-        'is_excluded_from_cash_forecast',
-        'is_excluded_from_next_cash_forecast',
       ],
     ];
 
@@ -518,8 +516,6 @@ class CsvService {
         budget.groupName ?? '',
         budget.type.name,
         budget.isHidden ? 1 : 0,
-        budget.isExcludedFromCashForecast ? 1 : 0,
-        budget.isExcludedFromNextCashForecast ? 1 : 0,
       ]);
     }
 
@@ -1053,14 +1049,6 @@ class CsvService {
           isHidden:
               row.length > 9 &&
               (int.tryParse(row[9]?.toString() ?? '') ?? 0) == 1,
-          isExcludedFromCashForecast:
-              row.length > 10 &&
-              (int.tryParse(row[10]?.toString() ?? '') ?? 0) == 1,
-          // backup เก่าไม่มีคอลัมน์งวดถัดไป ใช้ค่าเดียวกับงวดนี้
-          isExcludedFromNextCashForecast: row.length > 11
-              ? (int.tryParse(row[11]?.toString() ?? '') ?? 0) == 1
-              : row.length > 10 &&
-                    (int.tryParse(row[10]?.toString() ?? '') ?? 0) == 1,
         ),
       );
     }

@@ -13,6 +13,7 @@ import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 import '../models/fixed_cash_flow_item.dart';
 import '../models/planned_purchase.dart';
+import '../models/budget_forecast_setting.dart';
 import 'supabase_adapters/account_adapter.dart';
 import 'supabase_adapters/budget_adapter.dart';
 import 'supabase_adapters/cash_flow_adapter.dart';
@@ -386,18 +387,6 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _cashFlowAdapter.deleteFixedCashFlowItem(id);
 
   @override
-  Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks() =>
-      _cashFlowAdapter.getFixedCashFlowPaidMarks();
-
-  @override
-  Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark) =>
-      _cashFlowAdapter.upsertFixedCashFlowPaidMark(mark);
-
-  @override
-  Future<void> deleteFixedCashFlowPaidMark(String itemId, String month) =>
-      _cashFlowAdapter.deleteFixedCashFlowPaidMark(itemId, month);
-
-  @override
   Future<List<PlannedPurchase>> getPlannedPurchases() =>
       _cashFlowAdapter.getPlannedPurchases();
 
@@ -412,6 +401,20 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> deletePlannedPurchase(String id) =>
       _cashFlowAdapter.deletePlannedPurchase(id);
+
+  @override
+  Future<List<BudgetForecastSetting>> getBudgetForecastSettings() =>
+      _cashFlowAdapter.getBudgetForecastSettings();
+
+  @override
+  Future<void> upsertBudgetForecastSetting(BudgetForecastSetting setting) =>
+      _cashFlowAdapter.upsertBudgetForecastSetting(setting);
+
+  @override
+  Future<void> deleteBudgetForecastSetting(
+    String budgetId,
+    DateTime periodEnd,
+  ) => _cashFlowAdapter.deleteBudgetForecastSetting(budgetId, periodEnd);
 
   // ── Budgets ────────────────────────────────────────────────────────────────
 
@@ -567,13 +570,12 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     log('Deleted ${stockTrades.length} stock trades');
 
     // ตารางที่ไม่มี foreign key แบบ cascade ไปยัง accounts จึงต้องลบเองตาม user_id
-    // (portfolio_annual_reports ไม่มี user_id แต่ถูกลบตาม accounts อยู่แล้ว;
-    // paid marks ลบก่อนรายการเงินเข้าออกที่อ้างถึง)
+    // (portfolio_annual_reports ไม่มี user_id แต่ถูกลบตาม accounts อยู่แล้ว)
     for (final table in const [
       'stock_purchases',
-      'fixed_cash_flow_paid_marks',
       'fixed_cash_flow_items',
       'planned_purchases',
+      'budget_forecast_settings',
     ]) {
       final deleted = await client
           .from(table)

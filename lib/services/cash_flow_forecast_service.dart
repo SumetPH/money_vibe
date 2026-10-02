@@ -1,5 +1,6 @@
 import '../models/account.dart';
 import '../models/budget.dart';
+import '../models/budget_forecast_setting.dart';
 import '../models/fixed_cash_flow_item.dart';
 import '../models/planned_purchase.dart';
 import '../models/transaction.dart';
@@ -20,26 +21,15 @@ class LiquidBalanceLine {
   });
 }
 
-/// รายการประจำหนึ่งครั้งที่ตกอยู่ใน forecast window
-class CashFlowItemLine {
-  final FixedCashFlowItem item;
-  final DateTime date;
-  final bool isMarked;
+/// ยอดรวมของลิสต์จำลองเงินเข้าออก: นับเฉพาะรายการที่ยังไม่ติ๊ก
+double _itemTotal(List<FixedCashFlowItem> items, {required bool isIncoming}) =>
+    items
+        .where((i) => !i.isDone && i.isIncoming == isIncoming)
+        .fold(0.0, (sum, i) => sum + i.amount);
 
-  /// ยังไม่ติ๊กทั้งที่วันที่ของรายการเลยวันนี้ไปแล้ว
-  final bool isOverdueUnmarked;
-
-  const CashFlowItemLine({
-    required this.item,
-    required this.date,
-    required this.isMarked,
-    required this.isOverdueUnmarked,
-  });
-
-  bool get isCounted => !isMarked;
-  String get monthKey => cashFlowMonthKey(date);
-  double get signedAmount => item.signedAmount;
-}
+/// ยอดรวมของลิสต์อยากซื้อ: นับเฉพาะรายการที่ติ๊กให้นำมาคำนวณ
+double _purchaseTotal(List<PlannedPurchase> purchases) =>
+    purchases.where((p) => p.isIncluded).fold(0.0, (sum, p) => sum + p.amount);
 
 /// ภาระของบัตรเครดิตหนึ่งใบใน forecast window
 class CardObligationLine {
@@ -64,24 +54,26 @@ class BudgetRemainingLine {
   final double spent;
   final DateTime cycleStart;
   final DateTime cycleEnd;
+  final bool isIncluded;
 
-  /// อยู่ใน forecast งวดถัดไป (ใช้การเลือกงบของงวดถัดไป)
-  final bool isNextPeriod;
+  /// ยอดสมมติ (what-if) ของงวดนี้; null = ใช้ยอดงบจริง
+  final double? whatIfAmount;
 
   const BudgetRemainingLine({
     required this.budget,
     required this.spent,
     required this.cycleStart,
     required this.cycleEnd,
-    this.isNextPeriod = false,
+    this.isIncluded = true,
+    this.whatIfAmount,
   });
 
-  double get remaining =>
-      CashFlowForecastService._positive(budget.amount - spent);
+  bool get hasWhatIf => whatIfAmount != null;
 
-  bool get isIncluded => isNextPeriod
-      ? !budget.isExcludedFromNextCashForecast
-      : !budget.isExcludedFromCashForecast;
+  /// ยอดงบที่ใช้คำนวณ (ยอดสมมติถ้ามี)
+  double get amount => whatIfAmount ?? budget.amount;
+
+  double get remaining => CashFlowForecastService._positive(amount - spent);
 }
 
 /// ยอดที่ยังไม่สรุปของบัตรหนึ่งใบ ซึ่งสรุปหลังวันเคลียร์ยอดของงวดนี้ จึงไปอยู่งวดถัดไป
@@ -104,33 +96,29 @@ class NextPeriodForecast {
   final DateTime windowStart;
   final DateTime windowEnd;
   final double startingLeftover;
-  final List<CashFlowItemLine> itemLines;
+  final List<FixedCashFlowItem> items; // ลิสต์จำลองของงวดถัดไป
   final List<NextCardLine> cardLines;
   final List<BudgetRemainingLine> budgetLines; // รวมงบที่ถูกตัดออก
 
   /// แผนออม (งบประเภทออม/ลงทุน) นับเต็มเป้าหมาย เพราะไม่มีการติดตามยอดที่ออมแล้ว
   /// (รวมแผนที่ผู้ใช้ตัดออก เพื่อให้ UI เลือกได้)
   final List<BudgetRemainingLine> savingsPlans;
-  final List<PlannedPurchase> purchases;
+  final List<PlannedPurchase> purchases; // ลิสต์อยากซื้อของงวดถัดไป
 
   const NextPeriodForecast({
     required this.windowStart,
     required this.windowEnd,
     required this.startingLeftover,
-    required this.itemLines,
+    required this.items,
     required this.cardLines,
     required this.budgetLines,
     required this.savingsPlans,
     required this.purchases,
   });
 
-  double get incomingTotal => itemLines
-      .where((l) => l.isCounted && l.item.isIncoming)
-      .fold(0.0, (sum, l) => sum + l.item.amount);
+  double get incomingTotal => _itemTotal(items, isIncoming: true);
 
-  double get outgoingTotal => itemLines
-      .where((l) => l.isCounted && !l.item.isIncoming)
-      .fold(0.0, (sum, l) => sum + l.item.amount);
+  double get outgoingTotal => _itemTotal(items, isIncoming: false);
 
   double get cardTotal => cardLines.fold(0.0, (sum, l) => sum + l.total);
 
@@ -140,11 +128,9 @@ class NextPeriodForecast {
 
   double get savingsTotal => savingsPlans
       .where((l) => l.isIncluded)
-      .fold(0.0, (sum, l) => sum + l.budget.amount);
+      .fold(0.0, (sum, l) => sum + l.amount);
 
-  double get purchaseTotal => purchases
-      .where((p) => p.isIncluded)
-      .fold(0.0, (sum, p) => sum + p.amount);
+  double get purchaseTotal => _purchaseTotal(purchases);
 
   double get projectedLeftover =>
       startingLeftover +
@@ -160,7 +146,7 @@ class CashFlowForecast {
   final DateTime windowStart;
   final DateTime windowEnd;
   final List<LiquidBalanceLine> liquidLines;
-  final List<CashFlowItemLine> itemLines;
+  final List<FixedCashFlowItem> items; // ลิสต์จำลองของงวดนี้
   final List<CardObligationLine> cardLines;
   final List<BudgetRemainingLine> budgetLines;
   final List<BudgetRemainingLine> savingsPlans;
@@ -173,7 +159,7 @@ class CashFlowForecast {
     required this.windowStart,
     required this.windowEnd,
     required this.liquidLines,
-    required this.itemLines,
+    required this.items,
     required this.cardLines,
     this.cardBills = const {},
     this.budgetLines = const [],
@@ -185,13 +171,9 @@ class CashFlowForecast {
       .where((l) => l.isIncluded)
       .fold(0.0, (sum, l) => sum + l.balance);
 
-  double get incomingTotal => itemLines
-      .where((l) => l.isCounted && l.item.isIncoming)
-      .fold(0.0, (sum, l) => sum + l.item.amount);
+  double get incomingTotal => _itemTotal(items, isIncoming: true);
 
-  double get outgoingTotal => itemLines
-      .where((l) => l.isCounted && !l.item.isIncoming)
-      .fold(0.0, (sum, l) => sum + l.item.amount);
+  double get outgoingTotal => _itemTotal(items, isIncoming: false);
 
   double get cardTotal => cardLines.fold(0.0, (sum, l) => sum + l.outstanding);
 
@@ -201,11 +183,9 @@ class CashFlowForecast {
 
   double get savingsTotal => savingsPlans
       .where((l) => l.isIncluded)
-      .fold(0.0, (sum, l) => sum + l.budget.amount);
+      .fold(0.0, (sum, l) => sum + l.amount);
 
-  double get purchaseTotal => purchases
-      .where((p) => p.isIncludedCurrent)
-      .fold(0.0, (sum, p) => sum + p.amount);
+  double get purchaseTotal => _purchaseTotal(purchases);
 
   double get projectedLeftover =>
       liquidTotal +
@@ -234,8 +214,8 @@ class CashFlowForecastService {
     required double Function(Account account) balanceInThb,
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
-    required List<FixedCashFlowPaidMark> paidMarks,
     List<Budget> budgets = const [],
+    List<BudgetForecastSetting> budgetSettings = const [],
     List<PlannedPurchase> plannedPurchases = const [],
     int monthlyCycleStartDay = 1,
   }) {
@@ -247,15 +227,20 @@ class CashFlowForecastService {
       clampedDayOfMonth(settleDate.year, settleDate.month - 1, anchorDay),
     );
     final cardBills = _cardBills(accounts, transactions, day);
+    final settings = _settingsFor(budgetSettings, settleDate);
 
     return CashFlowForecast(
       windowStart: windowStart,
       windowEnd: settleDate,
       liquidLines: _liquidLines(accounts, balanceInThb),
-      itemLines: _itemLines(items, paidMarks, windowStart, settleDate, day),
+      items: _inPeriod(items, CashFlowPeriod.current, (i) => i.period),
       cardLines: _cardLines(accounts, cardBills, settleDate, day),
       cardBills: cardBills,
-      purchases: plannedPurchases,
+      purchases: _inPeriod(
+        plannedPurchases,
+        CashFlowPeriod.current,
+        (p) => p.period,
+      ),
       budgetLines: _budgetLines(
         budgets,
         accounts,
@@ -265,6 +250,7 @@ class CashFlowForecastService {
         day,
         settleDate,
         BudgetType.expense,
+        settings,
       ),
       savingsPlans: _budgetLines(
         budgets,
@@ -275,12 +261,13 @@ class CashFlowForecastService {
         day,
         settleDate,
         BudgetType.savings,
+        settings,
       ),
     );
   }
 
   /// คาดการณ์งวดถัดไป (ถึงวันเคลียร์ยอดครั้งถัดไป) ต่อจาก [current] โดยนับเพิ่ม:
-  /// รายการประจำของงวดถัดไป, ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้,
+  /// ลิสต์จำลองเงินเข้าออกของงวดถัดไป, ยอดที่ยังไม่สรุปของบิลที่สรุปหลังวันเคลียร์ยอดของงวดนี้,
   /// งบและแผนออมของรอบที่สิ้นสุดในงวดถัดไป; หักรายการอยากซื้อที่เลือกสำหรับงวดถัดไป
   static NextPeriodForecast calculateNextPeriod({
     required CashFlowForecast current,
@@ -290,9 +277,9 @@ class CashFlowForecastService {
     required List<Account> accounts,
     required List<AppTransaction> transactions,
     required List<FixedCashFlowItem> items,
-    required List<FixedCashFlowPaidMark> paidMarks,
     required List<Budget> budgets,
     required List<PlannedPurchase> plannedPurchases,
+    List<BudgetForecastSetting> budgetSettings = const [],
   }) {
     final day = _dayOf(today);
     final settleDate = current.windowEnd;
@@ -302,12 +289,13 @@ class CashFlowForecastService {
       settleDate.month + 1,
       anchorDay,
     );
+    final settings = _settingsFor(budgetSettings, windowEnd);
 
     return NextPeriodForecast(
       windowStart: windowStart,
       windowEnd: windowEnd,
       startingLeftover: current.projectedLeftover,
-      itemLines: _itemLines(items, paidMarks, windowStart, windowEnd, day),
+      items: _inPeriod(items, CashFlowPeriod.next, (i) => i.period),
       cardLines: [
         for (final card in accounts)
           if (current.cardBills[card.id] case final bills?)
@@ -322,7 +310,7 @@ class CashFlowForecastService {
         windowStart,
         windowEnd,
         BudgetType.expense,
-        isNextPeriod: true,
+        settings,
       ),
       savingsPlans: _budgetLines(
         budgets,
@@ -333,9 +321,13 @@ class CashFlowForecastService {
         windowStart,
         windowEnd,
         BudgetType.savings,
-        isNextPeriod: true,
+        settings,
       ),
-      purchases: plannedPurchases,
+      purchases: _inPeriod(
+        plannedPurchases,
+        CashFlowPeriod.next,
+        (p) => p.period,
+      ),
     );
   }
 
@@ -352,36 +344,14 @@ class CashFlowForecastService {
         ),
   ];
 
-  static List<CashFlowItemLine> _itemLines(
-    List<FixedCashFlowItem> items,
-    List<FixedCashFlowPaidMark> paidMarks,
-    DateTime windowStart,
-    DateTime windowEnd,
-    DateTime today,
-  ) {
-    final marked = {for (final m in paidMarks) '${m.itemId}|${m.month}'};
-    final lines = <CashFlowItemLine>[];
-    for (final item in items) {
-      for (final date in item.occurrencesBetween(windowStart, windowEnd)) {
-        final isMarked = marked.contains(
-          '${item.id}|${cashFlowMonthKey(date)}',
-        );
-        lines.add(
-          CashFlowItemLine(
-            item: item,
-            date: date,
-            isMarked: isMarked,
-            isOverdueUnmarked: !isMarked && date.isBefore(today),
-          ),
-        );
-      }
-    }
-    lines.sort((a, b) {
-      final byDate = a.date.compareTo(b.date);
-      return byDate != 0 ? byDate : a.item.name.compareTo(b.item.name);
-    });
-    return lines;
-  }
+  static List<T> _inPeriod<T>(
+    List<T> rows,
+    CashFlowPeriod period,
+    CashFlowPeriod Function(T row) periodOf,
+  ) => [
+    for (final row in rows)
+      if (periodOf(row) == period) row,
+  ];
 
   /// บิลของบัตรเครดิตทุกใบที่ตั้งวันสรุปยอดแล้ว (bills เรียงใหม่ → เก่า)
   static Map<String, List<CreditCardBill>> _cardBills(
@@ -495,9 +465,9 @@ class CashFlowForecastService {
     int monthlyCycleStartDay,
     DateTime windowStart,
     DateTime windowEnd,
-    BudgetType type, {
-    bool isNextPeriod = false,
-  }) {
+    BudgetType type,
+    Map<String, BudgetForecastSetting> settings,
+  ) {
     final lines = <BudgetRemainingLine>[];
     var month = monthlyCycleReportingMonth(today, monthlyCycleStartDay);
     while (true) {
@@ -519,14 +489,18 @@ class CashFlowForecastService {
               )
             : <String, double>{};
         for (final budget in budgets) {
-          if (budget.type != type || budget.isHidden) continue;
+          if (budget.type != type) continue;
+          final setting = settings[budget.id];
           lines.add(
             BudgetRemainingLine(
               budget: budget,
               spent: BudgetSpendingService.spentFor(budget, spentByCategoryId),
               cycleStart: cycle.start,
               cycleEnd: cycleEnd,
-              isNextPeriod: isNextPeriod,
+              isIncluded:
+                  !(setting?.isExcludedFor(isHidden: budget.isHidden) ??
+                      budget.isHidden),
+              whatIfAmount: setting?.amount,
             ),
           );
         }
@@ -535,6 +509,15 @@ class CashFlowForecastService {
     }
     return lines;
   }
+
+  /// การตั้งค่างบของงวดที่เคลียร์ยอดวัน [periodEnd] (key = budget id)
+  static Map<String, BudgetForecastSetting> _settingsFor(
+    List<BudgetForecastSetting> settings,
+    DateTime periodEnd,
+  ) => {
+    for (final s in settings)
+      if (_dayOf(s.periodEnd) == periodEnd) s.budgetId: s,
+  };
 
   static DateTime _firstAnchorOnOrAfter(int anchorDay, DateTime from) {
     final sameMonth = clampedDayOfMonth(from.year, from.month, anchorDay);

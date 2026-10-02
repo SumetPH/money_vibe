@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/fixed_cash_flow_item.dart';
 import '../../models/planned_purchase.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -13,11 +14,18 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/calculator_keyboard_host.dart';
 import 'cash_flow_section.dart';
 
-/// ฟอร์มเพิ่ม/แก้ไขรายการอยากซื้อ
+/// ฟอร์มเพิ่ม/แก้ไขรายการอยากซื้อในลิสต์ของงวด (ย้ายงวดได้)
 class PlannedPurchaseFormScreen extends StatefulWidget {
   final PlannedPurchase? purchase;
 
-  const PlannedPurchaseFormScreen({super.key, this.purchase});
+  /// งวดของรายการใหม่ (รายการที่แก้ไขใช้งวดของตัวเอง)
+  final CashFlowPeriod initialPeriod;
+
+  const PlannedPurchaseFormScreen({
+    super.key,
+    this.purchase,
+    this.initialPeriod = CashFlowPeriod.current,
+  });
 
   @override
   State<PlannedPurchaseFormScreen> createState() =>
@@ -32,6 +40,7 @@ class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
   final _amountFocusNode = FocusNode();
   late final TextEditingController _nameController;
   late final TextEditingController _amountController;
+  late CashFlowPeriod _period;
   bool _isLoading = false;
 
   bool get _isEditing => widget.purchase != null;
@@ -51,6 +60,7 @@ class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
     super.initState();
     final purchase = widget.purchase;
     _nameController = TextEditingController(text: purchase?.name ?? '');
+    _period = purchase?.period ?? widget.initialPeriod;
     _amountController = TextEditingController();
     attachCalculatorKeyboard();
     // ตั้งหลัง attach เพื่อให้ได้รูปแบบตัวเลขพร้อมคอมมา
@@ -97,10 +107,14 @@ class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
     try {
       final existing = widget.purchase;
       if (existing == null) {
-        await provider.addPlannedPurchase(name: name, amount: amount);
+        await provider.addPlannedPurchase(
+          name: name,
+          amount: amount,
+          period: _period,
+        );
       } else {
         await provider.updatePlannedPurchase(
-          existing.copyWith(name: name, amount: amount),
+          existing.copyWith(name: name, amount: amount, period: _period),
         );
       }
       if (mounted) Navigator.pop(context);
@@ -119,7 +133,8 @@ class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'ลบรายการ',
-      message: 'ต้องการลบ "${purchase.name}" ออกจากรายการอยากซื้อ?',
+      message:
+          'ต้องการลบ "${purchase.name}" ออกจากรายการอยากซื้อ${purchase.period.label}?',
       confirmLabel: 'ลบ',
       isDestructive: true,
     );
@@ -171,6 +186,11 @@ class _PlannedPurchaseFormScreenState extends State<PlannedPurchaseFormScreen>
               AppInsetCard(
                 margin: EdgeInsets.zero,
                 children: [_buildNameRow(isDarkMode)],
+              ),
+              const AppSectionHeader('งวด', padding: _sectionHeaderPadding),
+              buildCashFlowPeriodTabs(
+                _period,
+                (period) => setState(() => _period = period),
               ),
               if (_isEditing)
                 Padding(

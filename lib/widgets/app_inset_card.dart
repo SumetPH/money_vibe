@@ -73,9 +73,14 @@ class AppInsetCard extends StatelessWidget {
         border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+      // Ink paints on the nearest Material; keeping it inside the clipped
+      // container makes row splashes follow the rounded corners.
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
 

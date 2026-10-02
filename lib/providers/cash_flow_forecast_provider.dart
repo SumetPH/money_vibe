@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/account.dart';
 import '../models/budget.dart';
+import '../models/budget_forecast_setting.dart';
 import '../models/fixed_cash_flow_item.dart';
 import '../models/planned_purchase.dart';
 import '../models/transaction.dart';
@@ -10,7 +11,8 @@ import '../repositories/database_repository.dart';
 import '../services/cash_flow_forecast_service.dart';
 import '../services/database_manager.dart';
 
-/// State ของรายการเงินเข้าออกประจำ, paid mark และรายการอยากซื้อสำหรับ Cash-flow forecast
+/// State ของลิสต์จำลองรายการเงินเข้าออกและรายการอยากซื้อ (แยกงวดนี้/งวดถัดไป)
+/// และการตั้งค่างบรายงวด สำหรับ Cash-flow forecast
 class CashFlowForecastProvider extends ChangeNotifier {
   static const _sortOrderStep = 10;
 
@@ -18,15 +20,16 @@ class CashFlowForecastProvider extends ChangeNotifier {
   final DatabaseManager _dbManager = DatabaseManager();
 
   final List<FixedCashFlowItem> _items = [];
-  final List<FixedCashFlowPaidMark> _paidMarks = [];
   final List<PlannedPurchase> _plannedPurchases = [];
+  final List<BudgetForecastSetting> _budgetSettings = [];
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
   List<FixedCashFlowItem> get items => List.unmodifiable(_items);
-  List<FixedCashFlowPaidMark> get paidMarks => List.unmodifiable(_paidMarks);
   List<PlannedPurchase> get plannedPurchases =>
       List.unmodifiable(_plannedPurchases);
+  List<BudgetForecastSetting> get budgetSettings =>
+      List.unmodifiable(_budgetSettings);
 
   DatabaseRepository get _db => _dbManager.repository;
 
@@ -38,25 +41,25 @@ class CashFlowForecastProvider extends ChangeNotifier {
     try {
       final results = await Future.wait([
         _db.getFixedCashFlowItems(),
-        _db.getFixedCashFlowPaidMarks(),
         _db.getPlannedPurchases(),
+        _db.getBudgetForecastSettings(),
       ]);
       final items = results[0] as List<FixedCashFlowItem>;
-      final marks = results[1] as List<FixedCashFlowPaidMark>;
-      final purchases = results[2] as List<PlannedPurchase>;
+      final purchases = results[1] as List<PlannedPurchase>;
+      final budgetSettings = results[2] as List<BudgetForecastSetting>;
       _items
         ..clear()
         ..addAll(
           [...items]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
         );
-      _paidMarks
-        ..clear()
-        ..addAll(marks);
       _plannedPurchases
         ..clear()
         ..addAll(
           [...purchases]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
         );
+      _budgetSettings
+        ..clear()
+        ..addAll(budgetSettings);
     } catch (e) {
       debugPrint('CashFlowForecastProvider: Init error: $e');
       rethrow;
@@ -82,13 +85,13 @@ class CashFlowForecastProvider extends ChangeNotifier {
     today: today ?? DateTime.now(),
     anchorDay: anchorDay,
     budgets: budgets,
+    budgetSettings: _budgetSettings,
     plannedPurchases: _plannedPurchases,
     monthlyCycleStartDay: monthlyCycleStartDay,
     accounts: accounts,
     balanceInThb: balanceInThb,
     transactions: transactions,
     items: _items,
-    paidMarks: _paidMarks,
   );
 
   NextPeriodForecast buildNextPeriod({
@@ -107,73 +110,66 @@ class CashFlowForecastProvider extends ChangeNotifier {
     accounts: accounts,
     transactions: transactions,
     items: _items,
-    paidMarks: _paidMarks,
     budgets: budgets,
+    budgetSettings: _budgetSettings,
     plannedPurchases: _plannedPurchases,
   );
 
   // ── Items ─────────────────────────────────────────────────────────────────
 
-  /// เพิ่มรายการทุกเดือน ([dayOfMonth]) หรือครั้งเดียว ([oneTimeDate])
   Future<void> addItem({
     required String name,
     required double amount,
     required CashFlowDirection direction,
-    int? dayOfMonth,
-    DateTime? oneTimeDate,
-  }) async {
-    final sortOrder = _nextSortOrder(_items.map((i) => i.sortOrder));
-    final item = FixedCashFlowItem(
+    required CashFlowPeriod period,
+  }) => _saveItem(
+    FixedCashFlowItem(
       id: _uuid.v4(),
       name: name,
       amount: amount,
-      dayOfMonth: dayOfMonth,
-      oneTimeDate: oneTimeDate,
       direction: direction,
-      sortOrder: sortOrder,
-    );
-    final previous = List<FixedCashFlowItem>.from(_items);
-    _items.add(item);
-    notifyListeners();
-    try {
-      await _db.insertFixedCashFlowItem(item);
-    } catch (e) {
-      debugPrint('CashFlowForecastProvider: Error adding item: $e');
-      _restoreItems(previous);
-      rethrow;
-    }
-  }
+      period: period,
+      sortOrder: _nextSortOrder(_items.map((i) => i.sortOrder)),
+    ),
+    isNew: true,
+  );
 
-  Future<void> updateItem(FixedCashFlowItem updated) async {
-    final index = _items.indexWhere((i) => i.id == updated.id);
-    if (index == -1) return;
+  /// ใช้ทั้งแก้ไขรายละเอียด ย้ายงวด และติ๊กว่าเกิดขึ้นแล้ว ([FixedCashFlowItem.isDone])
+  Future<void> updateItem(FixedCashFlowItem updated) =>
+      _saveItem(updated, isNew: false);
+
+  Future<void> _saveItem(FixedCashFlowItem item, {required bool isNew}) async {
+    final index = _items.indexWhere((i) => i.id == item.id);
+    if (!isNew && index == -1) return;
     final previous = List<FixedCashFlowItem>.from(_items);
-    _items[index] = updated;
+    if (isNew) {
+      _items.add(item);
+    } else {
+      _items[index] = item;
+    }
     notifyListeners();
     try {
-      await _db.updateFixedCashFlowItem(updated);
+      if (isNew) {
+        await _db.insertFixedCashFlowItem(item);
+      } else {
+        await _db.updateFixedCashFlowItem(item);
+      }
     } catch (e) {
-      debugPrint('CashFlowForecastProvider: Error updating item: $e');
+      debugPrint('CashFlowForecastProvider: Error saving item: $e');
       _restoreItems(previous);
       rethrow;
     }
   }
 
   Future<void> deleteItem(String id) async {
-    final previousItems = List<FixedCashFlowItem>.from(_items);
-    final previousMarks = List<FixedCashFlowPaidMark>.from(_paidMarks);
+    final previous = List<FixedCashFlowItem>.from(_items);
     _items.removeWhere((i) => i.id == id);
-    _paidMarks.removeWhere((m) => m.itemId == id);
     notifyListeners();
     try {
       await _db.deleteFixedCashFlowItem(id);
     } catch (e) {
       debugPrint('CashFlowForecastProvider: Error deleting item: $e');
-      _restoreItems(previousItems);
-      _paidMarks
-        ..clear()
-        ..addAll(previousMarks);
-      notifyListeners();
+      _restoreItems(previous);
       rethrow;
     }
   }
@@ -185,20 +181,86 @@ class CashFlowForecastProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// ลากเรียงลำดับในลิสต์ของ [period]; [newIndex] คือตำแหน่งสุดท้ายของรายการ
+  Future<void> reorderItems(
+    CashFlowPeriod period,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final previous = List<FixedCashFlowItem>.from(_items);
+    final changed = _reorderInPeriod(
+      _items,
+      period,
+      oldIndex,
+      newIndex,
+      periodOf: (i) => i.period,
+      sortOrderOf: (i) => i.sortOrder,
+      withSortOrder: (i, order) => i.copyWith(sortOrder: order),
+    );
+    if (changed.isEmpty) return;
+    notifyListeners();
+    try {
+      await Future.wait(changed.map(_db.updateFixedCashFlowItem));
+    } catch (e) {
+      debugPrint('CashFlowForecastProvider: Error reordering items: $e');
+      _restoreItems(previous);
+      rethrow;
+    }
+  }
+
   int _nextSortOrder(Iterable<int> sortOrders) => sortOrders.isEmpty
       ? 0
       : sortOrders.reduce((a, b) => a > b ? a : b) + _sortOrderStep;
+
+  /// เรียงลำดับใหม่เฉพาะแถวของ [period] ใน [rows] (แก้ [rows] ในที่) และคืนแถวที่ sortOrder เปลี่ยน
+  List<T> _reorderInPeriod<T>(
+    List<T> rows,
+    CashFlowPeriod period,
+    int oldIndex,
+    int newIndex, {
+    required CashFlowPeriod Function(T row) periodOf,
+    required int Function(T row) sortOrderOf,
+    required T Function(T row, int sortOrder) withSortOrder,
+  }) {
+    final subset = rows.where((r) => periodOf(r) == period).toList();
+    if (oldIndex < 0 ||
+        oldIndex >= subset.length ||
+        newIndex < 0 ||
+        newIndex >= subset.length ||
+        oldIndex == newIndex) {
+      return const [];
+    }
+    final moved = subset.removeAt(oldIndex);
+    subset.insert(newIndex, moved);
+    final renumbered = [
+      for (var i = 0; i < subset.length; i++)
+        withSortOrder(subset[i], i * _sortOrderStep),
+    ];
+    final changed = [
+      for (var i = 0; i < subset.length; i++)
+        if (sortOrderOf(subset[i]) != sortOrderOf(renumbered[i])) renumbered[i],
+    ];
+    // ลำดับในลิสต์ของงวดอื่นไม่เปลี่ยน; sortOrder เทียบกันเฉพาะในงวดเดียวกัน
+    final others = rows.where((r) => periodOf(r) != period).toList();
+    rows
+      ..clear()
+      ..addAll(others)
+      ..addAll(renumbered);
+    return changed;
+  }
 
   // ── Planned purchases ─────────────────────────────────────────────────────
 
   Future<void> addPlannedPurchase({
     required String name,
     required double amount,
+    required CashFlowPeriod period,
   }) async {
     final purchase = PlannedPurchase(
       id: _uuid.v4(),
       name: name,
       amount: amount,
+      period: period,
       sortOrder: _nextSortOrder(_plannedPurchases.map((p) => p.sortOrder)),
     );
     final previous = List<PlannedPurchase>.from(_plannedPurchases);
@@ -213,7 +275,7 @@ class CashFlowForecastProvider extends ChangeNotifier {
     }
   }
 
-  /// ใช้ทั้งแก้ไขรายละเอียดและเปิด/ปิดการนับ ([PlannedPurchase.isIncluded])
+  /// ใช้ทั้งแก้ไขรายละเอียด ย้ายงวด และติ๊กให้นำมาคำนวณ ([PlannedPurchase.isIncluded])
   Future<void> updatePlannedPurchase(PlannedPurchase updated) async {
     final index = _plannedPurchases.indexWhere((p) => p.id == updated.id);
     if (index == -1) return;
@@ -242,6 +304,33 @@ class CashFlowForecastProvider extends ChangeNotifier {
     }
   }
 
+  /// ลากเรียงลำดับในลิสต์อยากซื้อของ [period]; [newIndex] คือตำแหน่งสุดท้ายของรายการ
+  Future<void> reorderPlannedPurchases(
+    CashFlowPeriod period,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final previous = List<PlannedPurchase>.from(_plannedPurchases);
+    final changed = _reorderInPeriod(
+      _plannedPurchases,
+      period,
+      oldIndex,
+      newIndex,
+      periodOf: (p) => p.period,
+      sortOrderOf: (p) => p.sortOrder,
+      withSortOrder: (p, order) => p.copyWith(sortOrder: order),
+    );
+    if (changed.isEmpty) return;
+    notifyListeners();
+    try {
+      await Future.wait(changed.map(_db.updatePlannedPurchase));
+    } catch (e) {
+      debugPrint('CashFlowForecastProvider: Error reordering purchases: $e');
+      _restorePurchases(previous);
+      rethrow;
+    }
+  }
+
   void _restorePurchases(List<PlannedPurchase> previous) {
     _plannedPurchases
       ..clear()
@@ -249,42 +338,50 @@ class CashFlowForecastProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Paid marks ────────────────────────────────────────────────────────────
+  // ── Budget settings per window ────────────────────────────────────────────
 
-  bool isMarked(String itemId, String month) =>
-      _paidMarks.any((m) => m.itemId == itemId && m.month == month);
+  /// การตั้งค่างบ [budgetId] ของงวดที่เคลียร์ยอดวัน [periodEnd] (ค่าเริ่มต้นถ้ายังไม่ตั้ง)
+  BudgetForecastSetting budgetSettingFor(String budgetId, DateTime periodEnd) =>
+      _budgetSettings
+          .where(
+            (s) => s.budgetId == budgetId && _isSameDay(s.periodEnd, periodEnd),
+          )
+          .firstOrNull ??
+      BudgetForecastSetting(
+        id: _uuid.v4(),
+        budgetId: budgetId,
+        periodEnd: DateTime(periodEnd.year, periodEnd.month, periodEnd.day),
+      );
 
-  Future<void> setMarked({
-    required String itemId,
-    required String month,
-    required bool isMarked,
-  }) async {
-    if (this.isMarked(itemId, month) == isMarked) return;
-    final previous = List<FixedCashFlowPaidMark>.from(_paidMarks);
-    final mark = FixedCashFlowPaidMark(
-      id: _uuid.v4(),
-      itemId: itemId,
-      month: month,
+  /// บันทึกการตั้งค่างบของงวด; ค่าที่กลับเป็นค่าเริ่มต้นจะถูกลบทิ้ง
+  Future<void> saveBudgetSetting(BudgetForecastSetting setting) async {
+    final previous = List<BudgetForecastSetting>.from(_budgetSettings);
+    _budgetSettings.removeWhere(
+      (s) =>
+          s.budgetId == setting.budgetId &&
+          _isSameDay(s.periodEnd, setting.periodEnd),
     );
-    if (isMarked) {
-      _paidMarks.add(mark);
-    } else {
-      _paidMarks.removeWhere((m) => m.itemId == itemId && m.month == month);
-    }
+    if (!setting.isDefault) _budgetSettings.add(setting);
     notifyListeners();
     try {
-      if (isMarked) {
-        await _db.upsertFixedCashFlowPaidMark(mark);
+      if (setting.isDefault) {
+        await _db.deleteBudgetForecastSetting(
+          setting.budgetId,
+          setting.periodEnd,
+        );
       } else {
-        await _db.deleteFixedCashFlowPaidMark(itemId, month);
+        await _db.upsertBudgetForecastSetting(setting);
       }
     } catch (e) {
-      debugPrint('CashFlowForecastProvider: Error toggling paid mark: $e');
-      _paidMarks
+      debugPrint('CashFlowForecastProvider: Error saving budget setting: $e');
+      _budgetSettings
         ..clear()
         ..addAll(previous);
       notifyListeners();
       rethrow;
     }
   }
+
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }

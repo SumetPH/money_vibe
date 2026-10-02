@@ -32,9 +32,6 @@ class SupabaseBudgetAdapter implements BudgetRepositoryInterface {
       'group_name': budget.groupName,
       'budget_type': budget.type.name,
       'is_hidden': budget.isHidden ? 1 : 0,
-      'is_excluded_from_cash_forecast': budget.isExcludedFromCashForecast,
-      'is_excluded_from_next_cash_forecast':
-          budget.isExcludedFromNextCashForecast,
     };
   }
 

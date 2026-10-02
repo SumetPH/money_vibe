@@ -1,6 +1,7 @@
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 
+import '../models/budget_forecast_setting.dart';
 import '../models/fixed_cash_flow_item.dart';
 import '../models/investment_plan.dart';
 import '../models/planned_purchase.dart';
@@ -210,9 +211,9 @@ final List<CsvBackupModule<Object>> csvBackupModules = [
       'id': CsvCell.text,
       'name': CsvCell.text,
       'amount': CsvCell.number,
-      'day_of_month': CsvCell.integer,
-      'one_time_on': CsvCell.text,
       'direction': CsvCell.text,
+      'period': CsvCell.text,
+      'is_done': CsvCell.boolean,
       'sort_order': CsvCell.integer,
     },
     load: (repo) => repo.getFixedCashFlowItems(),
@@ -221,20 +222,6 @@ final List<CsvBackupModule<Object>> csvBackupModules = [
     idOf: (i) => i.id,
     insert: (repo, i) => repo.insertFixedCashFlowItem(i),
   ),
-  CsvBackupModule<FixedCashFlowPaidMark>(
-    fileKey: 'cash_flow_paid_marks',
-    label: 'การติ๊กเงินเข้าออก',
-    columns: const {
-      'id': CsvCell.text,
-      'item_id': CsvCell.text,
-      'month': CsvCell.text,
-    },
-    load: (repo) => repo.getFixedCashFlowPaidMarks(),
-    toMap: (m) => m.toMap(),
-    fromMap: FixedCashFlowPaidMark.fromMap,
-    idOf: (m) => m.id,
-    insert: (repo, m) => repo.upsertFixedCashFlowPaidMark(m),
-  ),
   CsvBackupModule<PlannedPurchase>(
     fileKey: 'planned_purchases',
     label: 'รายการอยากซื้อ',
@@ -242,8 +229,8 @@ final List<CsvBackupModule<Object>> csvBackupModules = [
       'id': CsvCell.text,
       'name': CsvCell.text,
       'amount': CsvCell.number,
+      'period': CsvCell.text,
       'is_included': CsvCell.boolean,
-      'is_included_current': CsvCell.boolean,
       'sort_order': CsvCell.integer,
     },
     load: (repo) => repo.getPlannedPurchases(),
@@ -251,5 +238,21 @@ final List<CsvBackupModule<Object>> csvBackupModules = [
     fromMap: PlannedPurchase.fromMap,
     idOf: (p) => p.id,
     insert: (repo, p) => repo.insertPlannedPurchase(p),
+  ),
+  CsvBackupModule<BudgetForecastSetting>(
+    fileKey: 'budget_forecast_settings',
+    label: 'การตั้งค่างบในการคาดการณ์',
+    columns: const {
+      'id': CsvCell.text,
+      'budget_id': CsvCell.text,
+      'period_end_on': CsvCell.text,
+      'is_excluded': CsvCell.boolean,
+      'amount': CsvCell.number,
+    },
+    load: (repo) => repo.getBudgetForecastSettings(),
+    toMap: (s) => s.toMap(),
+    fromMap: BudgetForecastSetting.fromMap,
+    idOf: (s) => s.id,
+    insert: (repo, s) => repo.upsertBudgetForecastSetting(s),
   ),
 ];

@@ -1,15 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/budget_forecast_setting.dart';
 import '../../models/fixed_cash_flow_item.dart';
 import '../../models/planned_purchase.dart';
 import '../database_repository.dart';
 import '../supabase_repository.dart';
 
-/// Adapter สำหรับรายการเงินเข้าออกประจำ, paid mark และรายการอยากซื้อบน Supabase
+/// Adapter สำหรับรายการเงินเข้าออก, รายการอยากซื้อ
+/// และการตั้งค่างบรายงวดบน Supabase
 class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
   static const _itemsTable = 'fixed_cash_flow_items';
-  static const _marksTable = 'fixed_cash_flow_paid_marks';
   static const _purchasesTable = 'planned_purchases';
+  static const _budgetSettingsTable = 'budget_forecast_settings';
 
   final SupabaseRepository repo;
 
@@ -77,46 +79,6 @@ class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
   }
 
   @override
-  Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks() async {
-    _requireAuth();
-    repo.log('Fetching fixed cash-flow paid marks: $currentUserId');
-    final response = await client
-        .from(_marksTable)
-        .select()
-        .eq('user_id', currentUserId!)
-        .order('month');
-    return (response as List)
-        .map(
-          (row) => FixedCashFlowPaidMark.fromMap(
-            repo.normalizeRow(row as Map<String, dynamic>),
-          ),
-        )
-        .toList();
-  }
-
-  @override
-  Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark) async {
-    _requireAuth();
-    repo.log('Marking fixed cash-flow item paid: ${mark.itemId}/${mark.month}');
-    await client.from(_marksTable).upsert({
-      ...mark.toMap(),
-      'user_id': currentUserId,
-    }, onConflict: 'item_id, month');
-  }
-
-  @override
-  Future<void> deleteFixedCashFlowPaidMark(String itemId, String month) async {
-    _requireAuth();
-    repo.log('Unmarking fixed cash-flow item: $itemId/$month');
-    await client
-        .from(_marksTable)
-        .delete()
-        .eq('item_id', itemId)
-        .eq('month', month)
-        .eq('user_id', currentUserId!);
-  }
-
-  @override
   Future<List<PlannedPurchase>> getPlannedPurchases() async {
     _requireAuth();
     repo.log('Fetching planned purchases: $currentUserId');
@@ -163,6 +125,55 @@ class SupabaseCashFlowAdapter implements CashFlowRepositoryInterface {
         .from(_purchasesTable)
         .delete()
         .eq('id', id)
+        .eq('user_id', currentUserId!);
+  }
+
+  @override
+  Future<List<BudgetForecastSetting>> getBudgetForecastSettings() async {
+    _requireAuth();
+    repo.log('Fetching budget forecast settings: $currentUserId');
+    final response = await client
+        .from(_budgetSettingsTable)
+        .select()
+        .eq('user_id', currentUserId!)
+        .order('period_end_on');
+    return (response as List)
+        .map(
+          (row) => BudgetForecastSetting.fromMap(
+            repo.normalizeRow(row as Map<String, dynamic>),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<void> upsertBudgetForecastSetting(
+    BudgetForecastSetting setting,
+  ) async {
+    _requireAuth();
+    repo.log(
+      'Saving budget forecast setting: ${setting.budgetId}/'
+      '${BudgetForecastSetting.periodKey(setting.periodEnd)}',
+    );
+    await client.from(_budgetSettingsTable).upsert({
+      ...setting.toMap(),
+      'user_id': currentUserId,
+    }, onConflict: 'budget_id, period_end_on');
+  }
+
+  @override
+  Future<void> deleteBudgetForecastSetting(
+    String budgetId,
+    DateTime periodEnd,
+  ) async {
+    _requireAuth();
+    final periodKey = BudgetForecastSetting.periodKey(periodEnd);
+    repo.log('Deleting budget forecast setting: $budgetId/$periodKey');
+    await client
+        .from(_budgetSettingsTable)
+        .delete()
+        .eq('budget_id', budgetId)
+        .eq('period_end_on', periodKey)
         .eq('user_id', currentUserId!);
   }
 }

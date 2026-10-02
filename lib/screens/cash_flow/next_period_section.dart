@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../main.dart';
 import '../../models/budget.dart';
-import '../../models/planned_purchase.dart';
-import '../../providers/cash_flow_forecast_provider.dart';
 import '../../services/cash_flow_forecast_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_status_chip.dart';
 import 'cash_flow_forecast_scope.dart';
 import 'cash_flow_section.dart';
+import 'budget_what_if_dialog.dart';
 import 'forecast_budget_picker_sheet.dart';
-import 'planned_purchase_form_screen.dart';
 
 /// สรุปยอดคาดการณ์งวดถัดไป
 class NextPeriodHero extends StatelessWidget {
@@ -72,20 +70,11 @@ class NextPeriodHero extends StatelessWidget {
       CashFlowMetricRow(label: label, amount: amount, isDarkMode: isDarkMode);
 }
 
-/// รายละเอียดของงวดถัดไปต่อจากเงินเข้าออก: บัตรเครดิต, งบที่เหลือ, แผนออม และอยากซื้อ
-/// (เรียงตาม metric ใน [NextPeriodHero])
+/// รายละเอียดของงวดถัดไปต่อจากลิสต์จำลอง: บัตรเครดิต, งบที่เหลือ และแผนออม
 List<Widget> nextPeriodDetailSections(
   NextPeriodForecast forecast,
   bool isDarkMode,
 ) => [
-  ...forecastPurchaseSections(
-    forecast.purchases,
-    forecast.purchaseTotal,
-    isDarkMode,
-    note:
-        'ติ๊กเพื่อกันเงินซื้อในงวดถัดไป แยกจากงวดนี้ ถ้าติ๊กทั้งสองงวดจะกันเงินทั้งสองครั้ง',
-  ),
-
   ...cashFlowSection(
     title:
         'บัตรเครดิต · ${formatAmount(-forecast.cardTotal, showSign: true)} บาท',
@@ -108,36 +97,9 @@ List<Widget> nextPeriodDetailSections(
     forecast.budgetTotal,
     forecast.savingsTotal,
     isDarkMode,
-    isNextPeriod: true,
+    periodEnd: forecast.windowEnd,
+    periodLabel: 'งวดถัดไป',
   ),
-];
-
-List<Widget> forecastPurchaseSections(
-  List<PlannedPurchase> purchases,
-  double purchaseTotal,
-  bool isDarkMode, {
-  required String note,
-  bool isCurrent = false,
-  bool isManage = false,
-}) => [
-  ...cashFlowSection(
-    title: isManage
-        ? 'รายการอยากซื้อทั้งหมด'
-        : 'อยากซื้อ · ${formatAmount(-purchaseTotal, showSign: true)} บาท',
-    emptyText: 'ยังไม่มีรายการอยากซื้อ เพิ่มได้ที่แท็บจัดการ',
-    rows: [
-      for (final purchase in purchases)
-        _PurchaseRow(
-          purchase: purchase,
-          isDarkMode: isDarkMode,
-          isCurrent: isCurrent,
-          isManage: isManage,
-        ),
-      if (isManage) _AddPurchaseRow(isDarkMode: isDarkMode),
-    ],
-    isDarkMode: isDarkMode,
-  ),
-  cashFlowNote(note, isDarkMode),
 ];
 
 List<Widget> forecastBudgetSections(
@@ -146,18 +108,27 @@ List<Widget> forecastBudgetSections(
   double budgetTotal,
   double savingsTotal,
   bool isDarkMode, {
-  bool isNextPeriod = false,
+  required DateTime periodEnd,
+  required String periodLabel,
+  String budgetEmptyText = 'ยังไม่มีงบรายจ่าย',
+  String savingsEmptyText = 'ยังไม่มีแผนออมในงบประมาณ',
 }) => [
   ...cashFlowSection(
     title: 'งบรายจ่าย · ${formatAmount(-budgetTotal, showSign: true)} บาท',
-    emptyText: 'ยังไม่มีงบรายจ่าย',
+    emptyText: budgetEmptyText,
     rows: [
       for (final line in budgetLines.where((l) => l.isIncluded))
-        _BudgetRow(line: line, isDarkMode: isDarkMode),
+        _BudgetRow(
+          line: line,
+          periodEnd: periodEnd,
+          periodLabel: periodLabel,
+          isDarkMode: isDarkMode,
+        ),
       if (budgetLines.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.expense,
-          isNextPeriod: isNextPeriod,
+          periodEnd: periodEnd,
+          periodLabel: periodLabel,
           includedCount: budgetLines
               .where((l) => l.isIncluded)
               .map((l) => l.budget.id)
@@ -170,21 +141,27 @@ List<Widget> forecastBudgetSections(
     isDarkMode: isDarkMode,
   ),
   cashFlowNote(
-    'ถือว่างบที่เหลือจะถูกใช้จนหมด ถ้างบไหนซ้ำกับรายการเงินออกประจำ '
-    'ให้ปิดงบนั้นจากการคำนวณ เลือกงบแยกกันในแต่ละงวด',
+    'ถือว่างบที่เหลือจะถูกใช้จนหมด แตะงบเพื่อลองเปลี่ยนยอดเฉพาะ$periodLabel '
+    '(ไม่เปลี่ยนงบจริง) ถ้างบไหนซ้ำกับรายการเงินออกประจำ ให้ปิดงบนั้นจากการคำนวณ',
     isDarkMode,
   ),
 
   ...cashFlowSection(
     title: 'แผนออม · ${formatAmount(-savingsTotal, showSign: true)} บาท',
-    emptyText: 'ยังไม่มีแผนออมในงบประมาณ',
+    emptyText: savingsEmptyText,
     rows: [
       for (final plan in savingsPlans.where((p) => p.isIncluded))
-        _BudgetRow(line: plan, isDarkMode: isDarkMode),
+        _BudgetRow(
+          line: plan,
+          periodEnd: periodEnd,
+          periodLabel: periodLabel,
+          isDarkMode: isDarkMode,
+        ),
       if (savingsPlans.isNotEmpty)
         _BudgetSelectorRow(
           type: BudgetType.savings,
-          isNextPeriod: isNextPeriod,
+          periodEnd: periodEnd,
+          periodLabel: periodLabel,
           includedCount: savingsPlans
               .where((p) => p.isIncluded)
               .map((p) => p.budget.id)
@@ -201,140 +178,6 @@ List<Widget> forecastBudgetSections(
     isDarkMode,
   ),
 ];
-
-void _openPurchaseForm(BuildContext context, [PlannedPurchase? purchase]) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => PlannedPurchaseFormScreen(purchase: purchase),
-    ),
-  );
-}
-
-class _PurchaseRow extends StatelessWidget {
-  final PlannedPurchase purchase;
-  final bool isDarkMode;
-  final bool isCurrent;
-  final bool isManage;
-
-  const _PurchaseRow({
-    required this.purchase,
-    required this.isDarkMode,
-    required this.isCurrent,
-    required this.isManage,
-  });
-
-  Future<void> _toggle(BuildContext context, bool isIncluded) async {
-    try {
-      await context.read<CashFlowForecastProvider>().updatePlannedPurchase(
-        isCurrent
-            ? purchase.copyWith(isIncludedCurrent: isIncluded)
-            : purchase.copyWith(isIncluded: isIncluded),
-      );
-    } catch (e) {
-      debugPrint('NextPeriodSection: toggle purchase error: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('บันทึกสถานะไม่สำเร็จ')));
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    final isIncluded =
-        isManage ||
-        (isCurrent ? purchase.isIncludedCurrent : purchase.isIncluded);
-    return InkWell(
-      onTap: () => isManage
-          ? _openPurchaseForm(context, purchase)
-          : _toggle(context, !isIncluded),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 6, 16, 6),
-        child: Row(
-          children: [
-            // ติ๊กแบบเดียวกับแถวเงินเข้าออก: ติ๊ก = นับในการคาดการณ์
-            if (isManage)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Icon(Icons.shopping_bag_outlined, color: textSecondary),
-              )
-            else
-              IconButton(
-                tooltip: isIncluded ? 'ไม่นับรายการนี้' : 'นับรายการนี้',
-                onPressed: () => _toggle(context, !isIncluded),
-                icon: Icon(
-                  isIncluded
-                      ? Icons.check_circle_rounded
-                      : Icons.radio_button_unchecked_rounded,
-                  color: isIncluded
-                      ? AppColors.incomeFor(isDarkMode)
-                      : textSecondary.withValues(alpha: 0.6),
-                ),
-              ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                purchase.name,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isIncluded
-                      ? AppColors.textPrimaryFor(isDarkMode)
-                      : textSecondary,
-                ),
-              ),
-            ),
-            Text(
-              formatAmount(-purchase.amount, showSign: true),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: isIncluded
-                    ? AppColors.expenseFor(isDarkMode)
-                    : textSecondary.withValues(alpha: 0.6),
-                decoration: isIncluded ? null : TextDecoration.lineThrough,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AddPurchaseRow extends StatelessWidget {
-  final bool isDarkMode;
-
-  const _AddPurchaseRow({required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
-    return InkWell(
-      onTap: () => _openPurchaseForm(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(Icons.add_rounded, size: 20, color: textSecondary),
-            const SizedBox(width: 12),
-            Text(
-              'เพิ่มรายการอยากซื้อ',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryFor(isDarkMode),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _NextCardRow extends StatelessWidget {
   final NextCardLine line;
@@ -394,51 +237,91 @@ class _NextCardRow extends StatelessWidget {
 
 class _BudgetRow extends StatelessWidget {
   final BudgetRemainingLine line;
+  final DateTime periodEnd;
+  final String periodLabel;
   final bool isDarkMode;
 
-  const _BudgetRow({required this.line, required this.isDarkMode});
+  const _BudgetRow({
+    required this.line,
+    required this.periodEnd,
+    required this.periodLabel,
+    required this.isDarkMode,
+  });
+
+  String get _detail {
+    final amount = formatAmount(line.amount);
+    final usage = line.budget.type == BudgetType.savings
+        ? 'เป้าหมาย $amount'
+        : 'ใช้ไป ${formatAmount(line.spent)} จาก $amount';
+    return line.hasWhatIf
+        ? '$usage (จริง ${formatAmount(line.budget.amount)})'
+        : usage;
+  }
 
   @override
   Widget build(BuildContext context) {
     final remaining = line.remaining;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Icon(line.budget.icon, size: 22, color: line.budget.color),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  line.budget.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimaryFor(isDarkMode),
+    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
+    return InkWell(
+      onTap: () => showBudgetWhatIfDialog(
+        context,
+        line: line,
+        periodEnd: periodEnd,
+        periodLabel: periodLabel,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(line.budget.icon, size: 22, color: line.budget.color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        line.budget.name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimaryFor(isDarkMode),
+                        ),
+                      ),
+                      if (line.hasWhatIf)
+                        AppStatusChip(
+                          // รอบงบเริ่มแล้วแต่งบจริงยังไม่ตรงกับยอดสมมติ
+                          label: line.cycleStart.isAfter(DateTime.now())
+                              ? 'ยอดสมมติ'
+                              : 'รอบเริ่มแล้ว · ยังไม่ใช้เป็นงบจริง',
+                          color: AppColors.saveButtonFor(isDarkMode),
+                        ),
+                    ],
                   ),
-                ),
-                Text(
-                  '${formatCashFlowDate(line.cycleStart)} – ${formatCashFlowDate(line.cycleEnd)} ${line.cycleEnd.year}\n'
-                  '${line.budget.type == BudgetType.savings ? 'เป้าหมาย ${formatAmount(line.budget.amount)}' : 'ใช้ไป ${formatAmount(line.spent)} จาก ${formatAmount(line.budget.amount)}'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondaryFor(isDarkMode),
+                  Text(
+                    '${formatCashFlowDate(line.cycleStart)} – ${formatCashFlowDate(line.cycleEnd)} ${line.cycleEnd.year}\n'
+                    '$_detail',
+                    style: TextStyle(fontSize: 12, color: textSecondary),
                   ),
+                ],
+              ),
+            ),
+            Text(
+              formatAmount(-remaining, showSign: true),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.amountColor(
+                  -remaining,
+                  isDarkMode: isDarkMode,
                 ),
-              ],
+              ),
             ),
-          ),
-          Text(
-            formatAmount(-remaining, showSign: true),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.amountColor(-remaining, isDarkMode: isDarkMode),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -446,14 +329,16 @@ class _BudgetRow extends StatelessWidget {
 
 class _BudgetSelectorRow extends StatelessWidget {
   final BudgetType type;
-  final bool isNextPeriod;
+  final DateTime periodEnd;
+  final String periodLabel;
   final int includedCount;
   final int totalCount;
   final bool isDarkMode;
 
   const _BudgetSelectorRow({
     required this.type,
-    required this.isNextPeriod,
+    required this.periodEnd,
+    required this.periodLabel,
     required this.includedCount,
     required this.totalCount,
     required this.isDarkMode,
@@ -469,7 +354,8 @@ class _BudgetSelectorRow extends StatelessWidget {
     onTap: () => showForecastBudgetPickerSheet(
       context,
       type,
-      isNextPeriod: isNextPeriod,
+      periodEnd: periodEnd,
+      periodLabel: periodLabel,
     ),
     isDarkMode: isDarkMode,
   );

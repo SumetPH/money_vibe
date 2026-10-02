@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
+import '../../models/fixed_cash_flow_item.dart';
+import '../../widgets/app_segmented_tabs.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import 'cash_flow_forecast_scope.dart';
@@ -36,6 +38,21 @@ List<Widget> cashFlowSection({
           ],
   ),
 ];
+
+/// ตัวเลือกงวดของรายการในฟอร์ม (งวดนี้/งวดถัดไป)
+Widget buildCashFlowPeriodTabs(
+  CashFlowPeriod selected,
+  ValueChanged<CashFlowPeriod> onChanged,
+) => AppSegmentedTabs(
+  segments: [
+    for (final period in CashFlowPeriod.values)
+      AppSegment(
+        label: period.label,
+        isSelected: selected == period,
+        onTap: () => onChanged(period),
+      ),
+  ],
+);
 
 /// คำอธิบายสั้นใต้การ์ด
 Widget cashFlowNote(String text, bool isDarkMode) => Padding(

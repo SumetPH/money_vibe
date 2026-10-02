@@ -1,33 +1,36 @@
-/// รายการอยากซื้อชุดเดียวกัน เลือกนับแยกงวดนี้และงวดถัดไป
+import 'fixed_cash_flow_item.dart';
+
+/// รายการอยากซื้อในลิสต์จำลองของ [period]; ไม่ติ๊กคือจดไว้เฉย ๆ
+/// ติ๊ก ([isIncluded]) แล้วจึงนำมาคำนวณ
 class PlannedPurchase {
   final String id;
   final String name;
   final double amount;
-  final bool isIncluded; // งวดถัดไป (คงสถานะเดิม)
-  final bool isIncludedCurrent;
+  final CashFlowPeriod period;
+  final bool isIncluded;
   final int sortOrder;
 
   const PlannedPurchase({
     required this.id,
     required this.name,
     required this.amount,
-    this.isIncluded = true,
-    this.isIncludedCurrent = false,
+    required this.period,
+    this.isIncluded = false,
     this.sortOrder = 0,
   });
 
   PlannedPurchase copyWith({
     String? name,
     double? amount,
+    CashFlowPeriod? period,
     bool? isIncluded,
-    bool? isIncludedCurrent,
     int? sortOrder,
   }) => PlannedPurchase(
     id: id,
     name: name ?? this.name,
     amount: amount ?? this.amount,
+    period: period ?? this.period,
     isIncluded: isIncluded ?? this.isIncluded,
-    isIncludedCurrent: isIncludedCurrent ?? this.isIncludedCurrent,
     sortOrder: sortOrder ?? this.sortOrder,
   );
 
@@ -35,8 +38,8 @@ class PlannedPurchase {
     'id': id,
     'name': name,
     'amount': amount,
+    'period': period.name,
     'is_included': isIncluded,
-    'is_included_current': isIncludedCurrent,
     'sort_order': sortOrder,
   };
 
@@ -44,8 +47,8 @@ class PlannedPurchase {
     id: m['id'] as String,
     name: m['name'] as String,
     amount: (m['amount'] as num).toDouble(),
-    isIncluded: m['is_included'] as bool? ?? true,
-    isIncludedCurrent: m['is_included_current'] as bool? ?? false,
+    period: CashFlowPeriod.fromName(m['period']),
+    isIncluded: m['is_included'] as bool? ?? false,
     sortOrder: m['sort_order'] as int? ?? 0,
   );
 }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../main.dart';
 import '../../models/budget.dart';
 import '../../providers/budget_provider.dart';
+import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_inset_card.dart';
@@ -11,43 +12,48 @@ import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 
 /// Sheet เลือกงบ ([BudgetType.expense]) หรือแผนออม ([BudgetType.savings])
-/// ที่นำมาคำนวณในงวดนี้หรืองวดถัดไป ([isNextPeriod]) แยกกัน; บันทึกทันทีเมื่อสลับสวิตช์
+/// ที่นำมาคำนวณในงวดที่เคลียร์ยอดวัน [periodEnd]; บันทึกทันทีเมื่อสลับสวิตช์
 Future<void> showForecastBudgetPickerSheet(
   BuildContext context,
   BudgetType type, {
-  required bool isNextPeriod,
+  required DateTime periodEnd,
+  required String periodLabel,
 }) {
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) =>
-        _ForecastBudgetPickerSheet(type: type, isNextPeriod: isNextPeriod),
+    builder: (_) => _ForecastBudgetPickerSheet(
+      type: type,
+      periodEnd: periodEnd,
+      periodLabel: periodLabel,
+    ),
   );
 }
 
 class _ForecastBudgetPickerSheet extends StatelessWidget {
   final BudgetType type;
-  final bool isNextPeriod;
+  final DateTime periodEnd;
+  final String periodLabel;
 
   const _ForecastBudgetPickerSheet({
     required this.type,
-    required this.isNextPeriod,
+    required this.periodEnd,
+    required this.periodLabel,
   });
 
   bool get _isSavings => type == BudgetType.savings;
-
-  String get _periodLabel => isNextPeriod ? 'งวดถัดไป' : 'งวดนี้';
 
   Future<void> _toggle(
     BuildContext context,
     Budget budget,
     bool isIncluded,
   ) async {
+    final provider = context.read<CashFlowForecastProvider>();
     try {
-      await context.read<BudgetProvider>().updateBudget(
-        isNextPeriod
-            ? budget.copyWith(isExcludedFromNextCashForecast: !isIncluded)
-            : budget.copyWith(isExcludedFromCashForecast: !isIncluded),
+      await provider.saveBudgetSetting(
+        provider
+            .budgetSettingFor(budget.id, periodEnd)
+            .withIncluded(isIncluded, isHidden: budget.isHidden),
       );
     } catch (e) {
       debugPrint('ForecastBudgetPickerSheet: toggle budget error: $e');
@@ -64,11 +70,30 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    final budgets = context
+    final ofType = context
         .watch<BudgetProvider>()
         .budgets
-        .where((b) => b.type == type && !b.isHidden)
+        .where((b) => b.type == type)
         .toList();
+    final visible = ofType.where((b) => !b.isHidden).toList();
+    final hidden = ofType.where((b) => b.isHidden).toList();
+    final cashFlow = context.watch<CashFlowForecastProvider>();
+
+    Widget card(List<Budget> budgets) => AppInsetCard(
+      children: [
+        for (var i = 0; i < budgets.length; i++) ...[
+          if (i > 0) const AppCardDivider(),
+          _BudgetToggleRow(
+            budget: budgets[i],
+            isIncluded: !cashFlow
+                .budgetSettingFor(budgets[i].id, periodEnd)
+                .isExcludedFor(isHidden: budgets[i].isHidden),
+            isDarkMode: isDarkMode,
+            onChanged: (value) => _toggle(context, budgets[i], value),
+          ),
+        ],
+      ],
+    );
 
     return SafeArea(
       child: Column(
@@ -77,15 +102,15 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
         children: [
           AppModalBottomSheetHeader(
             title: _isSavings
-                ? 'แผนออมที่นำมาคำนวณ$_periodLabel'
-                : 'งบที่นำมาคำนวณ$_periodLabel',
+                ? 'แผนออมที่นำมาคำนวณ$periodLabel'
+                : 'งบที่นำมาคำนวณ$periodLabel',
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Text(
               _isSavings
-                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินใน$_periodLabel'
-                  : 'ปิดงบที่ไม่ต้องการนับใน$_periodLabel เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
+                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินใน$periodLabel'
+                  : 'ปิดงบที่ไม่ต้องการนับใน$periodLabel เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -98,22 +123,13 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
               shrinkWrap: true,
               padding: const EdgeInsets.only(bottom: 16),
               children: [
-                AppInsetCard(
-                  children: [
-                    for (var i = 0; i < budgets.length; i++) ...[
-                      if (i > 0) const AppCardDivider(),
-                      _BudgetToggleRow(
-                        budget: budgets[i],
-                        isIncluded: isNextPeriod
-                            ? !budgets[i].isExcludedFromNextCashForecast
-                            : !budgets[i].isExcludedFromCashForecast,
-                        isDarkMode: isDarkMode,
-                        onChanged: (value) =>
-                            _toggle(context, budgets[i], value),
-                      ),
-                    ],
-                  ],
-                ),
+                if (visible.isNotEmpty) card(visible),
+                if (hidden.isNotEmpty) ...[
+                  AppSectionHeader(
+                    _isSavings ? 'แผนออมที่ซ่อนไว้' : 'งบที่ซ่อนไว้',
+                  ),
+                  card(hidden),
+                ],
               ],
             ),
           ),

@@ -11,6 +11,7 @@ import '../models/portfolio_annual_report.dart';
 import '../models/investment_plan.dart';
 import '../models/fixed_cash_flow_item.dart';
 import '../models/planned_purchase.dart';
+import '../models/budget_forecast_setting.dart';
 
 // ── Sub-Interfaces (Feature-Specific Adapters) ──────────────────────────────
 
@@ -145,14 +146,14 @@ abstract class CashFlowRepositoryInterface {
   Future<void> updateFixedCashFlowItem(FixedCashFlowItem item);
   Future<void> deleteFixedCashFlowItem(String id);
 
-  Future<List<FixedCashFlowPaidMark>> getFixedCashFlowPaidMarks();
-  Future<void> upsertFixedCashFlowPaidMark(FixedCashFlowPaidMark mark);
-  Future<void> deleteFixedCashFlowPaidMark(String itemId, String month);
-
   Future<List<PlannedPurchase>> getPlannedPurchases();
   Future<void> insertPlannedPurchase(PlannedPurchase purchase);
   Future<void> updatePlannedPurchase(PlannedPurchase purchase);
   Future<void> deletePlannedPurchase(String id);
+
+  Future<List<BudgetForecastSetting>> getBudgetForecastSettings();
+  Future<void> upsertBudgetForecastSetting(BudgetForecastSetting setting);
+  Future<void> deleteBudgetForecastSetting(String budgetId, DateTime periodEnd);
 }
 
 /// Interface สำหรับจัดการข้อมูล Sync Log
