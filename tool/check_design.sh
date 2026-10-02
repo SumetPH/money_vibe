@@ -59,6 +59,9 @@ check 'Use IconPickerFormRow / ColorPickerFormRow instead of local picker rows' 
 check 'Use AppColors tokens instead of hard-coded Color(0x...) values' \
   'Color\(0x[0-9A-Fa-f]+\)' $(files_except '^$')
 
+check 'Use showAppDatePicker / showAppDateRangePicker instead of Material date pickers' \
+  '(showDatePicker|showDateRangePicker)\(' $(files_except 'lib/widgets/app_date_picker_sheet\.dart')
+
 if [[ $status -eq 0 ]]; then
   echo '✓ design check passed'
 fi

@@ -23,7 +23,7 @@ class SettingsProvider extends ChangeNotifier {
 
   String? _finnhubApiKey;
   bool _priceSourceFinnhub = false;
-  bool _useYahooExtendedHoursPrice = true;
+  bool _useYahooExtendedHoursPrice = false;
   ExchangeRateSource _exchangeRateSource = ExchangeRateSource.yahoo;
   String? _llmApiKey;
   String? _llmBaseUrl;
@@ -60,7 +60,8 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
     _priceSourceFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? false;
-    _useYahooExtendedHoursPrice = prefs.getBool(_yahooExtendedHoursKey) ?? true;
+    _useYahooExtendedHoursPrice =
+        prefs.getBool(_yahooExtendedHoursKey) ?? false;
     final exchangeRateSourceRaw = prefs.getString(_exchangeRateSourceKey);
     _exchangeRateSource =
         exchangeRateSourceRaw == ExchangeRateSource.frankfurter.name

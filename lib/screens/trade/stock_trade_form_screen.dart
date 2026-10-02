@@ -12,6 +12,7 @@ import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_date_picker_sheet.dart';
 
 typedef SaveStockTradeCallback = Future<void> Function(StockTrade trade);
 typedef FetchStockProfileCallback =
@@ -154,13 +155,11 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   }
 
   Future<void> _pickSoldAt() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: _soldAt,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       _soldAt = DateTime(
         picked.year,

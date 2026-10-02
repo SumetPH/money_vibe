@@ -18,6 +18,7 @@ import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/app_date_picker_sheet.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -50,6 +51,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   _TransactionTypeFilter _typeFilter = _TransactionTypeFilter.all;
   String _searchQuery = '';
   DateTime? _selectedCycleMonth;
+  DateTimeRange? _customRange;
 
   @override
   void initState() {
@@ -400,6 +402,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         DateTime(now.year, now.month - 1),
       ),
       _PeriodFilter.thisYear => 'ปี ${now.year}',
+      _PeriodFilter.custom when _customRange != null => _formatRange(
+        _customRange!,
+        withYear: true,
+      ),
       _ => _filter.label,
     };
   }
@@ -410,6 +416,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       _PeriodFilter.thisMonth => _formatMonthShort(now),
       _PeriodFilter.lastMonth => _formatMonthShort(
         DateTime(now.year, now.month - 1),
+      ),
+      _PeriodFilter.custom when _customRange != null => _formatRange(
+        _customRange!,
+        withYear: false,
       ),
       _ => _filter.shortLabel,
     };
@@ -577,6 +587,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             from,
             DateTime(9999),
           );
+        case _PeriodFilter.custom:
+          final range = _customRange;
+          transactions = range == null
+              ? (List.of(provider.transactions)
+                  ..sort((a, b) => b.dateTime.compareTo(a.dateTime)))
+              : provider.getTransactionsForPeriod(range.start, range.end);
       }
     }
 
@@ -738,6 +754,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final textColor = isDarkMode
         ? AppColors.darkTextPrimary
         : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
     final checkColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
 
     showAppModalBottomSheet(
@@ -769,7 +788,27 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                   : FontWeight.w500,
                             ),
                           ),
-                          trailing: _filter == f
+                          subtitle:
+                              f == _PeriodFilter.custom && _customRange != null
+                              ? Text(
+                                  _formatRange(_customRange!, withYear: true),
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                )
+                              : null,
+                          trailing: f == _PeriodFilter.custom
+                              ? Icon(
+                                  _filter == f
+                                      ? Icons.check_circle_rounded
+                                      : Icons.date_range_rounded,
+                                  color: _filter == f
+                                      ? checkColor
+                                      : textSecondary,
+                                  size: 22,
+                                )
+                              : _filter == f
                               ? Icon(
                                   Icons.check_circle_rounded,
                                   color: checkColor,
@@ -777,8 +816,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                 )
                               : null,
                           onTap: () {
-                            setState(() => _filter = f);
                             Navigator.pop(context);
+                            if (f == _PeriodFilter.custom) {
+                              _pickCustomRange();
+                              return;
+                            }
+                            setState(() => _filter = f);
                           },
                         ),
                       )
@@ -790,6 +833,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = await showAppDateRangePicker(
+      context: context,
+      initialRange:
+          _customRange ??
+          DateTimeRange(start: DateTime(now.year, now.month, 1), end: today),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _filter = _PeriodFilter.custom;
+      _customRange = picked;
+    });
   }
 
   void _openForm(BuildContext context, AppTransaction? tx) {
@@ -1059,7 +1118,8 @@ enum _PeriodFilter {
   thisMonth('เดือนนี้'),
   lastMonth('เดือนที่แล้ว'),
   thisYear('ปีนี้'),
-  oneYear('1 ปี');
+  oneYear('1 ปี'),
+  custom('กำหนดช่วงวันที่');
 
   final String label;
   const _PeriodFilter(this.label);
@@ -1073,6 +1133,7 @@ enum _PeriodFilter {
     _PeriodFilter.lastMonth => 'เดือนก่อน',
     _PeriodFilter.thisYear => 'ปีนี้',
     _PeriodFilter.oneYear => '1 ปี',
+    _PeriodFilter.custom => 'กำหนดเอง',
   };
 }
 
@@ -1101,6 +1162,18 @@ String _formatMonthYear(DateTime date) {
     'ธันวาคม',
   ];
   return '${thaiMonths[date.month - 1]} ${date.year}';
+}
+
+String _formatRange(DateTimeRange range, {required bool withYear}) {
+  String format(DateTime date) {
+    final base = '${date.day} ${_formatMonthShort(date)}';
+    return withYear ? '$base ${date.year}' : base;
+  }
+
+  final start = range.start;
+  final end = range.end;
+  if (DateUtils.isSameDay(start, end)) return format(start);
+  return '${format(start)} - ${format(end)}';
 }
 
 String _formatMonthShort(DateTime date) {

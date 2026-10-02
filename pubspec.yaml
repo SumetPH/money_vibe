@@ -58,6 +58,7 @@ dependencies:
   cached_network_image: ^3.4.1
   math_expressions: ^2.6.0
   text_sight: ^1.0.0
+  calendar_date_picker2: ^3.0.0
 
 dev_dependencies:
   flutter_test:

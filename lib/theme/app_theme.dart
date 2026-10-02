@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
@@ -111,6 +112,7 @@ class AppTheme {
       bodyColor: AppColors.textPrimary,
       displayColor: AppColors.textPrimary,
     ),
+    cupertinoOverrideTheme: cupertinoTheme(),
     useMaterial3: true,
   );
 
@@ -212,7 +214,38 @@ class AppTheme {
         bodyColor: AppColors.darkTextPrimary,
         displayColor: AppColors.darkTextPrimary,
       ),
+      cupertinoOverrideTheme: cupertinoTheme(),
       useMaterial3: true,
+    );
+  }
+
+  /// Cupertino widgets (CupertinoButton, CupertinoSearchTextField, pickers)
+  /// read fonts from CupertinoTheme, not the Material textTheme, so they would
+  /// fall back to the system font without this override.
+  static CupertinoThemeData cupertinoTheme() {
+    const base = CupertinoTextThemeData();
+    return CupertinoThemeData(
+      textTheme: CupertinoTextThemeData(
+        textStyle: GoogleFonts.ibmPlexSansThai(textStyle: base.textStyle),
+        actionTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.actionTextStyle,
+        ),
+        actionSmallTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.actionSmallTextStyle,
+        ),
+        navTitleTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.navTitleTextStyle,
+        ),
+        navActionTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.navActionTextStyle,
+        ),
+        pickerTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.pickerTextStyle,
+        ),
+        dateTimePickerTextStyle: GoogleFonts.ibmPlexSansThai(
+          textStyle: base.dateTimePickerTextStyle,
+        ),
+      ),
     );
   }
 

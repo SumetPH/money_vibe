@@ -9,11 +9,18 @@ void main() {
   IOSFlutterLocalNotificationsPlugin.registerWith();
 
   const channel = MethodChannel('dexterous.com/flutter/local_notifications');
+  const timezoneChannel = MethodChannel('flutter_timezone');
   final calls = <MethodCall>[];
 
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     calls.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          timezoneChannel,
+          (call) async =>
+              call.method == 'getLocalTimezone' ? 'Asia/Bangkok' : null,
+        );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           calls.add(call);

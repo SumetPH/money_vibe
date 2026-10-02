@@ -1328,9 +1328,15 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
     final textSecondary = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final accentColor = isDarkMode
-        ? AppColors.darkFabYellow
-        : AppColors.fabYellow;
+    final accentColor = AppColors.accentFor(
+      isDarkMode,
+      context.watch<SettingsProvider>().themeColor,
+    );
+    // Theme accents are dark in light mode and light in dark mode.
+    final onAccentColor =
+        ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
 
     final allIds = widget.accounts.map((a) => a.id).toSet();
     final isAllSelected = _selected.containsAll(allIds);
@@ -1453,7 +1459,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                             ],
                           ),
                           activeColor: accentColor,
-                          checkColor: Colors.black,
+                          checkColor: onAccentColor,
                           controlAffinity: ListTileControlAffinity.trailing,
                         ),
                       const AppCardDivider(),
@@ -1469,7 +1475,7 @@ class _NetWorthFilterSheetState extends State<_NetWorthFilterSheet> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
-                    foregroundColor: Colors.black,
+                    foregroundColor: onAccentColor,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

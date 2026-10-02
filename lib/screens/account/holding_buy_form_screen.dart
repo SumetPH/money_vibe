@@ -14,6 +14,7 @@ import '../../widgets/broker_order_import_button.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_date_picker_sheet.dart';
 
 typedef BuyHoldingCallback =
     Future<void> Function({
@@ -311,13 +312,12 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
   }
 
   Future<void> _pickOcrDate() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: _ocrDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
-    if (picked != null) setState(() => _ocrDate = picked);
+    if (picked != null && mounted) setState(() => _ocrDate = picked);
   }
 
   Future<void> _pickOcrTime() async {

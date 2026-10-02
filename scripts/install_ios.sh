@@ -8,6 +8,7 @@ PROJECT_FILE="$PROJECT_ROOT/ios/Runner.xcodeproj"
 PROFILE_DIR="${HOME:-}/Library/Developer/Xcode/UserData/Provisioning Profiles"
 PROFILE_PLIST=""
 XCODE_CONFIGURATION="Release"
+APP_BUNDLE="$PROJECT_ROOT/build/ios/iphoneos/Runner.app"
 
 log() {
   printf '[install-ios] %s\n' "$*"
@@ -106,10 +107,12 @@ main() {
   require_command plutil
   require_command security
   require_command xcodebuild
+  require_command xcrun
 
   cd "$PROJECT_ROOT"
   source "$SCRIPT_DIR/flutter_env.sh"
   resolve_flutter_env prod
+  resolve_flutter_build_version
 
   log "กำลังอ่าน Bundle ID และ Team ID จาก Xcode..."
   BUILD_SETTINGS="$(xcodebuild \
@@ -189,8 +192,17 @@ main() {
     done
   fi
 
-  log "เริ่ม Flutter prod release install/run บน $DEVICE_ID..."
-  flutter run --release --no-resident -d "$DEVICE_ID" "${FLUTTER_ENV_ARGS[@]}"
+  # flutter run ไม่รองรับ --build-name/--build-number จึง build ก่อนแล้วค่อย install
+  log "กำลัง build Flutter prod release (${FLUTTER_BUILD_NAME}+${FLUTTER_BUILD_NUMBER})..."
+  flutter build ios --release "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}"
+
+  # ใช้ devicectl ติดตั้งทับแอปเดิม (flutter install จะ uninstall ก่อนทำให้ข้อมูลในเครื่องหาย)
+  [[ -d "$APP_BUNDLE" ]] || die "ไม่พบ app bundle: $APP_BUNDLE"
+  log "กำลังติดตั้งทับบน $DEVICE_ID..."
+  xcrun devicectl device install app --device "$DEVICE_ID" "$APP_BUNDLE"
+
+  log "กำลังเปิดแอป $BUNDLE_ID..."
+  xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
   log "ติดตั้งและรันสำเร็จ"
 }
 

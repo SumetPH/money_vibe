@@ -631,45 +631,42 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                   const SizedBox(height: 24),
 
                   // ========== INFO SECTION ==========
-                  Container(
+                  AppInsetCard(
+                    margin: EdgeInsets.zero,
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? AppColors.darkSurface.withAlpha(128)
-                          : AppColors.sectionHeader,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'คำแนะนำ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'คำแนะนำ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoItem(
-                          icon: Icons.cloud,
-                          title: 'Supabase',
-                          description:
-                              'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                        ),
-                        Divider(color: dividerColor, height: 24),
-                        _buildInfoItem(
-                          icon: Icons.help_outline,
-                          title: 'CSV Export/Import',
-                          description:
-                              'ใช้สำหรับสำรองข้อมูลส่วนตัว หรือย้ายข้อมูลระหว่างบัญชี',
-                          textColor: textColor,
-                          secondaryTextColor: secondaryTextColor,
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 12),
+                          _buildInfoItem(
+                            icon: Icons.cloud,
+                            title: 'Supabase',
+                            description:
+                                'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                          ),
+                          Divider(color: dividerColor, height: 24),
+                          _buildInfoItem(
+                            icon: Icons.help_outline,
+                            title: 'CSV Export/Import',
+                            description:
+                                'ใช้สำหรับสำรองข้อมูลส่วนตัว หรือย้ายข้อมูลระหว่างบัญชี',
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),

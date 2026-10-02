@@ -21,6 +21,7 @@ import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
+import '../../widgets/app_date_picker_sheet.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -1357,13 +1358,11 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: _startDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _startDate = picked);
     }
   }

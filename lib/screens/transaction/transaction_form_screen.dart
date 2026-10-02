@@ -22,6 +22,7 @@ import '../../widgets/calculator_text_field_config.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/app_date_picker_sheet.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -805,29 +806,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   Future<void> _pickDateTime(BuildContext context) async {
     _closeKeyboard();
     final initialDt = _selectedDateTime;
-    final date = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: initialDt,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      title: 'เลือกวันและเวลา',
+      includeTime: true,
     );
-    if (date == null || !mounted) return;
+    if (picked == null || !mounted) return;
 
-    final time = await showTimePicker(
-      context: this.context,
-      initialTime: TimeOfDay.fromDateTime(initialDt),
-    );
-    if (time == null) return;
-
-    setState(() {
-      _selectedDateTime = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
-    });
+    setState(() => _selectedDateTime = picked);
   }
 
   void _showAllTypePicker(BuildContext context) {
