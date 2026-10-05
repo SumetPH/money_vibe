@@ -2039,57 +2039,61 @@ class _NetWorthLineChartState extends State<_NetWorthLineChart> {
           context.read<SettingsProvider>().themeColor,
         );
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'ช่วงเวลาที่แสดง'),
-              Material(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                  side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _NetWorthPeriodFilter.values.length,
-                  separatorBuilder: (_, _) => Divider(
-                    height: 1,
-                    color: AppColors.listDividerFor(isDarkMode),
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppModalBottomSheetHeader(title: 'ช่วงเวลาที่แสดง'),
+                Material(
+                  color: surfaceColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                    side: BorderSide(
+                      color: dividerColor.withValues(alpha: 0.4),
+                    ),
                   ),
-                  itemBuilder: (_, index) {
-                    final filter = _NetWorthPeriodFilter.values[index];
-                    final isSelected = filter == _selectedFilter;
-                    return ListTile(
-                      onTap: () => Navigator.pop(sheetContext, filter),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      leading: Icon(
-                        isSelected
-                            ? Icons.check_circle_rounded
-                            : Icons.circle_outlined,
-                        color: isSelected ? accent : secondaryColor,
-                        size: 22,
-                      ),
-                      title: Text(
-                        filter.label,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                  clipBehavior: Clip.antiAlias,
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _NetWorthPeriodFilter.values.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
+                    itemBuilder: (_, index) {
+                      final filter = _NetWorthPeriodFilter.values[index];
+                      final isSelected = filter == _selectedFilter;
+                      return ListTile(
+                        onTap: () => Navigator.pop(sheetContext, filter),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
                         ),
-                      ),
-                    );
-                  },
+                        leading: Icon(
+                          isSelected
+                              ? Icons.check_circle_rounded
+                              : Icons.circle_outlined,
+                          color: isSelected ? accent : secondaryColor,
+                          size: 22,
+                        ),
+                        title: Text(
+                          filter.label,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 15,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

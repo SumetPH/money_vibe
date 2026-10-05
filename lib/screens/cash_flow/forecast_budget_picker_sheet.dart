@@ -11,11 +11,10 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 
-/// Sheet เลือกงบ ([BudgetType.expense]) หรือแผนออม ([BudgetType.savings])
-/// ที่นำมาคำนวณในงวดที่เคลียร์ยอดวัน [periodEnd]; บันทึกทันทีเมื่อสลับสวิตช์
+/// Sheet เลือกงบรายจ่ายและแผนออมที่นำมาคำนวณในงวดที่เคลียร์ยอดวัน [periodEnd]
+/// แยกกลุ่มตามประเภทงบ; บันทึกทันทีเมื่อสลับสวิตช์
 Future<void> showForecastBudgetPickerSheet(
-  BuildContext context,
-  BudgetType type, {
+  BuildContext context, {
   required DateTime periodEnd,
   required String periodLabel,
 }) {
@@ -23,7 +22,6 @@ Future<void> showForecastBudgetPickerSheet(
     context: context,
     isScrollControlled: true,
     builder: (_) => _ForecastBudgetPickerSheet(
-      type: type,
       periodEnd: periodEnd,
       periodLabel: periodLabel,
     ),
@@ -31,17 +29,13 @@ Future<void> showForecastBudgetPickerSheet(
 }
 
 class _ForecastBudgetPickerSheet extends StatelessWidget {
-  final BudgetType type;
   final DateTime periodEnd;
   final String periodLabel;
 
   const _ForecastBudgetPickerSheet({
-    required this.type,
     required this.periodEnd,
     required this.periodLabel,
   });
-
-  bool get _isSavings => type == BudgetType.savings;
 
   Future<void> _toggle(
     BuildContext context,
@@ -70,13 +64,12 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    final ofType = context
-        .watch<BudgetProvider>()
-        .budgets
-        .where((b) => b.type == type)
-        .toList();
-    final visible = ofType.where((b) => !b.isHidden).toList();
-    final hidden = ofType.where((b) => b.isHidden).toList();
+    final budgets = context.watch<BudgetProvider>().budgets;
+    List<Budget> visibleOf(BudgetType type) =>
+        budgets.where((b) => b.type == type && !b.isHidden).toList();
+    final expenses = visibleOf(BudgetType.expense);
+    final savings = visibleOf(BudgetType.savings);
+    final hidden = budgets.where((b) => b.isHidden).toList();
     final cashFlow = context.watch<CashFlowForecastProvider>();
 
     Widget card(List<Budget> budgets) => AppInsetCard(
@@ -100,17 +93,12 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppModalBottomSheetHeader(
-            title: _isSavings
-                ? 'แผนออมที่นำมาคำนวณ$periodLabel'
-                : 'งบที่นำมาคำนวณ$periodLabel',
-          ),
+          AppModalBottomSheetHeader(title: 'งบที่นำมาคำนวณ$periodLabel'),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Text(
-              _isSavings
-                  ? 'ปิดแผนออมที่ไม่ต้องการกันเงินใน$periodLabel'
-                  : 'ปิดงบที่ไม่ต้องการนับใน$periodLabel เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
+              'ปิดงบหรือแผนออมที่ไม่ต้องการนับใน$periodLabel '
+              'เช่น งบที่ซ้ำกับรายการเงินออกประจำ',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -123,11 +111,16 @@ class _ForecastBudgetPickerSheet extends StatelessWidget {
               shrinkWrap: true,
               padding: const EdgeInsets.only(bottom: 16),
               children: [
-                if (visible.isNotEmpty) card(visible),
+                if (expenses.isNotEmpty) ...[
+                  const AppSectionHeader('งบรายจ่าย'),
+                  card(expenses),
+                ],
+                if (savings.isNotEmpty) ...[
+                  const AppSectionHeader('แผนออม'),
+                  card(savings),
+                ],
                 if (hidden.isNotEmpty) ...[
-                  AppSectionHeader(
-                    _isSavings ? 'แผนออมที่ซ่อนไว้' : 'งบที่ซ่อนไว้',
-                  ),
+                  const AppSectionHeader('ซ่อนไว้'),
                   card(hidden),
                 ],
               ],

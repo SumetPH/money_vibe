@@ -59,8 +59,7 @@ class NextPeriodHero extends StatelessWidget {
         _metric('เงินเข้าที่ยังไม่ติ๊ก', forecast.incomingTotal),
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
-        _metric('งบรายจ่าย', -forecast.budgetTotal),
-        _metric('แผนออม', -forecast.savingsTotal),
+        _metric('งบประมาณ', -(forecast.budgetTotal + forecast.savingsTotal)),
         _metric('อยากซื้อ', -forecast.purchaseTotal),
       ],
     );
@@ -70,7 +69,7 @@ class NextPeriodHero extends StatelessWidget {
       CashFlowMetricRow(label: label, amount: amount, isDarkMode: isDarkMode);
 }
 
-/// รายละเอียดของงวดถัดไปต่อจากลิสต์จำลอง: บัตรเครดิต, งบที่เหลือ และแผนออม
+/// รายละเอียดของงวดถัดไปต่อจากลิสต์จำลอง: บัตรเครดิต และงบประมาณ (งบที่เหลือ + แผนออม)
 List<Widget> nextPeriodDetailSections(
   NextPeriodForecast forecast,
   bool isDarkMode,
@@ -94,90 +93,57 @@ List<Widget> nextPeriodDetailSections(
   ...forecastBudgetSections(
     forecast.budgetLines,
     forecast.savingsPlans,
-    forecast.budgetTotal,
-    forecast.savingsTotal,
+    forecast.budgetTotal + forecast.savingsTotal,
     isDarkMode,
     periodEnd: forecast.windowEnd,
     periodLabel: 'งวดถัดไป',
   ),
 ];
 
+/// งบรายจ่ายและแผนออมรวมอยู่ใน section งบประมาณเดียวกัน
 List<Widget> forecastBudgetSections(
   List<BudgetRemainingLine> budgetLines,
   List<BudgetRemainingLine> savingsPlans,
-  double budgetTotal,
-  double savingsTotal,
+  double total,
   bool isDarkMode, {
   required DateTime periodEnd,
   required String periodLabel,
-  String budgetEmptyText = 'ยังไม่มีงบรายจ่าย',
-  String savingsEmptyText = 'ยังไม่มีแผนออมในงบประมาณ',
-}) => [
-  ...cashFlowSection(
-    title: 'งบรายจ่าย · ${formatAmount(-budgetTotal, showSign: true)} บาท',
-    emptyText: budgetEmptyText,
-    rows: [
-      for (final line in budgetLines.where((l) => l.isIncluded))
-        _BudgetRow(
-          line: line,
-          periodEnd: periodEnd,
-          periodLabel: periodLabel,
-          isDarkMode: isDarkMode,
-        ),
-      if (budgetLines.isNotEmpty)
-        _BudgetSelectorRow(
-          type: BudgetType.expense,
-          periodEnd: periodEnd,
-          periodLabel: periodLabel,
-          includedCount: budgetLines
-              .where((l) => l.isIncluded)
-              .map((l) => l.budget.id)
-              .toSet()
-              .length,
-          totalCount: budgetLines.map((l) => l.budget.id).toSet().length,
-          isDarkMode: isDarkMode,
-        ),
-    ],
-    isDarkMode: isDarkMode,
-  ),
-  cashFlowNote(
-    'ถือว่างบที่เหลือจะถูกใช้จนหมด แตะงบเพื่อลองเปลี่ยนยอดเฉพาะ$periodLabel '
-    '(ไม่เปลี่ยนงบจริง) ถ้างบไหนซ้ำกับรายการเงินออกประจำ ให้ปิดงบนั้นจากการคำนวณ',
-    isDarkMode,
-  ),
-
-  ...cashFlowSection(
-    title: 'แผนออม · ${formatAmount(-savingsTotal, showSign: true)} บาท',
-    emptyText: savingsEmptyText,
-    rows: [
-      for (final plan in savingsPlans.where((p) => p.isIncluded))
-        _BudgetRow(
-          line: plan,
-          periodEnd: periodEnd,
-          periodLabel: periodLabel,
-          isDarkMode: isDarkMode,
-        ),
-      if (savingsPlans.isNotEmpty)
-        _BudgetSelectorRow(
-          type: BudgetType.savings,
-          periodEnd: periodEnd,
-          periodLabel: periodLabel,
-          includedCount: savingsPlans
-              .where((p) => p.isIncluded)
-              .map((p) => p.budget.id)
-              .toSet()
-              .length,
-          totalCount: savingsPlans.map((p) => p.budget.id).toSet().length,
-          isDarkMode: isDarkMode,
-        ),
-    ],
-    isDarkMode: isDarkMode,
-  ),
-  cashFlowNote(
-    'กันออมเต็มเป้าหมายตามรอบที่แสดง เพราะยังไม่มีการติดตามยอดออมแล้ว',
-    isDarkMode,
-  ),
-];
+  String emptyText = 'ยังไม่มีงบประมาณ',
+}) {
+  final allLines = [...budgetLines, ...savingsPlans];
+  Set<String> idsOf(Iterable<BudgetRemainingLine> lines) =>
+      lines.map((l) => l.budget.id).toSet();
+  return [
+    ...cashFlowSection(
+      title: 'งบประมาณ · ${formatAmount(-total, showSign: true)} บาท',
+      emptyText: emptyText,
+      rows: [
+        for (final line in allLines.where((l) => l.isIncluded))
+          _BudgetRow(
+            line: line,
+            periodEnd: periodEnd,
+            periodLabel: periodLabel,
+            isDarkMode: isDarkMode,
+          ),
+        if (allLines.isNotEmpty)
+          _BudgetSelectorRow(
+            periodEnd: periodEnd,
+            periodLabel: periodLabel,
+            includedCount: idsOf(allLines.where((l) => l.isIncluded)).length,
+            totalCount: idsOf(allLines).length,
+            isDarkMode: isDarkMode,
+          ),
+      ],
+      isDarkMode: isDarkMode,
+    ),
+    cashFlowNote(
+      'ถือว่างบที่เหลือจะถูกใช้จนหมด และกันแผนออมเต็มเป้าหมายตามรอบที่แสดง '
+      'แตะงบเพื่อลองเปลี่ยนยอดเฉพาะ$periodLabel (ไม่เปลี่ยนงบจริง) '
+      'ถ้างบไหนซ้ำกับรายการเงินออกประจำ ให้ปิดงบนั้นจากการคำนวณ',
+      isDarkMode,
+    ),
+  ];
+}
 
 class _NextCardRow extends StatelessWidget {
   final NextCardLine line;
@@ -328,7 +294,6 @@ class _BudgetRow extends StatelessWidget {
 }
 
 class _BudgetSelectorRow extends StatelessWidget {
-  final BudgetType type;
   final DateTime periodEnd;
   final String periodLabel;
   final int includedCount;
@@ -336,7 +301,6 @@ class _BudgetSelectorRow extends StatelessWidget {
   final bool isDarkMode;
 
   const _BudgetSelectorRow({
-    required this.type,
     required this.periodEnd,
     required this.periodLabel,
     required this.includedCount,
@@ -346,14 +310,11 @@ class _BudgetSelectorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CashFlowSelectorRow(
-    label: type == BudgetType.savings
-        ? 'เลือกแผนออมที่นำมาคำนวณ'
-        : 'เลือกงบที่นำมาคำนวณ',
+    label: 'เลือกงบที่นำมาคำนวณ',
     includedCount: includedCount,
     totalCount: totalCount,
     onTap: () => showForecastBudgetPickerSheet(
       context,
-      type,
       periodEnd: periodEnd,
       periodLabel: periodLabel,
     ),

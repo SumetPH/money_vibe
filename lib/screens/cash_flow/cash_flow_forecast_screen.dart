@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../main.dart';
-import '../../models/budget.dart';
 import '../../models/fixed_cash_flow_item.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -224,15 +223,11 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     ...forecastBudgetSections(
       forecast.budgetLines,
       forecast.savingsPlans,
-      forecast.budgetTotal,
-      forecast.savingsTotal,
+      forecast.budgetTotal + forecast.savingsTotal,
       isDarkMode,
       periodEnd: forecast.windowEnd,
       periodLabel: 'งวดนี้',
-      budgetEmptyText:
-          _closedCycleText(BudgetType.expense) ?? 'ยังไม่มีงบรายจ่าย',
-      savingsEmptyText:
-          _closedCycleText(BudgetType.savings) ?? 'ยังไม่มีแผนออมในงบประมาณ',
+      emptyText: _closedCycleText() ?? 'ยังไม่มีงบประมาณ',
     ),
 
     ...cashFlowSection(
@@ -321,10 +316,10 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
   }
 
   /// ข้อความเมื่อมีงบแต่ไม่มีรอบงบที่จบก่อนวันเคลียร์ยอด (รอบงบปิดไปแล้ว)
-  /// null เมื่อยังไม่มีงบประเภทนี้
-  String? _closedCycleText(BudgetType type) {
+  /// null เมื่อยังไม่มีงบ
+  String? _closedCycleText() {
     final hasBudgets = context.read<BudgetProvider>().budgets.any(
-      (b) => b.type == type && !b.isHidden,
+      (b) => !b.isHidden,
     );
     if (!hasBudgets) return null;
     final startDay = context.read<SettingsProvider>().monthlyCycleStartDay;
@@ -338,12 +333,9 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       newCycleStart.month,
       newCycleStart.day - 1,
     );
-    return type == BudgetType.savings
-        ? 'รอบที่จบ ${formatCashFlowDate(closedEnd)} ปิดแล้ว '
-              'แผนออมของรอบใหม่ (เริ่ม ${formatCashFlowDate(newCycleStart)}) อยู่ในแท็บงวดถัดไป'
-        : 'รอบงบที่จบ ${formatCashFlowDate(closedEnd)} ปิดแล้ว '
-              'ยอดที่ใช้จริงนับอยู่ในยอดบัตรและเงินในบัญชีแล้ว · '
-              'งบรอบใหม่ (เริ่ม ${formatCashFlowDate(newCycleStart)}) อยู่ในแท็บงวดถัดไป';
+    return 'รอบงบที่จบ ${formatCashFlowDate(closedEnd)} ปิดแล้ว '
+        'ยอดที่ใช้จริงนับอยู่ในยอดบัตรและเงินในบัญชีแล้ว · '
+        'งบและแผนออมรอบใหม่ (เริ่ม ${formatCashFlowDate(newCycleStart)}) อยู่ในแท็บงวดถัดไป';
   }
 }
 
@@ -384,8 +376,7 @@ class _SummaryHero extends StatelessWidget {
         _metric('เงินเข้าที่ยังไม่ติ๊ก', forecast.incomingTotal),
         _metric('เงินออกที่ยังไม่ติ๊ก', -forecast.outgoingTotal),
         _metric('ยอดบัตรที่ต้องชำระ', -forecast.cardTotal),
-        _metric('งบรายจ่าย', -forecast.budgetTotal),
-        _metric('แผนออม', -forecast.savingsTotal),
+        _metric('งบประมาณ', -(forecast.budgetTotal + forecast.savingsTotal)),
         _metric('อยากซื้อ', -forecast.purchaseTotal),
         if (forecast.warningCount > 0) ...[
           const SizedBox(height: 10),
