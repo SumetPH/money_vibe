@@ -1,3 +1,4 @@
+import '../../widgets/app_metric_text.dart';
 import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
@@ -68,25 +69,25 @@ class TradeSummaryPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'เงินสดรับจากการขาย',
                     value: '${formatAmount(summary.cashReceivedUsd)} USD',
-                    color: textColor,
+                    valueColor: textColor,
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'กำไร',
                     value: '${formatAmount(summary.profitUsd)} USD',
-                    color: profitColor,
+                    valueColor: profitColor,
                     alignEnd: true,
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'ขาดทุน',
                     value: '${formatAmount(summary.lossUsd.abs())} USD',
-                    color: lossColor,
+                    valueColor: lossColor,
                     alignEnd: true,
                   ),
                 ),
@@ -176,80 +177,29 @@ class TradeFeeSummaryBreakdown extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TradeSummaryMetric(
+              child: AppMetricText(
                 label: 'Broker',
                 value: '${formatAmount(summary.brokerFeeUsd)} USD',
-                color: textColor,
+                valueColor: textColor,
               ),
             ),
             Expanded(
-              child: TradeSummaryMetric(
+              child: AppMetricText(
                 label: 'VAT',
                 value: '${formatAmount(summary.taxFeeUsd)} USD',
-                color: textColor,
+                valueColor: textColor,
                 alignEnd: true,
               ),
             ),
             Expanded(
-              child: TradeSummaryMetric(
+              child: AppMetricText(
                 label: 'SEC/TAF',
                 value: '${formatAmount(summary.exchangeFeeUsd)} USD',
-                color: textColor,
+                valueColor: textColor,
                 alignEnd: true,
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-class TradeSummaryMetric extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final bool alignEnd;
-
-  const TradeSummaryMetric({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.color,
-    this.alignEnd = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final secondaryColor = DefaultTextStyle.of(
-      context,
-    ).style.color?.withValues(alpha: 0.62);
-
-    return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: secondaryColor,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import '../../widgets/app_metric_text.dart';
 import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
@@ -6,7 +7,6 @@ import '../../models/portfolio_annual_report.dart';
 import '../../models/stock_trade.dart';
 import '../../theme/app_colors.dart';
 import 'trade_tracker_models.dart';
-import 'trade_summary_panel.dart';
 import 'trade_tracker_widgets.dart';
 
 class TradeAnnualTaxTab extends StatelessWidget {
@@ -176,10 +176,10 @@ class TradeAnnualTaxSummaryPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                TradeSummaryMetric(
+                AppMetricText(
                   label: 'โอนกลับรวม',
                   value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
-                  color: secondaryColor,
+                  valueColor: secondaryColor,
                   alignEnd: true,
                 ),
               ],
@@ -188,21 +188,21 @@ class TradeAnnualTaxSummaryPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'กำไรขายหุ้น',
                     value: '${formatAmount(tradeSummary.profitUsd)} USD',
-                    color: AppColors.getAmountColor(
+                    valueColor: AppColors.getAmountColor(
                       tradeSummary.profitUsd,
                       isDarkMode,
                     ),
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'ปันผลรวม',
                     value:
                         '${formatAmount(annualReportSummary.dividendGrossUsd)} USD',
-                    color: AppColors.getAmountColor(
+                    valueColor: AppColors.getAmountColor(
                       annualReportSummary.dividendGrossUsd,
                       isDarkMode,
                     ),
@@ -215,21 +215,21 @@ class TradeAnnualTaxSummaryPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'ภาษีปันผลหักไว้',
                     value:
                         '${formatAmount(annualReportSummary.dividendTaxWithheldUsd)} USD',
-                    color: isDarkMode
+                    valueColor: isDarkMode
                         ? AppColors.darkExpense
                         : AppColors.expense,
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'ปันผลสุทธิ',
                     value:
                         '${formatAmount(annualReportSummary.dividendNetUsd)} USD',
-                    color: secondaryColor,
+                    valueColor: secondaryColor,
                     alignEnd: true,
                   ),
                 ),
@@ -292,26 +292,26 @@ class TradeAnnualPrincipalSummarySection extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'โอนกลับรวม',
                     value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
-                    color: textColor,
+                    valueColor: textColor,
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'เงินต้นใช้แล้ว',
                     value:
                         '${formatAmount(annualTaxSummary.principalUsedUsd)} USD',
-                    color: textColor,
+                    valueColor: textColor,
                     alignEnd: true,
                   ),
                 ),
                 Expanded(
-                  child: TradeSummaryMetric(
+                  child: AppMetricText(
                     label: 'โควต้าคงเหลือ',
                     value: '${formatAmount(principalQuotaRemainingUsd)} USD',
-                    color: textColor,
+                    valueColor: textColor,
                     alignEnd: true,
                   ),
                 ),

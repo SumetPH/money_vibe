@@ -1,3 +1,4 @@
+import '../../widgets/app_metric_text.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -225,33 +226,12 @@ class StatisticsSummaryMetric extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.large),
         border: Border.all(color: dividerColor.withValues(alpha: 0.4)),
       ),
-      child: Column(
-        crossAxisAlignment: alignEnd
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: secondaryColor,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
+      child: AppMetricText(
+        label: label,
+        value: value,
+        valueColor: color,
+        labelColor: secondaryColor,
+        alignEnd: alignEnd,
       ),
     );
   }

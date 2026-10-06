@@ -1,3 +1,4 @@
+import '../../widgets/app_metric_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
@@ -5,7 +6,6 @@ import '../../models/investment_plan.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_inset_card.dart';
-import 'investment_plan_widgets.dart';
 
 class InvestmentPlanRebalanceRow extends StatelessWidget {
   final AllocationAnalysisRow row;
@@ -106,28 +106,28 @@ class InvestmentPlanRebalanceRow extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'เป้าหมาย',
                         value: '${row.targetPercent.toStringAsFixed(2)}%',
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: textColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'ปัจจุบัน',
                         value: '${row.currentPercent.toStringAsFixed(2)}%',
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: textColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'ส่วนต่าง %',
                         value:
                             '${row.diffPercent >= 0 ? '+' : ''}${row.diffPercent.toStringAsFixed(2)}%',
-                        textColor: diffColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: diffColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                   ],
@@ -139,28 +139,28 @@ class InvestmentPlanRebalanceRow extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'มูลค่าเป้า',
                         value: formatAmount(row.targetValue),
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: textColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'มูลค่าปัจจุบัน',
                         value: formatAmount(row.currentValue),
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: textColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                     Expanded(
-                      child: InvestmentPlanMetricTile(
+                      child: AppMetricText(
                         label: 'ขาด / เกิน',
                         value:
                             '${row.diffAmount >= 0 ? '+' : ''}${formatAmount(row.diffAmount)}',
-                        textColor: diffColor,
-                        secondaryColor: secondaryColor,
+                        valueColor: diffColor,
+                        labelColor: secondaryColor,
                       ),
                     ),
                   ],

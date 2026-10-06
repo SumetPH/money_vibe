@@ -1,3 +1,4 @@
+import '../../widgets/app_metric_text.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -137,11 +138,11 @@ class BudgetSummaryHeader extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: BudgetMetricTile(
+                  child: AppMetricText(
                     label: 'งบทั้งหมด',
                     value: formatAmount(totalBudget),
-                    textColor: textPrimary,
-                    secondaryColor: textSecondary,
+                    valueColor: textPrimary,
+                    labelColor: textSecondary,
                   ),
                 ),
                 Container(
@@ -152,13 +153,13 @@ class BudgetSummaryHeader extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12),
-                    child: BudgetMetricTile(
+                    child: AppMetricText(
                       label: 'ใช้ไปแล้ว',
                       value: formatAmount(totalSpent),
-                      textColor: isDarkMode
+                      valueColor: isDarkMode
                           ? AppColors.darkExpense
                           : AppColors.expense,
-                      secondaryColor: textSecondary,
+                      labelColor: textSecondary,
                     ),
                   ),
                 ),
@@ -170,13 +171,13 @@ class BudgetSummaryHeader extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12),
-                    child: BudgetMetricTile(
+                    child: AppMetricText(
                       label: 'ยังใช้ได้',
                       value: formatAmount(totalAvailable),
-                      textColor: isDarkMode
+                      valueColor: isDarkMode
                           ? AppColors.darkIncome
                           : AppColors.income,
-                      secondaryColor: textSecondary,
+                      labelColor: textSecondary,
                     ),
                   ),
                 ),
@@ -256,49 +257,6 @@ class BudgetSummaryHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class BudgetMetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color textColor;
-  final Color secondaryColor;
-
-  const BudgetMetricTile({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.textColor,
-    required this.secondaryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: secondaryColor,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -118,49 +118,6 @@ class InvestmentPlanTargetTotalBadge extends StatelessWidget {
   }
 }
 
-class InvestmentPlanMetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color textColor;
-  final Color secondaryColor;
-
-  const InvestmentPlanMetricTile({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.textColor,
-    required this.secondaryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: secondaryColor,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 Widget buildInvestmentPlanDcaChecklist({
   required bool dcaCompleted,
   required bool isDarkMode,
