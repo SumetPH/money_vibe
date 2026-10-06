@@ -1,9 +1,9 @@
+import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
 import '../../theme/app_colors.dart';
 import 'trade_tracker_models.dart';
-import 'trade_tracker_widgets.dart';
 
 class TradeSummaryPanel extends StatelessWidget {
   final TradeSummary summary;
@@ -29,79 +29,81 @@ class TradeSummaryPanel extends StatelessWidget {
       summary.realizedPnlUsd,
       isDarkMode,
     );
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Realized P/L (Est. / Broker)',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: secondaryColor,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Realized P/L (Est. / Broker)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: secondaryColor,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '${summary.tradeCount} รายการ',
-                style: TextStyle(fontSize: 12, color: secondaryColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${summary.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(summary.realizedPnlUsd)} USD',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: pnlColor,
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
+                const Spacer(),
+                Text(
+                  '${summary.tradeCount} รายการ',
+                  style: TextStyle(fontSize: 12, color: secondaryColor),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'เงินสดรับจากการขาย',
-                  value: '${formatAmount(summary.cashReceivedUsd)} USD',
-                  color: textColor,
-                ),
+            const SizedBox(height: 8),
+            Text(
+              '${summary.realizedPnlUsd >= 0 ? '+' : ''}${formatAmount(summary.realizedPnlUsd)} USD',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: pnlColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
               ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'กำไร',
-                  value: '${formatAmount(summary.profitUsd)} USD',
-                  color: profitColor,
-                  alignEnd: true,
-                ),
-              ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'ขาดทุน',
-                  value: '${formatAmount(summary.lossUsd.abs())} USD',
-                  color: lossColor,
-                  alignEnd: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Win/Loss ${summary.winCount}/${summary.lossCount}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: secondaryColor,
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'เงินสดรับจากการขาย',
+                    value: '${formatAmount(summary.cashReceivedUsd)} USD',
+                    color: textColor,
+                  ),
+                ),
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'กำไร',
+                    value: '${formatAmount(summary.profitUsd)} USD',
+                    color: profitColor,
+                    alignEnd: true,
+                  ),
+                ),
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'ขาดทุน',
+                    value: '${formatAmount(summary.lossUsd.abs())} USD',
+                    color: lossColor,
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Win/Loss ${summary.winCount}/${summary.lossCount}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: secondaryColor,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -118,10 +120,12 @@ class TradeFeeSummaryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      child: TradeFeeSummaryBreakdown(summary: summary, isDarkMode: isDarkMode),
+      children: [
+        TradeFeeSummaryBreakdown(summary: summary, isDarkMode: isDarkMode),
+      ],
     );
   }
 }

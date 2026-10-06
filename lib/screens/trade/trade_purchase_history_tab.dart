@@ -118,33 +118,34 @@ class TradePurchaseMonthSection extends StatelessWidget {
             ),
           ],
         ),
-        TradeInsetCard(
-          isDarkMode: isDarkMode,
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: section.purchases
-                .asMap()
-                .entries
-                .map(
-                  (entry) => Column(
-                    children: [
-                      TradePurchaseListItem(
-                        purchase: entry.value,
-                        portfolioName: portfolioNameOf(entry.value),
-                        isDarkMode: isDarkMode,
-                        onEdit: () => onEdit(entry.value),
-                        onDelete: () => onDelete(entry.value),
-                      ),
-                      if (entry.key != section.purchases.length - 1)
-                        Divider(
-                          height: 1,
-                          color: AppColors.listDividerFor(isDarkMode),
+        AppInsetCard(
+          margin: AppInsetCard.stackedMargin,
+          children: [
+            Column(
+              children: section.purchases
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => Column(
+                      children: [
+                        TradePurchaseListItem(
+                          purchase: entry.value,
+                          portfolioName: portfolioNameOf(entry.value),
+                          isDarkMode: isDarkMode,
+                          onEdit: () => onEdit(entry.value),
+                          onDelete: () => onDelete(entry.value),
                         ),
-                    ],
-                  ),
-                )
-                .toList(),
-          ),
+                        if (entry.key != section.purchases.length - 1)
+                          Divider(
+                            height: 1,
+                            color: AppColors.listDividerFor(isDarkMode),
+                          ),
+                      ],
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
         ),
       ],
     );

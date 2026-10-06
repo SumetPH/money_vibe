@@ -64,75 +64,81 @@ class StatisticsYearlyBarChart extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             children: [
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: StatisticsYearSelector(
-                  selectedYear: selectedYear,
-                  onYearChanged: onYearChanged,
-                  startDay: settingsProvider.monthlyCycleStartDay,
-                  isDarkMode: isDarkMode,
-                ),
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  StatisticsYearSelector(
+                    selectedYear: selectedYear,
+                    onYearChanged: onYearChanged,
+                    startDay: settingsProvider.monthlyCycleStartDay,
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
               ),
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: StatisticsYearlySummaryPanel(
-                  income: totalIncome,
-                  expense: totalExpense,
-                  net: netWorthYear,
-                  incomeColor: incomeColor,
-                  expenseColor: expenseColor,
-                  netColor: netWorthYearColor,
-                  isDarkMode: isDarkMode,
-                ),
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  StatisticsYearlySummaryPanel(
+                    income: totalIncome,
+                    expense: totalExpense,
+                    net: netWorthYear,
+                    incomeColor: incomeColor,
+                    expenseColor: expenseColor,
+                    netColor: netWorthYearColor,
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
               ),
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: SizedBox(
-                  height: 320,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'รายรับ vs รายจ่าย รายเดือน',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            StatisticsLegendItem(
-                              color: incomeColor,
-                              label: 'รายรับ',
-                              textColor: textColor,
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  SizedBox(
+                    height: 320,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'รายรับ vs รายจ่าย รายเดือน',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
                             ),
-                            const SizedBox(width: 16),
-                            StatisticsLegendItem(
-                              color: expenseColor,
-                              label: 'รายจ่าย',
-                              textColor: textColor,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: _buildBarChart(
-                            monthlyData,
-                            incomeColor,
-                            expenseColor,
-                            isDarkMode,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        const AppCardDivider(),
-                      ],
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              StatisticsLegendItem(
+                                color: incomeColor,
+                                label: 'รายรับ',
+                                textColor: textColor,
+                              ),
+                              const SizedBox(width: 16),
+                              StatisticsLegendItem(
+                                color: expenseColor,
+                                label: 'รายจ่าย',
+                                textColor: textColor,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: _buildBarChart(
+                              monthlyData,
+                              incomeColor,
+                              expenseColor,
+                              isDarkMode,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const AppCardDivider(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -149,16 +155,18 @@ class StatisticsYearlyBarChart extends StatelessWidget {
                   ),
                 ),
               ),
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: _buildMonthlyList(
-                  context,
-                  monthlyData,
-                  incomeColor,
-                  expenseColor,
-                  textColor,
-                  isDarkMode,
-                ),
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  _buildMonthlyList(
+                    context,
+                    monthlyData,
+                    incomeColor,
+                    expenseColor,
+                    textColor,
+                    isDarkMode,
+                  ),
+                ],
               ),
             ],
           ),

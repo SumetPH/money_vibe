@@ -1,3 +1,4 @@
+import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -13,7 +14,6 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../transaction/transaction_list_screen.dart';
 import 'statistics_models.dart';
-import 'statistics_widgets.dart';
 
 class StatisticsCategoryPieChart extends StatelessWidget {
   final CategoryType type;
@@ -70,108 +70,112 @@ class StatisticsCategoryPieChart extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: secondaryColor,
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${type == CategoryType.income ? 'รายรับ' : 'รายจ่าย'}รวมทั้งหมด',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: secondaryColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        formatAmount(total),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: color,
+                        const SizedBox(height: 8),
+                        Text(
+                          formatAmount(total),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: color,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
 
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: SizedBox(
-                  height: 220,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 16,
-                        sections: categoryData.map((data) {
-                          final percentage = total > 0
-                              ? (data.amount / total) * 100
-                              : 0.0;
-                          final showLabel = percentage >= 4;
-                          return PieChartSectionData(
-                            color: data.color,
-                            value: data.amount,
-                            title: '',
-                            radius: 52,
-                            badgeWidget: showLabel
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? AppColors.darkSurface
-                                          : AppColors.surface,
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadii.small,
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  SizedBox(
+                    height: 220,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 16,
+                          sections: categoryData.map((data) {
+                            final percentage = total > 0
+                                ? (data.amount / total) * 100
+                                : 0.0;
+                            final showLabel = percentage >= 4;
+                            return PieChartSectionData(
+                              color: data.color,
+                              value: data.amount,
+                              title: '',
+                              radius: 52,
+                              badgeWidget: showLabel
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
                                       ),
-                                      border: Border.all(
-                                        color: data.color,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          data.icon,
+                                      decoration: BoxDecoration(
+                                        color: isDarkMode
+                                            ? AppColors.darkSurface
+                                            : AppColors.surface,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadii.small,
+                                        ),
+                                        border: Border.all(
                                           color: data.color,
-                                          size: 11,
+                                          width: 1,
                                         ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          '${percentage.toStringAsFixed(0)}%',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            data.icon,
                                             color: data.color,
+                                            size: 11,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : null,
-                            badgePositionPercentageOffset: 1.50,
-                          );
-                        }).toList(),
-                        pieTouchData: PieTouchData(
-                          enabled: true,
-                          touchCallback:
-                              (FlTouchEvent event, pieTouchResponse) {},
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '${percentage.toStringAsFixed(0)}%',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color: data.color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : null,
+                              badgePositionPercentageOffset: 1.50,
+                            );
+                          }).toList(),
+                          pieTouchData: PieTouchData(
+                            enabled: true,
+                            touchCallback:
+                                (FlTouchEvent event, pieTouchResponse) {},
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
 
               Padding(
@@ -189,32 +193,34 @@ class StatisticsCategoryPieChart extends StatelessWidget {
                   ),
                 ),
               ),
-              StatisticsInsetCard(
-                isDarkMode: isDarkMode,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: categoryData.length,
-                    separatorBuilder: (_, _) => Divider(
-                      height: 1,
-                      color: AppColors.listDividerFor(isDarkMode),
+              AppInsetCard(
+                margin: AppInsetCard.stackedMargin,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: categoryData.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
+                      itemBuilder: (context, index) {
+                        final data = categoryData[index];
+                        final percentage = total > 0
+                            ? (data.amount / total) * 100
+                            : 0.0;
+                        return StatisticsCategoryListItem(
+                          data: data,
+                          percentage: percentage.toDouble(),
+                          isDarkMode: isDarkMode,
+                          onTap: () => _openCategoryTransactions(context, data),
+                        );
+                      },
                     ),
-                    itemBuilder: (context, index) {
-                      final data = categoryData[index];
-                      final percentage = total > 0
-                          ? (data.amount / total) * 100
-                          : 0.0;
-                      return StatisticsCategoryListItem(
-                        data: data,
-                        percentage: percentage.toDouble(),
-                        isDarkMode: isDarkMode,
-                        onTap: () => _openCategoryTransactions(context, data),
-                      );
-                    },
                   ),
-                ),
+                ],
               ),
             ],
           ),

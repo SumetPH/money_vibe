@@ -1,3 +1,4 @@
+import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
@@ -129,115 +130,119 @@ class TradeAnnualTaxSummaryPanel extends StatelessWidget {
       isDarkMode,
     );
 
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'ยอดโอนกลับส่วนเกินเงินต้น',
-                style: TextStyle(
-                  color: secondaryColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'ยอดโอนกลับส่วนเกินเงินต้น',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${formatAmount(annualTaxSummary.taxableThb)} THB',
-                    style: TextStyle(
-                      color: taxableColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${formatAmount(annualTaxSummary.taxableThb)} THB',
+                      style: TextStyle(
+                        color: taxableColor,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${formatAmount(annualTaxSummary.taxableUsd)} USD',
-                    style: TextStyle(
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    const SizedBox(height: 4),
+                    Text(
+                      '${formatAmount(annualTaxSummary.taxableUsd)} USD',
+                      style: TextStyle(
+                        color: secondaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              TradeSummaryMetric(
-                label: 'โอนกลับรวม',
-                value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
-                color: secondaryColor,
-                alignEnd: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'กำไรขายหุ้น',
-                  value: '${formatAmount(tradeSummary.profitUsd)} USD',
-                  color: AppColors.getAmountColor(
-                    tradeSummary.profitUsd,
-                    isDarkMode,
-                  ),
+                  ],
                 ),
-              ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'ปันผลรวม',
-                  value:
-                      '${formatAmount(annualReportSummary.dividendGrossUsd)} USD',
-                  color: AppColors.getAmountColor(
-                    annualReportSummary.dividendGrossUsd,
-                    isDarkMode,
-                  ),
-                  alignEnd: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'ภาษีปันผลหักไว้',
-                  value:
-                      '${formatAmount(annualReportSummary.dividendTaxWithheldUsd)} USD',
-                  color: isDarkMode ? AppColors.darkExpense : AppColors.expense,
-                ),
-              ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'ปันผลสุทธิ',
-                  value:
-                      '${formatAmount(annualReportSummary.dividendNetUsd)} USD',
+                TradeSummaryMetric(
+                  label: 'โอนกลับรวม',
+                  value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
                   color: secondaryColor,
                   alignEnd: true,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'ถ้ายอดโอนกลับเกินเงินต้น ยอดเกินทุนคือเงินได้ที่นำกลับไทยและเป็นตัวเลขหลักที่ต้องเอาไปดูภาษี',
-            style: TextStyle(color: secondaryColor, fontSize: 12),
-          ),
-        ],
-      ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'กำไรขายหุ้น',
+                    value: '${formatAmount(tradeSummary.profitUsd)} USD',
+                    color: AppColors.getAmountColor(
+                      tradeSummary.profitUsd,
+                      isDarkMode,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'ปันผลรวม',
+                    value:
+                        '${formatAmount(annualReportSummary.dividendGrossUsd)} USD',
+                    color: AppColors.getAmountColor(
+                      annualReportSummary.dividendGrossUsd,
+                      isDarkMode,
+                    ),
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'ภาษีปันผลหักไว้',
+                    value:
+                        '${formatAmount(annualReportSummary.dividendTaxWithheldUsd)} USD',
+                    color: isDarkMode
+                        ? AppColors.darkExpense
+                        : AppColors.expense,
+                  ),
+                ),
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'ปันผลสุทธิ',
+                    value:
+                        '${formatAmount(annualReportSummary.dividendNetUsd)} USD',
+                    color: secondaryColor,
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'ถ้ายอดโอนกลับเกินเงินต้น ยอดเกินทุนคือเงินได้ที่นำกลับไทยและเป็นตัวเลขหลักที่ต้องเอาไปดูภาษี',
+              style: TextStyle(color: secondaryColor, fontSize: 12),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -263,61 +268,63 @@ class TradeAnnualPrincipalSummarySection extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Text(
-                'โควต้าเงินต้นปีที่เลือก',
-                style: TextStyle(
-                  color: secondaryColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  'โควต้าเงินต้นปีที่เลือก',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'โอนกลับรวม',
-                  value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
-                  color: textColor,
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'โอนกลับรวม',
+                    value: '${formatAmount(annualTaxSummary.remittedUsd)} USD',
+                    color: textColor,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'เงินต้นใช้แล้ว',
-                  value:
-                      '${formatAmount(annualTaxSummary.principalUsedUsd)} USD',
-                  color: textColor,
-                  alignEnd: true,
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'เงินต้นใช้แล้ว',
+                    value:
+                        '${formatAmount(annualTaxSummary.principalUsedUsd)} USD',
+                    color: textColor,
+                    alignEnd: true,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: TradeSummaryMetric(
-                  label: 'โควต้าคงเหลือ',
-                  value: '${formatAmount(principalQuotaRemainingUsd)} USD',
-                  color: textColor,
-                  alignEnd: true,
+                Expanded(
+                  child: TradeSummaryMetric(
+                    label: 'โควต้าคงเหลือ',
+                    value: '${formatAmount(principalQuotaRemainingUsd)} USD',
+                    color: textColor,
+                    alignEnd: true,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'คำนวณจากเงินต้นสะสมถึงปีที่เลือก หักเงินต้นที่โอนกลับแล้ว',
-            style: TextStyle(color: secondaryColor, fontSize: 12),
-          ),
-        ],
-      ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'คำนวณจากเงินต้นสะสมถึงปีที่เลือก หักเงินต้นที่โอนกลับแล้ว',
+              style: TextStyle(color: secondaryColor, fontSize: 12),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -341,64 +348,65 @@ class TradeAnnualReportTaxListItem extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${formatAmount(report.remittedUsd)} USD',
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
+      children: [
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${formatAmount(report.remittedUsd)} USD',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${formatAmount(report.remittedThb)} THB',
                         style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
+                          color: secondaryColor,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                    Text(
-                      '${formatAmount(report.remittedThb)} THB',
-                      style: TextStyle(
-                        color: secondaryColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TradeCompactTaxMetric(
+                          label: 'เงินทุน',
+                          value:
+                              '${formatAmount(report.inflowUsd)} USD \n${formatAmount(report.inflowThb)} THB',
+                          color: secondaryColor,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TradeCompactTaxMetric(
-                        label: 'เงินทุน',
-                        value:
-                            '${formatAmount(report.inflowUsd)} USD \n${formatAmount(report.inflowThb)} THB',
-                        color: secondaryColor,
+                      Expanded(
+                        child: TradeCompactTaxMetric(
+                          label: 'ปันผลรวม',
+                          value: '${formatAmount(report.dividendGrossUsd)} USD',
+                          color: secondaryColor,
+                          alignEnd: true,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: TradeCompactTaxMetric(
-                        label: 'ปันผลรวม',
-                        value: '${formatAmount(report.dividendGrossUsd)} USD',
-                        color: secondaryColor,
-                        alignEnd: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }

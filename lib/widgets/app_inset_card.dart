@@ -43,6 +43,9 @@ class AppSectionHeader extends StatelessWidget {
 class AppInsetCard extends StatelessWidget {
   static const EdgeInsets defaultMargin = EdgeInsets.symmetric(horizontal: 16);
 
+  /// Margin for cards stacked vertically without section headers between them.
+  static const EdgeInsets stackedMargin = EdgeInsets.fromLTRB(16, 0, 16, 16);
+
   final List<Widget> children;
   final EdgeInsetsGeometry margin;
   final EdgeInsetsGeometry? padding;

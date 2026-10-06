@@ -1,3 +1,4 @@
+import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
@@ -112,32 +113,33 @@ class TradeMonthSection extends StatelessWidget {
             ),
           ],
         ),
-        TradeInsetCard(
-          isDarkMode: isDarkMode,
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: section.trades.asMap().entries.map((entry) {
-              final index = entry.key;
-              final trade = entry.value;
+        AppInsetCard(
+          margin: AppInsetCard.stackedMargin,
+          children: [
+            Column(
+              children: section.trades.asMap().entries.map((entry) {
+                final index = entry.key;
+                final trade = entry.value;
 
-              return Column(
-                children: [
-                  TradeListItem(
-                    trade: trade,
-                    portfolioName: portfolioNameOf(trade),
-                    isDarkMode: isDarkMode,
-                    onEdit: () => onEdit(trade),
-                    onDelete: () => onDelete(trade),
-                  ),
-                  if (index != section.trades.length - 1)
-                    Divider(
-                      height: 1,
-                      color: AppColors.listDividerFor(isDarkMode),
+                return Column(
+                  children: [
+                    TradeListItem(
+                      trade: trade,
+                      portfolioName: portfolioNameOf(trade),
+                      isDarkMode: isDarkMode,
+                      onEdit: () => onEdit(trade),
+                      onDelete: () => onDelete(trade),
                     ),
-                ],
-              );
-            }).toList(),
-          ),
+                    if (index != section.trades.length - 1)
+                      Divider(
+                        height: 1,
+                        color: AppColors.listDividerFor(isDarkMode),
+                      ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ],
     );
@@ -165,175 +167,176 @@ class TradeMonthlyTable extends StatelessWidget {
     final profitColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final lossColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'เดือน',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: secondaryColor,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'เดือน',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryColor,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'จำนวน',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: secondaryColor,
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'จำนวน',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryColor,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'กำไร',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'กำไร',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'ขาดทุน',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'ขาดทุน',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'สุทธิ',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: secondaryColor,
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'สุทธิ',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryColor,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
-          ...summaries.asMap().entries.map((entry) {
-            final index = entry.key;
-            final monthSummary = entry.value;
-            final summary = monthSummary.summary;
-            final hasData = summary.tradeCount > 0;
-            final pnl = summary.realizedPnlUsd;
-            final pnlColor = AppColors.getAmountColor(pnl, isDarkMode);
+            Divider(height: 1, color: AppColors.listDividerFor(isDarkMode)),
+            ...summaries.asMap().entries.map((entry) {
+              final index = entry.key;
+              final monthSummary = entry.value;
+              final summary = monthSummary.summary;
+              final hasData = summary.tradeCount > 0;
+              final pnl = summary.realizedPnlUsd;
+              final pnlColor = AppColors.getAmountColor(pnl, isDarkMode);
 
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            tradeMonthShortLabel(monthSummary.month),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            hasData ? '${summary.tradeCount}' : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: hasData ? textColor : secondaryColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData && summary.profitUsd > 0
+                                ? formatAmount(summary.profitUsd)
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: summary.profitUsd > 0
+                                  ? profitColor
+                                  : secondaryColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData && summary.lossUsd < 0
+                                ? formatAmount(summary.lossUsd.abs())
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: summary.lossUsd < 0
+                                  ? lossColor
+                                  : secondaryColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            hasData
+                                ? '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}'
+                                : '-',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: hasData ? pnlColor : secondaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          tradeMonthShortLabel(monthSummary.month),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          hasData ? '${summary.tradeCount}' : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: hasData ? textColor : secondaryColor,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData && summary.profitUsd > 0
-                              ? formatAmount(summary.profitUsd)
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: summary.profitUsd > 0
-                                ? profitColor
-                                : secondaryColor,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData && summary.lossUsd < 0
-                              ? formatAmount(summary.lossUsd.abs())
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: summary.lossUsd < 0
-                                ? lossColor
-                                : secondaryColor,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          hasData
-                              ? '${pnl >= 0 ? '+' : ''}${formatAmount(pnl)}'
-                              : '-',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: hasData ? pnlColor : secondaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (index != summaries.length - 1)
-                  Divider(
-                    height: 1,
-                    color: AppColors.listDividerFor(isDarkMode),
-                  ),
-              ],
-            );
-          }),
-        ],
-      ),
+                  if (index != summaries.length - 1)
+                    Divider(
+                      height: 1,
+                      color: AppColors.listDividerFor(isDarkMode),
+                    ),
+                ],
+              );
+            }),
+          ],
+        ),
+      ],
     );
   }
 }

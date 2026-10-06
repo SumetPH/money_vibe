@@ -4,40 +4,6 @@ import '../../theme/app_radii.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../main.dart';
 
-class StatisticsInsetCard extends StatelessWidget {
-  final bool isDarkMode;
-  final Widget child;
-
-  const StatisticsInsetCard({
-    super.key,
-    required this.isDarkMode,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(
-          color: dividerColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        clipBehavior: Clip.antiAlias,
-        child: child,
-      ),
-    );
-  }
-}
-
 class StatisticsYearSelector extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;

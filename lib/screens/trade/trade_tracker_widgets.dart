@@ -1,39 +1,8 @@
+import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-
-class TradeInsetCard extends StatelessWidget {
-  final bool isDarkMode;
-  final EdgeInsetsGeometry padding;
-  final Widget child;
-
-  const TradeInsetCard({
-    super.key,
-    required this.isDarkMode,
-    required this.padding,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Material(
-        color: surfaceColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-          side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(padding: padding, child: child),
-      ),
-    );
-  }
-}
 
 class TradeYearSelector extends StatelessWidget {
   final int selectedYear;
@@ -56,36 +25,38 @@ class TradeYearSelector extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    return TradeInsetCard(
-      isDarkMode: isDarkMode,
+    return AppInsetCard(
+      margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left, color: secondaryColor),
-                onPressed: () => onYearChanged(selectedYear - 1),
-              ),
-              Expanded(
-                child: Text(
-                  '$selectedYear',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+      children: [
+        Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.chevron_left, color: secondaryColor),
+                  onPressed: () => onYearChanged(selectedYear - 1),
+                ),
+                Expanded(
+                  child: Text(
+                    '$selectedYear',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: Icon(Icons.chevron_right, color: secondaryColor),
-                onPressed: () => onYearChanged(selectedYear + 1),
-              ),
-            ],
-          ),
-        ],
-      ),
+                IconButton(
+                  icon: Icon(Icons.chevron_right, color: secondaryColor),
+                  onPressed: () => onYearChanged(selectedYear + 1),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
