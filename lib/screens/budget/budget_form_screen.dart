@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/calculator_keyboard_host.dart';
 import 'budget_category_picker_sheet.dart';
 import 'budget_form_widgets.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +11,6 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
-import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/calculator_text_field_config.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
@@ -27,12 +27,10 @@ class BudgetFormScreen extends StatefulWidget {
   State<BudgetFormScreen> createState() => _BudgetFormScreenState();
 }
 
-class _BudgetFormScreenState extends State<BudgetFormScreen> {
+class _BudgetFormScreenState extends State<BudgetFormScreen>
+    with CalculatorKeyboardHost {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _amountFocusNode = FocusNode();
-  PersistentBottomSheetController? _keyboardController;
-  TextEditingController? _activeKeyboardController;
-  bool _isUpdatingController = false;
 
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -48,6 +46,18 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
   bool get _isEditing => widget.budget != null;
 
   @override
+  GlobalKey<ScaffoldState> get calculatorScaffoldKey => _scaffoldKey;
+
+  @override
+  TextEditingController get calculatorController => _amountController;
+
+  @override
+  FocusNode get calculatorFocusNode => _amountFocusNode;
+
+  @override
+  Color get calculatorActionColor => _selectedColor;
+
+  @override
   void initState() {
     super.initState();
     final b = widget.budget;
@@ -60,140 +70,17 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     _selectedType = b?.type ?? BudgetType.expense;
     _isHidden = b?.isHidden ?? false;
 
-    _amountFocusNode.addListener(_onFocusChange);
-    _amountController.addListener(_handleAmountChanged);
+    attachCalculatorKeyboard();
   }
 
   @override
   void dispose() {
-    _amountFocusNode.removeListener(_onFocusChange);
-    _amountController.removeListener(_handleAmountChanged);
+    detachCalculatorKeyboard();
     _amountFocusNode.dispose();
     _nameController.dispose();
     _amountController.dispose();
     _groupController.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (!mounted) return;
-    if (_amountFocusNode.hasFocus) {
-      _showKeyboard(_amountController);
-    } else {
-      _closeKeyboard();
-    }
-  }
-
-  void _handleAmountChanged() {
-    if (_isUpdatingController) return;
-    _isUpdatingController = true;
-    try {
-      final text = _amountController.text;
-      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
-
-      if (!hasOperator) {
-        _formatAmountInput(text);
-      } else {
-        // Strip commas if operator is present
-        final sanitized = text.replaceAll(',', '');
-        if (text != sanitized) {
-          final selection = _amountController.selection;
-          int commasBeforeCursor = 0;
-          if (selection.isValid) {
-            final textBeforeCursor = text.substring(0, selection.end);
-            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
-          }
-          final newOffset = selection.isValid
-              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
-              : sanitized.length;
-
-          _amountController.value = TextEditingValue(
-            text: sanitized,
-            selection: TextSelection.collapsed(offset: newOffset),
-          );
-        }
-      }
-    } finally {
-      _isUpdatingController = false;
-    }
-  }
-
-  void _showKeyboard(TextEditingController controller) {
-    if (_keyboardController != null) {
-      if (_activeKeyboardController == controller) {
-        return;
-      }
-      _closeKeyboard();
-    }
-
-    _activeKeyboardController = controller;
-    final actionColor = _selectedColor;
-
-    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
-      (context) {
-        return CalculatorKeyboard(
-          controller: controller,
-          actionButtonColor: actionColor,
-          onDone: () {
-            _amountFocusNode.unfocus();
-          },
-        );
-      },
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
-
-    _keyboardController?.closed.then((_) {
-      if (_activeKeyboardController == controller) {
-        _keyboardController = null;
-        _activeKeyboardController = null;
-        if (_amountFocusNode.hasFocus) {
-          _amountFocusNode.unfocus();
-        }
-      }
-    });
-  }
-
-  void _closeKeyboard() {
-    if (_keyboardController != null) {
-      _keyboardController?.close();
-      _keyboardController = null;
-      _activeKeyboardController = null;
-    }
-  }
-
-  void _formatAmountInput(String value) {
-    final raw = value.replaceAll(',', '');
-    if (raw.isEmpty) {
-      if (_amountController.text.isNotEmpty) {
-        _amountController.text = '';
-        _amountController.selection = const TextSelection.collapsed(offset: 0);
-      }
-      return;
-    }
-
-    final hasDecimal = raw.contains('.');
-    final parts = raw.split('.');
-    final intPart = parts[0];
-
-    final formattedInt = intPart.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-
-    String formatted;
-    if (hasDecimal && parts.length > 1) {
-      formatted = '$formattedInt.${parts[1]}';
-    } else {
-      formatted = formattedInt;
-    }
-
-    if (_amountController.text != formatted) {
-      _amountController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
   }
 
   String _buildBudgetConflictMessage(
@@ -315,7 +202,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
         );
       }
       if (mounted) {
-        _closeKeyboard();
+        closeCalculatorKeyboard();
         Navigator.pop(context);
       }
     } catch (e) {
@@ -366,12 +253,12 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
     try {
       await provider.deleteBudget(widget.budget!.id);
       if (mounted) {
-        _closeKeyboard();
+        closeCalculatorKeyboard();
         navigator.pop(); // Close form
       }
     } catch (e) {
       if (mounted) {
-        _closeKeyboard();
+        closeCalculatorKeyboard();
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('ลบงบประมาณไม่สำเร็จ: $e'),
@@ -433,7 +320,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen> {
               onPressed: _isLoading
                   ? null
                   : () {
-                      _closeKeyboard();
+                      closeCalculatorKeyboard();
                       Navigator.pop(context);
                     },
             ),
