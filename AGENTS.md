@@ -56,6 +56,18 @@
 - provider ลงท้ายด้วย `Provider`
 - screen ลงท้ายด้วย `Screen`
 
+### โครงสร้างไฟล์ใน `lib/screens/<module>/`
+
+ยึดแบบ `lib/screens/cash_flow/` (รายละเอียดใน `.scratch/screen-file-split/spec.md`)
+
+- ไฟล์ screen ควรยาวไม่เกิน ~400 บรรทัด และห้ามเกิน 800 บรรทัด
+- แยก tab, section, bottom sheet, dialog, list item, summary card ออกเป็นไฟล์ของตัวเองในโฟลเดอร์ module เดียวกัน (ไม่สร้างโฟลเดอร์ย่อย) ตั้งชื่อ `<feature>_<role>.dart` เช่น `trade_annual_tax_tab.dart`
+- widget ที่สั้นกว่า ~40 บรรทัดและใช้ที่เดียวไม่ต้องแยก
+- class ที่แยกออกมาเป็น public พร้อม prefix ของ feature (`_MetricTile` → `BudgetMetricTile`) ห้ามใช้ `part` / `part of`
+- ไฟล์ screen เก็บ `State`, lifecycle, การเชื่อม Provider, navigation และ action save/delete ส่วน widget ที่แยกออกไปรับข้อมูลและ callback
+- data/aggregation class ที่ใช้เฉพาะ UI ให้อยู่ใน `<feature>_models.dart` ข้างไฟล์ screen
+- widget ที่ใช้ซ้ำข้าม module ให้ย้ายไป `lib/widgets/` และบันทึกใน `docs/design.md`
+
 ## กฎสำหรับ Agent
 
 - **On-Demand Redesign**: เมื่อผู้ใช้ส่ง `@screen` หรือ `@widget` ให้ redesign ตาม `docs/design.md` โดยรักษา **Zero Business Logic Regression** (ห้ามแก้ logic การคำนวณ, state management `Provider`, repository/database, validation หรือ debounce timer เว้นแต่ผู้ใช้สั่งโดยตรง)

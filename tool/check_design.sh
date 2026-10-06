@@ -62,6 +62,14 @@ check 'Use AppColors tokens instead of hard-coded Color(0x...) values' \
 check 'Use showAppDatePicker / showAppDateRangePicker instead of Material date pickers' \
   '(showDatePicker|showDateRangePicker)\(' $(files_except 'lib/widgets/app_date_picker_sheet\.dart')
 
+# Non-failing: screen files over the 800-line cap (see AGENTS.md).
+while read -r lines file; do
+  [[ $file == total ]] && continue
+  if (( lines > 800 )); then
+    echo "⚠ $file has $lines lines (max 800)"
+  fi
+done < <(find lib/screens -name '*.dart' -exec wc -l {} +)
+
 if [[ $status -eq 0 ]]; then
   echo '✓ design check passed'
 fi
