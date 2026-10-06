@@ -1,6 +1,6 @@
 # Split large screen files into per-widget files
 
-Status: needs-triage
+Status: resolved
 
 ## Problem
 
