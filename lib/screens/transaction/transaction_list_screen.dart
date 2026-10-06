@@ -216,7 +216,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             widget.fixedDateRange == null &&
                                 widget.transactionIds == null
                             ? () => showTransactionPeriodPicker(
-                                context,
+                                this.context,
                                 isDarkMode,
                                 selected: _filter,
                                 customRange: _customRange,
