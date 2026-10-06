@@ -17,16 +17,15 @@ import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
-import '../../theme/theme_color_option.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
 import 'llm_api_key_settings_screen.dart';
-import '../../widgets/app_switch.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import 'settings_widgets.dart';
+import 'settings_sheets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -104,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 // Account Section
                 AppSectionHeader('บัญชีผู้ใช้'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
@@ -115,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             return Column(
                               children: [
                                 ListTile(
-                                  leading: _SettingsIcon(
+                                  leading: SettingsIcon(
                                     icon: Icons.person,
                                     color: secondaryTextColor,
                                   ),
@@ -139,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: AppColors.listDividerFor(isDarkMode),
                                 ),
                                 ListTile(
-                                  leading: _SettingsIcon(
+                                  leading: SettingsIcon(
                                     icon: Icons.logout,
                                     color: isDarkMode
                                         ? AppColors.darkExpense
@@ -160,7 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           } else {
                             // แสดงเมื่อยังไม่ได้ login
                             return ListTile(
-                              leading: _SettingsIcon(
+                              leading: SettingsIcon(
                                 icon: Icons.login,
                                 color: isDarkMode
                                     ? AppColors.darkIncome
@@ -189,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       if (!dbManager.isConfigured) ...[
                         ListTile(
-                          leading: const _SettingsIcon(
+                          leading: const SettingsIcon(
                             icon: Icons.cloud_off,
                             color: Colors.orange,
                           ),
@@ -222,13 +221,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Appearance Section
                 AppSectionHeader('ลักษณะ'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
                       Consumer<SettingsProvider>(
                         builder: (context, settingsProvider, _) {
-                          return _SettingsToggleTile(
+                          return SettingsToggleTile(
                             icon: Icons.dark_mode_outlined,
                             title: 'โหมดมืด',
                             subtitle: 'ใช้ธีมสีเข้ม',
@@ -245,7 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Consumer<SettingsProvider>(
                         builder: (context, settingsProvider, _) {
                           return ListTile(
-                            leading: _SettingsIcon(
+                            leading: SettingsIcon(
                               icon: Icons.palette_outlined,
                               color: secondaryTextColor,
                             ),
@@ -263,7 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _ThemeColorSwatch(
+                                SettingsThemeColorSwatch(
                                   option: settingsProvider.themeColor,
                                   isDarkMode: settingsProvider.isDarkMode,
                                   selected: false,
@@ -275,7 +274,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ],
                             ),
-                            onTap: _showThemeColorSheet,
+                            onTap: () =>
+                                showSettingsThemeColorSheet(this.context),
                           );
                         },
                       ),
@@ -284,12 +284,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 AppSectionHeader('รอบคำนวณ'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
                       ListTile(
-                        leading: _SettingsIcon(
+                        leading: SettingsIcon(
                           icon: Icons.calendar_today_outlined,
                           color: secondaryTextColor,
                         ),
@@ -308,7 +308,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.chevron_right,
                           color: secondaryTextColor,
                         ),
-                        onTap: _showMonthlyCycleStartDaySheet,
+                        onTap: () =>
+                            showSettingsMonthlyCycleStartDaySheet(this.context),
                       ),
                     ],
                   ),
@@ -316,13 +317,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // API Section
                 AppSectionHeader('API'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
                       Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
-                          return _SettingsToggleTile(
+                          return SettingsToggleTile(
                             icon: Icons.currency_exchange_outlined,
                             title: 'อัตราแลกเปลี่ยนจาก Yahoo',
                             subtitle: settings.useYahooForExchangeRate
@@ -346,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
-                          return _SettingsToggleTile(
+                          return SettingsToggleTile(
                             icon: Icons.schedule_outlined,
                             title: 'ราคา Pre/Post จาก Yahoo',
                             subtitle: settings.useYahooExtendedHoursPrice
@@ -368,7 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         builder: (context, settings, _) {
                           final finnhubReady = settings.isFinnhubConfigured;
 
-                          return _SettingsToggleTile(
+                          return SettingsToggleTile(
                             icon: Icons.toggle_on_outlined,
                             title: 'ราคาจาก Finnhub',
                             subtitle: finnhubReady
@@ -391,7 +392,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
 
                       ListTile(
-                        leading: _SettingsIcon(
+                        leading: SettingsIcon(
                           icon: Icons.api,
                           color: secondaryTextColor,
                         ),
@@ -426,7 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
 
                       ListTile(
-                        leading: _SettingsIcon(
+                        leading: SettingsIcon(
                           icon: Icons.auto_awesome,
                           color: secondaryTextColor,
                         ),
@@ -461,12 +462,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Data Management Section
                 AppSectionHeader('ข้อมูล'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
                       ListTile(
-                        leading: _SettingsIcon(
+                        leading: SettingsIcon(
                           icon: Icons.content_copy_outlined,
                           color: secondaryTextColor,
                         ),
@@ -492,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: AppColors.listDividerFor(isDarkMode),
                       ),
                       ListTile(
-                        leading: _SettingsIcon(
+                        leading: SettingsIcon(
                           icon: Icons.cloud,
                           color: dbManager.isConfigured
                               ? Colors.blue
@@ -532,12 +533,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (reinstallReminder.isSupported &&
                     reinstallReminder.state != null) ...[
                   AppSectionHeader('การติดตั้ง'),
-                  _SettingsGroup(
+                  SettingsGroup(
                     isDarkMode: isDarkMode,
                     child: Column(
                       children: [
                         ListTile(
-                          leading: _SettingsIcon(
+                          leading: SettingsIcon(
                             icon: reinstallReminder.needsExpiredBadge
                                 ? Icons.error_outline
                                 : Icons.timer_outlined,
@@ -562,7 +563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           height: 1,
                           color: AppColors.listDividerFor(isDarkMode),
                         ),
-                        _SettingsToggleTile(
+                        SettingsToggleTile(
                           icon: Icons.notifications_outlined,
                           title: 'แจ้งเตือนติดตั้งใหม่',
                           subtitle: reinstallReminder.notificationEnabled
@@ -579,7 +580,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // About Section
                 AppSectionHeader('เกี่ยวกับ'),
-                _SettingsGroup(
+                SettingsGroup(
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
@@ -591,7 +592,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               : 'กำลังโหลด...';
 
                           return ListTile(
-                            leading: _SettingsIcon(
+                            leading: SettingsIcon(
                               icon: Icons.info_outline,
                               color: secondaryTextColor,
                             ),
@@ -617,153 +618,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           );
         },
       ),
-    );
-  }
-
-  void _showThemeColorSheet() {
-    showAppModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) {
-        final settings = ctx.watch<SettingsProvider>();
-        final isDarkMode = settings.isDarkMode;
-        final textColor = isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-        final secondaryTextColor = isDarkMode
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-        return SafeArea(
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: ThemeColorOption.values.length + 1,
-            separatorBuilder: (_, index) => index == 0
-                ? const SizedBox(height: 4)
-                : Divider(
-                    height: 1,
-                    color: AppColors.listDividerFor(isDarkMode),
-                  ),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return const AppModalBottomSheetHeader(title: 'สีธีม');
-              }
-
-              final option = ThemeColorOption.values[index - 1];
-              final selected = option.id == settings.themeColor.id;
-              return ListTile(
-                tileColor: Colors.transparent,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                minLeadingWidth: 44,
-                leading: _ThemeColorSwatch(
-                  option: option,
-                  isDarkMode: isDarkMode,
-                  selected: selected,
-                ),
-                title: Text(option.label, style: TextStyle(color: textColor)),
-                subtitle: selected
-                    ? Text(
-                        'กำลังใช้งาน',
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: 12,
-                        ),
-                      )
-                    : null,
-                trailing: selected
-                    ? Icon(
-                        Icons.check_circle,
-                        color: AppColors.accentFor(isDarkMode, option),
-                      )
-                    : null,
-                onTap: () {
-                  settings.setThemeColor(option);
-                  Navigator.pop(ctx);
-                },
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  void _showMonthlyCycleStartDaySheet() {
-    showAppModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final settings = ctx.watch<SettingsProvider>();
-        final isDarkMode = settings.isDarkMode;
-        final textColor = isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-        final dividerColor = isDarkMode
-            ? AppColors.darkDivider
-            : AppColors.divider;
-        final surfaceColor = isDarkMode
-            ? AppColors.darkSurface
-            : AppColors.surface;
-        final selectedColor = isDarkMode
-            ? AppColors.darkIncome
-            : AppColors.header;
-        final sheetHeight = (MediaQuery.sizeOf(ctx).height * 0.8)
-            .clamp(0.0, 480.0)
-            .toDouble();
-
-        return SizedBox(
-          height: sheetHeight,
-          child: Column(
-            children: [
-              const AppModalBottomSheetHeader(title: 'วันเริ่มรอบรายเดือน'),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                    itemCount: 31,
-                    itemBuilder: (_, index) {
-                      final day = index + 1;
-                      final selected = settings.monthlyCycleStartDay == day;
-                      return Material(
-                        color: selected ? selectedColor : surfaceColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: selected
-                              ? BorderSide.none
-                              : BorderSide(color: dividerColor),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            settings.setMonthlyCycleStartDay(day);
-                            Navigator.pop(ctx);
-                          },
-                          child: Center(
-                            child: Text(
-                              '$day',
-                              style: TextStyle(
-                                color: selected ? Colors.white : textColor,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -920,7 +774,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       tileColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      leading: _SettingsIcon(icon: icon, color: secondaryTextColor),
+      leading: SettingsIcon(icon: icon, color: secondaryTextColor),
       title: Text(title, style: TextStyle(color: textColor)),
       subtitle: Text(
         subtitle,
@@ -928,177 +782,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
       onTap: () => Navigator.pop(context, scope),
-    );
-  }
-}
-
-class _ThemeColorSwatch extends StatelessWidget {
-  final ThemeColorOption option;
-  final bool isDarkMode;
-  final bool selected;
-
-  const _ThemeColorSwatch({
-    required this.option,
-    required this.isDarkMode,
-    required this.selected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final header = AppColors.headerFor(isDarkMode, option);
-    final accent = AppColors.accentFor(isDarkMode, option);
-    final fab = AppColors.fabFor(isDarkMode, option);
-
-    return Container(
-      width: 44,
-      height: 28,
-      padding: const EdgeInsets.all(3),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurfaceVariant : AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: selected
-              ? accent
-              : (isDarkMode ? AppColors.darkDivider : AppColors.divider),
-          width: 2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: header,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(4),
-                ),
-              ),
-            ),
-          ),
-          Expanded(child: ColoredBox(color: accent)),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: fab,
-                borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(4),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsGroup extends StatelessWidget {
-  final bool isDarkMode;
-  final Widget child;
-
-  const _SettingsGroup({required this.isDarkMode, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          splashFactory: NoSplash.splashFactory,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-        ),
-        child: Material(
-          color: surfaceColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.xLarge),
-            side: BorderSide(color: dividerColor.withValues(alpha: 0.4)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: ListTileTheme(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            minVerticalPadding: 10,
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-
-  const _SettingsIcon({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.large),
-      ),
-      child: Icon(icon, color: color, size: 20),
-    );
-  }
-}
-
-class _SettingsToggleTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-  final bool isDarkMode;
-
-  const _SettingsToggleTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          _SettingsIcon(icon: icon, color: textSecondary),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: textPrimary, fontSize: 16)),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: textSecondary, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
-      ),
     );
   }
 }
