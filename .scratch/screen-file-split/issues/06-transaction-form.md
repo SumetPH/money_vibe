@@ -1,6 +1,6 @@
 # 06 transaction_form_screen.dart (1,976 lines)
 
-Status: ready-for-agent
+Status: resolved
 
 Proposed files in `lib/screens/transaction/`:
 - `transaction_form_screen.dart` — State, keyboard, save/delete, pickers
@@ -10,3 +10,7 @@ Proposed files in `lib/screens/transaction/`:
 - `transaction_meta_info_card.dart` — `_MetaInfoCard`
 
 Do not touch the keyboard/amount-format logic here (see ticket 18).
+
+## Comments
+
+Done. Screen 1,976 → 824 lines; drops below 800 once ticket 18 removes the duplicated keyboard code. Type picker sheet is `showTransactionTypePicker` (keyboard close stays in the State).
