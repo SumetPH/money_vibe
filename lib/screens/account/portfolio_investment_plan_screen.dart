@@ -5,16 +5,16 @@ import 'package:money_vibe/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../main.dart';
 import '../../models/account.dart';
 import '../../models/investment_plan.dart';
 import '../../models/stock_holding.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/app_switch.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import 'investment_plan_widgets.dart';
+import 'investment_plan_stock_selection_sheet.dart';
+import 'investment_plan_recommendation_row.dart';
 
 class PortfolioInvestmentPlanScreen extends StatefulWidget {
   final Account account;
@@ -154,19 +154,22 @@ class _PortfolioInvestmentPlanScreenState
         padding: const EdgeInsets.only(bottom: 96),
         child: Column(
           children: [
-            _Section(
+            InvestmentPlanSection(
               title: 'DCA เดือนนี้',
               isDarkMode: widget.isDarkMode,
-              child: _buildDcaChecklist(
+              child: buildInvestmentPlanDcaChecklist(
+                dcaCompleted: widget.dcaCompleted,
+                isDarkMode: widget.isDarkMode,
+                onDcaChanged: _handleDcaChanged,
                 textColor: textColor,
                 secondaryColor: secondaryColor,
                 dividerColor: dividerColor,
                 activeColor: activeColor,
               ),
             ),
-            _Section(
+            InvestmentPlanSection(
               title: 'สัดส่วนเป้าหมาย',
-              trailing: _TargetTotalBadge(
+              trailing: InvestmentPlanTargetTotalBadge(
                 total: analysis.targetPercentTotal,
                 isBalanced: analysis.isTargetBalanced,
                 isDarkMode: widget.isDarkMode,
@@ -180,17 +183,19 @@ class _PortfolioInvestmentPlanScreenState
                 dividerColor: dividerColor,
               ),
             ),
-            _Section(
+            InvestmentPlanSection(
               title: 'บาลานซ์ปัจจุบัน',
               isDarkMode: widget.isDarkMode,
-              child: _buildRebalanceRows(
+              child: buildInvestmentPlanRebalanceRows(
+                account: widget.account,
+                isDarkMode: widget.isDarkMode,
                 analysis: analysis,
                 textColor: textColor,
                 secondaryColor: secondaryColor,
                 dividerColor: dividerColor,
               ),
             ),
-            _Section(
+            InvestmentPlanSection(
               title: 'จำลองซื้อเพิ่ม',
               isDarkMode: widget.isDarkMode,
               child: _buildBuyRecommendation(
@@ -206,105 +211,6 @@ class _PortfolioInvestmentPlanScreenState
     );
   }
 
-  Widget _buildDcaChecklist({
-    required Color textColor,
-    required Color secondaryColor,
-    required Color dividerColor,
-    required Color activeColor,
-  }) {
-    final monthLabel = _formatMonthLabel(currentInvestmentMonthKey());
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => _handleDcaChanged(!widget.dcaCompleted),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: widget.dcaCompleted
-                        ? activeColor.withValues(alpha: 0.15)
-                        : (widget.isDarkMode
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.04)),
-                    borderRadius: BorderRadius.circular(AppRadii.medium),
-                  ),
-                  child: Icon(
-                    widget.dcaCompleted
-                        ? Icons.check_circle_rounded
-                        : Icons.calendar_month_rounded,
-                    color: widget.dcaCompleted ? activeColor : secondaryColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'DCA $monthLabel',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.dcaCompleted
-                            ? 'ซื้อครบตามแผนแล้ว'
-                            : 'ยังไม่ได้ติ๊กว่าซื้อครบ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.dcaCompleted
-                              ? activeColor
-                              : secondaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                AppSwitch(
-                  value: widget.dcaCompleted,
-                  onChanged: _handleDcaChanged,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const AppCardDivider(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 15,
-                color: secondaryColor.withValues(alpha: 0.8),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'สถานะนี้เป็น checklist รายเดือนของพอร์ตนี้เท่านั้น',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryColor.withValues(alpha: 0.8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _handleDcaChanged(bool completed) async {
     final confirmed = await _confirmDcaChange(completed);
     if (!mounted || confirmed != true) return;
@@ -313,7 +219,7 @@ class _PortfolioInvestmentPlanScreenState
   }
 
   Future<bool?> _confirmDcaChange(bool completed) {
-    final monthLabel = _formatMonthLabel(currentInvestmentMonthKey());
+    final monthLabel = formatInvestmentMonthLabel(currentInvestmentMonthKey());
 
     return showAppConfirmDialog(
       context: context,
@@ -510,7 +416,9 @@ class _PortfolioInvestmentPlanScreenState
   }) {
     final controller = _targetControllers.putIfAbsent(
       holding.id,
-      () => TextEditingController(text: _formatEditablePct(row.targetPercent)),
+      () => TextEditingController(
+        text: formatInvestmentEditablePct(row.targetPercent),
+      ),
     );
 
     return Padding(
@@ -618,238 +526,6 @@ class _PortfolioInvestmentPlanScreenState
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _showStockSelectionSheet() async {
-    final localEnabled = {
-      for (final holding in widget.holdings)
-        holding.id: _targetFor(holding)?.isEnabled ?? false,
-    };
-    final textColor = widget.isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondaryColor = widget.isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final accentColor = widget.isDarkMode
-        ? AppColors.darkIncome
-        : AppColors.income;
-
-    await showAppModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final selectedCount = localEnabled.values
-                .where((enabled) => enabled)
-                .length;
-
-            return SafeArea(
-              child: FractionallySizedBox(
-                heightFactor: 0.72,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 4, 12, 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'เลือกหุ้นในแผน',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: textColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'เปิดอยู่ $selectedCount จาก ${widget.holdings.length} ตัว',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: secondaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () => Navigator.pop(sheetContext),
-                            borderRadius: BorderRadius.circular(AppRadii.full),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: widget.isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.05),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 18,
-                                color: secondaryColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const AppCardDivider(),
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        itemCount: widget.holdings.length,
-                        separatorBuilder: (_, _) => Divider(
-                          height: 1,
-                          color: AppColors.listDividerFor(widget.isDarkMode),
-                        ),
-                        itemBuilder: (context, index) {
-                          final holding = widget.holdings[index];
-                          final enabled = localEnabled[holding.id] ?? false;
-                          final target = _targetFor(holding);
-
-                          Future<void> toggle(bool value) async {
-                            setSheetState(() {
-                              localEnabled[holding.id] = value;
-                            });
-                            final saved = await _saveTarget(
-                              holding,
-                              enabled: value,
-                            );
-                            if (!saved && mounted) {
-                              setSheetState(() {
-                                localEnabled[holding.id] = !value;
-                              });
-                            }
-                          }
-
-                          return InkWell(
-                            onTap: () => toggle(!enabled),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: enabled
-                                          ? accentColor.withValues(alpha: 0.12)
-                                          : (widget.isDarkMode
-                                                ? Colors.white.withValues(
-                                                    alpha: 0.05,
-                                                  )
-                                                : Colors.black.withValues(
-                                                    alpha: 0.04,
-                                                  )),
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadii.medium,
-                                      ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      holding.ticker.isNotEmpty
-                                          ? holding.ticker[0].toUpperCase()
-                                          : 'S',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: enabled
-                                            ? accentColor
-                                            : textColor,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          holding.ticker,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: textColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          target != null
-                                              ? 'เป้า ${target.targetPercent.toStringAsFixed(2)}%'
-                                              : 'ยังไม่ได้ตั้งเป้า',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: secondaryColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  AppSwitch(value: enabled, onChanged: toggle),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildRebalanceRows({
-    required AllocationAnalysis analysis,
-    required Color textColor,
-    required Color secondaryColor,
-    required Color dividerColor,
-  }) {
-    final rows = analysis.rows.where((row) => row.isEnabled).toList();
-    if (rows.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Center(
-          child: Text(
-            'เปิดหุ้นในแผนและใส่เปอร์เซ็นต์เป้าหมายเพื่อดูบาลานซ์',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: secondaryColor, fontSize: 13),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const AppCardDivider(),
-          _RebalanceRow(
-            row: rows[i],
-            currencyCode: widget.account.currencyCodeLabel,
-            isDarkMode: widget.isDarkMode,
-            textColor: textColor,
-            secondaryColor: secondaryColor,
-            dividerColor: dividerColor,
-          ),
-        ],
-      ],
     );
   }
 
@@ -978,7 +654,7 @@ class _PortfolioInvestmentPlanScreenState
           const AppCardDivider(),
           for (var i = 0; i < recommendedRows.length; i++) ...[
             if (i > 0) const AppCardDivider(),
-            _RecommendationRow(
+            InvestmentPlanRecommendationRow(
               row: recommendedRows[i],
               plannedTotalAfterBuy:
                   analysis.totalCurrentValue + analysis.buyAmount,
@@ -994,6 +670,17 @@ class _PortfolioInvestmentPlanScreenState
     );
   }
 
+  Future<void> _showStockSelectionSheet() {
+    return showInvestmentPlanStockSelectionSheet(
+      context,
+      holdings: widget.holdings,
+      isDarkMode: widget.isDarkMode,
+      targetFor: _targetFor,
+      saveTarget: _saveTarget,
+      isMounted: () => mounted,
+    );
+  }
+
   void _syncTargetControllers() {
     final activeIds = widget.holdings.map((holding) => holding.id).toSet();
     final staleIds = _targetControllers.keys
@@ -1006,11 +693,11 @@ class _PortfolioInvestmentPlanScreenState
 
     for (final holding in widget.holdings) {
       final target = _targetFor(holding);
-      final text = _formatEditablePct(target?.targetPercent ?? 0);
+      final text = formatInvestmentEditablePct(target?.targetPercent ?? 0);
       final controller = _targetControllers[holding.id];
       if (controller == null) {
         _targetControllers[holding.id] = TextEditingController(text: text);
-      } else if (!_textEqualsNumber(
+      } else if (!investmentTextEqualsNumber(
         controller.text,
         target?.targetPercent ?? 0,
       )) {
@@ -1105,538 +792,4 @@ class _PortfolioInvestmentPlanScreenState
 
   Color _warningColor() =>
       widget.isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay;
-
-  String _formatEditablePct(double value) {
-    if (value == 0) return '';
-    final fixed = value.toStringAsFixed(2);
-    return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
-  }
-
-  bool _textEqualsNumber(String text, double value) {
-    final parsed = double.tryParse(text.trim());
-    if (parsed == null) return value == 0;
-    return (parsed - value).abs() < 0.0001;
-  }
-
-  String _formatMonthLabel(String monthKey) {
-    final parts = monthKey.split('-');
-    if (parts.length != 2) return monthKey;
-    const monthNames = [
-      '',
-      'มกราคม',
-      'กุมภาพันธ์',
-      'มีนาคม',
-      'เมษายน',
-      'พฤษภาคม',
-      'มิถุนายน',
-      'กรกฎาคม',
-      'สิงหาคม',
-      'กันยายน',
-      'ตุลาคม',
-      'พฤศจิกายน',
-      'ธันวาคม',
-    ];
-    final month = int.tryParse(parts[1]) ?? 0;
-    final year = parts[0];
-    if (month < 1 || month > 12) return monthKey;
-    return '${monthNames[month]} $year';
-  }
-}
-
-class _Section extends StatelessWidget {
-  final String title;
-  final Widget child;
-  final Widget? trailing;
-  final bool isDarkMode;
-
-  const _Section({
-    required this.title,
-    required this.child,
-    required this.isDarkMode,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: secondaryColor,
-                  ),
-                ),
-              ),
-              if (trailing case final Widget trailingWidget) trailingWidget,
-            ],
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(AppRadii.xLarge),
-            border: Border.all(
-              color: dividerColor.withValues(alpha: 0.4),
-              width: 1,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: child,
-        ),
-      ],
-    );
-  }
-}
-
-class _TargetTotalBadge extends StatelessWidget {
-  final double total;
-  final bool isBalanced;
-  final bool isDarkMode;
-
-  const _TargetTotalBadge({
-    required this.total,
-    required this.isBalanced,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isBalanced
-        ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
-        : (isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isBalanced
-                ? Icons.check_circle_rounded
-                : Icons.warning_amber_rounded,
-            size: 13,
-            color: color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${total.toStringAsFixed(2)}%',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RebalanceRow extends StatelessWidget {
-  final AllocationAnalysisRow row;
-  final String currencyCode;
-  final bool isDarkMode;
-  final Color textColor;
-  final Color secondaryColor;
-  final Color dividerColor;
-
-  const _RebalanceRow({
-    required this.row,
-    required this.currencyCode,
-    required this.isDarkMode,
-    required this.textColor,
-    required this.secondaryColor,
-    required this.dividerColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _statusColor();
-    final diffColor = row.diffPercent > 0
-        ? (isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay)
-        : row.diffPercent < 0
-        ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
-        : (isDarkMode ? AppColors.darkIncome : AppColors.income);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  row.ticker.isNotEmpty ? row.ticker[0].toUpperCase() : 'S',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  row.ticker,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  color: statusColor.withValues(alpha: 0.12),
-                ),
-                child: Text(
-                  row.statusLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.03)
-                  : Colors.black.withValues(alpha: 0.02),
-              borderRadius: BorderRadius.circular(AppRadii.large),
-              border: Border.all(color: dividerColor.withValues(alpha: 0.25)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'เป้าหมาย',
-                        value: '${row.targetPercent.toStringAsFixed(2)}%',
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'ปัจจุบัน',
-                        value: '${row.currentPercent.toStringAsFixed(2)}%',
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'ส่วนต่าง %',
-                        value:
-                            '${row.diffPercent >= 0 ? '+' : ''}${row.diffPercent.toStringAsFixed(2)}%',
-                        textColor: diffColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: AppCardDivider(),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'มูลค่าเป้า',
-                        value: formatAmount(row.targetValue),
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'มูลค่าปัจจุบัน',
-                        value: formatAmount(row.currentValue),
-                        textColor: textColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MetricTile(
-                        label: 'ขาด / เกิน',
-                        value:
-                            '${row.diffAmount >= 0 ? '+' : ''}${formatAmount(row.diffAmount)}',
-                        textColor: diffColor,
-                        secondaryColor: secondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _statusColor() {
-    if (row.isUnderweight) {
-      return isDarkMode ? AppColors.darkTransfer : AppColors.transfer;
-    }
-    if (row.isOverweight) {
-      return isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay;
-    }
-    return isDarkMode ? AppColors.darkIncome : AppColors.income;
-  }
-}
-
-class _RecommendationRow extends StatelessWidget {
-  final AllocationAnalysisRow row;
-  final double plannedTotalAfterBuy;
-  final String currencyCode;
-  final bool isDarkMode;
-  final Color textColor;
-  final Color secondaryColor;
-  final Color dividerColor;
-
-  const _RecommendationRow({
-    required this.row,
-    required this.plannedTotalAfterBuy,
-    required this.currencyCode,
-    required this.isDarkMode,
-    required this.textColor,
-    required this.secondaryColor,
-    required this.dividerColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final targetValueAfterBuy = plannedTotalAfterBuy * row.targetPercent / 100;
-    final gapBeforeBuy = (targetValueAfterBuy - row.currentValue).clamp(
-      0.0,
-      double.infinity,
-    );
-    final gapAfterBuy = (gapBeforeBuy - row.buyAmount).clamp(
-      0.0,
-      double.infinity,
-    );
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  row.ticker.isNotEmpty ? row.ticker[0].toUpperCase() : 'S',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  row.ticker,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: incomeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                ),
-                child: Text(
-                  '+${formatAmount(row.buyAmount)} $currencyCode',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: incomeColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.03)
-                  : Colors.black.withValues(alpha: 0.02),
-              borderRadius: BorderRadius.circular(AppRadii.medium),
-              border: Border.all(color: dividerColor.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'หลังซื้อประมาณ',
-                        style: TextStyle(fontSize: 11, color: secondaryColor),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${row.projectedPercent.toStringAsFixed(2)}%',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ขาดจากเป้า',
-                        style: TextStyle(fontSize: 11, color: secondaryColor),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        formatAmount(gapBeforeBuy),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'หลังซื้อยังขาด',
-                        style: TextStyle(fontSize: 11, color: secondaryColor),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        formatAmount(gapAfterBuy),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: gapAfterBuy > 0 ? secondaryColor : incomeColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color textColor;
-  final Color secondaryColor;
-
-  const _MetricTile({
-    required this.label,
-    required this.value,
-    required this.textColor,
-    required this.secondaryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: secondaryColor,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
-        ),
-      ],
-    );
-  }
 }
