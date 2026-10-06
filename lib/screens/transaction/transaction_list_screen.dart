@@ -12,13 +12,16 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../widgets/account_icon_widget.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/app_date_picker_sheet.dart';
+import 'transaction_list_models.dart';
+import 'transaction_cash_flow_summary.dart';
+import 'transaction_list_item.dart';
+import 'transaction_period_picker_sheet.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -47,8 +50,8 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  _PeriodFilter _filter = _PeriodFilter.all;
-  _TransactionTypeFilter _typeFilter = _TransactionTypeFilter.all;
+  TransactionPeriodFilter _filter = TransactionPeriodFilter.all;
+  TransactionTypeFilter _typeFilter = TransactionTypeFilter.all;
   String _searchQuery = '';
   DateTime? _selectedCycleMonth;
   DateTimeRange? _customRange;
@@ -154,12 +157,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
                 actions: [
-                  _HeaderAction(
+                  TransactionListHeaderAction(
                     icon: Icons.add,
                     onTap: _openAddTransactionForm,
                     isDarkMode: isDarkMode,
                   ),
-                  _HeaderAction(
+                  TransactionListHeaderAction(
                     icon: Icons.search,
                     onTap: _showSearchSheet,
                     isDarkMode: isDarkMode,
@@ -203,7 +206,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     sliver: SliverToBoxAdapter(
-                      child: _CashFlowSummary(
+                      child: TransactionCashFlowSummary(
                         income: summaryData.totalIncome,
                         expense: summaryData.totalExpense,
                         periodLabel: _periodShortLabel(),
@@ -212,7 +215,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         onSelectPeriod:
                             widget.fixedDateRange == null &&
                                 widget.transactionIds == null
-                            ? () => _showPeriodPicker(isDarkMode)
+                            ? () => showTransactionPeriodPicker(
+                                context,
+                                isDarkMode,
+                                selected: _filter,
+                                customRange: _customRange,
+                                onPickCustomRange: _pickCustomRange,
+                                onSelected: (f) => setState(() => _filter = f),
+                              )
                             : null,
                       ),
                     ),
@@ -222,7 +232,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     sliver: SliverToBoxAdapter(
                       child: AppSegmentedTabs(
                         segments: [
-                          for (final value in _TransactionTypeFilter.values)
+                          for (final value in TransactionTypeFilter.values)
                             AppSegment(
                               label: value.label,
                               isSelected: _typeFilter == value,
@@ -273,7 +283,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          _formatDate(group.date),
+                                          formatTransactionDate(group.date),
                                           style: TextStyle(
                                             color: isDarkMode
                                                 ? AppColors.darkTextSecondary
@@ -328,7 +338,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                         final tx = entry.value;
                                         return Column(
                                           children: [
-                                            _TransactionItem(
+                                            TransactionListItem(
                                               tx: tx,
                                               accountProvider: accountProvider,
                                               catProvider: catProvider,
@@ -366,10 +376,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   bool _matchesTypeFilter(AppTransaction tx) {
     return switch (_typeFilter) {
-      _TransactionTypeFilter.all => true,
-      _TransactionTypeFilter.income =>
+      TransactionTypeFilter.all => true,
+      TransactionTypeFilter.income =>
         tx.type == TransactionType.income || tx.type.isIncreaseBalance,
-      _TransactionTypeFilter.expense =>
+      TransactionTypeFilter.expense =>
         tx.type.isExpenseLike || tx.type.isDecreaseBalance,
     };
   }
@@ -397,15 +407,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   String _periodTitle() {
     final now = DateTime.now();
     return switch (_filter) {
-      _PeriodFilter.thisMonth => _formatMonthYear(now),
-      _PeriodFilter.lastMonth => _formatMonthYear(
+      TransactionPeriodFilter.thisMonth => formatTransactionMonthYear(now),
+      TransactionPeriodFilter.lastMonth => formatTransactionMonthYear(
         DateTime(now.year, now.month - 1),
       ),
-      _PeriodFilter.thisYear => 'ปี ${now.year}',
-      _PeriodFilter.custom when _customRange != null => _formatRange(
-        _customRange!,
-        withYear: true,
-      ),
+      TransactionPeriodFilter.thisYear => 'ปี ${now.year}',
+      TransactionPeriodFilter.custom when _customRange != null =>
+        formatTransactionRange(_customRange!, withYear: true),
       _ => _filter.label,
     };
   }
@@ -413,14 +421,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   String _periodShortLabel() {
     final now = DateTime.now();
     return switch (_filter) {
-      _PeriodFilter.thisMonth => _formatMonthShort(now),
-      _PeriodFilter.lastMonth => _formatMonthShort(
+      TransactionPeriodFilter.thisMonth => formatTransactionMonthShort(now),
+      TransactionPeriodFilter.lastMonth => formatTransactionMonthShort(
         DateTime(now.year, now.month - 1),
       ),
-      _PeriodFilter.custom when _customRange != null => _formatRange(
-        _customRange!,
-        withYear: false,
-      ),
+      TransactionPeriodFilter.custom when _customRange != null =>
+        formatTransactionRange(_customRange!, withYear: false),
       _ => _filter.shortLabel,
     };
   }
@@ -542,52 +548,52 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
     } else {
       switch (_filter) {
-        case _PeriodFilter.all:
+        case TransactionPeriodFilter.all:
           transactions = List.of(provider.transactions)
             ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-        case _PeriodFilter.last30Days:
+        case TransactionPeriodFilter.last30Days:
           final from = now.subtract(const Duration(days: 30));
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.last90Days:
+        case TransactionPeriodFilter.last90Days:
           final from = now.subtract(const Duration(days: 90));
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.last180Days:
+        case TransactionPeriodFilter.last180Days:
           final from = now.subtract(const Duration(days: 180));
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.thisMonth:
+        case TransactionPeriodFilter.thisMonth:
           final from = DateTime(now.year, now.month, 1);
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.lastMonth:
+        case TransactionPeriodFilter.lastMonth:
           final from = DateTime(now.year, now.month - 1, 1);
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.thisYear:
+        case TransactionPeriodFilter.thisYear:
           final from = DateTime(now.year, 1, 1);
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.oneYear:
+        case TransactionPeriodFilter.oneYear:
           final from = DateTime(now.year - 1, now.month, now.day);
           transactions = provider.getTransactionsForPeriod(
             from,
             DateTime(9999),
           );
-        case _PeriodFilter.custom:
+        case TransactionPeriodFilter.custom:
           final range = _customRange;
           transactions = range == null
               ? (List.of(provider.transactions)
@@ -646,13 +652,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     return transactions;
   }
 
-  _TransactionListData _buildTransactionListData(
+  TransactionListData _buildTransactionListData(
     List<AppTransaction> txs,
     AccountProvider accountProvider,
   ) {
     final accounts = accountProvider.accounts;
     final accountsById = {for (final account in accounts) account.id: account};
-    final grouped = <DateTime, _MutableTransactionDateGroup>{};
+    final grouped = <DateTime, TransactionMutableTransactionDateGroup>{};
     var totalIncome = 0.0;
     var totalExpense = 0.0;
 
@@ -664,7 +670,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
       final group = grouped.putIfAbsent(
         date,
-        () => _MutableTransactionDateGroup(date),
+        () => TransactionMutableTransactionDateGroup(date),
       );
       group.transactions.add(tx);
 
@@ -681,7 +687,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     final groups = grouped.values.map((group) {
       group.transactions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
-      return _TransactionDateGroup(
+      return TransactionDateGroup(
         date: group.date,
         transactions: group.transactions,
         income: group.income,
@@ -689,7 +695,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
     }).toList()..sort((a, b) => b.date.compareTo(a.date));
 
-    return _TransactionListData(
+    return TransactionListData(
       transactions: txs,
       groups: groups,
       totalIncome: totalIncome,
@@ -750,91 +756,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   double _effectiveRate(Account? account) =>
       (account?.exchangeRate ?? 0) > 0 ? account!.exchangeRate : 1.0;
 
-  void _showPeriodPicker(bool isDarkMode) {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final checkColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-
-    showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกช่วงเวลา'),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(bottom: 12),
-                  children: _PeriodFilter.values
-                      .map(
-                        (f) => ListTile(
-                          title: Text(
-                            f.label,
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 15,
-                              fontWeight: _filter == f
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                          ),
-                          subtitle:
-                              f == _PeriodFilter.custom && _customRange != null
-                              ? Text(
-                                  _formatRange(_customRange!, withYear: true),
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                )
-                              : null,
-                          trailing: f == _PeriodFilter.custom
-                              ? Icon(
-                                  _filter == f
-                                      ? Icons.check_circle_rounded
-                                      : Icons.date_range_rounded,
-                                  color: _filter == f
-                                      ? checkColor
-                                      : textSecondary,
-                                  size: 22,
-                                )
-                              : _filter == f
-                              ? Icon(
-                                  Icons.check_circle_rounded,
-                                  color: checkColor,
-                                  size: 22,
-                                )
-                              : null,
-                          onTap: () {
-                            Navigator.pop(context);
-                            if (f == _PeriodFilter.custom) {
-                              _pickCustomRange();
-                              return;
-                            }
-                            setState(() => _filter = f);
-                          },
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _pickCustomRange() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -846,7 +767,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
     if (picked == null || !mounted) return;
     setState(() {
-      _filter = _PeriodFilter.custom;
+      _filter = TransactionPeriodFilter.custom;
       _customRange = picked;
     });
   }
@@ -867,644 +788,5 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             TransactionFormScreen(transaction: tx, initialValues: initialTx),
       ),
     );
-  }
-}
-
-class _HeaderAction extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isDarkMode;
-
-  const _HeaderAction({
-    required this.icon,
-    required this.onTap,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 6),
-      child: Material(
-        color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: IconButton(
-          onPressed: onTap,
-          icon: Icon(
-            icon,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CashFlowSummary extends StatelessWidget {
-  final double income;
-  final double expense;
-  final String periodLabel;
-  final bool isDarkMode;
-  final bool hidePeriodSelector;
-  final VoidCallback? onSelectPeriod;
-
-  const _CashFlowSummary({
-    required this.income,
-    required this.expense,
-    required this.periodLabel,
-    required this.isDarkMode,
-    required this.hidePeriodSelector,
-    required this.onSelectPeriod,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final surface = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-    final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
-    final net = income - expense;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-        border: Border.all(color: AppColors.borderFor(isDarkMode)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'กระแสเงินสด',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (!hidePeriodSelector)
-                InkWell(
-                  onTap: onSelectPeriod,
-                  borderRadius: BorderRadius.circular(AppRadii.large),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        periodLabel,
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 18,
-                        color: textSecondary,
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryAmount(
-                  label: 'รายรับ',
-                  amount: income,
-                  color: incomeColor,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _SummaryAmount(
-                  label: 'รายจ่าย',
-                  amount: expense,
-                  color: expenseColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Text(
-                'สุทธิ',
-                style: TextStyle(color: textSecondary, fontSize: 16),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
-                style: TextStyle(
-                  color: AppColors.getAmountColor(net, isDarkMode),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryAmount extends StatelessWidget {
-  final String label;
-  final double amount;
-  final Color color;
-
-  const _SummaryAmount({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 7),
-            Text(label, style: TextStyle(color: color)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '฿ ${formatAmount(amount)}',
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TransactionListData {
-  final List<AppTransaction> transactions;
-  final List<_TransactionDateGroup> groups;
-  final double totalIncome;
-  final double totalExpense;
-
-  const _TransactionListData({
-    required this.transactions,
-    required this.groups,
-    required this.totalIncome,
-    required this.totalExpense,
-  });
-}
-
-class _TransactionDateGroup {
-  final DateTime date;
-  final List<AppTransaction> transactions;
-  final double income;
-  final double expense;
-
-  const _TransactionDateGroup({
-    required this.date,
-    required this.transactions,
-    required this.income,
-    required this.expense,
-  });
-}
-
-class _MutableTransactionDateGroup {
-  final DateTime date;
-  final List<AppTransaction> transactions = [];
-  double income = 0;
-  double expense = 0;
-
-  _MutableTransactionDateGroup(this.date);
-}
-
-enum _PeriodFilter {
-  all('ทั้งหมด'),
-  last30Days('30 วันล่าสุด'),
-  last90Days('90 วันล่าสุด'),
-  last180Days('180 วันล่าสุด'),
-  thisMonth('เดือนนี้'),
-  lastMonth('เดือนที่แล้ว'),
-  thisYear('ปีนี้'),
-  oneYear('1 ปี'),
-  custom('กำหนดช่วงวันที่');
-
-  final String label;
-  const _PeriodFilter(this.label);
-
-  String get shortLabel => switch (this) {
-    _PeriodFilter.all => 'ทั้งหมด',
-    _PeriodFilter.last30Days => '30 วัน',
-    _PeriodFilter.last90Days => '90 วัน',
-    _PeriodFilter.last180Days => '180 วัน',
-    _PeriodFilter.thisMonth => 'เดือนนี้',
-    _PeriodFilter.lastMonth => 'เดือนก่อน',
-    _PeriodFilter.thisYear => 'ปีนี้',
-    _PeriodFilter.oneYear => '1 ปี',
-    _PeriodFilter.custom => 'กำหนดเอง',
-  };
-}
-
-enum _TransactionTypeFilter {
-  all('ทั้งหมด'),
-  income('รายรับ'),
-  expense('รายจ่าย');
-
-  final String label;
-  const _TransactionTypeFilter(this.label);
-}
-
-String _formatMonthYear(DateTime date) {
-  const thaiMonths = [
-    'มกราคม',
-    'กุมภาพันธ์',
-    'มีนาคม',
-    'เมษายน',
-    'พฤษภาคม',
-    'มิถุนายน',
-    'กรกฎาคม',
-    'สิงหาคม',
-    'กันยายน',
-    'ตุลาคม',
-    'พฤศจิกายน',
-    'ธันวาคม',
-  ];
-  return '${thaiMonths[date.month - 1]} ${date.year}';
-}
-
-String _formatRange(DateTimeRange range, {required bool withYear}) {
-  String format(DateTime date) {
-    final base = '${date.day} ${_formatMonthShort(date)}';
-    return withYear ? '$base ${date.year}' : base;
-  }
-
-  final start = range.start;
-  final end = range.end;
-  if (DateUtils.isSameDay(start, end)) return format(start);
-  return '${format(start)} - ${format(end)}';
-}
-
-String _formatMonthShort(DateTime date) {
-  const thaiMonths = [
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
-  return thaiMonths[date.month - 1];
-}
-
-String _formatDate(DateTime date) {
-  const thaiDays = [
-    'จันทร์',
-    'อังคาร',
-    'พุธ',
-    'พฤหัสบดี',
-    'ศุกร์',
-    'เสาร์',
-    'อาทิตย์',
-  ];
-  const thaiMonths = [
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
-  final dayOfWeek = thaiDays[date.weekday - 1];
-  return '${date.day} ${thaiMonths[date.month - 1]} ${date.year} · $dayOfWeek';
-}
-
-class _TransactionItem extends StatelessWidget {
-  final AppTransaction tx;
-  final AccountProvider accountProvider;
-  final CategoryProvider catProvider;
-  final VoidCallback onTap;
-  final bool isDarkMode;
-  final String? viewingAccountId;
-
-  const _TransactionItem({
-    required this.tx,
-    required this.accountProvider,
-    required this.catProvider,
-    required this.onTap,
-    required this.isDarkMode,
-    this.viewingAccountId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final account = accountProvider.findById(tx.accountId);
-    final toAccount = tx.toAccountId != null
-        ? accountProvider.findById(tx.toAccountId!)
-        : null;
-    final category = tx.categoryId != null
-        ? catProvider.findById(tx.categoryId!)
-        : null;
-
-    final typeColor = _typeColor(tx.type, isDarkMode);
-    double displayAmount = tx.type.isExpenseLike || tx.type.isDecreaseBalance
-        ? -tx.amount
-        : tx.amount;
-
-    if (viewingAccountId != null) {
-      if ((tx.type == TransactionType.debtRepay ||
-              tx.type == TransactionType.debtTransfer) &&
-          tx.toAccountId == viewingAccountId) {
-        displayAmount = tx.amount;
-      } else if (tx.type == TransactionType.transfer) {
-        if (tx.accountId == viewingAccountId) {
-          displayAmount = -tx.amount;
-        } else if (tx.toAccountId == viewingAccountId) {
-          displayAmount = tx.toAmount ?? tx.amount;
-        }
-      }
-    }
-
-    final currency = viewingAccountId != null
-        ? (viewingAccountId == tx.toAccountId
-              ? toAccount?.currency
-              : account?.currency)
-        : account?.currency;
-
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : AppColors.surface;
-    final textPrimaryColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final note = tx.note?.trim();
-    final subLabel = _buildSubLabel(category?.name, note);
-    final amountColor =
-        (tx.type == TransactionType.transfer && viewingAccountId == null)
-        ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
-        : (tx.type == TransactionType.debtRepay && viewingAccountId == null)
-        ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
-        : (tx.type == TransactionType.debtTransfer && viewingAccountId == null)
-        ? (isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer)
-        : AppColors.getAmountColor(displayAmount, isDarkMode);
-    final amountText =
-        (tx.type == TransactionType.transfer && viewingAccountId == null)
-        ? '฿ ${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
-        : '${displayAmount < 0
-              ? '-'
-              : displayAmount > 0
-              ? '+'
-              : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadii.xLarge),
-      child: Container(
-        color: surfaceColor,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: (category?.color ?? typeColor).withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(AppRadii.large),
-              ),
-              child: Icon(
-                tx.type == TransactionType.debtTransfer
-                    ? Icons.account_tree
-                    : tx.type == TransactionType.transfer
-                    ? Icons.swap_horiz
-                    : tx.type == TransactionType.debtRepay
-                    ? Icons.payment
-                    : (category?.icon ?? Icons.receipt),
-                color: category?.color ?? typeColor,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAccountWidget(
-                    account,
-                    toAccount,
-                    tx,
-                    textPrimaryColor,
-                    isDarkMode,
-                  ),
-                  if (subLabel.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subLabel,
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  amountText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: amountColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatTime(tx.dateTime),
-                  style: TextStyle(fontSize: 12, color: textSecondaryColor),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _typeColor(TransactionType type, bool isDarkMode) {
-    if (isDarkMode) {
-      switch (type) {
-        case TransactionType.income:
-          return AppColors.darkIncome;
-        case TransactionType.expense:
-          return AppColors.darkExpense;
-        case TransactionType.transfer:
-          return AppColors.darkTransfer;
-        case TransactionType.debtRepay:
-          return AppColors.darkDebtRepay;
-        case TransactionType.debtTransfer:
-          return AppColors.darkDebtTransfer;
-        case TransactionType.increaseBalance:
-          return AppColors.darkIncome;
-        case TransactionType.decreaseBalance:
-          return AppColors.darkExpense;
-      }
-    }
-    switch (type) {
-      case TransactionType.income:
-        return AppColors.income;
-      case TransactionType.expense:
-        return AppColors.expense;
-      case TransactionType.transfer:
-        return AppColors.transfer;
-      case TransactionType.debtRepay:
-        return AppColors.debtRepay;
-      case TransactionType.debtTransfer:
-        return AppColors.debtTransfer;
-      case TransactionType.increaseBalance:
-        return AppColors.income;
-      case TransactionType.decreaseBalance:
-        return AppColors.expense;
-    }
-  }
-
-  Widget _buildAccountWidget(
-    Account? account,
-    Account? toAccount,
-    AppTransaction tx,
-    Color textPrimaryColor,
-    bool isDarkMode,
-  ) {
-    final style = TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: textPrimaryColor,
-    );
-
-    if (tx.type.usesDestinationAccount) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (account != null) ...[
-            AccountIconWidget(
-              account: account,
-              size: 16,
-              isDarkMode: isDarkMode,
-            ),
-            const SizedBox(width: 4),
-          ],
-          Flexible(
-            child: Text(
-              account?.name ?? '-',
-              style: style,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text('→', style: style),
-          ),
-          if (toAccount != null) ...[
-            AccountIconWidget(
-              account: toAccount,
-              size: 16,
-              isDarkMode: isDarkMode,
-            ),
-            const SizedBox(width: 4),
-          ],
-          Flexible(
-            child: Text(
-              toAccount?.name ?? '-',
-              style: style,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    String prefix = '';
-    if (tx.type.isIncreaseBalance || tx.type.isDecreaseBalance) {
-      prefix = tx.type == TransactionType.increaseBalance
-          ? 'ปรับเพิ่ม '
-          : 'ปรับลด ';
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (prefix.isNotEmpty) Text(prefix, style: style),
-        if (account != null) ...[
-          AccountIconWidget(account: account, size: 16, isDarkMode: isDarkMode),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            account?.name ?? '-',
-            style: style,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _buildSubLabel(String? categoryName, String? note) {
-    final parts = <String>[
-      if (categoryName != null && categoryName.isNotEmpty) categoryName,
-      if (note != null && note.isNotEmpty) note,
-    ];
-    return parts.join(' • ');
-  }
-
-  String _formatTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
   }
 }
