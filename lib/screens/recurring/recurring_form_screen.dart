@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/calculator_keyboard_host.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
@@ -12,7 +13,6 @@ import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../main.dart';
-import '../../widgets/calculator_keyboard.dart';
 import 'recurring_section.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
@@ -29,12 +29,10 @@ class RecurringFormScreen extends StatefulWidget {
   State<RecurringFormScreen> createState() => _RecurringFormScreenState();
 }
 
-class _RecurringFormScreenState extends State<RecurringFormScreen> {
+class _RecurringFormScreenState extends State<RecurringFormScreen>
+    with CalculatorKeyboardHost {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _amountFocusNode = FocusNode();
-  PersistentBottomSheetController? _keyboardController;
-  TextEditingController? _activeKeyboardController;
-  bool _isUpdatingController = false;
 
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -56,6 +54,18 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   bool _isLoading = false;
 
   bool get _isEditing => widget.recurring != null;
+
+  @override
+  GlobalKey<ScaffoldState> get calculatorScaffoldKey => _scaffoldKey;
+
+  @override
+  TextEditingController get calculatorController => _amountController;
+
+  @override
+  FocusNode get calculatorFocusNode => _amountFocusNode;
+
+  @override
+  Color get calculatorActionColor => _color;
 
   @override
   void initState() {
@@ -81,140 +91,17 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       minute: r?.notificationMinute ?? 0,
     );
 
-    _amountFocusNode.addListener(_onFocusChange);
-    _amountController.addListener(_handleAmountChanged);
+    attachCalculatorKeyboard();
   }
 
   @override
   void dispose() {
-    _amountFocusNode.removeListener(_onFocusChange);
-    _amountController.removeListener(_handleAmountChanged);
+    detachCalculatorKeyboard();
     _amountFocusNode.dispose();
     _nameController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (!mounted) return;
-    if (_amountFocusNode.hasFocus) {
-      _showKeyboard(_amountController);
-    } else {
-      _closeKeyboard();
-    }
-  }
-
-  void _handleAmountChanged() {
-    if (_isUpdatingController) return;
-    _isUpdatingController = true;
-    try {
-      final text = _amountController.text;
-      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
-
-      if (!hasOperator) {
-        _formatAmountInput(text);
-      } else {
-        // Strip commas if operator is present
-        final sanitized = text.replaceAll(',', '');
-        if (text != sanitized) {
-          final selection = _amountController.selection;
-          int commasBeforeCursor = 0;
-          if (selection.isValid) {
-            final textBeforeCursor = text.substring(0, selection.end);
-            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
-          }
-          final newOffset = selection.isValid
-              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
-              : sanitized.length;
-
-          _amountController.value = TextEditingValue(
-            text: sanitized,
-            selection: TextSelection.collapsed(offset: newOffset),
-          );
-        }
-      }
-    } finally {
-      _isUpdatingController = false;
-    }
-  }
-
-  void _showKeyboard(TextEditingController controller) {
-    if (_keyboardController != null) {
-      if (_activeKeyboardController == controller) {
-        return;
-      }
-      _closeKeyboard();
-    }
-
-    _activeKeyboardController = controller;
-    final actionColor = _color;
-
-    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
-      (context) {
-        return CalculatorKeyboard(
-          controller: controller,
-          actionButtonColor: actionColor,
-          onDone: () {
-            _amountFocusNode.unfocus();
-          },
-        );
-      },
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
-
-    _keyboardController?.closed.then((_) {
-      if (_activeKeyboardController == controller) {
-        _keyboardController = null;
-        _activeKeyboardController = null;
-        if (_amountFocusNode.hasFocus) {
-          _amountFocusNode.unfocus();
-        }
-      }
-    });
-  }
-
-  void _closeKeyboard() {
-    if (_keyboardController != null) {
-      _keyboardController?.close();
-      _keyboardController = null;
-      _activeKeyboardController = null;
-    }
-  }
-
-  void _formatAmountInput(String value) {
-    final raw = value.replaceAll(',', '');
-    if (raw.isEmpty) {
-      if (_amountController.text.isNotEmpty) {
-        _amountController.text = '';
-        _amountController.selection = const TextSelection.collapsed(offset: 0);
-      }
-      return;
-    }
-
-    final hasDecimal = raw.contains('.');
-    final parts = raw.split('.');
-    final intPart = parts[0];
-
-    final formattedInt = intPart.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-
-    String formatted;
-    if (hasDecimal && parts.length > 1) {
-      formatted = '$formattedInt.${parts[1]}';
-    } else {
-      formatted = formattedInt;
-    }
-
-    if (_amountController.text != formatted) {
-      _amountController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
   }
 
   Future<void> _save() async {
@@ -325,7 +212,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
         );
       }
 
-      _closeKeyboard();
+      closeCalculatorKeyboard();
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -363,12 +250,12 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     try {
       await provider.deleteRecurring(widget.recurring!.id);
       if (mounted) {
-        _closeKeyboard();
+        closeCalculatorKeyboard();
         navigator.pop(); // Close form
       }
     } catch (e) {
       if (mounted) {
-        _closeKeyboard();
+        closeCalculatorKeyboard();
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('ลบรายการไม่สำเร็จ: $e'),
@@ -448,7 +335,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
               onPressed: _isLoading
                   ? null
                   : () {
-                      _closeKeyboard();
+                      closeCalculatorKeyboard();
                       Navigator.pop(context);
                     },
             ),
@@ -468,7 +355,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
             behavior: HitTestBehavior.translucent,
             onTap: () {
               FocusScope.of(context).unfocus();
-              _closeKeyboard();
+              closeCalculatorKeyboard();
             },
             child: AbsorbPointer(
               absorbing: _isLoading,
