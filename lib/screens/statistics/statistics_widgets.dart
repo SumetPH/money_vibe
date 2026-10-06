@@ -1,3 +1,4 @@
+import '../../widgets/app_year_selector.dart';
 import '../../widgets/app_metric_text.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
@@ -45,9 +46,6 @@ class StatisticsYearSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
     final secondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
@@ -56,36 +54,10 @@ class StatisticsYearSelector extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
       child: Column(
         children: [
-          Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
-                child: IconButton(
-                  tooltip: 'ปีก่อนหน้า',
-                  icon: Icon(Icons.chevron_left, color: secondaryColor),
-                  onPressed: () => onYearChanged(selectedYear - 1),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  '$selectedYear',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-                child: IconButton(
-                  tooltip: 'ปีถัดไป',
-                  icon: Icon(Icons.chevron_right, color: secondaryColor),
-                  onPressed: () => onYearChanged(selectedYear + 1),
-                ),
-              ),
-            ],
+          AppYearSelector(
+            selectedYear: selectedYear,
+            onYearChanged: onYearChanged,
+            buttonInset: 8,
           ),
 
           Padding(

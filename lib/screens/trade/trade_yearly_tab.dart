@@ -45,7 +45,6 @@ class TradeYearlyTab extends StatelessWidget {
           child: TradeYearSelector(
             selectedYear: selectedYear,
             onYearChanged: onYearChanged,
-            isDarkMode: isDarkMode,
           ),
         ),
         SliverToBoxAdapter(

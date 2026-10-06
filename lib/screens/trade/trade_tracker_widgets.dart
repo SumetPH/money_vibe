@@ -1,3 +1,4 @@
+import '../../widgets/app_year_selector.dart';
 import '../../widgets/app_inset_card.dart';
 import 'package:flutter/material.dart';
 
@@ -7,54 +8,22 @@ import '../../theme/app_radii.dart';
 class TradeYearSelector extends StatelessWidget {
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
-  final bool isDarkMode;
 
   const TradeYearSelector({
     super.key,
     required this.selectedYear,
     required this.onYearChanged,
-    required this.isDarkMode,
   });
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
     return AppInsetCard(
       margin: AppInsetCard.stackedMargin,
       padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
       children: [
-        Column(
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.chevron_left, color: secondaryColor),
-                  onPressed: () => onYearChanged(selectedYear - 1),
-                ),
-                Expanded(
-                  child: Text(
-                    '$selectedYear',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.chevron_right, color: secondaryColor),
-                  onPressed: () => onYearChanged(selectedYear + 1),
-                ),
-              ],
-            ),
-          ],
+        AppYearSelector(
+          selectedYear: selectedYear,
+          onYearChanged: onYearChanged,
         ),
       ],
     );
