@@ -1,3 +1,4 @@
+import '../../widgets/app_status_chip.dart';
 import 'package:flutter/material.dart';
 import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
@@ -207,21 +208,7 @@ class RecurringOccurrenceStatusBadge extends StatelessWidget {
       OccurrenceStatus.skipped => ('ข้ามแล้ว', Colors.orange),
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
+    return AppStatusChip(label: label, color: color);
   }
 }
 

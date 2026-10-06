@@ -1,3 +1,4 @@
+import '../../widgets/app_status_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
@@ -98,7 +99,7 @@ class RecurringListItem extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          RecurringListTypeBadge(
+                          AppStatusChip(
                             label: recurring.transactionType.label,
                             color: typeColor,
                           ),
@@ -136,7 +137,7 @@ class RecurringListItem extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           if (statusLabel != null && statusColor != null) ...[
-                            RecurringListStatusChip(
+                            AppStatusChip(
                               label: statusLabel!,
                               color: statusColor!,
                             ),
@@ -251,66 +252,6 @@ class RecurringListItem extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class RecurringListTypeBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const RecurringListTypeBadge({
-    super.key,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-class RecurringListStatusChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const RecurringListStatusChip({
-    super.key,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
       ),
     );
   }

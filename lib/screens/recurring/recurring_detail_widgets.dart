@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 
 // ── Supporting widgets ────────────────────────────────────────────────────────
 
@@ -53,36 +52,6 @@ class RecurringDetailRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class RecurringDetailTypeBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const RecurringDetailTypeBadge({
-    super.key,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
     );
   }
 }

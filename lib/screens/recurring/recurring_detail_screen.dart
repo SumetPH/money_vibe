@@ -1,3 +1,4 @@
+import '../../widgets/app_status_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/recurring_transaction.dart';
@@ -405,7 +406,7 @@ class _RecurringDetailScreenState extends State<RecurringDetailScreen> {
                                     const SizedBox(height: 2),
                                     Row(
                                       children: [
-                                        RecurringDetailTypeBadge(
+                                        AppStatusChip(
                                           label:
                                               recurring.transactionType.label,
                                           color: typeColor,
