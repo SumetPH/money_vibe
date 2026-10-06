@@ -2,10 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Dev App Supabase",
+      "name": "Dev App ",
       "request": "launch",
       "type": "dart",
       "toolArgs": ["--dart-define-from-file=config/dev.json"]
+    },
+    {
+      "name": "Dev App Store",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define-from-file=config/dev.json",
+        "--dart-define=DISTRIBUTION=store"
+      ]
     },
     {
       "name": "Dev Web Supabase",

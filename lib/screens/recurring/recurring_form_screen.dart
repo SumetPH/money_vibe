@@ -19,6 +19,7 @@ import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
 import 'recurring_form_widgets.dart';
 import 'recurring_form_pickers.dart';
+import '../../utils/user_error_message.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -219,7 +220,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'บันทึกรายการไม่สำเร็จ: $e',
+            userErrorMessage(e, action: 'บันทึกรายการ'),
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: AppColors.expense,
@@ -258,7 +259,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen>
         closeCalculatorKeyboard();
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text('ลบรายการไม่สำเร็จ: $e'),
+            content: Text(userErrorMessage(e, action: 'ลบรายการ')),
             backgroundColor: AppColors.expense,
           ),
         );

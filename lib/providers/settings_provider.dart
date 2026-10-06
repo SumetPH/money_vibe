@@ -1,19 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/theme_color_option.dart';
 
-enum ExchangeRateSource { yahoo, frankfurter }
-
 class SettingsProvider extends ChangeNotifier {
+  static const _secureStorage = FlutterSecureStorage();
   static const _finnhubApiKeyKey = 'finnhub_api_key';
-  static const _priceSourceFinnhubKey = 'price_source_finnhub';
-  static const _yahooExtendedHoursKey = 'yahoo_extended_hours_price';
-  static const _exchangeRateSourceKey = 'exchange_rate_source';
-  static const _llmApiKeyKey = 'llm_api_key';
-  static const _llmBaseUrlKey = 'llm_base_url';
-  static const _llmModelKey = 'llm_model';
+  // key ของฟีเจอร์ Yahoo/LLM ที่ถูกถอดออกแล้ว ลบทิ้งตอนโหลดเพื่อไม่ให้ API key ค้างในเครื่อง
+  static const _removedFeatureKeys = [
+    'price_source_finnhub',
+    'yahoo_extended_hours_price',
+    'exchange_rate_source',
+    'llm_api_key',
+    'llm_base_url',
+    'llm_model',
+  ];
   static const _darkModeKey = 'dark_mode';
   static const _themeColorKey = 'theme_color';
   static const _monthlyCycleStartDayKey = 'budget_start_day';
@@ -22,12 +25,6 @@ class SettingsProvider extends ChangeNotifier {
   static const _netWorthFilterKey = 'net_worth_filter_ids';
 
   String? _finnhubApiKey;
-  bool _priceSourceFinnhub = false;
-  bool _useYahooExtendedHoursPrice = false;
-  ExchangeRateSource _exchangeRateSource = ExchangeRateSource.yahoo;
-  String? _llmApiKey;
-  String? _llmBaseUrl;
-  String? _llmModel;
   bool _isDarkMode = true;
   ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
@@ -36,9 +33,6 @@ class SettingsProvider extends ChangeNotifier {
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
-  String? get llmApiKey => _llmApiKey;
-  String? get llmBaseUrl => _llmBaseUrl;
-  String? get llmModel => _llmModel;
   bool get isDarkMode => _isDarkMode;
   ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
@@ -50,26 +44,10 @@ class SettingsProvider extends ChangeNotifier {
   bool get isFinnhubConfigured =>
       _finnhubApiKey != null && _finnhubApiKey!.isNotEmpty;
 
-  bool get useFinnhubForPrices => _priceSourceFinnhub && isFinnhubConfigured;
-  bool get useYahooExtendedHoursPrice => _useYahooExtendedHoursPrice;
-  ExchangeRateSource get exchangeRateSource => _exchangeRateSource;
-  bool get useYahooForExchangeRate =>
-      _exchangeRateSource == ExchangeRateSource.yahoo;
-
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _finnhubApiKey = prefs.getString(_finnhubApiKeyKey);
-    _priceSourceFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? false;
-    _useYahooExtendedHoursPrice =
-        prefs.getBool(_yahooExtendedHoursKey) ?? false;
-    final exchangeRateSourceRaw = prefs.getString(_exchangeRateSourceKey);
-    _exchangeRateSource =
-        exchangeRateSourceRaw == ExchangeRateSource.frankfurter.name
-        ? ExchangeRateSource.frankfurter
-        : ExchangeRateSource.yahoo;
-    _llmApiKey = prefs.getString(_llmApiKeyKey);
-    _llmBaseUrl = prefs.getString(_llmBaseUrlKey);
-    _llmModel = prefs.getString(_llmModelKey);
+    _finnhubApiKey = await _loadFinnhubApiKey(prefs);
+    await Future.wait(_removedFeatureKeys.map(prefs.remove));
     _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
     _themeColor = ThemeColorOption.byId(prefs.getString(_themeColorKey));
     _monthlyCycleStartDay =
@@ -124,65 +102,38 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setFinnhubApiKey(String? apiKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_finnhubApiKeyKey);
+    final trimmed = apiKey?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      await _secureStorage.delete(key: _finnhubApiKeyKey);
       _finnhubApiKey = null;
     } else {
-      await prefs.setString(_finnhubApiKeyKey, apiKey);
-      _finnhubApiKey = apiKey;
+      await _secureStorage.write(key: _finnhubApiKeyKey, value: trimmed);
+      _finnhubApiKey = trimmed;
     }
     notifyListeners();
   }
 
-  Future<void> setUseFinnhubForPrices(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_priceSourceFinnhubKey, value);
-    _priceSourceFinnhub = value;
-    notifyListeners();
+  /// ล้างข้อมูลลับในเครื่อง (ใช้ตอนลบบัญชี)
+  Future<void> clearSensitiveData() async {
+    await setFinnhubApiKey(null);
   }
 
-  Future<void> setUseYahooExtendedHoursPrice(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_yahooExtendedHoursKey, value);
-    _useYahooExtendedHoursPrice = value;
-    notifyListeners();
-  }
-
-  Future<void> setExchangeRateSource(ExchangeRateSource value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_exchangeRateSourceKey, value.name);
-    _exchangeRateSource = value;
-    notifyListeners();
-  }
-
-  Future<void> setLLM(String? apiKey, String? baseUrl, String? model) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_llmApiKeyKey);
-      _llmApiKey = null;
-    } else {
-      await prefs.setString(_llmApiKeyKey, apiKey);
-      _llmApiKey = apiKey;
+  /// อ่าน Finnhub key จาก secure storage และย้ายค่าเก่าที่เคยเก็บใน
+  /// SharedPreferences (plaintext) มาไว้ใน secure storage ครั้งเดียว
+  Future<String?> _loadFinnhubApiKey(SharedPreferences prefs) async {
+    try {
+      final legacyKey = prefs.getString(_finnhubApiKeyKey);
+      if (legacyKey != null) {
+        if (legacyKey.isNotEmpty) {
+          await _secureStorage.write(key: _finnhubApiKeyKey, value: legacyKey);
+        }
+        await prefs.remove(_finnhubApiKeyKey);
+      }
+      return await _secureStorage.read(key: _finnhubApiKeyKey);
+    } catch (e) {
+      debugPrint('SettingsProvider: failed to load Finnhub key: $e');
+      return null;
     }
-
-    if (baseUrl == null || baseUrl.isEmpty) {
-      await prefs.remove(_llmBaseUrlKey);
-      _llmBaseUrl = null;
-    } else {
-      await prefs.setString(_llmBaseUrlKey, baseUrl);
-      _llmBaseUrl = baseUrl;
-    }
-
-    if (model == null || model.isEmpty) {
-      await prefs.remove(_llmModelKey);
-      _llmModel = null;
-    } else {
-      await prefs.setString(_llmModelKey, model);
-      _llmModel = model;
-    }
-
-    notifyListeners();
   }
 
   Future<void> setDarkMode(bool enabled) async {

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
 import 'recurring_notification_service.dart';
 
 enum ReinstallStatus { active, warning, expired }
@@ -82,7 +83,11 @@ class ReinstallReminderService extends ChangeNotifier {
   }) => notificationEnabled && state.deadline.isAfter(now);
 
   Future<void> initialize() async {
-    _isSupported = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+    // เตือนติดตั้งใหม่ใช้เฉพาะ build ที่ sideload (provisioning หมดอายุ) ไม่ใช่ store build
+    _isSupported =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        !AppConfig.isStoreBuild;
     if (!_isSupported) return;
 
     final installationId = await const MethodChannel(

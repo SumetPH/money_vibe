@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
-import 'settings_provider.dart';
 import '../services/database_manager.dart';
-import '../services/stock_price_service.dart';
+import '../services/exchange_rate_service.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
@@ -15,11 +14,6 @@ import '../models/investment_plan.dart';
 class AccountProvider extends ChangeNotifier {
   final _uuid = const Uuid();
   final DatabaseManager _dbManager = DatabaseManager();
-  final SettingsProvider? _settingsProvider;
-
-  AccountProvider({SettingsProvider? settingsProvider})
-    : _settingsProvider = settingsProvider;
-
   final List<Account> _accounts = [];
   final Map<String, List<StockHolding>> _holdings =
       {}; // portfolioId → holdings
@@ -195,10 +189,7 @@ class AccountProvider extends ChangeNotifier {
     if (usdAccounts.isEmpty) return;
 
     try {
-      final rate = await StockPriceService(
-        exchangeRateSource:
-            _settingsProvider?.exchangeRateSource ?? ExchangeRateSource.yahoo,
-      ).fetchUsdThbRate();
+      final rate = await const ExchangeRateService().fetchUsdThbRate();
       debugPrint('AccountProvider: USD/THB rate fetched: $rate');
       // fetch ครั้งเดียว แล้ว apply ให้ทุก USD account
       for (final acc in usdAccounts) {

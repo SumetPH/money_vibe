@@ -17,6 +17,7 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../utils/user_error_message.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final Budget? budget;
@@ -214,7 +215,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen>
             e,
             categoryProvider,
           ),
-          _ => 'เกิดข้อผิดพลาดในการบันทึก: $e',
+          _ => userErrorMessage(e, action: 'บันทึก'),
         };
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -261,7 +262,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen>
         closeCalculatorKeyboard();
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text('ลบงบประมาณไม่สำเร็จ: $e'),
+            content: Text(userErrorMessage(e, action: 'ลบงบประมาณ')),
             backgroundColor: AppColors.expense,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

@@ -25,6 +25,7 @@ import 'trade_purchase_history_tab.dart';
 import 'trade_yearly_tab.dart';
 import 'trade_annual_tax_tab.dart';
 import 'trade_filter_bar.dart';
+import '../../utils/user_error_message.dart';
 
 class TradeTrackerScreen extends StatefulWidget {
   const TradeTrackerScreen({super.key});
@@ -387,9 +388,9 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
       ).showSnackBar(SnackBar(content: Text('Export ข้อมูลภาษีปี $year แล้ว')));
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Export ไม่สำเร็จ: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userErrorMessage(error, action: 'Export '))),
+      );
     }
   }
 
@@ -411,12 +412,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
 
   StockPriceService _buildPriceService() {
     final settings = context.read<SettingsProvider>();
-    return StockPriceService(
-      finnhubApiKey: settings.finnhubApiKey,
-      useFinnhub: settings.useFinnhubForPrices,
-      useYahooExtendedHoursPrice: settings.useYahooExtendedHoursPrice,
-      exchangeRateSource: settings.exchangeRateSource,
-    );
+    return StockPriceService(finnhubApiKey: settings.finnhubApiKey);
   }
 
   Future<void> _openTradeForm(BuildContext context, StockTrade? trade) async {

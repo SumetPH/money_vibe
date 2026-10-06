@@ -17,6 +17,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../utils/user_error_message.dart';
 
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
@@ -101,9 +102,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('ส่งออกไม่สำเร็จ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(userErrorMessage(e, action: 'ส่งออก'))),
+        );
       }
     }
   });
@@ -139,9 +140,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('นำเข้าไม่สำเร็จ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(userErrorMessage(e, action: 'นำเข้า'))),
+        );
       }
     }
   });
@@ -238,9 +239,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         );
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('ล้างข้อมูลไม่สำเร็จ: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(userErrorMessage(e, action: 'ล้างข้อมูล'))),
+          );
         }
       }
     });

@@ -15,6 +15,7 @@ import '../../widgets/app_confirm_dialog.dart';
 import 'investment_plan_widgets.dart';
 import 'investment_plan_stock_selection_sheet.dart';
 import 'investment_plan_recommendation_row.dart';
+import '../../utils/user_error_message.dart';
 
 class PortfolioInvestmentPlanScreen extends StatefulWidget {
   final Account account;
@@ -750,9 +751,9 @@ class _PortfolioInvestmentPlanScreenState
       return true;
     } catch (e) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('บันทึกแผนไม่ได้: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userErrorMessage(e, action: 'บันทึกแผน'))),
+      );
       return false;
     }
   }

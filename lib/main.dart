@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:money_vibe/providers/llm_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/account_provider.dart';
@@ -36,6 +35,11 @@ import 'utils/web_safe_area_insets.dart';
 import 'widgets/app_sidebar.dart';
 
 void main() async {
+  // ไม่พิมพ์ log ใน release build เพื่อไม่ให้ข้อมูลภายในหลุดไปใน device log
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
   // Initialize and preserve native splash screen
   SplashService.initialize();
 
@@ -61,14 +65,13 @@ void main() async {
 
   final settingsProvider = SettingsProvider();
   final reinstallReminderService = ReinstallReminderService.instance;
-  final accountProvider = AccountProvider(settingsProvider: settingsProvider);
+  final accountProvider = AccountProvider();
   final budgetProvider = BudgetProvider();
   final categoryProvider = CategoryProvider();
   final transactionProvider = TransactionProvider();
   final recurringProvider = RecurringTransactionProvider();
   final cashFlowProvider = CashFlowForecastProvider();
   final authProvider = AuthProvider();
-  final llmProvider = LlmProvider();
   final syncProvider = SyncProvider(
     isAuthenticated: () => dbManager.repositoryOrNull?.isAuthenticated ?? false,
     getSyncLogs: () async =>
@@ -132,7 +135,6 @@ void main() async {
       recurringProvider: recurringProvider,
       cashFlowProvider: cashFlowProvider,
       reinstallReminderService: reinstallReminderService,
-      llmProvider: llmProvider,
       syncProvider: syncProvider,
     ),
   );
@@ -163,7 +165,6 @@ class MyApp extends StatefulWidget {
   final RecurringTransactionProvider recurringProvider;
   final CashFlowForecastProvider cashFlowProvider;
   final ReinstallReminderService reinstallReminderService;
-  final LlmProvider llmProvider;
   final SyncProvider syncProvider;
 
   const MyApp({
@@ -177,7 +178,6 @@ class MyApp extends StatefulWidget {
     required this.recurringProvider,
     required this.cashFlowProvider,
     required this.reinstallReminderService,
-    required this.llmProvider,
     required this.syncProvider,
   });
 
@@ -362,7 +362,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider.value(value: widget.cashFlowProvider),
         ChangeNotifierProvider.value(value: widget.reinstallReminderService),
         ChangeNotifierProvider.value(value: _databaseManager),
-        ChangeNotifierProvider.value(value: widget.llmProvider),
         ChangeNotifierProvider.value(value: widget.syncProvider),
       ],
       child: Consumer<SettingsProvider>(

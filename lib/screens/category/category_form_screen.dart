@@ -13,6 +13,7 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../utils/user_error_message.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   final Category? category;
@@ -128,7 +129,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              userErrorMessage(e, action: 'บันทึก'),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: AppColors.expense,

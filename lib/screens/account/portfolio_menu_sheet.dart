@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:money_vibe/screens/account/portfolio_analyze_screen.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
@@ -115,31 +114,6 @@ void showPortfolioMenuSheet(
                             },
                           ),
                         ],
-                        const AppCardDivider(),
-                        _buildPortfolioMenuTile(
-                          icon: Icons.auto_awesome_rounded,
-                          iconColor: isDarkMode
-                              ? AppColors.darkFabYellow
-                              : AppColors.fabYellow,
-                          title: 'วิเคราะห์พอร์ต',
-                          subtitle: 'ตรวจสอบการกระจายความเสี่ยงและผลตอบแทน',
-                          textColor: textColor,
-                          secondaryColor: textSecondary,
-                          bgColor: isDarkMode
-                              ? AppColors.darkSurface
-                              : AppColors.surface,
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PortfolioAnalyzeScreen(
-                                  accountId: account.id,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
                         const AppCardDivider(),
                         _buildPortfolioMenuTile(
                           icon: Icons.account_tree_outlined,

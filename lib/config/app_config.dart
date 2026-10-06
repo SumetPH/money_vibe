@@ -30,6 +30,16 @@ class AppConfigException implements Exception {
 }
 
 class AppConfig {
+  /// build สำหรับ App Store / Play Store (`--dart-define=DISTRIBUTION=store`)
+  /// ใช้ซ่อนฟีเจอร์ที่ใช้เฉพาะ build ส่วนตัว/sideload
+  static const bool isStoreBuild =
+      String.fromEnvironment('DISTRIBUTION') == 'store';
+
+  /// URL หน้า Privacy Policy; ว่าง = ไม่แสดงลิงก์ในแอป
+  static const String privacyPolicyUrl = String.fromEnvironment(
+    'PRIVACY_POLICY_URL',
+  );
+
   static const String _environment = String.fromEnvironment(
     'APP_ENV',
     defaultValue: 'dev',

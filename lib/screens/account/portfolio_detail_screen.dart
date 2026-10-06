@@ -25,6 +25,7 @@ import 'portfolio_edit_dialogs.dart';
 import 'portfolio_group_section.dart';
 import 'portfolio_holding_actions.dart';
 import 'portfolio_menu_sheet.dart';
+import '../../utils/user_error_message.dart';
 
 class PortfolioDetailScreen extends StatefulWidget {
   final Account account;
@@ -118,15 +119,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     } catch (_) {}
   }
 
-  StockPriceService _buildPriceService() {
-    final settings = context.read<SettingsProvider>();
-    return StockPriceService(
-      finnhubApiKey: settings.finnhubApiKey,
-      useFinnhub: settings.useFinnhubForPrices,
-      useYahooExtendedHoursPrice: settings.useYahooExtendedHoursPrice,
-      exchangeRateSource: settings.exchangeRateSource,
-    );
-  }
+  StockPriceService _buildPriceService() => StockPriceService(
+    finnhubApiKey: context.read<SettingsProvider>().finnhubApiKey,
+  );
 
   Future<void> _refreshPrices() async {
     if (_isRefreshing) return;
@@ -145,8 +140,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       final holdings = provider.getHoldings(acc.id);
       if (holdings.isEmpty) return;
 
-      final priceSymbolsByHoldingId = {
-        for (final h in holdings) h.id: acc.yahooSymbolFor(h.ticker),
+      final priceSymbolsByHoldingId = <String, String>{
+        if (_priceService.isConfigured)
+          for (final h in holdings) h.id: ?acc.priceSymbolFor(h.ticker),
       };
       final tickers = priceSymbolsByHoldingId.values.toSet().toList();
       final tickersNeedingProfile = _priceService.isConfigured
@@ -176,6 +172,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       final failedTickers = holdings
           .where(
             (holding) =>
+                priceSymbolsByHoldingId.containsKey(holding.id) &&
                 !prices.containsKey(priceSymbolsByHoldingId[holding.id]),
           )
           .map((holding) => holding.ticker)
@@ -227,6 +224,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         exchangeRate: hasCompletePriceSnapshot ? rate : null,
       );
       final warningMessages = <String>[];
+      if (acc.isUsPortfolio && !_priceService.isConfigured) {
+        warningMessages.add('ใส่ Finnhub API key เพื่ออัปเดตราคาอัตโนมัติ');
+      }
       if (failedTickers.isNotEmpty) {
         final displayedTickers = failedTickers.take(5).join(', ');
         final remainingCount = failedTickers.length - 5;
@@ -248,9 +248,9 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('โหลดราคาไม่ได้: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(userErrorMessage(e, action: 'โหลดราคา'))),
+        );
       }
     } finally {
       if (mounted) {
@@ -331,7 +331,11 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('บันทึก DCA ไม่ได้: $e')),
+                              SnackBar(
+                                content: Text(
+                                  userErrorMessage(e, action: 'บันทึก DCA '),
+                                ),
+                              ),
                             );
                           }
                         },
@@ -494,7 +498,8 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
 
   Future<double?> _fetchCurrentHoldingPrice(String ticker) async {
     _priceService = _buildPriceService();
-    final symbol = widget.account.yahooSymbolFor(ticker);
+    final symbol = widget.account.priceSymbolFor(ticker);
+    if (symbol == null) return null;
     final prices = await _priceService.fetchPrices([symbol]);
     return prices[symbol];
   }

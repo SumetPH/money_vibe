@@ -1,14 +1,13 @@
 # Money Vibe
 
-Money Vibe คือแอป Flutter สำหรับจัดการการเงินส่วนบุคคลที่เน้นความเรียบง่าย แต่ทรงพลัง รองรับการใช้งานแบบ **Online-First (Supabase)** เพื่อให้ข้อมูลซิงค์ตรงกันทุกอุปกรณ์แบบ Real-time พร้อมฟีเจอร์การวิเคราะห์อัจฉริยะด้วย AI และการจัดการพอร์ตการลงทุนที่ครบวงจร
+Money Vibe คือแอป Flutter สำหรับจัดการการเงินส่วนบุคคลที่เน้นความเรียบง่าย แต่ทรงพลัง รองรับการใช้งานแบบ **Online-First (Supabase)** เพื่อให้ข้อมูลซิงค์ตรงกันทุกอุปกรณ์แบบ Real-time พร้อมการจัดการพอร์ตการลงทุนที่ครบวงจร
 
 ## ฟีเจอร์หลัก
 
 - **Cloud-First Architecture**: ข้อมูลซิงค์อัตโนมัติข้ามทุกอุปกรณ์ผ่าน Supabase
 - **Financial Tracking**: จัดการบัญชีเงินสด, ธนาคาร, และบัตรเครดิต
 - **Smart Transactions**: บันทึกรายรับ-รายจ่าย พร้อมระบบโอนเงินและชำระหนี้สิน
-- **AI Analysis (LLM)**: วิเคราะห์พอร์ตการลงทุนและข้อมูลทางการเงินด้วย AI อัจฉริยะ
-- **Portfolio & Stocks**: ติดตามราคาหุ้นอัตโนมัติ (Finnhub) และจัดการพอร์ตการลงทุน
+- **Portfolio & Stocks**: ติดตามราคาหุ้นสหรัฐฯ อัตโนมัติ (Finnhub, ใช้ API key ของผู้ใช้) และจัดการพอร์ตการลงทุน (พอร์ตหุ้นไทยกรอกราคาเอง)
 - **Recurring Transactions**: ระบบรายการอัตโนมัติที่เกิดซ้ำ (รายวัน, รายสัปดาห์, รายเดือน)
 - **Budgeting**: วางแผนงบประมาณตามหมวดหมู่ พร้อมระบบแจ้งเตือนเมื่อใกล้เต็ม
 - **Visual Statistics**: กราฟและสรุปภาพรวมการเงินที่สวยงามและเข้าใจง่าย
@@ -23,9 +22,9 @@ Money Vibe คือแอป Flutter สำหรับจัดการกา
 - **Architecture**: Repository Pattern (Cloud-First)
 - **Database & Auth**: Supabase
 - **Navigation**: GoRouter
-- **Storage**: Shared Preferences (User Preferences) & Supabase Storage (Icons/Logos)
+- **Storage**: Shared Preferences (User Preferences), Secure Storage (API keys) & Supabase Storage (Icons/Logos)
 - **Charts**: fl_chart
-- **AI Integration**: Edge Functions & Provider-based LLM Service
+- **Exchange Rate**: Frankfurter (ECB)
 
 ## เริ่มต้นใช้งาน
 

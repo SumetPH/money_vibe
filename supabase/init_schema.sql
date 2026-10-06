@@ -33,3 +33,4 @@
 \ir migrations/20261002090000_create_budget_forecast_settings.sql
 \ir migrations/20261002120000_static_period_cash_flow_lists.sql
 \ir migrations/20261002150000_planned_purchase_inclusion.sql
+\ir migrations/20261006120000_harden_store_release.sql

@@ -22,6 +22,7 @@ import 'transaction_type_picker.dart';
 import 'transaction_amount_hero_card.dart';
 import 'transaction_selection_group_card.dart';
 import 'transaction_meta_info_card.dart';
+import '../../utils/user_error_message.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final AppTransaction? transaction;
@@ -330,7 +331,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              userErrorMessage(e, action: 'บันทึก'),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: AppColors.expense,
