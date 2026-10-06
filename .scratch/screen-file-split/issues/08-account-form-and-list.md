@@ -1,6 +1,6 @@
 # 08 account_form_screen.dart (1,645) + account_list_screen.dart (1,553)
 
-Status: ready-for-agent
+Status: resolved
 
 One commit per file.
 
@@ -19,3 +19,7 @@ account_list:
 - `account_total_row.dart` — `_AccountTotals`, `_TotalRow` + its menu
 - `account_net_worth_filter_sheet.dart` — `_NetWorthFilterSheet`
 - `account_list_item.dart` — `_AccountItem` + its menu
+
+## Comments
+
+Done. account_list 1,553 → 692 (pure move). account_form 1,645 → 873: row builders, hero/delete cards → `account_form_rows.dart`; type/currency/icon-source sheets → `account_form_pickers.dart` with callbacks. Drops below 800 after ticket 18.
