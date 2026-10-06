@@ -1,6 +1,6 @@
 # 02 trade_tracker_screen.dart (3,545 lines)
 
-Status: ready-for-agent
+Status: resolved
 
 Proposed files in `lib/screens/trade/`:
 - `trade_tracker_screen.dart` — State, tab bar, app bar actions, menus, export, open/delete actions
@@ -14,3 +14,7 @@ Proposed files in `lib/screens/trade/`:
 - `trade_summary_panel.dart` — `_SummaryPanel`, `_FeeSummaryPanel`, `_FeeSummaryBreakdown`, `_SummaryMetric`, `_TradeInsetCard`
 - `trade_filter_bar.dart` — `_FilterBar`, portfolio picker + tile, `_PnlFilterChips`, `_FilterChipButton`, `_YearSelector`
 - `trade_list_item.dart` — `_TradeListItem`, `_TradeDetailRow`, `_TickerFallback`, `_EmptyTradeState`
+
+## Comments
+
+Done: pure move (verified line-by-line). Screen file now 640 lines; remaining State methods (tax export, menus) can be extracted later if needed.
