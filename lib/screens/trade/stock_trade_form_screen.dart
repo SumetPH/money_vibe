@@ -9,12 +9,13 @@ import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_date_picker_sheet.dart';
+import 'stock_trade_form_widgets.dart';
 
 typedef SaveStockTradeCallback = Future<void> Function(StockTrade trade);
+
 typedef FetchStockProfileCallback =
     Future<StockCompanyProfile?> Function(String ticker);
 
@@ -172,7 +173,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
   }
 
   Future<void> _pickPortfolio(bool isDarkMode) async {
-    final selected = await _showPortfolioPickerSheet(
+    final selected = await showStockTradePortfolioPickerSheet(
       context: context,
       portfolios: widget.portfolios,
       selectedPortfolioId: _portfolioId,
@@ -459,7 +460,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       ),
                     ),
                     _buildDivider(isDarkMode),
-                    _TradeTextFieldRow(
+                    StockTradeTextFieldRow(
                       label: 'Ticker',
                       controller: _tickerController,
                       hintText: 'AAPL',
@@ -469,7 +470,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       textCapitalization: TextCapitalization.characters,
                     ),
                     _buildDivider(isDarkMode),
-                    _TradeTextFieldRow(
+                    StockTradeTextFieldRow(
                       label: 'จำนวนขาย',
                       controller: _sharesController,
                       hintText: '0',
@@ -481,7 +482,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       inputFormatters: [_decimalInputFormatter(7)],
                     ),
                     _buildDivider(isDarkMode),
-                    _TradeTextFieldRow(
+                    StockTradeTextFieldRow(
                       label: 'ราคาทุน ($_selectedCurrencyCode)',
                       controller: _costBasisController,
                       hintText: '0.00',
@@ -493,7 +494,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
                     _buildDivider(isDarkMode),
-                    _TradeTextFieldRow(
+                    StockTradeTextFieldRow(
                       label: 'ราคาขาย ($_selectedCurrencyCode)',
                       controller: _sellPriceController,
                       hintText: '0.00',
@@ -505,7 +506,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
                     _buildDivider(isDarkMode),
-                    _TradeTextFieldRow(
+                    StockTradeTextFieldRow(
                       label: 'เงินสดรับ ($_selectedCurrencyCode)',
                       controller: _cashReceivedController,
                       hintText: '0.00',
@@ -518,7 +519,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                     ),
 
                     _buildDivider(isDarkMode),
-                    _AdvancedDetailsSection(
+                    StockTradeAdvancedDetailsSection(
                       isDarkMode: isDarkMode,
                       textColor: textColor,
                       secondaryColor: secondaryColor,
@@ -529,14 +530,14 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                         });
                       },
                       children: [
-                        _TradeTextFieldRow(
+                        StockTradeTextFieldRow(
                           label: 'ชื่อหุ้น',
                           controller: _nameController,
                           hintText: 'Optional',
                           isDarkMode: isDarkMode,
                         ),
                         _buildDivider(isDarkMode),
-                        _TradeTextFieldRow(
+                        StockTradeTextFieldRow(
                           label: 'มูลค่าขายรวม (Gross)',
                           controller: _grossProceedsController,
                           hintText: 'Optional',
@@ -548,7 +549,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                           inputFormatters: [_decimalInputFormatter(4)],
                         ),
                         _buildDivider(isDarkMode),
-                        _TradeTextFieldRow(
+                        StockTradeTextFieldRow(
                           label: 'ค่าธรรมเนียม Broker',
                           controller: _brokerFeeController,
                           hintText: 'Optional',
@@ -560,7 +561,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                           inputFormatters: [_decimalInputFormatter(4)],
                         ),
                         _buildDivider(isDarkMode),
-                        _TradeTextFieldRow(
+                        StockTradeTextFieldRow(
                           label: 'SEC / Exchange Fee',
                           controller: _exchangeFeeController,
                           hintText: 'Optional',
@@ -572,7 +573,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                           inputFormatters: [_decimalInputFormatter(4)],
                         ),
                         _buildDivider(isDarkMode),
-                        _TradeTextFieldRow(
+                        StockTradeTextFieldRow(
                           label: 'Tax / VAT',
                           controller: _taxFeeController,
                           hintText: 'Optional',
@@ -627,7 +628,7 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
                         ),
                         if (_useBrokerPnl) ...[
                           _buildDivider(isDarkMode),
-                          _TradeTextFieldRow(
+                          StockTradeTextFieldRow(
                             label: 'Realized P/L ($_selectedCurrencyCode)',
                             controller: _realizedPnlController,
                             hintText: '0.00',
@@ -696,180 +697,5 @@ class _StockTradeFormScreenState extends State<StockTradeFormScreen> {
       return value.toInt().toString();
     }
     return value.toStringAsFixed(scale).replaceFirst(RegExp(r'\.?0+$'), '');
-  }
-}
-
-Future<String?> _showPortfolioPickerSheet({
-  required BuildContext context,
-  required List<Account> portfolios,
-  required String? selectedPortfolioId,
-  required bool isDarkMode,
-}) {
-  final textColor = isDarkMode
-      ? AppColors.darkTextPrimary
-      : AppColors.textPrimary;
-  final secondaryColor = isDarkMode
-      ? AppColors.darkTextSecondary
-      : AppColors.textSecondary;
-
-  return showAppModalBottomSheet<String>(
-    context: context,
-    builder: (sheetContext) {
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกพอร์ต'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: portfolios
-                    .map(
-                      (portfolio) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          portfolio.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: textColor),
-                        ),
-                        trailing: portfolio.id == selectedPortfolioId
-                            ? Icon(Icons.check, color: secondaryColor)
-                            : null,
-                        onTap: () => Navigator.pop(sheetContext, portfolio.id),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-class _AdvancedDetailsSection extends StatelessWidget {
-  final bool isDarkMode;
-  final Color textColor;
-  final Color secondaryColor;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final List<Widget> children;
-
-  const _AdvancedDetailsSection({
-    required this.isDarkMode,
-    required this.textColor,
-    required this.secondaryColor,
-    required this.isExpanded,
-    required this.onToggle,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-          child: ListTile(
-            title: Text(
-              'รายละเอียดเพิ่มเติม',
-              style: TextStyle(color: textColor, fontSize: 15),
-            ),
-            subtitle: Text(
-              'ค่าธรรมเนียม ภาษี และข้อมูลจาก statement',
-              style: TextStyle(color: secondaryColor, fontSize: 13),
-            ),
-            trailing: Icon(
-              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: secondaryColor,
-            ),
-            onTap: onToggle,
-          ),
-        ),
-        if (isExpanded) ...[
-          Divider(
-            height: 1,
-            color: isDarkMode ? AppColors.darkDivider : AppColors.divider,
-          ),
-          ...children,
-        ],
-      ],
-    );
-  }
-}
-
-class _TradeTextFieldRow extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String hintText;
-  final bool isDarkMode;
-  final String? errorText;
-  final List<TextInputFormatter>? inputFormatters;
-  final TextCapitalization textCapitalization;
-  final TextInputType keyboardType;
-
-  const _TradeTextFieldRow({
-    required this.label,
-    required this.controller,
-    required this.hintText,
-    required this.isDarkMode,
-    this.keyboardType = TextInputType.text,
-    this.errorText,
-    this.inputFormatters,
-    this.textCapitalization = TextCapitalization.none,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labelColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-
-    return Container(
-      color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: SizedBox(
-              width: 140,
-              child: Text(
-                label,
-                style: TextStyle(color: labelColor, fontSize: 15),
-              ),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.right,
-              keyboardType: keyboardType,
-              textCapitalization: textCapitalization,
-              inputFormatters: inputFormatters,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: labelColor),
-                errorText: errorText,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              style: TextStyle(color: textColor, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
