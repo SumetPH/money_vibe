@@ -17,7 +17,7 @@
       ]
     },
     {
-      "name": "Dev Web Supabase",
+      "name": "Dev Web",
       "request": "launch",
       "type": "dart",
       "deviceId": "chrome",
@@ -25,6 +25,18 @@
         "--dart-define-from-file=config/dev.json",
         "--web-port=8080",
         "--web-browser-flag=--user-data-dir=/Users/sumetph/.flutter-chrome-profile"
+      ]
+    },
+    {
+      "name": "Dev Web Store",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--dart-define-from-file=config/dev.json",
+        "--web-port=8080",
+        "--web-browser-flag=--user-data-dir=/Users/sumetph/.flutter-chrome-profile",
+        "--dart-define=DISTRIBUTION=store"
       ]
     },
     {
@@ -37,13 +49,6 @@
         "--web-port=8080",
         "--web-browser-flag=--user-data-dir=/Users/sumetph/.flutter-chrome-profile"
       ]
-    },
-    {
-      "name": "Release (Production App)",
-      "request": "launch",
-      "type": "dart",
-      "flutterMode": "release",
-      "toolArgs": ["--dart-define-from-file=config/prod.json"]
     }
   ]
 }
