@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'holding_reset_peak_profit_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -9,12 +10,13 @@ import '../../providers/settings_provider.dart';
 import '../../services/dime_trade_ocr.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/broker_order_import_button.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_date_picker_sheet.dart';
+import 'holding_buy_form_widgets.dart';
+import 'holding_portfolio_picker_sheet.dart';
 
 typedef BuyHoldingCallback =
     Future<void> Function({
@@ -430,42 +432,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
         .hasInvestmentBasisChangedFrom(holding);
     if (!basisChanged) return false;
 
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final backgroundColor = isDarkMode
-        ? AppColors.darkSurface
-        : AppColors.surface;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final primaryColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
-
-    return showDialog<bool>(
-      context: context,
-      // design-check: allow input or multi-choice dialog
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: backgroundColor,
-        title: Text('รีเซ็ต Peak ไหม?', style: TextStyle(color: textColor)),
-        content: Text(
-          'จำนวนหุ้นหรือราคาทุนเปลี่ยนจากเดิม ต้องการเริ่มนับ Peak Profit ใหม่จากสถานะล่าสุดหรือคงค่าเดิมไว้?',
-          style: TextStyle(color: textColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('ยกเลิก', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('คงค่าเดิม', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: primaryColor),
-            child: const Text('รีเซ็ต'),
-          ),
-        ],
-      ),
-    );
+    return showResetPeakProfitDialog(context);
   }
 
   @override
@@ -596,19 +563,19 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                   disableSplash: true,
                   children: [
                     if (_isNewHolding) ...[
-                      _BuyPortfolioFieldRow(
+                      HoldingBuyPortfolioFieldRow(
                         account: _selectedPortfolio,
                         isDarkMode: isDarkMode,
                         onTap: () => _selectPortfolio(isDarkMode: isDarkMode),
                       ),
                       const AppCardDivider(),
-                      _BuyTickerFieldRow(
+                      HoldingBuyTickerFieldRow(
                         controller: _ticker,
                         isDarkMode: isDarkMode,
                       ),
                       const AppCardDivider(),
                     ],
-                    _BuyNumberFieldRow(
+                    HoldingBuyNumberFieldRow(
                       label: 'จำนวนที่ซื้อ',
                       controller: _shares,
                       hintText: '0',
@@ -616,7 +583,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       inputFormatters: [_decimalInputFormatter(7)],
                     ),
                     const AppCardDivider(),
-                    _BuyNumberFieldRow(
+                    HoldingBuyNumberFieldRow(
                       label: 'ราคาซื้อ ($_currencyCode)',
                       controller: _price,
                       hintText: '0.00',
@@ -624,7 +591,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       inputFormatters: [_decimalInputFormatter(4)],
                     ),
                     const AppCardDivider(),
-                    _BuyNumberFieldRow(
+                    HoldingBuyNumberFieldRow(
                       label: 'มูลค่าหุ้น (Gross $_currencyCode)',
                       controller: _gross,
                       hintText: '0.00',
@@ -637,7 +604,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                     ),
                     if (!_isHistoryEdit) ...[
                       const AppCardDivider(),
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ยอดที่จ่าย (Net $_currencyCode)',
                         controller: _cash,
                         hintText: '0.00',
@@ -657,7 +624,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                     margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     disableSplash: true,
                     children: [
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ค่าคอมมิชชัน ($_currencyCode)',
                         controller: _brokerFee,
                         hintText: '0.00',
@@ -665,7 +632,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
                       const AppCardDivider(),
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ภาษี (VAT $_currencyCode)',
                         controller: _taxFee,
                         hintText: '0.00',
@@ -673,7 +640,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         inputFormatters: [_decimalInputFormatter(4)],
                       ),
                       const AppCardDivider(),
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ค่าธรรมเนียมอื่นๆ (SEC/TAF)',
                         controller: _exchangeFee,
                         hintText: '0.00',
@@ -687,7 +654,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                     margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     disableSplash: true,
                     children: [
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'จำนวนหุ้น',
                         controller: _resultShares,
                         hintText: '0',
@@ -699,7 +666,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         },
                       ),
                       const AppCardDivider(),
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ต้นทุนรวม ($_currencyCode)',
                         controller: _resultTotalCost,
                         hintText: '0.00',
@@ -707,7 +674,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         inputFormatters: [_decimalInputFormatter(2)],
                       ),
                       const AppCardDivider(),
-                      _BuyNumberFieldRow(
+                      HoldingBuyNumberFieldRow(
                         label: 'ต้นทุนต่อหุ้น ($_currencyCode)',
                         controller: _resultCostBasis,
                         hintText: '0.0000',
@@ -764,7 +731,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                         ),
                         if (_sellPlanEnabled) ...[
                           const AppCardDivider(),
-                          _BuyNumberFieldRow(
+                          HoldingBuyNumberFieldRow(
                             label: 'Take Profit (%)',
                             controller: _takeProfit,
                             hintText: '0',
@@ -772,7 +739,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
                           const AppCardDivider(),
-                          _BuyNumberFieldRow(
+                          HoldingBuyNumberFieldRow(
                             label: 'Trailing Stop (%)',
                             controller: _trailingStop,
                             hintText: '0',
@@ -780,7 +747,7 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                             inputFormatters: [_decimalInputFormatter(2)],
                           ),
                           const AppCardDivider(),
-                          _BuyNumberFieldRow(
+                          HoldingBuyNumberFieldRow(
                             label: 'Stop Loss (%)',
                             controller: _stopLoss,
                             hintText: '0',
@@ -801,231 +768,14 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
   }
 
   Future<void> _selectPortfolio({required bool isDarkMode}) async {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final secondaryColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    final selected = await showAppModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'เลือกพอร์ต'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  children: widget.portfolios
-                      .map(
-                        (portfolio) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            portfolio.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: textColor),
-                          ),
-                          trailing: portfolio.id == _selectedPortfolioId
-                              ? Icon(Icons.check, color: secondaryColor)
-                              : null,
-                          onTap: () =>
-                              Navigator.pop(sheetContext, portfolio.id),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    final selected = await showHoldingPortfolioPicker(
+      context,
+      isDarkMode: isDarkMode,
+      portfolios: widget.portfolios,
+      selectedPortfolioId: _selectedPortfolioId,
     );
     if (selected != null && mounted) {
       setState(() => _selectedPortfolioId = selected);
     }
-  }
-}
-
-class _BuyPortfolioFieldRow extends StatelessWidget {
-  final Account? account;
-  final bool isDarkMode;
-  final VoidCallback onTap;
-
-  const _BuyPortfolioFieldRow({
-    required this.account,
-    required this.isDarkMode,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labelColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 140,
-              child: Text(
-                'พอร์ต',
-                style: TextStyle(fontSize: 15, color: labelColor),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                account?.name ?? 'เลือกพอร์ต',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right, size: 18, color: labelColor),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BuyNumberFieldRow extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String hintText;
-  final bool isDarkMode;
-  final List<TextInputFormatter> inputFormatters;
-  final ValueChanged<String>? onChanged;
-
-  const _BuyNumberFieldRow({
-    required this.label,
-    required this.controller,
-    required this.hintText,
-    required this.isDarkMode,
-    required this.inputFormatters,
-    this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labelColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 15, color: labelColor),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.right,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: inputFormatters,
-              onChanged: onChanged,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.6)),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                filled: false,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: textColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BuyTickerFieldRow extends StatelessWidget {
-  final TextEditingController controller;
-  final bool isDarkMode;
-
-  const _BuyTickerFieldRow({
-    required this.controller,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labelColor = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              'Ticker',
-              style: TextStyle(fontSize: 15, color: labelColor),
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.right,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(
-                hintText: 'เช่น AAPL',
-                hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.6)),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                filled: false,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
