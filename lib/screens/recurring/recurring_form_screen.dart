@@ -10,20 +10,15 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/recurring_notification_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
-import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../main.dart';
 import '../../widgets/calculator_keyboard.dart';
 import 'recurring_section.dart';
-import '../../widgets/app_amount_hero_card.dart';
-import '../../widgets/app_form_row.dart';
-import '../../widgets/app_segmented_tabs.dart';
-import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
+import 'recurring_form_widgets.dart';
+import 'recurring_form_pickers.dart';
 
 class RecurringFormScreen extends StatefulWidget {
   final RecurringTransaction? recurring;
@@ -482,7 +477,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                 children: [
-                  _RecurringTypeSegmentedControl(
+                  RecurringTypeSegmentedControl(
                     selectedType: _type,
                     onChanged: (type) => setState(() {
                       _type = type;
@@ -493,7 +488,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     onShowMore: () => _pickType(isDark),
                   ),
                   const SizedBox(height: 14),
-                  _RecurringAmountHeroCard(
+                  RecurringAmountHeroCard(
                     type: _type,
                     amountController: _amountController,
                     amountFocusNode: _amountFocusNode,
@@ -540,7 +535,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     child: Column(
                       children: [
                         // ── Account ───────────────────────────────────────────────────
-                        _RowTile(
+                        RecurringRowTile(
                           label: 'บัญชี',
                           value: selectedAccount?.name ?? 'เลือกบัญชี',
                           onTap: () =>
@@ -550,7 +545,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
                         // ── To Account (transfer only) ────────────────────────────────
                         if (_type.isTransferLike) ...[
-                          _RowTile(
+                          RecurringRowTile(
                             label: 'บัญชีปลายทาง',
                             value:
                                 (_type == TransactionType.debtTransfer
@@ -567,7 +562,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
                         // ── Debt Account (debtRepay only) ─────────────────────────────
                         if (_type == TransactionType.debtRepay) ...[
-                          _RowTile(
+                          RecurringRowTile(
                             label: 'บัญชีหนี้สิน',
                             value:
                                 selectedDebtAccount?.name ??
@@ -579,7 +574,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
 
                         // ── Category (non-transfer) ────────────────────────────────────
                         if (_type.supportsCategory) ...[
-                          _RowTile(
+                          RecurringRowTile(
                             label: 'หมวดหมู่',
                             value: selectedCategory?.name ?? 'ไม่ได้เลือก',
                             onTap: () => _pickCategory(categories, isDark),
@@ -588,7 +583,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         ],
 
                         // ── Day of month ──────────────────────────────────────────────
-                        _RowTile(
+                        RecurringRowTile(
                           label: 'วันที่ในเดือน',
                           value: _dayOfMonth == 0
                               ? 'สิ้นเดือน'
@@ -604,103 +599,18 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     inset: false,
                     child: Column(
                       children: [
-                        InkWell(
-                          onTap: () => _pickDate(isStart: true),
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'เดือนเริ่มต้น',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  _formatMonthYear(_startDate),
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Divider(height: 1, color: dividerColor),
-
-                        // ── Month end (optional) ───────────────────────────────────────
-                        InkWell(
-                          onTap: () => _pickDate(isStart: false),
-                          child: Container(
-                            color: surfaceColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'เดือนสิ้นสุด',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                if (_endDate != null) ...[
-                                  Text(
-                                    _formatMonthYear(_endDate!),
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: InkResponse(
-                                      onTap: () =>
-                                          setState(() => _endDate = null),
-                                      radius: 16,
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 16,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ] else
-                                  Text(
-                                    'ไม่ได้เลือก',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: textSecondary.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: textSecondary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
+                        RecurringMonthRangeRows(
+                          startLabel: _formatMonthYear(_startDate),
+                          endLabel: _endDate != null
+                              ? _formatMonthYear(_endDate!)
+                              : null,
+                          surfaceColor: surfaceColor,
+                          dividerColor: dividerColor,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          onPickStart: () => _pickDate(isStart: true),
+                          onPickEnd: () => _pickDate(isStart: false),
+                          onClearEnd: () => setState(() => _endDate = null),
                         ),
                         Divider(height: 1, color: dividerColor),
                         IconPickerFormRow(
@@ -719,7 +629,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                     inset: false,
                     child: Column(
                       children: [
-                        _ToggleRow(
+                        RecurringToggleRow(
                           color: surfaceColor,
                           value: _notificationEnabled,
                           onChanged: (v) =>
@@ -740,7 +650,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         ),
                         if (_notificationEnabled) ...[
                           Divider(height: 1, color: dividerColor),
-                          _RowTile(
+                          RecurringRowTile(
                             label: 'เวลาแจ้งเตือน',
                             value: _formatTime(_notificationTime),
                             onTap: () => _pickNotificationTime(isDark),
@@ -783,7 +693,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                         ),
 
                         Divider(height: 1, color: dividerColor),
-                        _ToggleRow(
+                        RecurringToggleRow(
                           color: surfaceColor,
                           value: _isHidden,
                           onChanged: (v) => setState(() => _isHidden = v),
@@ -806,46 +716,10 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
                   const SizedBox(height: 16),
 
                   if (_isEditing)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: surfaceColor,
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                        border: Border.all(
-                          color: AppColors.borderFor(isDark),
-                          width: 1,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: _delete,
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.delete_outline_rounded,
-                                color: isDark
-                                    ? AppColors.darkExpense
-                                    : AppColors.expense,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'ลบรายการประจำนี้',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? AppColors.darkExpense
-                                      : AppColors.expense,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    RecurringDeleteButton(
+                      isDark: isDark,
+                      surfaceColor: surfaceColor,
+                      onDelete: _delete,
                     ),
                   const SizedBox(height: 24),
                 ],
@@ -858,66 +732,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
   }
 
   // ── Pickers ────────────────────────────────────────────────────────────────
-
-  void _pickType(bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final dividerColor = AppColors.borderFor(isDark);
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกประเภทรายการ'),
-            Expanded(
-              child: ListView(
-                controller: sc,
-                children: TransactionType.values
-                    .map(
-                      (t) => Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            tileColor: bgColor,
-                            title: Text(
-                              t.label,
-                              style: TextStyle(color: textColor),
-                            ),
-                            trailing: _type == t
-                                ? Icon(Icons.check, color: selectedColor)
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                _type = t;
-                                _categoryId = null;
-                                // Reset debt account when changing type
-                                if (!t.requiresDebtAccount) {
-                                  _debtAccountId = null;
-                                }
-                                if (t != TransactionType.transfer) {
-                                  _toAccountId = null;
-                                }
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                          Divider(height: 1, color: dividerColor),
-                        ],
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _pickAccount(
     List<Account> accounts, {
@@ -956,155 +770,9 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     });
   }
 
-  void _pickCategory(List<Category> categories, bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'เลือกหมวดหมู่'),
-            // Clear option
-            ListTile(
-              tileColor: bgColor,
-              leading: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.do_not_disturb, color: Colors.grey, size: 18),
-              ),
-              title: Text('ไม่ได้เลือก', style: TextStyle(color: textColor)),
-              trailing: _categoryId == null
-                  ? Icon(Icons.check, color: selectedColor)
-                  : null,
-              onTap: () {
-                setState(() => _categoryId = null);
-                Navigator.pop(context);
-              },
-            ),
-            const AppCardDivider(),
-            Expanded(
-              child: ListView.separated(
-                controller: sc,
-                itemCount: categories.length,
-                separatorBuilder: (context, i) =>
-                    Divider(height: 1, color: AppColors.listDividerFor(isDark)),
-                itemBuilder: (_, i) {
-                  final cat = categories[i];
-                  final isSelected = _categoryId == cat.id;
-                  return ListTile(
-                    tileColor: bgColor,
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: cat.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(cat.icon, color: cat.color, size: 18),
-                    ),
-                    title: Text(cat.name, style: TextStyle(color: textColor)),
-                    trailing: isSelected
-                        ? Icon(Icons.check, color: selectedColor)
-                        : null,
-                    onTap: () {
-                      setState(() => _categoryId = cat.id);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _pickDayOfMonth(bool isDark) {
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => AppDraggableSheet(
-        builder: (_, sc) => Column(
-          children: [
-            const AppModalBottomSheetHeader(title: 'วันที่ในเดือน'),
-            Expanded(
-              child: GridView.builder(
-                controller: sc,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1,
-                ),
-                itemCount: 32, // 1-31 + 0 (สิ้นเดือน)
-                itemBuilder: (_, i) {
-                  final day = i; // 0 = สิ้นเดือน, 1-31 = actual day
-                  final isSelected = _dayOfMonth == day;
-                  return Material(
-                    color: isSelected ? selectedColor : bgColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: isSelected
-                          ? BorderSide.none
-                          : BorderSide(
-                              color: isDark
-                                  ? AppColors.darkDivider
-                                  : AppColors.divider,
-                            ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _dayOfMonth = day);
-                        Navigator.pop(context);
-                      },
-                      child: Center(
-                        child: Text(
-                          day == 0 ? 'สิ้น' : '$day',
-                          style: TextStyle(
-                            fontSize: day == 0 ? 10 : 14,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.normal,
-                            color: isSelected ? Colors.white : textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _pickDate({required bool isStart}) async {
     final initial = isStart ? _startDate : (_endDate ?? _startDate);
-    final picked = await _showMonthYearPicker(
+    final picked = await showRecurringMonthYearPicker(
       context,
       initial,
       isStart ? DateTime(2000) : _startDate,
@@ -1123,143 +791,6 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
       });
     }
   }
-
-  Future<DateTime?> _showMonthYearPicker(
-    BuildContext context,
-    DateTime initialDate,
-    DateTime firstDate, {
-    required bool isEnd,
-  }) async {
-    final isDark = context.read<SettingsProvider>().isDarkMode;
-    final bgColor = isDark ? AppColors.darkSurface : AppColors.surface;
-    final textColor = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final selectedColor = isDark ? AppColors.darkIncome : AppColors.header;
-
-    int selectedYear = initialDate.year;
-
-    return showAppModalBottomSheet<DateTime>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setModalState) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with year navigator
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: () => setModalState(() => selectedYear--),
-                      color: textColor,
-                    ),
-                    Expanded(
-                      child: Text(
-                        '${selectedYear + 543}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () => setModalState(() => selectedYear++),
-                      color: textColor,
-                    ),
-                  ],
-                ),
-              ),
-              // Month grid
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: 12,
-                  itemBuilder: (_, i) {
-                    final month = i + 1;
-                    final isSelected =
-                        selectedYear == initialDate.year &&
-                        month == initialDate.month;
-                    return Material(
-                      color: isSelected ? selectedColor : bgColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: isSelected
-                            ? BorderSide.none
-                            : BorderSide(
-                                color: isDark
-                                    ? AppColors.darkDivider
-                                    : AppColors.divider,
-                              ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          // For start date, use day 1; for end date, use last day
-                          final day = isEnd
-                              ? DateTime(selectedYear, month + 1, 0).day
-                              : 1;
-                          Navigator.pop(
-                            context,
-                            DateTime(selectedYear, month, day),
-                          );
-                        },
-                        child: Center(
-                          child: Text(
-                            _thaiMonthsShort[month - 1],
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.normal,
-                              color: isSelected ? Colors.white : textColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static const _thaiMonthsShort = [
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
 
   static const _thaiMonths = [
     'มกราคม',
@@ -1285,71 +816,51 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     return '$hour:$minute';
   }
 
-  Future<void> _pickNotificationTime(bool isDark) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _notificationTime,
-      builder: (context, child) {
-        final actionColor = isDark ? AppColors.darkIncome : AppColors.header;
-        final pickerBg = isDark ? AppColors.darkSurface : AppColors.surface;
-        final textColor = isDark
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-        final secondaryTextColor = isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-        final selectedBg = isDark
-            ? AppColors.darkSurfaceVariant
-            : AppColors.background;
-        final dialTextColor = WidgetStateColor.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return Colors.white;
+  void _pickType(bool isDark) {
+    showRecurringTypePicker(
+      context,
+      isDark,
+      selected: _type,
+      onSelected: (t) {
+        setState(() {
+          _type = t;
+          _categoryId = null;
+          // Reset debt account when changing type
+          if (!t.requiresDebtAccount) {
+            _debtAccountId = null;
           }
-          return textColor;
+          if (t != TransactionType.transfer) {
+            _toAccountId = null;
+          }
         });
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: isDark ? AppColors.darkHeader : AppColors.header,
-              surface: pickerBg,
-              onSurface: textColor,
-              onPrimary: Colors.white,
-            ),
-            dialogTheme: DialogThemeData(backgroundColor: pickerBg),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: actionColor),
-            ),
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: pickerBg,
-              hourMinuteColor: selectedBg,
-              hourMinuteTextColor: textColor,
-              dayPeriodColor: selectedBg,
-              dayPeriodTextColor: textColor,
-              dayPeriodBorderSide: BorderSide(
-                color: isDark ? AppColors.darkDivider : AppColors.divider,
-              ),
-              dialHandColor: actionColor,
-              dialBackgroundColor: selectedBg,
-              dialTextColor: dialTextColor,
-              entryModeIconColor: actionColor,
-              helpTextStyle: TextStyle(color: secondaryTextColor),
-              hourMinuteShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: isDark ? AppColors.darkDivider : AppColors.divider,
-                ),
-              ),
-              dayPeriodShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: isDark ? AppColors.darkDivider : AppColors.divider,
-                ),
-              ),
-            ),
-          ),
-          child: child!,
-        );
       },
+    );
+  }
+
+  void _pickCategory(List<Category> categories, bool isDark) {
+    showRecurringCategoryPicker(
+      context,
+      categories,
+      isDark,
+      selectedCategoryId: _categoryId,
+      onSelected: (id) => setState(() => _categoryId = id),
+    );
+  }
+
+  void _pickDayOfMonth(bool isDark) {
+    showRecurringDayOfMonthPicker(
+      context,
+      isDark,
+      selectedDay: _dayOfMonth,
+      onSelected: (day) => setState(() => _dayOfMonth = day),
+    );
+  }
+
+  Future<void> _pickNotificationTime(bool isDark) async {
+    final picked = await showRecurringNotificationTimePicker(
+      context,
+      isDark,
+      initialTime: _notificationTime,
     );
 
     if (picked == null) return;
@@ -1375,153 +886,5 @@ class _RecurringFormScreenState extends State<RecurringFormScreen> {
     );
     if (color == null || !mounted) return;
     setState(() => _color = color);
-  }
-}
-
-// ── Reusable widgets ──────────────────────────────────────────────────────────
-
-class _RecurringTypeSegmentedControl extends StatelessWidget {
-  final TransactionType selectedType;
-  final ValueChanged<TransactionType> onChanged;
-  final VoidCallback onShowMore;
-
-  const _RecurringTypeSegmentedControl({
-    required this.selectedType,
-    required this.onChanged,
-    required this.onShowMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isPrimary =
-        selectedType == TransactionType.expense ||
-        selectedType == TransactionType.income ||
-        selectedType == TransactionType.transfer;
-    final otherLabel = switch (selectedType) {
-      TransactionType.debtRepay => 'ชำระหนี้ ▾',
-      TransactionType.debtTransfer => 'โอนหนี้ ▾',
-      TransactionType.increaseBalance => 'ปรับเพิ่ม ▾',
-      TransactionType.decreaseBalance => 'ปรับลด ▾',
-      _ => 'อื่นๆ ▾',
-    };
-
-    AppSegment tab(String label, TransactionType type) => AppSegment(
-      label: label,
-      isSelected: selectedType == type,
-      onTap: () => onChanged(type),
-    );
-
-    return AppSegmentedTabs(
-      segments: [
-        tab('รายจ่าย', TransactionType.expense),
-        tab('รายรับ', TransactionType.income),
-        tab('โอน', TransactionType.transfer),
-        AppSegment(
-          label: otherLabel,
-          isSelected: !isPrimary,
-          onTap: onShowMore,
-        ),
-      ],
-    );
-  }
-}
-
-class _RecurringAmountHeroCard extends StatelessWidget {
-  final TransactionType type;
-  final TextEditingController amountController;
-  final FocusNode amountFocusNode;
-  final Account? selectedAccount;
-  final bool isDarkMode;
-
-  const _RecurringAmountHeroCard({
-    required this.type,
-    required this.amountController,
-    required this.amountFocusNode,
-    required this.selectedAccount,
-    required this.isDarkMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final typeColor = switch (type) {
-      TransactionType.income || TransactionType.increaseBalance =>
-        isDarkMode ? AppColors.darkIncome : AppColors.income,
-      TransactionType.expense || TransactionType.decreaseBalance =>
-        isDarkMode ? AppColors.darkExpense : AppColors.expense,
-      TransactionType.transfer || TransactionType.debtRepay =>
-        isDarkMode ? AppColors.darkTransfer : AppColors.transfer,
-      TransactionType.debtTransfer =>
-        isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer,
-    };
-
-    return AppAmountHeroCard(
-      controller: amountController,
-      focusNode: amountFocusNode,
-      accentColor: typeColor,
-      currencyCode: selectedAccount?.currency == 'USD' ? 'USD' : 'THB',
-    );
-  }
-}
-
-class _ToggleRow extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final Widget title;
-  final Widget subtitle;
-  final Color color;
-
-  const _ToggleRow({
-    required this.value,
-    required this.onChanged,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: color,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [title, const SizedBox(height: 2), subtitle],
-            ),
-          ),
-          const SizedBox(width: 12),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-}
-
-class _RowTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-
-  const _RowTile({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = switch (label) {
-      'บัญชี' => Icons.account_balance_wallet_outlined,
-      'บัญชีปลายทาง' => Icons.input_rounded,
-      'บัญชีหนี้สิน' => Icons.credit_card_rounded,
-      'หมวดหมู่' => Icons.category_outlined,
-      'วันที่ในเดือน' => Icons.calendar_today_rounded,
-      'เวลาแจ้งเตือน' => Icons.notifications_outlined,
-      _ => Icons.tune_rounded,
-    };
-
-    return AppFormRow(icon: icon, label: label, value: value, onTap: onTap);
   }
 }
