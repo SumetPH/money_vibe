@@ -1,6 +1,6 @@
 # 18 Use CalculatorKeyboardHost in the remaining forms
 
-Status: ready-for-agent
+Status: resolved
 
 `lib/widgets/calculator_keyboard_host.dart` is only used by the two `cash_flow` forms.
 `account_form`, `recurring_form`, `budget_form`, `transaction_form` each copy ~150 lines of keyboard code.
@@ -35,3 +35,11 @@ transaction_form additionally has:
 
 Type a number (commas appear), type an expression with an operator (commas removed, cursor stays),
 move the cursor mid-number and type, press `=`, press done, tap outside, switch fields (transaction transfer).
+
+## Comments
+
+Done.
+- `formatCalculatorAmountInput` (in `calculator_keyboard_host.dart`) now keeps the cursor when stripping commas; the mixin uses it, so the cash_flow forms get the fix too.
+- account / recurring / budget forms use `CalculatorKeyboardHost` (logic was identical apart from the cursor handling).
+- transaction form keeps its own two-field show/close logic and only uses the shared formatter. Steps 3–4 of the plan (multi-field mixin) were skipped: the two-field close/refocus timing differs from the mixin, and nothing else needs it (YAGNI).
+- Manual test checklist above still applies to all four forms.

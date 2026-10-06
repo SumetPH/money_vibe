@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/calculator_keyboard_host.dart';
 import 'package:money_vibe/providers/recurring_transaction_provider.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
@@ -151,32 +152,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      final text = _amountController.text;
-      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
-
-      if (!hasOperator) {
-        _formatAmountInput(text);
-      } else {
-        // Strip commas if operator is present
-        final sanitized = text.replaceAll(',', '');
-        if (text != sanitized) {
-          final selection = _amountController.selection;
-          int commasBeforeCursor = 0;
-          if (selection.isValid) {
-            final textBeforeCursor = text.substring(0, selection.end);
-            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
-          }
-          final newOffset = selection.isValid
-              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
-              : sanitized.length;
-
-          _amountController.value = TextEditingValue(
-            text: sanitized,
-            selection: TextSelection.collapsed(offset: newOffset),
-          );
-        }
-      }
-
+      formatCalculatorAmountInput(_amountController);
       _calculateAccountBalance();
       if (_type.requiresDebtAccount) {
         setState(() {});
@@ -190,32 +166,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      final text = _toAmountController.text;
-      final hasOperator = RegExp(r'[+\-*/]').hasMatch(text);
-
-      if (!hasOperator) {
-        _formatToAmountInput(text);
-      } else {
-        // Strip commas if operator is present
-        final sanitized = text.replaceAll(',', '');
-        if (text != sanitized) {
-          final selection = _toAmountController.selection;
-          int commasBeforeCursor = 0;
-          if (selection.isValid) {
-            final textBeforeCursor = text.substring(0, selection.end);
-            commasBeforeCursor = ','.allMatches(textBeforeCursor).length;
-          }
-          final newOffset = selection.isValid
-              ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
-              : sanitized.length;
-
-          _toAmountController.value = TextEditingValue(
-            text: sanitized,
-            selection: TextSelection.collapsed(offset: newOffset),
-          );
-        }
-      }
-
+      formatCalculatorAmountInput(_toAmountController);
       setState(() {});
     } finally {
       _isUpdatingController = false;
@@ -290,77 +241,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
     if (_toAmountFocusNode.hasFocus) {
       _toAmountFocusNode.unfocus();
-    }
-  }
-
-  /// Format amount with commas while typing
-  void _formatAmountInput(String value) {
-    final raw = value.replaceAll(',', '');
-    if (raw.isEmpty) {
-      if (_amountController.text.isNotEmpty) {
-        _amountController.text = '';
-        _amountController.selection = const TextSelection.collapsed(offset: 0);
-      }
-      return;
-    }
-
-    final hasDecimal = raw.contains('.');
-    final parts = raw.split('.');
-    final intPart = parts[0];
-
-    final formattedInt = intPart.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-
-    String formatted;
-    if (hasDecimal && parts.length > 1) {
-      formatted = '$formattedInt.${parts[1]}';
-    } else {
-      formatted = formattedInt;
-    }
-
-    if (_amountController.text != formatted) {
-      _amountController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-  }
-
-  void _formatToAmountInput(String value) {
-    final raw = value.replaceAll(',', '');
-    if (raw.isEmpty) {
-      if (_toAmountController.text.isNotEmpty) {
-        _toAmountController.text = '';
-        _toAmountController.selection = const TextSelection.collapsed(
-          offset: 0,
-        );
-      }
-      return;
-    }
-
-    final hasDecimal = raw.contains('.');
-    final parts = raw.split('.');
-    final intPart = parts[0];
-
-    final formattedInt = intPart.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    );
-
-    String formatted;
-    if (hasDecimal && parts.length > 1) {
-      formatted = '$formattedInt.${parts[1]}';
-    } else {
-      formatted = formattedInt;
-    }
-
-    if (_toAmountController.text != formatted) {
-      _toAmountController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
     }
   }
 
