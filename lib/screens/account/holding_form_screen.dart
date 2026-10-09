@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import 'holding_form_widgets.dart';
+import '../../utils/user_error_message.dart';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) =>
     TextInputFormatter.withFunction((oldValue, newValue) {
@@ -290,7 +291,7 @@ class _HoldingFormScreenState extends State<HoldingFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              userErrorMessage(e, action: 'บันทึก'),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: AppColors.expense,

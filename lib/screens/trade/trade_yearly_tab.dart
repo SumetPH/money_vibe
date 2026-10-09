@@ -8,7 +8,6 @@ import 'trade_summary_panel.dart';
 import 'trade_tracker_widgets.dart';
 
 class TradeYearlyTab extends StatelessWidget {
-  final Widget header;
   final List<StockTrade> trades;
   final int selectedYear;
   final ValueChanged<int> onYearChanged;
@@ -16,7 +15,6 @@ class TradeYearlyTab extends StatelessWidget {
 
   const TradeYearlyTab({
     super.key,
-    required this.header,
     required this.trades,
     required this.selectedYear,
     required this.onYearChanged,
@@ -40,7 +38,6 @@ class TradeYearlyTab extends StatelessWidget {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(
           child: TradeYearSelector(
             selectedYear: selectedYear,

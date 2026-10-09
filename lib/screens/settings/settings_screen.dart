@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../config/app_config.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -21,11 +24,13 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
-import 'llm_api_key_settings_screen.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import 'settings_account_section.dart';
+import 'settings_install_section.dart';
 import 'settings_widgets.dart';
 import 'settings_sheets.dart';
+import '../../utils/user_error_message.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -110,51 +115,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Consumer<AuthProvider>(
                         builder: (context, authProvider, _) {
                           if (authProvider.isLoggedIn) {
-                            // แสดงเมื่อ login แล้ว
-                            return Column(
-                              children: [
-                                ListTile(
-                                  leading: SettingsIcon(
-                                    icon: Icons.person,
-                                    color: secondaryTextColor,
-                                  ),
-                                  title: Text(
-                                    authProvider.userEmail ?? 'ผู้ใช้',
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    'อีเมลปัจจุบัน',
-                                    style: TextStyle(
-                                      color: secondaryTextColor,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                                Divider(
-                                  height: 1,
-                                  color: AppColors.listDividerFor(isDarkMode),
-                                ),
-                                ListTile(
-                                  leading: SettingsIcon(
-                                    icon: Icons.logout,
-                                    color: isDarkMode
-                                        ? AppColors.darkExpense
-                                        : AppColors.expense,
-                                  ),
-                                  title: Text(
-                                    'ออกจากระบบ',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? AppColors.darkExpense
-                                          : AppColors.expense,
-                                    ),
-                                  ),
-                                  onTap: () => _showLogoutDialog(context),
-                                ),
-                              ],
+                            return SettingsAccountSection(
+                              userEmail: authProvider.userEmail,
+                              isDarkMode: isDarkMode,
+                              isBusy: authProvider.isLoading,
+                              onLogout: () => _showLogoutDialog(context),
+                              onDeleteAccount: () =>
+                                  _showDeleteAccountDialog(context),
                             );
                           } else {
                             // แสดงเมื่อยังไม่ได้ login
@@ -321,76 +288,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
-                      Consumer<SettingsProvider>(
-                        builder: (context, settings, _) {
-                          return SettingsToggleTile(
-                            icon: Icons.currency_exchange_outlined,
-                            title: 'อัตราแลกเปลี่ยนจาก Yahoo',
-                            subtitle: settings.useYahooForExchangeRate
-                                ? 'ใช้ Yahoo Finance สำหรับ USD/THB'
-                                : 'ใช้ Frankfurter สำหรับ USD/THB',
-                            isDarkMode: isDarkMode,
-                            value: settings.useYahooForExchangeRate,
-                            onChanged: (value) =>
-                                settings.setExchangeRateSource(
-                                  value
-                                      ? ExchangeRateSource.yahoo
-                                      : ExchangeRateSource.frankfurter,
-                                ),
-                          );
-                        },
-                      ),
-                      Divider(
-                        height: 1,
-                        color: AppColors.listDividerFor(isDarkMode),
-                      ),
-
-                      Consumer<SettingsProvider>(
-                        builder: (context, settings, _) {
-                          return SettingsToggleTile(
-                            icon: Icons.schedule_outlined,
-                            title: 'ราคา Pre/Post จาก Yahoo',
-                            subtitle: settings.useYahooExtendedHoursPrice
-                                ? 'รวมราคานอกเวลาตลาดเมื่อใช้ Yahoo Finance'
-                                : 'ใช้เฉพาะราคาช่วงตลาดปกติเมื่อใช้ Yahoo Finance',
-                            isDarkMode: isDarkMode,
-                            value: settings.useYahooExtendedHoursPrice,
-                            onChanged: (value) =>
-                                settings.setUseYahooExtendedHoursPrice(value),
-                          );
-                        },
-                      ),
-                      Divider(
-                        height: 1,
-                        color: AppColors.listDividerFor(isDarkMode),
-                      ),
-
-                      Consumer<SettingsProvider>(
-                        builder: (context, settings, _) {
-                          final finnhubReady = settings.isFinnhubConfigured;
-
-                          return SettingsToggleTile(
-                            icon: Icons.toggle_on_outlined,
-                            title: 'ราคาจาก Finnhub',
-                            subtitle: finnhubReady
-                                ? settings.useFinnhubForPrices
-                                      ? 'Finnhub API'
-                                      : 'Yahoo Finance'
-                                : 'ยังไม่ได้ตั้งค่า Finnhub API key',
-                            isDarkMode: isDarkMode,
-                            value: settings.useFinnhubForPrices,
-                            onChanged: finnhubReady
-                                ? (value) =>
-                                      settings.setUseFinnhubForPrices(value)
-                                : null,
-                          );
-                        },
-                      ),
-                      Divider(
-                        height: 1,
-                        color: AppColors.listDividerFor(isDarkMode),
-                      ),
-
                       ListTile(
                         leading: SettingsIcon(
                           icon: Icons.api,
@@ -401,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
-                          'ตั้งค่า API key สำหรับดึงราคาหุ้น',
+                          'ใช้ดึงราคาหุ้นสหรัฐฯ และโลโก้',
                           style: TextStyle(
                             color: secondaryTextColor,
                             fontSize: 13,
@@ -417,41 +314,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             MaterialPageRoute(
                               builder: (context) =>
                                   const FinnhubApiKeySettingsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      Divider(
-                        height: 1,
-                        color: AppColors.listDividerFor(isDarkMode),
-                      ),
-
-                      ListTile(
-                        leading: SettingsIcon(
-                          icon: Icons.auto_awesome,
-                          color: secondaryTextColor,
-                        ),
-                        title: Text(
-                          'LLM API Key',
-                          style: TextStyle(color: textColor, fontSize: 16),
-                        ),
-                        subtitle: Text(
-                          'ตั้งค่า API key สำหรับ LLM',
-                          style: TextStyle(
-                            color: secondaryTextColor,
-                            fontSize: 13,
-                          ),
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          color: secondaryTextColor,
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const LLMApiKeySettingsScreen(),
                             ),
                           );
                         },
@@ -535,45 +397,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   AppSectionHeader('การติดตั้ง'),
                   SettingsGroup(
                     isDarkMode: isDarkMode,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: SettingsIcon(
-                            icon: reinstallReminder.needsExpiredBadge
-                                ? Icons.error_outline
-                                : Icons.timer_outlined,
-                            color: reinstallReminder.needsExpiredBadge
-                                ? (isDarkMode
-                                      ? AppColors.darkExpense
-                                      : AppColors.expense)
-                                : secondaryTextColor,
-                          ),
-                          title: Text(
-                            'สถานะการติดตั้ง',
-                            style: TextStyle(color: textColor),
-                          ),
-                          subtitle: Text(
-                            reinstallReminder.needsExpiredBadge
-                                ? 'หมดอายุแล้ว กรุณาติดตั้งใหม่'
-                                : 'เหลือ ${reinstallReminder.remainingLabel}',
-                            style: TextStyle(color: secondaryTextColor),
-                          ),
-                        ),
-                        Divider(
-                          height: 1,
-                          color: AppColors.listDividerFor(isDarkMode),
-                        ),
-                        SettingsToggleTile(
-                          icon: Icons.notifications_outlined,
-                          title: 'แจ้งเตือนติดตั้งใหม่',
-                          subtitle: reinstallReminder.notificationEnabled
-                              ? 'แจ้งเตือนเมื่อครบ 5 วัน'
-                              : 'ปิดการแจ้งเตือนแล้ว',
-                          isDarkMode: isDarkMode,
-                          value: reinstallReminder.notificationEnabled,
-                          onChanged: reinstallReminder.setNotificationEnabled,
-                        ),
-                      ],
+                    child: SettingsInstallSection(
+                      isDarkMode: isDarkMode,
+                      isExpired: reinstallReminder.needsExpiredBadge,
+                      remainingLabel: reinstallReminder.remainingLabel ?? '',
+                      isNotificationEnabled:
+                          reinstallReminder.notificationEnabled,
+                      onNotificationChanged:
+                          reinstallReminder.setNotificationEnabled,
                     ),
                   ),
                 ],
@@ -610,6 +441,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
+                      if (AppConfig.privacyPolicyUrl.isNotEmpty) ...[
+                        Divider(
+                          height: 1,
+                          color: AppColors.listDividerFor(isDarkMode),
+                        ),
+                        ListTile(
+                          leading: SettingsIcon(
+                            icon: Icons.privacy_tip_outlined,
+                            color: secondaryTextColor,
+                          ),
+                          title: Text(
+                            'นโยบายความเป็นส่วนตัว',
+                            style: TextStyle(color: textColor, fontSize: 16),
+                          ),
+                          trailing: Icon(
+                            Icons.open_in_new,
+                            size: 18,
+                            color: secondaryTextColor,
+                          ),
+                          onTap: _openPrivacyPolicy,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -619,6 +472,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.tryParse(AppConfig.privacyPolicyUrl);
+    final isOpened =
+        uri != null &&
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!isOpened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เปิดนโยบายความเป็นส่วนตัวไม่สำเร็จ')),
+      );
+    }
+  }
+
+  Future<void> _showDeleteAccountDialog(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    final email = authProvider.userEmail ?? '';
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    var typedEmail = '';
+
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'ลบบัญชีถาวร',
+      confirmLabel: 'ลบบัญชี',
+      isDestructive: true,
+      content: SettingsDeleteAccountConfirmContent(
+        email: email,
+        isDarkMode: isDarkMode,
+        onEmailChanged: (value) => typedEmail = value,
+      ),
+    );
+    if (!confirmed || !context.mounted) return;
+
+    // เก็บ dependency ไว้ก่อน: หลังลบบัญชี router จะ redirect ไป /auth และหน้านี้ถูก unmount
+    final messenger = ScaffoldMessenger.of(context);
+    final settingsProvider = context.read<SettingsProvider>();
+    final clearProviders = _providerClearer(context);
+    final router = GoRouter.of(context);
+    if (email.isEmpty ||
+        typedEmail.trim().toLowerCase() != email.toLowerCase()) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('อีเมลไม่ตรงกัน ยังไม่ได้ลบบัญชี')),
+      );
+      return;
+    }
+
+    final isDeleted = await authProvider.deleteAccount();
+    if (!isDeleted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(authProvider.error ?? 'ลบบัญชีไม่สำเร็จ'),
+          backgroundColor: AppColors.expenseFor(isDarkMode),
+        ),
+      );
+      return;
+    }
+
+    await settingsProvider.clearSensitiveData();
+    await clearProviders();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('ลบบัญชีเรียบร้อยแล้ว')),
+    );
+    router.go('/auth');
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
@@ -631,38 +547,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (!confirmed || !context.mounted) return;
 
+    // เก็บ dependency ไว้ก่อน: หลัง sign out router จะ redirect ไป /auth และหน้านี้ถูก unmount
+    final authProvider = context.read<AuthProvider>();
+    final clearProviders = _providerClearer(context);
+    final router = GoRouter.of(context);
+
     // Logout - ล้างแค่ login state ไม่ล้าง Supabase config
-    await context.read<AuthProvider>().signOut();
+    await authProvider.signOut();
 
     // Clear all providers (ข้อมูลเก่าของ user ก่อนหน้า)
-    if (context.mounted) {
-      await _clearAllProviders(context);
-    }
+    await clearProviders();
 
     // Navigate to login screen and clear navigation stack
-    if (context.mounted) {
-      context.go('/auth');
-    }
+    router.go('/auth');
   }
 
-  Future<void> _clearAllProviders(BuildContext context) async {
-    debugPrint('[SettingsScreen] Clearing all providers...');
+  /// อ่าน provider ที่ต้องล้างข้อมูลไว้ล่วงหน้า แล้วคืนฟังก์ชันที่เรียกได้แม้หน้านี้ถูก unmount แล้ว
+  Future<void> Function() _providerClearer(BuildContext context) {
+    final reloaders = <Future<void> Function()>[
+      context.read<AccountProvider>().reload,
+      context.read<CategoryProvider>().reload,
+      context.read<TransactionProvider>().reload,
+      context.read<BudgetProvider>().reload,
+      context.read<RecurringTransactionProvider>().reload,
+      context.read<CashFlowForecastProvider>().reload,
+    ];
 
-    try {
-      // Reload providers ด้วยข้อมูลว่าง (SQLite mode หลัง logout)
-      await Future.wait([
-        context.read<AccountProvider>().reload(),
-        context.read<CategoryProvider>().reload(),
-        context.read<TransactionProvider>().reload(),
-        context.read<BudgetProvider>().reload(),
-        context.read<RecurringTransactionProvider>().reload(),
-        context.read<CashFlowForecastProvider>().reload(),
-      ]);
-
-      debugPrint('[SettingsScreen] Providers cleared and reloaded');
-    } catch (e) {
-      debugPrint('[SettingsScreen] Error clearing providers: $e');
-    }
+    return () async {
+      debugPrint('[SettingsScreen] Clearing all providers...');
+      try {
+        // Reload providers ด้วยข้อมูลว่างหลัง logout
+        await Future.wait(reloaders.map((reload) => reload()));
+        debugPrint('[SettingsScreen] Providers cleared and reloaded');
+      } catch (e) {
+        debugPrint('[SettingsScreen] Error clearing providers: $e');
+      }
+    };
   }
 
   Future<void> _showAiFinanceExportSheet() async {
@@ -747,9 +667,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('คัดลอกข้อมูลไม่สำเร็จ: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userErrorMessage(e, action: 'คัดลอกข้อมูล'))),
+      );
     }
   }
 

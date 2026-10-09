@@ -154,12 +154,12 @@ class Account {
   String get currencyCodeLabel => currency == 'USD' ? 'USD' : 'THB';
   String get currencyAmountSuffix => currency == 'USD' ? 'USD' : 'บาท';
 
-  String yahooSymbolFor(String ticker) {
+  /// symbol สำหรับดึงราคาอัตโนมัติ (Finnhub); null = ไม่มีแหล่งราคาอัตโนมัติ
+  /// พอร์ตหุ้นไทยต้องกรอกราคาเอง เพราะ Finnhub ไม่มีข้อมูลตลาด SET
+  String? priceSymbolFor(String ticker) {
+    if (isThaiPortfolio) return null;
     final normalized = ticker.trim().toUpperCase();
-    if (!isThaiPortfolio || normalized.isEmpty || normalized.contains('.')) {
-      return normalized;
-    }
-    return '$normalized.BK';
+    return normalized.isEmpty ? null : normalized;
   }
 
   Map<String, dynamic> toMap() => {

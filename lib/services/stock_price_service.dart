@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../providers/settings_provider.dart';
 import 'exchange_rate_service.dart';
 
 class StockCompanyProfile {
@@ -14,40 +12,31 @@ class StockCompanyProfile {
   const StockCompanyProfile({this.name = '', this.logoUrl = ''});
 }
 
+/// ดึงราคาหุ้นและ company profile จาก Finnhub (ต้องมี API key ของผู้ใช้)
 class StockPriceService {
-  static const _finnhubBase = 'https://finnhub.io/api/v1';
+  static const _finnhubHost = 'finnhub.io';
   static const _maxConcurrentPriceRequests = 4;
   static const _maxPriceFetchAttempts = 3;
   static const _singlePriceTimeout = Duration(seconds: 12);
+  static const _requestTimeout = Duration(seconds: 10);
 
   final String? _finnhubApiKey;
-  final bool _useFinnhub;
-  final bool _useYahooExtendedHoursPrice;
-  final ExchangeRateSource _exchangeRateSource;
-
-  late final supabase = Supabase.instance.client;
-  late final _exchangeRateService = ExchangeRateService(
-    source: _exchangeRateSource,
-  );
+  final ExchangeRateService _exchangeRateService;
 
   StockPriceService({
     String? finnhubApiKey,
-    bool useFinnhub = false,
-    bool useYahooExtendedHoursPrice = true,
-    ExchangeRateSource exchangeRateSource = ExchangeRateSource.yahoo,
+    ExchangeRateService exchangeRateService = const ExchangeRateService(),
   }) : _finnhubApiKey = finnhubApiKey,
-       _useFinnhub = useFinnhub,
-       _useYahooExtendedHoursPrice = useYahooExtendedHoursPrice,
-       _exchangeRateSource = exchangeRateSource;
+       _exchangeRateService = exchangeRateService;
 
   bool get isConfigured {
     final key = _finnhubApiKey;
     return key != null && key.isNotEmpty;
   }
 
-  /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน (Yahoo หรือ Finnhub ตาม toggle)
+  /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน; คืน map ว่างถ้ายังไม่ได้ตั้งค่า Finnhub
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {
-    if (tickers.isEmpty) return {};
+    if (tickers.isEmpty || !isConfigured) return {};
 
     final pendingTickers = tickers.toSet().toList();
     final prices = <String, double>{};
@@ -80,7 +69,7 @@ class StockPriceService {
       final batch = tickers.sublist(start, end);
       final results = await Future.wait(
         batch.map(
-          (ticker) => _fetchSinglePrice(
+          (ticker) => _fetchFinnhubPrice(
             ticker,
           ).timeout(_singlePriceTimeout, onTimeout: () => null),
         ),
@@ -96,66 +85,10 @@ class StockPriceService {
     return prices;
   }
 
-  Future<double?> _fetchSinglePrice(String ticker) {
-    return _useFinnhub && isConfigured
-        ? _fetchFinnhubPrice(ticker)
-        : _fetchYahooPrice(ticker);
-  }
-
-  Future<double?> _fetchYahooPrice(String ticker) async {
-    try {
-      final res = await supabase.functions.invoke(
-        'yfinance',
-        body: {
-          "symbol": ticker,
-          "interval": "1m",
-          "range": "1d",
-          "includePrePost": _useYahooExtendedHoursPrice,
-        },
-      );
-
-      final data = res.data;
-
-      final result =
-          (data['chart']?['result'] as List?)?.first as Map<String, dynamic>?;
-      if (result == null) return null;
-
-      final meta = result['meta'] as Map<String, dynamic>?;
-      if (meta == null) return null;
-
-      final regularPrice = (meta['regularMarketPrice'] as num?)?.toDouble();
-      if (regularPrice == null || regularPrice <= 0) return null;
-
-      if (!_useYahooExtendedHoursPrice) {
-        return regularPrice;
-      }
-
-      // ใช้ราคาจาก candle ล่าสุด — รวม pre/regular/post ทุกช่วงตลาด
-      final quotes =
-          (result['indicators']?['quote'] as List?)?.first
-              as Map<String, dynamic>?;
-      final closes = quotes?['close'];
-      if (closes is List) {
-        for (var i = closes.length - 1; i >= 0; i--) {
-          final close = closes[i];
-          if (close is num && close > 0) {
-            return close.toDouble();
-          }
-        }
-      }
-
-      return regularPrice;
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<double?> _fetchFinnhubPrice(String ticker) async {
     try {
-      final uri = Uri.parse(
-        '$_finnhubBase/quote?symbol=$ticker&token=$_finnhubApiKey',
-      );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final uri = _finnhubUri('/api/v1/quote', ticker);
+      final response = await http.get(uri).timeout(_requestTimeout);
       if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final price = (data['c'] as num?)?.toDouble();
@@ -192,10 +125,8 @@ class StockPriceService {
 
   Future<StockCompanyProfile?> _fetchSingleProfile(String ticker) async {
     try {
-      final uri = Uri.parse(
-        '$_finnhubBase/stock/profile2?symbol=$ticker&token=$_finnhubApiKey',
-      );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final uri = _finnhubUri('/api/v1/stock/profile2', ticker);
+      final response = await http.get(uri).timeout(_requestTimeout);
       if (response.statusCode != 200) {
         debugPrint(
           'StockPriceService: profile $ticker failed (${response.statusCode})',
@@ -215,12 +146,12 @@ class StockPriceService {
     }
   }
 
+  /// สร้าง URL ของ Finnhub โดย encode query ให้ถูกต้อง
+  Uri _finnhubUri(String path, String ticker) => Uri.https(_finnhubHost, path, {
+    'symbol': ticker,
+    'token': _finnhubApiKey ?? '',
+  });
+
   /// ดึงอัตราแลกเปลี่ยน USD/THB (Delegated to ExchangeRateService)
-  Future<double> fetchUsdThbRateFrankfurter() =>
-      _exchangeRateService.fetchUsdThbRateFrankfurter();
-
-  Future<double> fetchUsdThbRateYahoo() =>
-      _exchangeRateService.fetchUsdThbRateYahoo();
-
   Future<double> fetchUsdThbRate() => _exchangeRateService.fetchUsdThbRate();
 }

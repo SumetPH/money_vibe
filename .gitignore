@@ -56,3 +56,8 @@ macos/Pods/
 # Build-time app config
 config/*.json
 !config/*.example.json
+
+# Android release signing (never commit)
+android/key.properties
+*.jks
+*.keystore

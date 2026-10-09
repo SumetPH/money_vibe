@@ -108,16 +108,16 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
-          children: forecast == null
-              ? _buildWithoutAnchor(isDarkMode)
-              : _buildForecast(
-                  forecast,
-                  watchNextPeriodForecast(context, forecast),
-                  isDarkMode,
-                ),
-        ),
+        child: forecast == null
+            ? ListView(
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
+                children: _buildWithoutAnchor(isDarkMode),
+              )
+            : _buildForecast(
+                forecast,
+                watchNextPeriodForecast(context, forecast),
+                isDarkMode,
+              ),
       ),
     );
   }
@@ -131,24 +131,36 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     ),
   ];
 
-  List<Widget> _buildForecast(
+  // แบนเนอร์จัดเรียงและแท็บ fixed ด้านบน เนื้อหาของแท็บเลื่อนอยู่ด้านล่าง
+  Widget _buildForecast(
     CashFlowForecast forecast,
     NextPeriodForecast? next,
     bool isDarkMode,
-  ) => [
-    if (_isReorderMode)
-      const AppReorderBanner(
-        message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงรายการเงินเข้าออกและอยากซื้อ',
+  ) => Column(
+    children: [
+      if (_isReorderMode)
+        const AppReorderBanner(
+          message:
+              'แตะค้างที่ไอคอนลากเพื่อจัดเรียงรายการเงินเข้าออกและอยากซื้อ',
+        ),
+      _buildTabs(hasNext: next != null),
+      Expanded(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
+          children: switch (_tab) {
+            _ForecastTab.next when next != null => _buildNextTab(
+              next,
+              isDarkMode,
+            ),
+            _ => _buildCurrentTab(forecast, isDarkMode),
+          },
+        ),
       ),
-    _buildTabs(hasNext: next != null),
-    ...switch (_tab) {
-      _ForecastTab.next when next != null => _buildNextTab(next, isDarkMode),
-      _ => _buildCurrentTab(forecast, isDarkMode),
-    },
-  ];
+    ],
+  );
 
   Widget _buildTabs({required bool hasNext}) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
     child: AppSegmentedTabs(
       segments: [
         AppSegment(

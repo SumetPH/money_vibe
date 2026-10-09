@@ -20,6 +20,7 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/icon_color_picker_sheet.dart';
 import '../../widgets/app_date_picker_sheet.dart';
+import '../../utils/user_error_message.dart';
 
 class AccountFormScreen extends StatefulWidget {
   final Account? account;
@@ -234,7 +235,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'เกิดข้อผิดพลาดในการบันทึก: $e',
+              userErrorMessage(e, action: 'บันทึก'),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: AppColors.expense,
@@ -707,9 +708,9 @@ class _AccountFormScreenState extends State<AccountFormScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(userErrorMessage(e, action: 'อัปโหลดรูปภาพ'))),
+        );
       }
     }
   }

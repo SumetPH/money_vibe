@@ -11,6 +11,7 @@ import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../settings/data_management_screen.dart';
+import 'reset_password_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_buttons.dart';
@@ -23,6 +24,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  static const _minPasswordLength = 8;
+
   bool _isLogin = true;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -48,7 +51,19 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // อ่าน provider ทั้งหมดก่อน await: เมื่อ login สำเร็จ router จะ redirect ออกจาก
+    // หน้านี้ทันที (State ถูก unmount) จึงใช้ context หลัง signIn ไม่ได้
     final authProvider = context.read<AuthProvider>();
+    final syncProvider = context.read<SyncProvider>();
+    final reloaders = <Future<void> Function()>[
+      context.read<AccountProvider>().reload,
+      context.read<CategoryProvider>().reload,
+      context.read<TransactionProvider>().reload,
+      context.read<BudgetProvider>().reload,
+      context.read<RecurringTransactionProvider>().reload,
+      context.read<CashFlowForecastProvider>().reload,
+    ];
+    final router = GoRouter.of(context);
     final isLoginMode = _isLogin;
     bool success;
 
@@ -64,26 +79,17 @@ class _AuthScreenState extends State<AuthScreen> {
       );
     }
 
-    if (success && mounted && isLoginMode) {
-      // Login สำเร็จ → reload providers แล้วค่อยกลับ
+    if (success && isLoginMode) {
+      // Login สำเร็จ → reload providers แล้วค่อยกลับ (ทำต่อแม้หน้านี้ถูก unmount แล้ว)
       debugPrint('[AuthScreen] Login success, reloading providers...');
 
       // โหลดข้อมูลใหม่ตาม user ที่ login
-      await context.read<SyncProvider>().initialize(
-        () => Future.wait([
-          context.read<AccountProvider>().reload(),
-          context.read<CategoryProvider>().reload(),
-          context.read<TransactionProvider>().reload(),
-          context.read<BudgetProvider>().reload(),
-          context.read<RecurringTransactionProvider>().reload(),
-          context.read<CashFlowForecastProvider>().reload(),
-        ]),
+      await syncProvider.initialize(
+        () => Future.wait(reloaders.map((reload) => reload())),
       );
 
       debugPrint('[AuthScreen] Providers reloaded, navigating to home');
-      if (mounted) {
-        context.go('/accounts');
-      }
+      router.go('/accounts');
     } else if (success && mounted) {
       _passwordController.clear();
       _confirmPasswordController.clear();
@@ -310,8 +316,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'กรุณากรอกรหัสผ่าน';
                               }
-                              if (value.length < 6) {
-                                return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                              // บังคับความยาวเฉพาะตอนสมัคร เพื่อให้ผู้ใช้เดิมที่ตั้งรหัสสั้นกว่ายัง login ได้
+                              if (!_isLogin &&
+                                  value.length < _minPasswordLength) {
+                                return 'รหัสผ่านต้องมีอย่างน้อย $_minPasswordLength ตัวอักษร';
                               }
                               return null;
                             },
@@ -445,7 +453,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
                   ),
-                  // Forgot Password
+                  // Forgot Password (ส่งรหัส OTP ทางอีเมล แล้วตั้งรหัสใหม่ในแอป)
                   if (_isLogin)
                     TextButton(
                       onPressed: authProvider.isLoading
@@ -502,80 +510,117 @@ class _AuthScreenState extends State<AuthScreen> {
       settingsProvider.themeColor,
     );
 
-    final emailController = TextEditingController();
+    // เติมอีเมลจากหน้า login ไว้ให้ ผู้ใช้จะได้ไม่ต้องพิมพ์ซ้ำ
+    final emailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
+    var isSending = false;
 
     showDialog(
       context: context,
-      // design-check: allow input or multi-choice dialog
-      builder: (ctx) => AlertDialog(
-        backgroundColor: surfaceColor,
-        title: Text('รีเซ็ตรหัสผ่าน', style: TextStyle(color: textColor)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'กรุณากรอกอีเมลของคุณ เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปให้',
-              style: TextStyle(color: secondaryTextColor),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          Future<void> sendCode() async {
+            final email = emailController.text.trim();
+            if (email.isEmpty || !email.contains('@')) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('กรุณากรอกอีเมลให้ถูกต้อง'),
+                  backgroundColor: AppColors.expense,
+                ),
+              );
+              return;
+            }
+
+            final authProvider = context.read<AuthProvider>();
+            final messenger = ScaffoldMessenger.of(context);
+            final navigator = Navigator.of(context);
+            setDialogState(() => isSending = true);
+            final success = await authProvider.resetPassword(email);
+            if (!ctx.mounted) return;
+
+            if (!success) {
+              // ส่งไม่สำเร็จ: คง dialog ไว้ให้ลองใหม่ได้
+              setDialogState(() => isSending = false);
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(authProvider.error ?? 'ส่งรหัสไม่สำเร็จ'),
+                  backgroundColor: AppColors.expense,
+                ),
+              );
+              return;
+            }
+
+            Navigator.pop(ctx);
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text('ส่งรหัสยืนยันไปยัง $email แล้ว'),
+                backgroundColor: AppColors.income,
+              ),
+            );
+            navigator.push(
+              MaterialPageRoute(
+                builder: (_) => ResetPasswordScreen(email: email),
+              ),
+            );
+          }
+
+          // design-check: allow input or multi-choice dialog
+          return AlertDialog(
+            backgroundColor: surfaceColor,
+            title: Text('รีเซ็ตรหัสผ่าน', style: TextStyle(color: textColor)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'กรุณากรอกอีเมลของคุณ เราจะส่งรหัสยืนยันสำหรับตั้งรหัสผ่านใหม่ไปให้',
+                  style: TextStyle(color: secondaryTextColor),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  enabled: !isSending,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    hintText: 'อีเมล',
+                    hintStyle: TextStyle(color: secondaryTextColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                hintText: 'อีเมล',
-                hintStyle: TextStyle(color: secondaryTextColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            actions: [
+              TextButton(
+                onPressed: isSending ? null : () => Navigator.pop(ctx),
+                child: Text(
+                  'ยกเลิก',
+                  style: TextStyle(color: secondaryTextColor),
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('ยกเลิก', style: TextStyle(color: secondaryTextColor)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final email = emailController.text.trim();
-              if (email.isEmpty || !email.contains('@')) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('กรุณากรอกอีเมลให้ถูกต้อง'),
-                    backgroundColor: AppColors.expense,
-                  ),
-                );
-                return;
-              }
-
-              final success = await context.read<AuthProvider>().resetPassword(
-                email,
-              );
-              if (ctx.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยัง $email แล้ว'
-                          : 'ไม่สามารถส่งลิงก์ได้ กรุณาลองใหม่อีกครั้ง',
-                    ),
-                    backgroundColor: success
-                        ? AppColors.income
-                        : AppColors.expense,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: headerColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('ส่งลิงก์'),
-          ),
-        ],
+              ElevatedButton(
+                onPressed: isSending ? null : sendCode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: headerColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: headerColor.withValues(alpha: 0.6),
+                ),
+                child: isSending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('ส่งรหัส'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

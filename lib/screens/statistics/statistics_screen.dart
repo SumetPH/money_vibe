@@ -112,48 +112,60 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
           body: SafeArea(
             bottom: false,
-            // แท็บเลื่อนไปพร้อมเนื้อหา (ไม่ sticky)
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom,
-              ),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: AppSegmentedTabs(
-                      segments: [
-                        for (final (index, label) in _tabLabels.indexed)
-                          AppSegment(
-                            label: label,
-                            isSelected: _selectedTab == index,
-                            onTap: () => setState(() => _selectedTab = index),
-                          ),
-                      ],
+            // แท็บ fixed ด้านบน เนื้อหาเลื่อนอยู่ด้านล่าง
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: AppSegmentedTabs(
+                    segments: [
+                      for (final (index, label) in _tabLabels.indexed)
+                        AppSegment(
+                          label: label,
+                          isSelected: _selectedTab == index,
+                          onTap: () => setState(() => _selectedTab = index),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom,
+                    ),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
+                      // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
+                      children:
+                          [
+                                StatisticsNetWorthLineChart(),
+                                StatisticsYearlyBarChart(
+                                  selectedYear: selectedYear,
+                                  onYearChanged: (year) =>
+                                      setState(() => _selectedYear = year),
+                                ),
+                                StatisticsCategoryPieChart(
+                                  type: CategoryType.expense,
+                                ),
+                                StatisticsCategoryPieChart(
+                                  type: CategoryType.income,
+                                ),
+                              ].indexed
+                              .map(
+                                (entry) => Visibility(
+                                  visible: entry.$1 == _selectedTab,
+                                  maintainState: true,
+                                  child: entry.$2,
+                                ),
+                              )
+                              .toList(),
                     ),
                   ),
-                  // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
-                  // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
-                  ...[
-                    StatisticsNetWorthLineChart(),
-                    StatisticsYearlyBarChart(
-                      selectedYear: selectedYear,
-                      onYearChanged: (year) =>
-                          setState(() => _selectedYear = year),
-                    ),
-                    StatisticsCategoryPieChart(type: CategoryType.expense),
-                    StatisticsCategoryPieChart(type: CategoryType.income),
-                  ].indexed.map(
-                    (entry) => Visibility(
-                      visible: entry.$1 == _selectedTab,
-                      maintainState: true,
-                      child: entry.$2,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );

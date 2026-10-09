@@ -11,7 +11,6 @@ import 'trade_list_item.dart';
 import 'trade_tracker_widgets.dart';
 
 class TradeSaleHistoryTab extends StatelessWidget {
-  final Widget header;
   final List<StockTrade> trades;
   final bool isDarkMode;
   final String Function(StockTrade trade) portfolioNameOf;
@@ -20,7 +19,6 @@ class TradeSaleHistoryTab extends StatelessWidget {
 
   const TradeSaleHistoryTab({
     super.key,
-    required this.header,
     required this.trades,
     required this.isDarkMode,
     required this.portfolioNameOf,
@@ -39,7 +37,6 @@ class TradeSaleHistoryTab extends StatelessWidget {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: TradeFeeSummaryPanel(

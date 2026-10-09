@@ -56,7 +56,10 @@
 4. สร้าง Edge Function ชื่อ `mirror-stock-logo` จากไฟล์ `supabase/functions/mirror-stock-logo/index.ts`
 5. Deploy function พร้อม environment variables มาตรฐานของ Supabase Functions (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
 
-หลังจาก deploy แล้ว แอปจะ mirror โลโก้จากผู้ให้บริการภายนอกมาเก็บใน bucket `stock-logos` อัตโนมัติ และใช้ public URL ของ Supabase แทน
+หลังจาก deploy แล้ว แอปจะ mirror โลโก้จาก Finnhub มาเก็บใน `stock-logos/{user_id}/` อัตโนมัติ และใช้ public URL ของ Supabase แทน (function รับเฉพาะผู้ใช้ที่ login แล้ว และดึงได้เฉพาะ host ของ Finnhub)
+
+### Edge Function สำหรับลบบัญชี
+สร้าง Edge Function ชื่อ `delete-account` จากไฟล์ `supabase/functions/delete-account/index.ts` (ใช้ env ชุดเดียวกัน) แอปเรียกใช้จากเมนู ตั้งค่า → ลบบัญชี
 
 ### ความปลอดภัย:
 - **RLS (Row Level Security)** เปิดใช้งานทุก table
