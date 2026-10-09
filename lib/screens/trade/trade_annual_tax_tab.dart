@@ -10,7 +10,6 @@ import 'trade_tracker_models.dart';
 import 'trade_tracker_widgets.dart';
 
 class TradeAnnualTaxTab extends StatelessWidget {
-  final Widget header;
   final List<StockTrade> trades;
   final List<PortfolioAnnualReport> annualReports;
   final int selectedYear;
@@ -21,7 +20,6 @@ class TradeAnnualTaxTab extends StatelessWidget {
 
   const TradeAnnualTaxTab({
     super.key,
-    required this.header,
     required this.trades,
     required this.annualReports,
     required this.selectedYear,
@@ -54,7 +52,6 @@ class TradeAnnualTaxTab extends StatelessWidget {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: header),
         SliverToBoxAdapter(child: SizedBox(height: 6)),
         SliverToBoxAdapter(
           child: TradeYearSelector(

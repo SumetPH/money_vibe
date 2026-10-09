@@ -145,48 +145,56 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
               );
 
           return SafeArea(
-            // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
-            child: [
-              TradeYearlyTab(
-                header: tabBar,
-                trades: accountProvider.stockTrades,
-                selectedYear: _selectedYear,
-                onYearChanged: (year) => setState(() => _selectedYear = year),
-                isDarkMode: isDarkMode,
-              ),
-              TradeSaleHistoryTab(
-                header: tabBar,
-                trades: trades,
-                isDarkMode: isDarkMode,
-                portfolioNameOf: (trade) =>
-                    accountProvider.findById(trade.portfolioId)?.name ??
-                    'พอร์ตหุ้น',
-                onEdit: (trade) => _openTradeForm(context, trade),
-                onDelete: (trade) => _confirmDeleteTrade(context, trade),
-              ),
-              TradePurchaseHistoryTab(
-                header: tabBar,
-                purchases: accountProvider.stockPurchases,
-                isDarkMode: isDarkMode,
-                portfolioNameOf: (purchase) =>
-                    accountProvider.findById(purchase.portfolioId)?.name ??
-                    'พอร์ตหุ้น',
-                onEdit: (purchase) =>
-                    _openPurchaseHistoryForm(context, purchase),
-                onDelete: (purchase) =>
-                    _confirmDeletePurchase(context, purchase),
-              ),
-              TradeAnnualTaxTab(
-                header: tabBar,
-                trades: accountProvider.stockTrades,
-                annualReports: accountProvider.portfolioAnnualReports,
-                selectedYear: _selectedYear,
-                principalAvailableForYearUsd: principalAvailableForYearUsd,
-                principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                onYearChanged: (year) => setState(() => _selectedYear = year),
-                isDarkMode: isDarkMode,
-              ),
-            ][_selectedTab],
+            child: Column(
+              children: [
+                tabBar,
+                // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+                Expanded(
+                  child: [
+                    TradeYearlyTab(
+                      trades: accountProvider.stockTrades,
+                      selectedYear: _selectedYear,
+                      onYearChanged: (year) =>
+                          setState(() => _selectedYear = year),
+                      isDarkMode: isDarkMode,
+                    ),
+                    TradeSaleHistoryTab(
+                      trades: trades,
+                      isDarkMode: isDarkMode,
+                      portfolioNameOf: (trade) =>
+                          accountProvider.findById(trade.portfolioId)?.name ??
+                          'พอร์ตหุ้น',
+                      onEdit: (trade) => _openTradeForm(context, trade),
+                      onDelete: (trade) => _confirmDeleteTrade(context, trade),
+                    ),
+                    TradePurchaseHistoryTab(
+                      purchases: accountProvider.stockPurchases,
+                      isDarkMode: isDarkMode,
+                      portfolioNameOf: (purchase) =>
+                          accountProvider
+                              .findById(purchase.portfolioId)
+                              ?.name ??
+                          'พอร์ตหุ้น',
+                      onEdit: (purchase) =>
+                          _openPurchaseHistoryForm(context, purchase),
+                      onDelete: (purchase) =>
+                          _confirmDeletePurchase(context, purchase),
+                    ),
+                    TradeAnnualTaxTab(
+                      trades: accountProvider.stockTrades,
+                      annualReports: accountProvider.portfolioAnnualReports,
+                      selectedYear: _selectedYear,
+                      principalAvailableForYearUsd:
+                          principalAvailableForYearUsd,
+                      principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                      onYearChanged: (year) =>
+                          setState(() => _selectedYear = year),
+                      isDarkMode: isDarkMode,
+                    ),
+                  ][_selectedTab],
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -195,7 +203,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
 
   static const _tabLabels = ['สรุป', 'ขาย', 'ซื้อ', 'ภาษีไทย'];
 
-  // แถบแท็บอยู่ใน scroll ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมเนื้อหา
+  // แถบแท็บ fixed ด้านบน เนื้อหาของแต่ละแท็บเลื่อนอยู่ด้านล่าง
   Widget _buildTabBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

@@ -155,8 +155,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       ),
       body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
         builder: (context, catProvider, txProvider, settingsProvider, _) {
-          // Segmented control อยู่ใน list ของแต่ละแท็บ จึงเลื่อนและเด้งไปพร้อมรายการ
-          final segmentedControl = _buildSegmentedControl();
           return SafeArea(
             child: Column(
               children: [
@@ -166,6 +164,9 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                     message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
                   ),
 
+                // Segmented control fixed ด้านบน ไม่เลื่อนไปพร้อมรายการ
+                _buildSegmentedControl(),
+
                 // Category List View
                 // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
                 Expanded(
@@ -174,7 +175,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                     txProvider,
                     _currentType,
                     isDarkMode,
-                    segmentedControl,
                   ),
                 ),
               ],
@@ -210,7 +210,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     TransactionProvider txProvider,
     CategoryType type,
     bool isDarkMode,
-    Widget header,
   ) {
     final allTransactions = txProvider.transactions;
     final totalsByCategoryId = _buildCategoryTotals(allTransactions);
@@ -240,7 +239,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          header,
           Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -315,7 +313,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        header,
         const SizedBox(height: 4),
         // Metric Summary Capsule / Tile (when not reordering)
         if (!_isReorderMode)
