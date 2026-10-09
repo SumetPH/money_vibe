@@ -37,10 +37,24 @@ class CreditCardBillHeroCard extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    final hasPending = totalUnpaid > 0;
+    // ค้างชำระ = มีบิลที่ตัดรอบแล้วยังจ่ายไม่ครบ; ยอดรอบปัจจุบันยังไม่ถือว่าค้าง
+    final hasPending = pastPending > 0;
+    final hasOpenCycle = openCycleAmount > 0;
     final statusColor = hasPending
         ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
+        : hasOpenCycle
+        ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
         : (isDarkMode ? AppColors.darkIncome : AppColors.income);
+    final statusIcon = hasPending
+        ? Icons.warning_amber_rounded
+        : hasOpenCycle
+        ? Icons.schedule_rounded
+        : Icons.check_circle_rounded;
+    final statusLabel = hasPending
+        ? 'มียอดค้างชำระ'
+        : hasOpenCycle
+        ? 'รอตัดรอบ'
+        : 'ชำระครบแล้ว';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -130,16 +144,10 @@ class CreditCardBillHeroCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      hasPending
-                          ? Icons.warning_amber_rounded
-                          : Icons.check_circle_rounded,
-                      size: 14,
-                      color: statusColor,
-                    ),
+                    Icon(statusIcon, size: 14, color: statusColor),
                     const SizedBox(width: 4),
                     Text(
-                      hasPending ? 'มียอดค้างชำระ' : 'ชำระครบแล้ว',
+                      statusLabel,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
