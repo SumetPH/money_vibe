@@ -126,15 +126,13 @@ class TransactionListItem extends StatelessWidget {
                     textPrimaryColor,
                     isDarkMode,
                   ),
-                  if (subLabel.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subLabel,
-                      style: TextStyle(fontSize: 13, color: textSecondaryColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  const SizedBox(height: 2),
+                  Text(
+                    subLabel,
+                    style: TextStyle(fontSize: 13, color: textSecondaryColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
