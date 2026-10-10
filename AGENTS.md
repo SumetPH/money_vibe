@@ -2,7 +2,7 @@
 
 แนวทางนี้ใช้เป็นกติกากลางสำหรับ Agent และ Developer ในโปรเจกต์ Money Vibe โดยเน้นให้สอดคล้องกับโค้ดและรูปแบบ UI ที่ใช้อยู่จริงในปัจจุบัน
 
-### Design
+## Design
 
 เมื่อออกแบบหรือแก้ UI, form, modal, navigation หรือ Account flow ให้อ่าน `docs/design.md` ซึ่งเป็น source of truth ของกติกา design
 
@@ -44,7 +44,7 @@
 
 ### โครงสร้างไฟล์ใน `lib/screens/<module>/`
 
-ยึดแบบ `lib/screens/cash_flow/` (รายละเอียดใน `.scratch/screen-file-split/spec.md`)
+ยึดแบบ `lib/screens/cash_flow/`
 
 - ไฟล์ screen ควรยาวไม่เกิน ~400 บรรทัด และห้ามเกิน 800 บรรทัด
 - แยก tab, section, bottom sheet, dialog, list item, summary card ออกเป็นไฟล์ของตัวเองในโฟลเดอร์ module เดียวกัน (ไม่สร้างโฟลเดอร์ย่อย) ตั้งชื่อ `<feature>_<role>.dart` เช่น `trade_annual_tax_tab.dart`
