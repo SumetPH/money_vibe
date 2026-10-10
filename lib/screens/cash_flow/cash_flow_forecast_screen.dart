@@ -12,6 +12,7 @@ import '../../widgets/account_icon_widget.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_drawer_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_switch.dart';
@@ -58,6 +59,8 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
           : const AppDrawer(currentRoute: '/cash-flow'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: isLargeScreen ? null : const AppDrawerButton(),
+        leadingWidth: 64,
         toolbarHeight: 100,
         backgroundColor: bgColor,
         elevation: 0,

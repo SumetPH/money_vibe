@@ -21,6 +21,7 @@ import '../../services/database_manager.dart';
 import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_drawer_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
 import 'data_management_screen.dart';
@@ -69,6 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: isLargeScreen ? null : const AppDrawerButton(),
+        leadingWidth: 64,
         toolbarHeight: 100,
         backgroundColor: backgroundColor,
         foregroundColor: textColor,

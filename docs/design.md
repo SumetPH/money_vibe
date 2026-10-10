@@ -11,6 +11,7 @@
 | `AppSwitch`                                                           | `CupertinoSwitch`                                      | `lib/widgets/app_switch.dart`             |
 | `AppSectionHeader`, `AppInsetCard`, `AppCardDivider`                  | helper `_buildSectionHeader` / `_buildInsetCard` ในหน้า | `lib/widgets/app_inset_card.dart`         |
 | `AppCloseButton` (ฟอร์ม), `AppBackButton` (หน้ารอง), `AppSaveButton` | ปุ่ม leading/บันทึกที่สร้างเองบน AppBar               | `lib/widgets/app_bar_buttons.dart`        |
+| `AppDrawerButton` | ปุ่มเปิด drawer บน header ของ mobile (ค้นหา Scaffold ที่มี drawer รวม shell ของแท็บหลัก) | `lib/widgets/app_drawer_button.dart` |
 | `AppBarActionButton`                                                  | ปุ่ม icon action อื่นบน AppBar                         | `lib/widgets/app_bar_action_button.dart`  |
 | `showAppConfirmDialog`                                                | `AlertDialog` สำหรับยืนยัน                             | `lib/widgets/app_confirm_dialog.dart`     |
 | `showAppModalBottomSheet`, `AppModalBottomSheetHeader`, `AppDraggableSheet` | `showModalBottomSheet` / `DraggableScrollableSheet` | `lib/widgets/app_modal_bottom_sheet.dart` |

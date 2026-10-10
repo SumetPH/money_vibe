@@ -11,6 +11,7 @@ import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_drawer_button.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
@@ -127,7 +128,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     : AppColors.textPrimary,
                 centerTitle: false,
                 titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
-                leading: isFiltered ? const AppBackButton() : null,
+                leading: isFiltered
+                    ? const AppBackButton()
+                    : isLargeScreen
+                    ? null
+                    : const AppDrawerButton(),
+                leadingWidth: 64,
                 title: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

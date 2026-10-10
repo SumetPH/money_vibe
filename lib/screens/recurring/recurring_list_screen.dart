@@ -10,6 +10,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_drawer_button.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'recurring_form_screen.dart';
@@ -92,7 +93,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
             scrolledUnderElevation: 0,
             centerTitle: false,
             titleSpacing: isLargeScreen ? 24 : 16,
-            leading: null,
+            leading: isLargeScreen ? null : const AppDrawerButton(),
+            leadingWidth: 64,
             title: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

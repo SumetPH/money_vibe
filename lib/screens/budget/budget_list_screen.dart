@@ -10,6 +10,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_drawer_button.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../services/budget_spending_service.dart';
@@ -198,6 +199,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
               : null,
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            leading: isLargeScreen ? null : const AppDrawerButton(),
+            leadingWidth: 64,
             toolbarHeight: 100,
             backgroundColor: bgColor,
             foregroundColor: textPrimary,
