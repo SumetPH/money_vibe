@@ -719,6 +719,9 @@ class _NetWorthLineChartState extends State<StatisticsNetWorthLineChart> {
     if (filter == StatisticsNetWorthPeriodFilter.oneYear) {
       return 6;
     }
+    if (filter == StatisticsNetWorthPeriodFilter.thisYear) {
+      return 3;
+    }
     final length = data.length;
     if (length <= 12) return 1;
     if (length <= 24) return 2;
