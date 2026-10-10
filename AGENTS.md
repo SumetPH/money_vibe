@@ -2,20 +2,6 @@
 
 แนวทางนี้ใช้เป็นกติกากลางสำหรับ Agent และ Developer ในโปรเจกต์ Money Vibe โดยเน้นให้สอดคล้องกับโค้ดและรูปแบบ UI ที่ใช้อยู่จริงในปัจจุบัน
 
-## Agent skills
-
-### Issue tracker
-
-ติดตาม issues เป็น Local Markdown ใต้ `.scratch/` ดูรายละเอียดที่ `docs/agents/issue-tracker.md`
-
-### Triage labels
-
-ใช้ triage labels มาตรฐานทั้งห้ารายการ ดูรายละเอียดที่ `docs/agents/triage-labels.md`
-
-### Domain docs
-
-ใช้โครงสร้าง domain docs แบบ single-context ดูรายละเอียดที่ `docs/agents/domain.md`
-
 ### Design
 
 เมื่อออกแบบหรือแก้ UI, form, modal, navigation หรือ Account flow ให้อ่าน `docs/design.md` ซึ่งเป็น source of truth ของกติกา design
