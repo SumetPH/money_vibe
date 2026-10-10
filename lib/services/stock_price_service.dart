@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/stock_quote.dart';
 import 'exchange_rate_service.dart';
+
+export '../models/stock_quote.dart';
 
 class StockCompanyProfile {
   final String name;
@@ -36,10 +39,16 @@ class StockPriceService {
 
   /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน; คืน map ว่างถ้ายังไม่ได้ตั้งค่า Finnhub
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {
+    final quotes = await fetchQuotes(tickers);
+    return quotes.map((ticker, quote) => MapEntry(ticker, quote.price));
+  }
+
+  /// ราคาพร้อมเปอร์เซ็นต์เปลี่ยนแปลงเทียบราคาปิดครั้งก่อนจาก quote เดียวกัน
+  Future<Map<String, StockQuote>> fetchQuotes(List<String> tickers) async {
     if (tickers.isEmpty || !isConfigured) return {};
 
     final pendingTickers = tickers.toSet().toList();
-    final prices = <String, double>{};
+    final prices = <String, StockQuote>{};
     for (
       var attempt = 0;
       attempt < _maxPriceFetchAttempts && pendingTickers.isNotEmpty;
@@ -55,8 +64,8 @@ class StockPriceService {
     return prices;
   }
 
-  Future<Map<String, double>> _fetchPriceBatch(List<String> tickers) async {
-    final prices = <String, double>{};
+  Future<Map<String, StockQuote>> _fetchPriceBatch(List<String> tickers) async {
+    final prices = <String, StockQuote>{};
 
     for (
       var start = 0;
@@ -69,7 +78,7 @@ class StockPriceService {
       final batch = tickers.sublist(start, end);
       final results = await Future.wait(
         batch.map(
-          (ticker) => _fetchFinnhubPrice(
+          (ticker) => _fetchFinnhubQuote(
             ticker,
           ).timeout(_singlePriceTimeout, onTimeout: () => null),
         ),
@@ -85,14 +94,13 @@ class StockPriceService {
     return prices;
   }
 
-  Future<double?> _fetchFinnhubPrice(String ticker) async {
+  Future<StockQuote?> _fetchFinnhubQuote(String ticker) async {
     try {
       final uri = _finnhubUri('/api/v1/quote', ticker);
       final response = await http.get(uri).timeout(_requestTimeout);
       if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final price = (data['c'] as num?)?.toDouble();
-      return (price != null && price > 0) ? price : null;
+      return StockQuote.fromJson(data);
     } catch (_) {
       return null;
     }

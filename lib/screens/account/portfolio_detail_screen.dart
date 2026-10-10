@@ -47,6 +47,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   ];
 
   late StockPriceService _priceService;
+  Map<String, StockQuote> _quotes = {};
   late StockLogoStorageService _logoStorageService;
   late final AnimationController _refreshIconController;
   int _selectedTab = 0;
@@ -126,20 +127,19 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   Future<void> _refreshPrices() async {
     if (_isRefreshing) return;
     final provider = context.read<AccountProvider>();
-
     _refreshIconController.repeat();
-    setState(() => _isRefreshing = true);
-
+    setState(() {
+      _isRefreshing = true;
+      _quotes = {};
+    });
     try {
       await provider.reloadPersistedData();
       if (!mounted) return;
-
       _priceService = _buildPriceService();
       final acc = provider.findById(widget.account.id);
       if (acc == null) return;
       final holdings = provider.getHoldings(acc.id);
       if (holdings.isEmpty) return;
-
       final priceSymbolsByHoldingId = <String, String>{
         if (_priceService.isConfigured)
           for (final h in holdings) h.id: ?acc.priceSymbolFor(h.ticker),
@@ -154,7 +154,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                 .toList()
           : <String>[];
       final futures = await Future.wait([
-        _priceService.fetchPrices(tickers),
+        _priceService.fetchQuotes(tickers),
         acc.autoUpdateRate
             ? _priceService
                   .fetchUsdThbRate()
@@ -165,27 +165,25 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             ? Future.value(<String, StockCompanyProfile>{})
             : _priceService.fetchProfiles(tickersNeedingProfile),
       ]);
-
-      final prices = futures[0] as Map<String, double>;
+      final quotes = futures[0] as Map<String, StockQuote>;
       final rate = futures[1] as double?;
       final profiles = futures[2] as Map<String, StockCompanyProfile>;
       final failedTickers = holdings
           .where(
             (holding) =>
                 priceSymbolsByHoldingId.containsKey(holding.id) &&
-                !prices.containsKey(priceSymbolsByHoldingId[holding.id]),
+                !quotes.containsKey(priceSymbolsByHoldingId[holding.id]),
           )
           .map((holding) => holding.ticker)
           .toSet()
           .toList();
       if (!mounted) return;
-
       final hasCompletePriceSnapshot = failedTickers.isEmpty;
       final updatedHoldings = <StockHolding>[];
       for (final h in holdings) {
         var updatedHolding = h;
         var hasChanges = false;
-        final newPrice = prices[priceSymbolsByHoldingId[h.id]];
+        final newPrice = quotes[priceSymbolsByHoldingId[h.id]]?.price;
         if (hasCompletePriceSnapshot && newPrice != null) {
           updatedHolding = updatedHolding.copyWith(priceUsd: newPrice);
           hasChanges = true;
@@ -223,6 +221,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
         holdings: updatedHoldings,
         exchangeRate: hasCompletePriceSnapshot ? rate : null,
       );
+      if (mounted && hasCompletePriceSnapshot) setState(() => _quotes = quotes);
       final warningMessages = <String>[];
       if (acc.isUsPortfolio && !_priceService.isConfigured) {
         warningMessages.add('ใส่ Finnhub API key เพื่ออัปเดตราคาอัตโนมัติ');
@@ -767,6 +766,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
             PortfolioGroupSection(
               groupName: groupName,
               groupHoldings: groups[groupName]!,
+              quotes: _quotes,
               acc: acc,
               isDarkMode: isDarkMode,
               provider: provider,

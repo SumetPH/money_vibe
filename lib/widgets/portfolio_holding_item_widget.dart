@@ -14,6 +14,7 @@ import 'app_confirm_dialog.dart';
 /// รองรับการ collapse/expand รายละเอียดด้วยการกดที่ปุ่มลูกศร
 class PortfolioHoldingItemWidget extends StatefulWidget {
   final StockHolding holding;
+  final double? priceChangePercent;
   final double exchangeRate;
   final String currencyCode;
   final double totalHoldingsValueUsd;
@@ -29,6 +30,7 @@ class PortfolioHoldingItemWidget extends StatefulWidget {
   const PortfolioHoldingItemWidget({
     super.key,
     required this.holding,
+    this.priceChangePercent,
     required this.exchangeRate,
     required this.currencyCode,
     required this.totalHoldingsValueUsd,
@@ -91,6 +93,7 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
         ? AppColors.darkTextSecondary
         : AppColors.header;
     final sellPlanStatus = _buildSellPlanStatus();
+    final priceChangePercent = widget.priceChangePercent;
 
     return Column(
       children: [
@@ -270,6 +273,23 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       child: _DetailCell(
                         label: 'ราคาปัจจุบัน',
                         value: widget.holding.priceUsd.toStringAsFixed(2),
+                        trailing: priceChangePercent == null
+                            ? null
+                            : Tooltip(
+                                message: 'เปลี่ยนแปลงเทียบราคาปิดครั้งก่อน',
+                                child: Text(
+                                  '(${priceChangePercent > 0 ? '+' : ''}${priceChangePercent.toStringAsFixed(2)}%)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: priceChangePercent == 0
+                                        ? textSecondaryColor
+                                        : priceChangePercent > 0
+                                        ? incomeColor
+                                        : expenseColor,
+                                  ),
+                                ),
+                              ),
                         textPrimaryColor: textPrimaryColor,
                         textSecondaryColor: textSecondaryColor,
                       ),
@@ -829,12 +849,14 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
 class _DetailCell extends StatelessWidget {
   final String label;
   final String value;
+  final Widget? trailing;
   final Color textPrimaryColor;
   final Color textSecondaryColor;
 
   const _DetailCell({
     required this.label,
     required this.value,
+    this.trailing,
     required this.textPrimaryColor,
     required this.textSecondaryColor,
   });
@@ -853,13 +875,20 @@ class _DetailCell extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            color: textPrimaryColor,
-            fontWeight: FontWeight.w500,
-          ),
+        Wrap(
+          spacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: textPrimaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            ?trailing,
+          ],
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
+import '../../services/stock_price_service.dart';
 import '../../providers/account_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -13,6 +14,7 @@ typedef PortfolioHoldingAction =
 class PortfolioGroupSection extends StatelessWidget {
   final String groupName;
   final List<StockHolding> groupHoldings;
+  final Map<String, StockQuote> quotes;
   final Account acc;
   final bool isDarkMode;
   final AccountProvider provider;
@@ -27,6 +29,7 @@ class PortfolioGroupSection extends StatelessWidget {
     super.key,
     required this.groupName,
     required this.groupHoldings,
+    required this.quotes,
     required this.acc,
     required this.isDarkMode,
     required this.provider,
@@ -320,6 +323,7 @@ class PortfolioGroupSection extends StatelessWidget {
               itemCount: sortedHoldings.length,
               itemBuilder: (context, index) {
                 final h = sortedHoldings[index];
+                final quote = quotes[acc.priceSymbolFor(h.ticker)];
                 return Column(
                   key: ValueKey(h.id),
                   children: [
@@ -330,6 +334,9 @@ class PortfolioGroupSection extends StatelessWidget {
                       ),
                     PortfolioHoldingItemWidget(
                       holding: h,
+                      priceChangePercent: quote?.price == h.priceUsd
+                          ? quote?.changePercent
+                          : null,
                       exchangeRate: acc.exchangeRate,
                       currencyCode: acc.currencyCodeLabel,
                       totalHoldingsValueUsd: groupValueUsd,
