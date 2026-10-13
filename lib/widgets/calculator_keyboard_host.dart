@@ -8,32 +8,111 @@ final _thousandsPattern = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
 /// จัดรูปแบบช่องจำนวนเงินของ [CalculatorKeyboard]: ใส่คอมมาหลักพัน
 /// ระหว่างพิมพ์สูตร (มี operator) จะเอาคอมมาออกโดยคงตำแหน่ง cursor ไว้
 /// เพราะคีย์บอร์ดแทรกตัวอักษรที่ตำแหน่ง cursor
-void formatCalculatorAmountInput(TextEditingController controller) {
-  final text = controller.text;
+void formatCalculatorAmountInput(
+  TextEditingController controller, {
+  TextEditingValue? previousValue,
+}) {
+  final currentValue = controller.value;
+  final text = currentValue.text;
   if (!_operatorPattern.hasMatch(text)) {
-    final formatted = _withThousands(text.replaceAll(',', ''));
-    if (formatted != text) {
-      controller.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
+    var raw = text.replaceAll(',', '');
+    var baseOffset = _rawOffset(text, currentValue.selection.baseOffset);
+    var extentOffset = _rawOffset(text, currentValue.selection.extentOffset);
+
+    final deletedCommaIndex = previousValue == null
+        ? null
+        : _singleDeletedCommaIndex(previousValue, currentValue);
+    var handledDeletedComma = false;
+    if (deletedCommaIndex != null && previousValue != null && raw.isNotEmpty) {
+      final rawCommaOffset = _rawOffset(previousValue.text, deletedCommaIndex);
+      final isBackspace =
+          previousValue.selection.extentOffset >
+          currentValue.selection.extentOffset;
+      final digitIndex = isBackspace ? rawCommaOffset - 1 : rawCommaOffset;
+      if (digitIndex >= 0 &&
+          digitIndex < raw.length &&
+          _isDigit(raw[digitIndex])) {
+        // Treat deleting a generated separator as deleting its adjacent digit.
+        raw = raw.replaceRange(digitIndex, digitIndex + 1, '');
+        if (baseOffset > digitIndex) baseOffset--;
+        if (extentOffset > digitIndex) extentOffset--;
+        handledDeletedComma = true;
+      }
     }
+
+    final formatted = _withThousands(raw);
+    final selection = formatted == text && !handledDeletedComma
+        ? currentValue.selection
+        : TextSelection(
+            baseOffset: _formattedOffset(formatted, raw.length, baseOffset),
+            extentOffset: _formattedOffset(formatted, raw.length, extentOffset),
+            affinity: currentValue.selection.affinity,
+            isDirectional: currentValue.selection.isDirectional,
+          );
+    _setFormattedValue(controller, currentValue, formatted, selection);
     return;
   }
 
   final sanitized = text.replaceAll(',', '');
   if (sanitized == text) return;
-  final selection = controller.selection;
-  final commasBeforeCursor = selection.isValid
-      ? ','.allMatches(text.substring(0, selection.end)).length
-      : 0;
-  final offset = selection.isValid
-      ? (selection.end - commasBeforeCursor).clamp(0, sanitized.length)
-      : sanitized.length;
-  controller.value = TextEditingValue(
-    text: sanitized,
-    selection: TextSelection.collapsed(offset: offset),
+  final selection = TextSelection(
+    baseOffset: _rawOffset(text, currentValue.selection.baseOffset),
+    extentOffset: _rawOffset(text, currentValue.selection.extentOffset),
+    affinity: currentValue.selection.affinity,
+    isDirectional: currentValue.selection.isDirectional,
   );
+  _setFormattedValue(controller, currentValue, sanitized, selection);
+}
+
+int _rawOffset(String text, int formattedOffset) {
+  if (formattedOffset < 0) return text.replaceAll(',', '').length;
+  final safeOffset = formattedOffset.clamp(0, text.length);
+  return text.substring(0, safeOffset).replaceAll(',', '').length;
+}
+
+int _formattedOffset(String formatted, int rawLength, int rawOffset) {
+  final safeRawOffset = rawOffset.clamp(0, rawLength);
+  if (safeRawOffset == 0) return 0;
+  return (formatted.length - (rawLength - safeRawOffset)).clamp(
+    0,
+    formatted.length,
+  );
+}
+
+int? _singleDeletedCommaIndex(
+  TextEditingValue previousValue,
+  TextEditingValue currentValue,
+) {
+  if (!previousValue.selection.isCollapsed ||
+      !currentValue.selection.isCollapsed ||
+      previousValue.text.length != currentValue.text.length + 1) {
+    return null;
+  }
+
+  final candidateIndex = currentValue.selection.extentOffset.clamp(
+    0,
+    previousValue.text.length - 1,
+  );
+  if (previousValue.text[candidateIndex] != ',') return null;
+  final withoutCandidate = previousValue.text.replaceRange(
+    candidateIndex,
+    candidateIndex + 1,
+    '',
+  );
+  return withoutCandidate == currentValue.text ? candidateIndex : null;
+}
+
+bool _isDigit(String value) =>
+    value.codeUnitAt(0) >= 48 && value.codeUnitAt(0) <= 57;
+
+void _setFormattedValue(
+  TextEditingController controller,
+  TextEditingValue currentValue,
+  String text,
+  TextSelection selection,
+) {
+  if (text == currentValue.text && selection == currentValue.selection) return;
+  controller.value = TextEditingValue(text: text, selection: selection);
 }
 
 String _withThousands(String raw) {
@@ -56,12 +135,14 @@ mixin CalculatorKeyboardHost<T extends StatefulWidget> on State<T> {
 
   PersistentBottomSheetController? _keyboardController;
   bool _isFormatting = false;
+  TextEditingValue? _previousAmountValue;
 
   /// จำนวนเงินที่กรอก (ไม่มีคอมมา) หรือ null ถ้าไม่ใช่ตัวเลข
   double? get calculatorAmount =>
       double.tryParse(calculatorController.text.replaceAll(',', '').trim());
 
   void attachCalculatorKeyboard() {
+    _previousAmountValue = calculatorController.value;
     calculatorFocusNode.addListener(_onFocusChange);
     calculatorController.addListener(_onAmountChanged);
   }
@@ -69,6 +150,7 @@ mixin CalculatorKeyboardHost<T extends StatefulWidget> on State<T> {
   void detachCalculatorKeyboard() {
     calculatorFocusNode.removeListener(_onFocusChange);
     calculatorController.removeListener(_onAmountChanged);
+    _previousAmountValue = null;
   }
 
   void closeCalculatorKeyboard() {
@@ -108,7 +190,11 @@ mixin CalculatorKeyboardHost<T extends StatefulWidget> on State<T> {
     if (_isFormatting) return;
     _isFormatting = true;
     try {
-      formatCalculatorAmountInput(calculatorController);
+      formatCalculatorAmountInput(
+        calculatorController,
+        previousValue: _previousAmountValue,
+      );
+      _previousAmountValue = calculatorController.value;
     } finally {
       _isFormatting = false;
     }

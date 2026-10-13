@@ -47,6 +47,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   PersistentBottomSheetController? _keyboardController;
   TextEditingController? _activeKeyboardController;
   bool _isUpdatingController = false;
+  late TextEditingValue _previousAmountValue;
+  late TextEditingValue _previousToAmountValue;
 
   final _amountController = TextEditingController();
   final _toAmountController =
@@ -84,6 +86,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ? formatAmount(tx.toAmount!)
         : '';
     _noteController.text = tx?.note ?? '';
+    _previousAmountValue = _amountController.value;
+    _previousToAmountValue = _toAmountController.value;
 
     _amountFocusNode.addListener(_onFocusChange);
     _toAmountFocusNode.addListener(_onFocusChange);
@@ -153,7 +157,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      formatCalculatorAmountInput(_amountController);
+      formatCalculatorAmountInput(
+        _amountController,
+        previousValue: _previousAmountValue,
+      );
+      _previousAmountValue = _amountController.value;
       _calculateAccountBalance();
       if (_type.requiresDebtAccount) {
         setState(() {});
@@ -167,7 +175,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      formatCalculatorAmountInput(_toAmountController);
+      formatCalculatorAmountInput(
+        _toAmountController,
+        previousValue: _previousToAmountValue,
+      );
+      _previousToAmountValue = _toAmountController.value;
       setState(() {});
     } finally {
       _isUpdatingController = false;

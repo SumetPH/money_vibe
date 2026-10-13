@@ -28,6 +28,13 @@
       ]
     },
     {
+      "name": "Dev Web Windows",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define-from-file=config/dev.json", "--web-port=8080"]
+    },
+    {
       "name": "Dev Web Store",
       "request": "launch",
       "type": "dart",
