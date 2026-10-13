@@ -66,6 +66,18 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   bool _isLoading = false;
 
   bool get _isEditing => widget.transaction != null;
+  bool get _isAdjustment => _type.isIncreaseBalance || _type.isDecreaseBalance;
+
+  double _balanceBeforeAdjustment() {
+    if (_selectedAccountId == null) return 0;
+    final transactions = context.read<TransactionProvider>().transactions;
+    return context.read<AccountProvider>().getBalance(
+      _selectedAccountId!,
+      _isEditing
+          ? transactions.where((tx) => tx.id != widget.transaction!.id).toList()
+          : transactions,
+    );
+  }
 
   @override
   void initState() {
@@ -86,6 +98,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         ? formatAmount(tx.toAmount!)
         : '';
     _noteController.text = tx?.note ?? '';
+    if (_isAdjustment && tx != null) {
+      final balance = _balanceBeforeAdjustment();
+      _amountController.text = formatAmount(
+        balance + (tx.type.isIncreaseBalance ? tx.amount : -tx.amount),
+      );
+    }
     _previousAmountValue = _amountController.value;
     _previousToAmountValue = _toAmountController.value;
 
@@ -114,27 +132,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   }
 
   void _calculateAccountBalance() {
-    if (_selectedAccountId != null &&
-        (_type == TransactionType.increaseBalance ||
-            _type == TransactionType.decreaseBalance)) {
-      final amount =
-          double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
-      final currentBalance = context.read<AccountProvider>().getBalance(
-        _selectedAccountId!,
-        context.read<TransactionProvider>().transactions,
-      );
-
-      final originalAmount = _isEditing ? widget.transaction!.amount : 0;
-
-      if (_type == TransactionType.increaseBalance) {
-        setState(() {
-          _accountBalance = (currentBalance - originalAmount) + amount;
-        });
-      } else if (_type == TransactionType.decreaseBalance) {
-        setState(() {
-          _accountBalance = (currentBalance + originalAmount) - amount;
-        });
-      }
+    if (_isAdjustment) {
+      setState(() => _accountBalance = _balanceBeforeAdjustment());
     }
   }
 
@@ -259,8 +258,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   Future<void> _save() async {
     final amountText = _amountController.text.replaceAll(',', '').trim();
-    final amount = double.tryParse(amountText);
-    if (amount == null || amount <= 0) {
+    var amount = double.tryParse(amountText);
+    if (amount == null || !amount.isFinite || (!_isAdjustment && amount <= 0)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณากรอกจำนวนเงิน')));
@@ -281,6 +280,29 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
     final txProvider = context.read<TransactionProvider>();
     final accountProvider = context.read<AccountProvider>();
+    if (_isAdjustment) {
+      final difference = amount - _balanceBeforeAdjustment();
+      if (difference.abs() < 0.005) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ยอดที่ต้องการเท่ากับยอดบัญชีเดิม')),
+        );
+        return;
+      }
+      if ((_type.isIncreaseBalance && difference < 0) ||
+          (_type.isDecreaseBalance && difference > 0)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _type.isIncreaseBalance
+                  ? 'ปรับเพิ่ม: กรุณากรอกยอดที่สูงกว่ายอดก่อนปรับ'
+                  : 'ปรับลด: กรุณากรอกยอดที่ต่ำกว่ายอดก่อนปรับ',
+            ),
+          ),
+        );
+        return;
+      }
+      amount = difference.abs();
+    }
 
     String? toAccountId;
     if (_type == TransactionType.transfer) {
@@ -387,8 +409,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   void _selectType(TransactionType t) {
     _closeKeyboard();
+    final wasAdjustment = _isAdjustment;
     setState(() {
       _type = t;
+      if (wasAdjustment != _isAdjustment) _amountController.clear();
       _selectedCategoryId = null;
       if (t != TransactionType.transfer) {
         _selectedToAccountId = null;
@@ -518,17 +542,20 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   const SizedBox(height: 14),
 
                   // 2. Amount Hero Card
-                  TransactionAmountHeroCard(
-                    type: _type,
-                    amountController: _amountController,
-                    amountFocusNode: _amountFocusNode,
-                    toAmountController: _toAmountController,
-                    toAmountFocusNode: _toAmountFocusNode,
-                    selectedAccount: selectedAccount,
-                    selectedToAccount: selectedToAccount,
-                    accountBalance: _accountBalance,
-                    isDarkMode: isDarkMode,
-                  ),
+                  if (!_isAdjustment)
+                    TransactionAmountHeroCard(
+                      type: _type,
+                      amountController: _amountController,
+                      amountFocusNode: _amountFocusNode,
+                      toAmountController: _toAmountController,
+                      toAmountFocusNode: _toAmountFocusNode,
+                      selectedAccount: selectedAccount,
+                      selectedToAccount: selectedToAccount,
+                      accountBalance: _isAdjustment
+                          ? _balanceBeforeAdjustment()
+                          : _accountBalance,
+                      isDarkMode: isDarkMode,
+                    ),
                   const SizedBox(height: 18),
 
                   // 3. Selection Section (Grouped Inset Card)
@@ -563,6 +590,20 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     onPickCategory: () => _pickCategory(context, categories),
                   ),
                   const SizedBox(height: 18),
+                  if (_isAdjustment) ...[
+                    TransactionAmountHeroCard(
+                      type: _type,
+                      amountController: _amountController,
+                      amountFocusNode: _amountFocusNode,
+                      toAmountController: _toAmountController,
+                      toAmountFocusNode: _toAmountFocusNode,
+                      selectedAccount: selectedAccount,
+                      selectedToAccount: selectedToAccount,
+                      accountBalance: _balanceBeforeAdjustment(),
+                      isDarkMode: isDarkMode,
+                    ),
+                    const SizedBox(height: 18),
+                  ],
 
                   // 4. Meta Information Section (Date & Note)
                   Padding(

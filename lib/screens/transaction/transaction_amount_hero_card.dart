@@ -70,8 +70,8 @@ class TransactionAmountHeroCard extends StatelessWidget {
     final amountLabel = switch (type) {
       TransactionType.debtRepay => 'เงินต้น',
       TransactionType.debtTransfer => 'ยอดโยก',
-      TransactionType.increaseBalance => 'ยอดปรับเพิ่ม',
-      TransactionType.decreaseBalance => 'ยอดปรับลด',
+      TransactionType.increaseBalance ||
+      TransactionType.decreaseBalance => 'ยอดคงเหลือที่ต้องการ',
       _ => 'จำนวนเงิน',
     };
 
@@ -84,6 +84,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
+          if (isAdjust && selectedAccount == null) return;
           if (!amountFocusNode.hasFocus) {
             amountFocusNode.requestFocus();
           }
@@ -145,6 +146,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
                   ),
                   Expanded(
                     child: TextField(
+                      enabled: !isAdjust || selectedAccount != null,
                       controller: amountController,
                       focusNode: amountFocusNode,
                       readOnly: calculatorTextFieldReadOnly,
@@ -305,12 +307,16 @@ class TransactionAmountHeroCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'ยอดคงเหลือหลังปรับ:',
+                        selectedAccount == null
+                            ? 'กรุณาเลือกบัญชีก่อน'
+                            : 'ยอดก่อนปรับ:',
                         style: TextStyle(color: textSecondary, fontSize: 13),
                       ),
                       const Spacer(),
                       Text(
-                        '฿ ${NumberFormat('#,##0.00').format(accountBalance)}',
+                        selectedAccount == null
+                            ? '—'
+                            : '${fromCurrency == 'USD' ? '\$' : '฿'} ${NumberFormat('#,##0.00').format(accountBalance)}',
                         style: TextStyle(
                           color: textPrimary,
                           fontSize: 14,
@@ -320,6 +326,47 @@ class TransactionAmountHeroCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (selectedAccount != null)
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: amountController,
+                    builder: (context, value, _) {
+                      final target = double.tryParse(
+                        value.text.replaceAll(',', ''),
+                      );
+                      final difference = target == null
+                          ? null
+                          : target - accountBalance;
+                      final String? error;
+                      if (difference == null) {
+                        error = null;
+                      } else if (difference.abs() < 0.005) {
+                        error = 'ยอดที่ต้องการเท่ากับยอดบัญชีเดิม';
+                      } else if (type.isIncreaseBalance && difference < 0) {
+                        error = 'ปรับเพิ่ม: กรุณากรอกยอดที่สูงกว่ายอดก่อนปรับ';
+                      } else if (type.isDecreaseBalance && difference > 0) {
+                        error = 'ปรับลด: กรุณากรอกยอดที่ต่ำกว่ายอดก่อนปรับ';
+                      } else {
+                        error = null;
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          error ??
+                              (difference == null
+                                  ? (type.isIncreaseBalance
+                                        ? 'กรอกยอดที่สูงกว่ายอดก่อนปรับ'
+                                        : 'กรอกยอดที่ต่ำกว่ายอดก่อนปรับ')
+                                  : '${difference >= 0 ? 'ปรับเพิ่ม' : 'ปรับลด'} ${fromCurrency == 'USD' ? '\$' : '฿'} ${NumberFormat('#,##0.00').format(difference.abs())}'),
+                          style: TextStyle(
+                            color: error == null
+                                ? textSecondary
+                                : AppColors.expenseFor(isDarkMode),
+                            fontSize: 13,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ],
           ),
