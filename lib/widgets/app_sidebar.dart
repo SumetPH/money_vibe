@@ -7,6 +7,7 @@ import '../providers/settings_provider.dart';
 import '../services/reinstall_reminder_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_color_option.dart';
+import '../theme/app_brand.dart';
 
 class SidebarItemData {
   final IconData icon;
@@ -121,7 +122,7 @@ class _AppSidebarState extends State<AppSidebar> {
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.account_balance_wallet,
+                        AppBrand.logo,
                         color: AppColors.onHeader,
                         size: 22,
                       ),

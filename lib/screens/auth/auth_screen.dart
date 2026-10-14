@@ -15,6 +15,7 @@ import 'reset_password_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../theme/app_brand.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -175,11 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       color: headerColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                     ),
-                    child: Icon(
-                      Icons.account_balance_wallet,
-                      size: 40,
-                      color: fabColor,
-                    ),
+                    child: Icon(AppBrand.logo, size: 40, color: fabColor),
                   ),
                   const SizedBox(height: 24),
                   // App Name

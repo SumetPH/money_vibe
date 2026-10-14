@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash ตาม dark mode ในแอป (Android 13+) ตั้งผ่าน SplashScreen.setSplashScreenTheme
+         ระบุสี/รูปตรง ๆ ไม่ใช้ -night เพราะต้องไม่ขึ้นกับ dark mode ของระบบ -->
+    <style name="SplashThemeLight" parent="@style/LaunchTheme">
+        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/android12splash_light</item>
+    </style>
+    <style name="SplashThemeDark" parent="@style/LaunchTheme">
+        <item name="android:windowSplashScreenBackground">#111315</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/android12splash_dark</item>
+    </style>
+</resources>

@@ -6,6 +6,7 @@ import '../providers/settings_provider.dart';
 import '../services/reinstall_reminder_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+import '../theme/app_brand.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -236,11 +237,7 @@ class AppDrawer extends StatelessWidget {
                 color: accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppRadii.large),
               ),
-              child: Icon(
-                Icons.account_balance_wallet_rounded,
-                color: accent,
-                size: 24,
-              ),
+              child: Icon(AppBrand.logo, color: accent, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(

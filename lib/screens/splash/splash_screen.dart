@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_brand.dart';
 
 /// Splash Screen สำหรับแสดงในขณะโหลดข้อมูลเริ่มต้น
 /// ใช้ร่วมกับ flutter_native_splash
@@ -32,11 +33,7 @@ class SplashScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.account_balance_wallet,
-                size: 60,
-                color: headerColor,
-              ),
+              child: Icon(AppBrand.logo, size: 60, color: headerColor),
             ),
             const SizedBox(height: 24),
             // ชื่อแอป

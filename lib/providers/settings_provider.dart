@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/app_icon_service.dart';
 import '../theme/theme_color_option.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -61,6 +62,8 @@ class SettingsProvider extends ChangeNotifier {
       _netWorthFilterIds = list.cast<String>().toSet();
     }
     _isLoaded = true;
+    // sync icon สำหรับคนที่ตั้ง light ไว้ก่อนมีฟีเจอร์นี้ (native ข้ามถ้าตรงอยู่แล้ว)
+    AppIconService.apply(isDarkMode: _isDarkMode);
     notifyListeners();
   }
 
@@ -141,6 +144,7 @@ class SettingsProvider extends ChangeNotifier {
     await prefs.setBool(_darkModeKey, enabled);
     _isDarkMode = enabled;
     notifyListeners();
+    await AppIconService.apply(isDarkMode: enabled);
   }
 
   Future<void> setThemeColor(ThemeColorOption option) async {

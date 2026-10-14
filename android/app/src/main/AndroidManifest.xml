@@ -39,11 +39,37 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- ให้ flutter run หา launch activity เจอ (มันไม่อ่าน activity-alias)
+                 แต่ใส่ data scheme ไว้เพื่อไม่ให้ launcher แสดง icon ซ้ำ
+                 icon จริงอยู่ที่ alias ด้านล่าง ซึ่งสลับตาม dark mode ในแอป -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <data android:scheme="moneyvibe-dev-launch"/>
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name=".LauncherDark"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/launcher_icon_dark"
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherLight"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/launcher_icon"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

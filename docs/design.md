@@ -27,7 +27,7 @@ Color tokens ที่ใช้บ่อย: `backgroundFor`, `surfaceFor`, `tex
 ## ภาษาภาพรวม
 
 - ใช้ iOS Inset Grouped แบบ surface-first: canvas สงบ, การ์ดที่แบ่งข้อมูลชัด, dark mode first และ light mode ที่มี contrast พอ. สี income, expense, transfer และ debt repayment สื่อความหมายของตัวเลขหรือสถานะ ไม่ใช้ระบายพื้นหลังเพื่อความสวยงาม.
-- อ่าน theme จาก `SettingsProvider`; ใช้ `AppColors` และ `AppRadii` เป็น tokens. ใช้ alpha กับสี semantic หรือดำ/ขาวเพื่อสร้าง depth ได้. รูปและไอคอนบัญชีใช้ `AccountIconWidget`; โลโก้หุ้นใช้ `HoldingThumbnailWidget`.
+- อ่าน theme จาก `SettingsProvider`; ใช้ `AppColors` และ `AppRadii` เป็น tokens. ใช้ alpha กับสี semantic หรือดำ/ขาวเพื่อสร้าง depth ได้. โลโก้แอป (drawer, sidebar, splash, auth) ใช้ `AppBrand.logo` ให้ตรงกับ launcher icon; รูปและไอคอนบัญชีใช้ `AccountIconWidget`; โลโก้หุ้นใช้ `HoldingThumbnailWidget`.
 - ใช้ surface แทน elevation หนักหรือ gradient. การ์ดหลักมีระยะขอบแนวนอน 16, มุม `AppRadii.xLarge`, ขอบ `AppColors.borderFor` หนา 1 (`AppInsetCard`; การ์ดที่วางต่อกันโดยไม่มีหัวข้อคั่นใช้ `margin: AppInsetCard.stackedMargin`). หัวข้อ section อยู่ **นอก** การ์ด (`AppSectionHeader`: `textSecondary`, 12sp, `FontWeight.w600`, `letterSpacing: 0.5`, padding 20/16/20/6).
 - แถวใน form/setting/รายการ: ไอคอนหรือ avatar 32–40px ทางซ้าย, ชื่อ 15sp `FontWeight.w600` และคำอธิบาย 12sp, control หรือค่าที่เลือกทางขวา. ตัวแบ่งในการ์ดใช้ `AppCardDivider` (สี `borderFor` หนา 1px เต็มความกว้าง).
 - สวิตช์ใช้ `AppSwitch` เท่านั้น (track เปิดเป็น accent ของธีม, track ปิดเป็น `switchInactiveFor`). สถานะใช้แคปซูล `AppRadii.full` และพื้น semantic tint ประมาณ 12%. ชุดตัวเลขเปรียบเทียบใช้ metric grid สองคอลัมน์หรือ 2×3 ให้ label และค่าเทียบกันได้.

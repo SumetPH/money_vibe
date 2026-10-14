@@ -26,5 +26,31 @@ import UserNotifications
       // ponytail: bundle relocation identifies installs; verify with the IPA installer in use.
       result(Bundle.main.bundleURL.resolvingSymlinksInPath().path)
     }
+
+    let appIconChannel = FlutterMethodChannel(
+      name: "money_vibe/app_icon",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    appIconChannel.setMethodCallHandler { call, result in
+      guard call.method == "setDarkIcon" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      // primary icon = AppIconDark, alternate "AppIcon" = light
+      let isDark = call.arguments as? Bool ?? true
+      let target: String? = isDark ? nil : "AppIcon"
+      let app = UIApplication.shared
+      guard app.supportsAlternateIcons, app.alternateIconName != target else {
+        result(nil)
+        return
+      }
+      app.setAlternateIconName(target) { error in
+        if let error = error {
+          result(FlutterError(code: "set_icon_failed", message: error.localizedDescription, details: nil))
+        } else {
+          result(nil)
+        }
+      }
+    }
   }
 }
