@@ -18,6 +18,7 @@ flutter_launcher_icons:
   # desaturate_tinted_to_grayscale_ios: true
   # background_color_ios: "#ffffff"
 
+  # หมายเหตุ: web/favicon.png ทำมือ (พื้นเข้ม ขอบโค้ง 64px) รันคำสั่งนี้แล้วจะถูกทับ ต้องทำใหม่
   web:
     generate: true
     image_path: "assets/icon/icon.png"
