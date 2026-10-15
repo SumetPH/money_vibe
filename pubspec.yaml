@@ -118,8 +118,8 @@ flutter:
 flutter_native_splash:
   # สีพื้นหลังสำหรับ Light Mode
   color: "#FFFFFF"
-  # สีพื้นหลังสำหรับ Dark Mode (darkBackground)
-  color_dark: "#111315"
+  # สีพื้นหลังสำหรับ Dark Mode (AppColors.darkSurface)
+  color_dark: "#202226"
 
   # รูปภาพสำหรับ Splash Screen
   image: assets/images/splash_logo.png
@@ -139,7 +139,7 @@ flutter_native_splash:
   android_12:
     # สีพื้นหลังสำหรับ Android 12+
     color: "#FFFFFF"
-    color_dark: "#111315"
+    color_dark: "#202226"
     # ไอคอนสำหรับ Android 12+ ต้อง 1152px (288dp@xxxhdpi) ไม่งั้นภาพแตก
     image: assets/images/splash_logo_android12.png
     image_dark: assets/images/splash_logo_android12_dark.png
