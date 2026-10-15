@@ -71,18 +71,21 @@ class RecurringDetailEmptyState extends StatelessWidget {
     final textSecondary = isDark
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event_note_outlined,
-            size: 64,
-            color: textSecondary.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(message, style: TextStyle(fontSize: 16, color: textSecondary)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 100),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.event_note_outlined,
+              size: 64,
+              color: textSecondary.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(message, style: TextStyle(fontSize: 16, color: textSecondary)),
+          ],
+        ),
       ),
     );
   }

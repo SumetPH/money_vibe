@@ -9,7 +9,6 @@ import '../../models/stock_purchase.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/dime_trade_ocr.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import '../../widgets/broker_order_import_button.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_bar_buttons.dart';
@@ -515,13 +514,6 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       ListTile(
                         title: const Text('วันที่'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          side: BorderSide(
-                            color: AppColors.borderFor(isDarkMode),
-                            width: 1,
-                          ),
-                        ),
                         trailing: Text(
                           _ocrDate == null
                               ? 'เลือกวันที่'
@@ -537,13 +529,6 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
                       ListTile(
                         title: const Text('เวลา'),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                          side: BorderSide(
-                            color: AppColors.borderFor(isDarkMode),
-                            width: 1,
-                          ),
-                        ),
                         trailing: Text(
                           _ocrTime?.format(context) ?? 'เลือกเวลา',
                           style: TextStyle(

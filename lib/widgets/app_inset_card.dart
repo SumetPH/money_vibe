@@ -73,6 +73,11 @@ class AppInsetCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceFor(isDarkMode),
         borderRadius: BorderRadius.circular(AppRadii.xLarge),
+      ),
+      // Border paints above children so opaque rows (e.g. ListTile tileColor)
+      // don't cover it at the rounded corners.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.xLarge),
         border: Border.all(color: AppColors.borderFor(isDarkMode)),
       ),
       clipBehavior: Clip.antiAlias,
