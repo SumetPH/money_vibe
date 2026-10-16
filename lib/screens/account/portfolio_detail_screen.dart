@@ -122,6 +122,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
 
   StockPriceService _buildPriceService() => StockPriceService(
     finnhubApiKey: context.read<SettingsProvider>().finnhubApiKey,
+    useFinnhub: context.read<SettingsProvider>().useFinnhub,
   );
 
   Future<void> _refreshPrices() async {
@@ -141,7 +142,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       final holdings = provider.getHoldings(acc.id);
       if (holdings.isEmpty) return;
       final priceSymbolsByHoldingId = <String, String>{
-        if (_priceService.isConfigured)
+        if (_priceService.canFetchPrices)
           for (final h in holdings) h.id: ?acc.priceSymbolFor(h.ticker),
       };
       final tickers = priceSymbolsByHoldingId.values.toSet().toList();
@@ -223,7 +224,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       );
       if (mounted && hasCompletePriceSnapshot) setState(() => _quotes = quotes);
       final warningMessages = <String>[];
-      if (acc.isUsPortfolio && !_priceService.isConfigured) {
+      if (acc.isUsPortfolio && !_priceService.canFetchPrices) {
         warningMessages.add('ใส่ Finnhub API key เพื่ออัปเดตราคาอัตโนมัติ');
       }
       if (failedTickers.isNotEmpty) {

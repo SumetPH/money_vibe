@@ -76,8 +76,29 @@
 
 ## สิ่งที่ store build (`DISTRIBUTION=store`) ซ่อนไว้
 - ส่วน "การติดตั้ง" และการแจ้งเตือนให้ติดตั้งใหม่ (ใช้เฉพาะ build ที่ sideload)
+- ตัวเลือกแหล่งราคาหุ้น Yahoo Finance; Settings และ service บังคับใช้ Finnhub แม้เคยเลือก Yahoo ไว้
 
-## ข้อจำกัดหลังถอด Yahoo
-- ราคาหุ้นอัตโนมัติใช้ Finnhub เท่านั้น (ผู้ใช้ต้องใส่ API key เอง) และไม่มีราคา Pre/Post
+## แหล่งราคาหุ้น
+- Store build ใช้ Finnhub เท่านั้น (ผู้ใช้ต้องใส่ API key เอง)
+- Build ส่วนตัว/sideload เลือก Yahoo ได้ที่ ตั้งค่า → API → ปิด "ใช้ Finnhub ดึงราคาหุ้น"; ค่าเริ่มต้นยังเป็น Finnhub
+- Yahoo ใช้ `GET https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d` โดยอ่าน `regularMarketPrice` และคำนวณเปอร์เซ็นต์เทียบ `chartPreviousClose` (สำรองด้วย `previousClose`)
+- ไม่มีราคา Pre/Post; โลโก้/ชื่อบริษัทยังใช้ Finnhub และอัตราแลกเปลี่ยนยังใช้ Frankfurter
+- Yahoo ล้มเหลวให้คงราคาเดิมตามกติกา snapshot ครบทั้งพอร์ต; ไม่มีการสลับผู้ให้บริการอัตโนมัติ
 - พอร์ตหุ้นไทยไม่มีราคาอัตโนมัติ ต้องกรอกเองในช่อง "ราคาปัจจุบัน"
-- อัตราแลกเปลี่ยน USD/THB ใช้ Frankfurter (ECB) ซึ่งอัปเดตวันละครั้ง
+- Yahoo เป็น endpoint ไม่เป็นทางการ อาจถูกจำกัดหรือเปลี่ยนรูปแบบได้; Flutter Web อาจติด CORS
+
+### สถานะการเชื่อม Yahoo สำหรับ build ส่วนตัว
+
+ครบด้านโค้ด 3/3 · ยังไม่ยืนยัน live service และ Store binary
+
+| ส่วนจาก UI/design | ทำถึงไหน | ขาด/ครบ | หมายเหตุ |
+| --- | --- | --- | --- |
+| เลือกแหล่งราคา | UI มีแล้ว; บันทึก preference ผ่าน Provider | ครบ | ซ่อนและบังคับ Finnhub ใน Store |
+| ราคาหุ้น US และ % เปลี่ยนแปลง | UI เดิม; API เชื่อมแล้ว | ครบ | ตรวจ local ตามบันทึกด้านล่าง |
+| ข้อมูลว่าง/โหลดไม่ครบ | UI เดิม; API คืนผลล้มเหลวและคงราคาเก่า | ครบ | ใช้กติกา snapshot เดิม |
+
+ตรวจ UI เทียบ `docs/design.md` โดยใช้ `SettingsToggleTile` เดิม ไม่มี mock; ไม่รวมการคืนราคา Pre/Post หรือราคาหุ้นไทย
+
+ผลตรวจ 2026-10-16: `dart format .` (เรียก Dart SDK โดยตรงเพราะ Flutter wrapper เขียน cache นอก sandbox), `tool/check_design.sh`, static analysis ของไฟล์ที่แก้ และ assert self-check ชั่วคราวของ quote mapping/flag ทั้งส่วนตัวและ Store ผ่านแล้ว ไม่ได้เพิ่ม unit test หรือทดสอบ browser ตามกติกาโปรเจกต์
+
+Live probe ของ Yahoo สำหรับ AAPL ได้ HTTP 429 จากเครือข่ายที่ตรวจ จึงยังไม่ยืนยัน live success หรือความเร็วช่วงตลาดเปิด และยังไม่ได้ build IPA/AAB จริง

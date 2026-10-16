@@ -4,14 +4,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/app_icon_service.dart';
+import '../config/app_config.dart';
 import '../theme/theme_color_option.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _secureStorage = FlutterSecureStorage();
   static const _finnhubApiKeyKey = 'finnhub_api_key';
+  static const _priceSourceFinnhubKey = 'price_source_finnhub';
   // key ของฟีเจอร์ Yahoo/LLM ที่ถูกถอดออกแล้ว ลบทิ้งตอนโหลดเพื่อไม่ให้ API key ค้างในเครื่อง
   static const _removedFeatureKeys = [
-    'price_source_finnhub',
     'yahoo_extended_hours_price',
     'exchange_rate_source',
     'llm_api_key',
@@ -26,6 +27,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _netWorthFilterKey = 'net_worth_filter_ids';
 
   String? _finnhubApiKey;
+  bool _useFinnhub = true;
   bool _isDarkMode = true;
   ThemeColorOption _themeColor = ThemeColorOption.classic;
   bool _isLoaded = false;
@@ -34,6 +36,7 @@ class SettingsProvider extends ChangeNotifier {
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
+  bool get useFinnhub => AppConfig.isStoreBuild || _useFinnhub;
   bool get isDarkMode => _isDarkMode;
   ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
@@ -48,6 +51,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _finnhubApiKey = await _loadFinnhubApiKey(prefs);
+    _useFinnhub = prefs.getBool(_priceSourceFinnhubKey) ?? true;
     await Future.wait(_removedFeatureKeys.map(prefs.remove));
     _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
     _themeColor = ThemeColorOption.byId(prefs.getString(_themeColorKey));
@@ -101,6 +105,14 @@ class SettingsProvider extends ChangeNotifier {
       await prefs.setInt(_cashFlowAnchorDayKey, day);
     }
     _cashFlowAnchorDay = day;
+    notifyListeners();
+  }
+
+  Future<void> setUseFinnhub(bool value) async {
+    if (AppConfig.isStoreBuild) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_priceSourceFinnhubKey, value);
+    _useFinnhub = value;
     notifyListeners();
   }
 

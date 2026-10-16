@@ -288,6 +288,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
+                      if (!AppConfig.isStoreBuild)
+                        SettingsToggleTile(
+                          icon: Icons.show_chart,
+                          title: 'ใช้ Finnhub ดึงราคาหุ้น',
+                          subtitle: settings.useFinnhub
+                              ? 'Finnhub · ต้องใส่ API key'
+                              : 'Yahoo Finance · ไม่ต้องใช้ API key',
+                          value: settings.useFinnhub,
+                          onChanged: settings.setUseFinnhub,
+                          isDarkMode: isDarkMode,
+                        ),
                       ListTile(
                         leading: SettingsIcon(
                           icon: Icons.api,

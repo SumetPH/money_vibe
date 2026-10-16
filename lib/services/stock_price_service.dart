@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../models/stock_quote.dart';
 import 'exchange_rate_service.dart';
 
@@ -15,7 +16,7 @@ class StockCompanyProfile {
   const StockCompanyProfile({this.name = '', this.logoUrl = ''});
 }
 
-/// ดึงราคาหุ้นและ company profile จาก Finnhub (ต้องมี API key ของผู้ใช้)
+/// ราคาหุ้นจากแหล่งที่เลือก; company profile ใช้ Finnhub เสมอ
 class StockPriceService {
   static const _finnhubHost = 'finnhub.io';
   static const _maxConcurrentPriceRequests = 4;
@@ -24,12 +25,15 @@ class StockPriceService {
   static const _requestTimeout = Duration(seconds: 10);
 
   final String? _finnhubApiKey;
+  final bool _useFinnhub;
   final ExchangeRateService _exchangeRateService;
 
   StockPriceService({
     String? finnhubApiKey,
+    bool useFinnhub = true,
     ExchangeRateService exchangeRateService = const ExchangeRateService(),
   }) : _finnhubApiKey = finnhubApiKey,
+       _useFinnhub = useFinnhub,
        _exchangeRateService = exchangeRateService;
 
   bool get isConfigured {
@@ -37,7 +41,11 @@ class StockPriceService {
     return key != null && key.isNotEmpty;
   }
 
-  /// ดึงราคาปัจจุบันหลายหุ้นพร้อมกัน; คืน map ว่างถ้ายังไม่ได้ตั้งค่า Finnhub
+  // บังคับที่ service ด้วย เพื่อไม่ให้ preference เก่าเปิด Yahoo ใน Store
+  bool get useFinnhub => AppConfig.isStoreBuild || _useFinnhub;
+  bool get canFetchPrices => !useFinnhub || isConfigured;
+
+  /// ดึงราคาปัจจุบันหลายหุ้นจากแหล่งที่เลือก
   Future<Map<String, double>> fetchPrices(List<String> tickers) async {
     final quotes = await fetchQuotes(tickers);
     return quotes.map((ticker, quote) => MapEntry(ticker, quote.price));
@@ -45,7 +53,7 @@ class StockPriceService {
 
   /// ราคาพร้อมเปอร์เซ็นต์เปลี่ยนแปลงเทียบราคาปิดครั้งก่อนจาก quote เดียวกัน
   Future<Map<String, StockQuote>> fetchQuotes(List<String> tickers) async {
-    if (tickers.isEmpty || !isConfigured) return {};
+    if (tickers.isEmpty || !canFetchPrices) return {};
 
     final pendingTickers = tickers.toSet().toList();
     final prices = <String, StockQuote>{};
@@ -78,9 +86,11 @@ class StockPriceService {
       final batch = tickers.sublist(start, end);
       final results = await Future.wait(
         batch.map(
-          (ticker) => _fetchFinnhubQuote(
-            ticker,
-          ).timeout(_singlePriceTimeout, onTimeout: () => null),
+          (ticker) =>
+              (useFinnhub
+                      ? _fetchFinnhubQuote(ticker)
+                      : _fetchYahooQuote(ticker))
+                  .timeout(_singlePriceTimeout, onTimeout: () => null),
         ),
         eagerError: false,
       );
@@ -92,6 +102,30 @@ class StockPriceService {
     }
 
     return prices;
+  }
+
+  Future<StockQuote?> _fetchYahooQuote(String ticker) async {
+    if (AppConfig.isStoreBuild) return null;
+    try {
+      final uri = Uri.https(
+        'query1.finance.yahoo.com',
+        '/v8/finance/chart/$ticker',
+        {'interval': '1d', 'range': '1d'},
+      );
+      // shortcut: endpoint ไม่เป็นทางการ; เปลี่ยนแหล่งราคาหาก Yahoo เลิกรองรับ
+      final response = await http.get(uri).timeout(_requestTimeout);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final chart = data['chart'] as Map<String, dynamic>?;
+      if (chart == null || chart['error'] != null) return null;
+      final results = chart['result'] as List?;
+      if (results == null || results.isEmpty) return null;
+      final result = results.first as Map<String, dynamic>;
+      final meta = result['meta'] as Map<String, dynamic>?;
+      return meta == null ? null : StockQuote.fromYahooMeta(meta);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<StockQuote?> _fetchFinnhubQuote(String ticker) async {
