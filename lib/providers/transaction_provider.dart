@@ -6,6 +6,10 @@ import '../models/transaction.dart';
 import '../models/account.dart';
 
 class TransactionProvider extends ChangeNotifier {
+  final Future<void> Function()? onTransferChanged;
+
+  TransactionProvider({this.onTransferChanged});
+
   final _uuid = const Uuid();
   final DatabaseManager _dbManager = DatabaseManager();
 
@@ -160,6 +164,7 @@ class TransactionProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+    await _refreshTransferAccounts(tx);
   }
 
   Future<void> updateTransaction(AppTransaction updated) async {
@@ -178,6 +183,7 @@ class TransactionProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+    await _refreshTransferAccounts(updated, previous: oldTx);
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -195,6 +201,23 @@ class TransactionProvider extends ChangeNotifier {
       _transactions.insert(idx, oldTx);
       notifyListeners();
       rethrow;
+    }
+    await _refreshTransferAccounts(oldTx);
+  }
+
+  Future<void> _refreshTransferAccounts(
+    AppTransaction tx, {
+    AppTransaction? previous,
+  }) async {
+    if (tx.type != TransactionType.transfer &&
+        previous?.type != TransactionType.transfer) {
+      return;
+    }
+    try {
+      await onTransferChanged?.call();
+    } catch (e) {
+      // The transaction is already committed; a refresh failure must not undo it.
+      debugPrint('TransactionProvider: Error refreshing transfer accounts: $e');
     }
   }
 

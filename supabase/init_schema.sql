@@ -35,3 +35,4 @@
 \ir migrations/20261002150000_planned_purchase_inclusion.sql
 \ir migrations/20261006120000_harden_store_release.sql
 \ir migrations/20261006130000_nullable_budget_forecast_is_excluded.sql
+\ir migrations/20261016120000_sync_transfer_portfolio_cash.sql

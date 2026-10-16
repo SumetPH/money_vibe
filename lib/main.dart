@@ -68,7 +68,12 @@ void main() async {
   final accountProvider = AccountProvider();
   final budgetProvider = BudgetProvider();
   final categoryProvider = CategoryProvider();
-  final transactionProvider = TransactionProvider();
+  final transactionProvider = TransactionProvider(
+    onTransferChanged: () async {
+      await accountProvider.waitForIdle();
+      await accountProvider.reloadPersistedData();
+    },
+  );
   final recurringProvider = RecurringTransactionProvider();
   final cashFlowProvider = CashFlowForecastProvider();
   final authProvider = AuthProvider();

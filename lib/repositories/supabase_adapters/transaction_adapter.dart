@@ -128,7 +128,15 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
     );
     await repo.batchInsert(
       'transactions',
-      transactions.map((t) => _transactionToSupabase(t)).toList(),
+      // Backups restore account cash snapshots before their transactions.
+      transactions
+          .map(
+            (t) => {
+              ..._transactionToSupabase(t),
+              'portfolio_cash_applied': true,
+            },
+          )
+          .toList(),
     );
   }
 }

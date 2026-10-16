@@ -61,3 +61,5 @@ config/*.json
 android/key.properties
 *.jks
 *.keystore
+
+/supabase/.temp/
