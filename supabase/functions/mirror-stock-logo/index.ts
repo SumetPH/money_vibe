@@ -9,6 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const bucketName = "stock-logos";
 const maxLogoBytes = 1024 * 1024;
+const maxRedirects = 3;
 const tickerPattern = /^[A-Z0-9.\-]{1,15}$/;
 const allowedSourceHostSuffix = "finnhub.io";
 const allowedContentTypes: Record<string, string> = {
@@ -48,8 +49,7 @@ function parseSourceUrl(value: unknown): URL | null {
   try {
     const url = new URL(value);
     const host = url.hostname.toLowerCase();
-    const isAllowedHost =
-      host === allowedSourceHostSuffix ||
+    const isAllowedHost = host === allowedSourceHostSuffix ||
       host.endsWith(`.${allowedSourceHostSuffix}`);
     if (url.protocol !== "https:" || !isAllowedHost) return null;
     return url;
@@ -58,7 +58,46 @@ function parseSourceUrl(value: unknown): URL | null {
   }
 }
 
-async function readLimitedBytes(response: Response): Promise<Uint8Array | null> {
+// Finnhub redirect ข้าม host ของตัวเอง (เช่น static2 -> static9) จึง follow เอง
+// ทีละ hop และตรวจปลายทางทุกครั้ง เพื่อไม่ให้ถูกพาไป host นอก allowlist
+async function fetchAllowedSource(url: URL): Promise<Response | null> {
+  let current = url;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    const response = await fetch(current, { redirect: "manual" });
+    const location = response.headers.get("location");
+    if (response.status < 300 || response.status >= 400 || !location) {
+      return response;
+    }
+    await response.body?.cancel();
+    const next = parseSourceUrl(new URL(location, current).toString());
+    if (!next) return null;
+    current = next;
+  }
+  return null;
+}
+
+async function findStoredLogoPath(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  ticker: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .list(userId, { search: ticker });
+  if (error) {
+    console.error("mirror-stock-logo: list failed", error);
+    return null;
+  }
+  const fileNames = new Set(
+    Object.values(allowedContentTypes).map((ext) => `${ticker}.${ext}`),
+  );
+  const match = data?.find((file) => fileNames.has(file.name));
+  return match ? `${userId}/${match.name}` : null;
+}
+
+async function readLimitedBytes(
+  response: Response,
+): Promise<Uint8Array | null> {
   const declaredLength = Number(response.headers.get("content-length") ?? "0");
   if (declaredLength > maxLogoBytes) return null;
   if (!response.body) return null;
@@ -118,16 +157,28 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => null);
-    const ticker =
-      typeof body?.ticker === "string" ? body.ticker.trim().toUpperCase() : "";
+    const ticker = typeof body?.ticker === "string"
+      ? body.ticker.trim().toUpperCase()
+      : "";
     const sourceUrl = parseSourceUrl(body?.sourceUrl);
     if (!tickerPattern.test(ticker) || !sourceUrl) {
       return jsonResponse(req, { error: "Invalid ticker or sourceUrl" }, 400);
     }
 
-    // ไม่ follow redirect เพื่อไม่ให้ถูกพาไป host อื่นนอก allowlist
-    const sourceResponse = await fetch(sourceUrl, { redirect: "error" });
-    if (!sourceResponse.ok) {
+    // มีรูปของ ticker นี้ใน storage อยู่แล้ว ใช้ได้เลยไม่ต้องดึงจาก Finnhub ซ้ำ
+    const existingPath = await findStoredLogoPath(supabase, userId, ticker);
+    if (existingPath) {
+      const { data } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(existingPath);
+      return jsonResponse(req, {
+        path: existingPath,
+        publicUrl: data.publicUrl,
+      });
+    }
+
+    const sourceResponse = await fetchAllowedSource(sourceUrl);
+    if (!sourceResponse?.ok) {
       return jsonResponse(req, { error: "Failed to fetch source logo" }, 502);
     }
 

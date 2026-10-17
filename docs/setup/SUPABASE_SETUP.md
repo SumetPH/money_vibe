@@ -33,10 +33,9 @@
 
 ## ขั้นตอนที่ 3: สร้าง Tables
 
-1. ไปที่ **SQL Editor** ใน Supabase Dashboard
-2. เปิดไฟล์ `supabase/init_schema.sql` จากโปรเจค Flutter
-3. Copy ทั้งหมดและ Paste ลงใน SQL Editor
-4. กด **Run** เพื่อสร้าง tables ทั้งหมด
+1. ติดตั้ง [Supabase CLI](https://supabase.com/docs/guides/cli) แล้ว login: `supabase login`
+2. ผูกโปรเจค: `supabase link --project-ref <project-ref>`
+3. รัน migration ทั้งหมดใน `supabase/migrations/`: `supabase db push`
 
 ### Tables ที่สร้าง:
 - `accounts` - บัญชีเงิน (มี user_id)
@@ -50,11 +49,9 @@
 ### Storage สำหรับโลโก้หุ้น
 ถ้าต้องการ cache โลโก้หุ้นไว้ใน Supabase Storage:
 
-1. รัน SQL ใน `supabase/add_logo_url_to_portfolio_holdings.sql`
-2. รัน SQL ใน `supabase/create_stock_logos_bucket.sql`
-3. รัน SQL ใน `supabase/add_stock_logo_storage_policies.sql`
-4. สร้าง Edge Function ชื่อ `mirror-stock-logo` จากไฟล์ `supabase/functions/mirror-stock-logo/index.ts`
-5. Deploy function พร้อม environment variables มาตรฐานของ Supabase Functions (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+1. bucket `stock-logos` และ policy ถูกสร้างจาก migration แล้วตอน `supabase db push`
+2. Deploy Edge Function: `supabase functions deploy mirror-stock-logo`
+3. Deploy function พร้อม environment variables มาตรฐานของ Supabase Functions (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
 
 หลังจาก deploy แล้ว แอปจะ mirror โลโก้จาก Finnhub มาเก็บใน `stock-logos/{user_id}/` อัตโนมัติ และใช้ public URL ของ Supabase แทน (function รับเฉพาะผู้ใช้ที่ login แล้ว และดึงได้เฉพาะ host ของ Finnhub)
 

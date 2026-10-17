@@ -22,7 +22,7 @@
 
 - ใช้ Supabase เท่านั้น ห้ามเพิ่มหรือพาโค้ดกลับไปพึ่ง SQLite
 - หากมีการแก้ schema database ให้สร้างหรือแก้ migration ใน `supabase/migrations`
-- หากมีการสร้างหรือแก้ migration ต้องอัปเดต `supabase/init_schema.sql` ให้รวม schema ล่าสุดด้วยเสมอ
+- apply migration ด้วย Supabase CLI (`supabase db push`)
 - การเก็บเวลาใช้ local time ตามเครื่องผู้ใช้
 - ห้ามแปลง timezone ไปมาเองตอนอ่านหรือเขียนข้อมูล
 - ใช้ ISO8601 เมื่อต้อง serialize วันที่เวลาเข้า database

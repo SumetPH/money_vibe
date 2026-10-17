@@ -43,7 +43,7 @@ Money Vibe คือแอป Flutter สำหรับจัดการกา
 
 2. **Supabase Setup**:
    - สร้างโปรเจกต์ใน Supabase Dashboard
-   - รัน SQL schema จาก `supabase/init_schema.sql`
+   - สร้าง schema ด้วย Supabase CLI: `supabase link --project-ref <project-ref>` แล้ว `supabase db push`
    - สร้างไฟล์ config จากตัวอย่าง:
      ```bash
      cp config/dev.example.json config/dev.json

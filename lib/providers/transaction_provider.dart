@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
@@ -164,7 +166,7 @@ class TransactionProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
-    await _refreshTransferAccounts(tx);
+    _refreshTransferAccounts(tx);
   }
 
   Future<void> updateTransaction(AppTransaction updated) async {
@@ -183,7 +185,7 @@ class TransactionProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
-    await _refreshTransferAccounts(updated, previous: oldTx);
+    _refreshTransferAccounts(updated, previous: oldTx);
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -202,23 +204,25 @@ class TransactionProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
-    await _refreshTransferAccounts(oldTx);
+    _refreshTransferAccounts(oldTx);
   }
 
-  Future<void> _refreshTransferAccounts(
-    AppTransaction tx, {
-    AppTransaction? previous,
-  }) async {
-    if (tx.type != TransactionType.transfer &&
-        previous?.type != TransactionType.transfer) {
+  void _refreshTransferAccounts(AppTransaction tx, {AppTransaction? previous}) {
+    final refresh = onTransferChanged;
+    if (refresh == null ||
+        (tx.type != TransactionType.transfer &&
+            previous?.type != TransactionType.transfer)) {
       return;
     }
-    try {
-      await onTransferChanged?.call();
-    } catch (e) {
-      // The transaction is already committed; a refresh failure must not undo it.
-      debugPrint('TransactionProvider: Error refreshing transfer accounts: $e');
-    }
+    // Refresh in the background so saving never waits on the account reload;
+    // the transaction is already committed, so a failure must not undo it.
+    unawaited(
+      refresh().catchError((Object e) {
+        debugPrint(
+          'TransactionProvider: Error refreshing transfer accounts: $e',
+        );
+      }),
+    );
   }
 
   String generateId() => _uuid.v4();
