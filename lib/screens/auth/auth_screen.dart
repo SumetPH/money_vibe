@@ -137,7 +137,6 @@ class _AuthScreenState extends State<AuthScreen> {
       isDarkMode,
       settingsProvider.themeColor,
     );
-    final fabColor = AppColors.fabFor(isDarkMode, settingsProvider.themeColor);
 
     return Scaffold(
       backgroundColor: backgroundColor,
