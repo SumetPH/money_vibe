@@ -85,7 +85,7 @@ class ThemeColorOption {
     darkOnFab: Colors.black,
   );
 
-  static const values = [forest, steel, plum, copper];
+  static const values = [steel, forest, plum, copper];
 
   static ThemeColorOption byId(String? id) {
     for (final option in values) {
@@ -97,6 +97,6 @@ class ThemeColorOption {
       case 'violet':
         return plum;
     }
-    return forest;
+    return steel;
   }
 }
