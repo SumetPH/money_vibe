@@ -141,7 +141,7 @@ class AppDrawer extends StatelessWidget {
                       ),
                       _buildInnerDivider(isDarkMode),
                       _DrawerRowItem(
-                        icon: Icons.savings_rounded,
+                        icon: Icons.payments_outlined,
                         label: 'คาดการณ์เงินคงเหลือ',
                         isSelected: currentRoute == '/cash-flow',
                         onTap: () => _navigate(context, '/cash-flow'),

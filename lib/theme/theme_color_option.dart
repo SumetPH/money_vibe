@@ -36,19 +36,6 @@ class ThemeColorOption {
   static const classic = ThemeColorOption(
     id: 'classic',
     label: 'Classic',
-    lightHeader: Color(0xFF393E46),
-    lightAccent: Color(0xFF393E46),
-    lightFab: Color(0xFFFFB74D),
-    lightOnFab: Colors.white,
-    darkHeader: Color(0xFF2C333A),
-    darkAccent: Color(0xFF66BB6A),
-    darkFab: Color(0xFFFFB74D),
-    darkOnFab: Colors.black,
-  );
-
-  static const forest = ThemeColorOption(
-    id: 'forest',
-    label: 'Forest',
     lightHeader: Color(0xFF315142),
     lightAccent: Color(0xFF527760),
     lightFab: Color(0xFF6F9B69),
@@ -88,25 +75,23 @@ class ThemeColorOption {
   static const copper = ThemeColorOption(
     id: 'copper',
     label: 'Copper',
-    lightHeader: Color(0xFF5B4433),
-    lightAccent: Color(0xFF8A6548),
-    lightFab: Color(0xFFB17A4F),
+    lightHeader: Color(0xFF393E46),
+    lightAccent: Color(0xFF393E46),
+    lightFab: Color(0xFFFFB74D),
     lightOnFab: Colors.white,
-    darkHeader: Color(0xFF352D26),
-    darkAccent: Color(0xFFC08A62),
-    darkFab: Color(0xFFD39A6A),
+    darkHeader: Color(0xFF2C333A),
+    darkAccent: Color(0xFF66BB6A),
+    darkFab: Color(0xFFFFB74D),
     darkOnFab: Colors.black,
   );
 
-  static const values = [classic, forest, steel, plum, copper];
+  static const values = [classic, steel, plum, copper];
 
   static ThemeColorOption byId(String? id) {
     for (final option in values) {
       if (option.id == id) return option;
     }
     switch (id) {
-      case 'teal':
-        return forest;
       case 'blue':
         return steel;
       case 'violet':
