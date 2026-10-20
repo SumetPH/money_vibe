@@ -42,7 +42,7 @@ class StockPriceService {
   }
 
   // บังคับที่ service ด้วย เพื่อไม่ให้ preference เก่าเปิด Yahoo ใน Store
-  bool get useFinnhub => AppConfig.isStoreBuild || _useFinnhub;
+  bool get useFinnhub => !AppConfig.canUseYahooPrices || _useFinnhub;
   bool get canFetchPrices => !useFinnhub || isConfigured;
 
   /// ดึงราคาปัจจุบันหลายหุ้นจากแหล่งที่เลือก
@@ -105,7 +105,7 @@ class StockPriceService {
   }
 
   Future<StockQuote?> _fetchYahooQuote(String ticker) async {
-    if (AppConfig.isStoreBuild) return null;
+    if (!AppConfig.canUseYahooPrices) return null;
     try {
       final uri = Uri.https(
         'query1.finance.yahoo.com',

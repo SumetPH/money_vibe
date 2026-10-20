@@ -288,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isDarkMode: isDarkMode,
                   child: Column(
                     children: [
-                      if (!AppConfig.isStoreBuild)
+                      if (AppConfig.canUseYahooPrices)
                         SettingsToggleTile(
                           icon: Icons.show_chart,
                           title: 'ใช้ Finnhub ดึงราคาหุ้น',

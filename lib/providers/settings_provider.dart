@@ -36,7 +36,7 @@ class SettingsProvider extends ChangeNotifier {
   Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
-  bool get useFinnhub => AppConfig.isStoreBuild || _useFinnhub;
+  bool get useFinnhub => !AppConfig.canUseYahooPrices || _useFinnhub;
   bool get isDarkMode => _isDarkMode;
   ThemeColorOption get themeColor => _themeColor;
   bool get isLoaded => _isLoaded;
@@ -109,7 +109,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setUseFinnhub(bool value) async {
-    if (AppConfig.isStoreBuild) return;
+    if (!AppConfig.canUseYahooPrices) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_priceSourceFinnhubKey, value);
     _useFinnhub = value;

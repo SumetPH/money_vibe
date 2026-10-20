@@ -87,7 +87,7 @@ class ReinstallReminderService extends ChangeNotifier {
     _isSupported =
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
-        !AppConfig.isStoreBuild;
+        AppConfig.showReinstallReminder;
     if (!_isSupported) return;
 
     final installationId = await const MethodChannel(

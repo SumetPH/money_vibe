@@ -35,6 +35,14 @@ class AppConfig {
   static const bool isStoreBuild =
       String.fromEnvironment('DISTRIBUTION') == 'store';
 
+  // Feature toggles ต่อ build — แก้ที่นี่ที่เดียวเมื่อต้องการเปิด/ปิดแยกกัน
+
+  /// ดึงราคาหุ้นจาก Yahoo (unofficial API) และให้ผู้ใช้สลับกลับจาก Finnhub ได้
+  static const bool canUseYahooPrices = !isStoreBuild;
+
+  /// เตือนให้ติดตั้งแอปใหม่ก่อน provisioning ของ build sideload หมดอายุ
+  static const bool showReinstallReminder = !isStoreBuild;
+
   /// URL หน้า Privacy Policy; ว่าง = ไม่แสดงลิงก์ในแอป
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',
