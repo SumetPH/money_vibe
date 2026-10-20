@@ -43,10 +43,13 @@ class AppConfig {
   /// เตือนให้ติดตั้งแอปใหม่ก่อน provisioning ของ build sideload หมดอายุ
   static const bool showReinstallReminder = !isStoreBuild;
 
-  /// URL หน้า Privacy Policy; ว่าง = ไม่แสดงลิงก์ในแอป
+  /// URL หน้า Privacy Policy (`--dart-define=PRIVACY_POLICY_URL=...`)
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',
   );
+
+  /// แสดงลิงก์ Privacy Policy ในหน้าตั้งค่า เมื่อกำหนด URL ไว้
+  static const bool showPrivacyPolicy = privacyPolicyUrl != '';
 
   static const String _environment = String.fromEnvironment(
     'APP_ENV',

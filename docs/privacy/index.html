@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Money Vibe Privacy Policy</title>
+  <meta name="description" content="นโยบายความเป็นส่วนตัวของแอป Money Vibe">
+  <style>
+    :root { --bg: #ffffff; --text: #1f2328; --muted: #59636e; --line: #d1d9e0; --accent: #0969da; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #202226; --text: #e6e8eb; --muted: #9aa4af; --line: #3a3d43; --accent: #58a6ff; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font-size: 1.8rem; margin: 0 0 4px; }
+    h2 { font-size: 1.2rem; margin: 32px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .meta { color: var(--muted); margin: 0 0 24px; }
+    a { color: var(--accent); }
+    li { margin-bottom: 6px; }
+    nav a { margin-right: 12px; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="#th">ภาษาไทย</a><a href="#en">English</a></nav>
+
+  <section id="th" lang="th">
+    <h1>นโยบายความเป็นส่วนตัว</h1>
+    <p class="meta">แอป Money Vibe · มีผลตั้งแต่วันที่ 20 ตุลาคม 2026</p>
+
+    <p>Money Vibe เป็นแอปบันทึกและจัดการการเงินส่วนบุคคล นโยบายนี้อธิบายว่าแอปเก็บข้อมูลอะไร นำไปใช้อย่างไร และคุณจัดการหรือลบข้อมูลได้อย่างไร</p>
+
+    <h2>ข้อมูลที่เราเก็บ</h2>
+    <ul>
+      <li><strong>ข้อมูลบัญชีผู้ใช้</strong>: อีเมลและรหัสผ่านที่ใช้สมัครและเข้าสู่ระบบ รหัสผ่านจัดการโดย Supabase Auth และจัดเก็บแบบเข้ารหัส (hash) เราไม่เห็นรหัสผ่านของคุณ</li>
+      <li><strong>ข้อมูลการเงินที่คุณบันทึกเอง</strong>: บัญชี ยอดเงิน รายการรับจ่าย หมวดหมู่ งบประมาณ รายการประจำ หุ้นและการซื้อขาย แผนการลงทุน และบันทึกช่วยจำ</li>
+      <li><strong>รูปภาพ</strong>: รูปที่คุณเลือกเป็นไอคอนบัญชีจะถูกอัปโหลดไปเก็บใน Supabase Storage ส่วนภาพหน้าจอรายการซื้อขายที่ใช้ดึงข้อมูลอัตโนมัติ (OCR) จะประมวลผลบนเครื่องของคุณเท่านั้น ไม่มีการอัปโหลด</li>
+      <li><strong>ข้อมูลบนเครื่อง</strong>: การตั้งค่าแอป และ Finnhub API key (ถ้าคุณใส่) เก็บไว้บนเครื่องของคุณเท่านั้น โดย API key อยู่ใน secure storage ของระบบปฏิบัติการ</li>
+    </ul>
+    <p>แอปไม่ใช้โฆษณา ไม่ใช้เครื่องมือวิเคราะห์หรือติดตามพฤติกรรม (analytics/tracking) ไม่ขอตำแหน่งที่ตั้ง รายชื่อผู้ติดต่อ หรือข้อมูลบัญชีธนาคารจริงของคุณ</p>
+
+    <h2>การนำข้อมูลไปใช้</h2>
+    <p>เราใช้ข้อมูลเพื่อให้แอปทำงานได้เท่านั้น เช่น ซิงก์ข้อมูลข้ามอุปกรณ์ คำนวณยอดและสรุปผล และส่งอีเมลยืนยันตัวตนหรือรหัสตั้งรหัสผ่านใหม่ เราไม่ขาย ไม่แลกเปลี่ยน และไม่ใช้ข้อมูลของคุณเพื่อการโฆษณา</p>
+
+    <h2>ผู้ให้บริการภายนอก</h2>
+    <ul>
+      <li><strong>Supabase</strong>: ฐานข้อมูล ระบบยืนยันตัวตน ที่เก็บไฟล์ และการส่งอีเมลยืนยันหรือรหัสตั้งรหัสผ่านใหม่ ข้อมูลของคุณแยกตามผู้ใช้ด้วย Row Level Security</li>
+      <li><strong>Finnhub</strong>: เมื่อคุณใส่ API key ของตัวเอง แอปจะส่งสัญลักษณ์หุ้น (ticker) และ API key นั้นไปยัง Finnhub เพื่อดึงราคาและข้อมูลบริษัท</li>
+      <li><strong>Frankfurter</strong>: แอปส่งรหัสสกุลเงินเพื่อดึงอัตราแลกเปลี่ยน ไม่มีข้อมูลส่วนตัวรวมอยู่ด้วย</li>
+    </ul>
+    <p>การเชื่อมต่อกับบริการเหล่านี้ทั้งหมดเข้ารหัสด้วย HTTPS</p>
+
+    <h2>การส่งออกข้อมูล</h2>
+    <p>คุณส่งออกข้อมูลเป็นไฟล์ CSV หรือเป็นข้อความสรุปเพื่อนำไปใช้กับเครื่องมืออื่นได้ ไฟล์หรือข้อความเหล่านี้จะถูกบันทึกหรือแชร์ไปที่ปลายทางที่คุณเลือกเองเท่านั้น</p>
+
+    <h2>การแจ้งเตือน</h2>
+    <p>การแจ้งเตือนรายการประจำเป็นการแจ้งเตือนที่ตั้งเวลาไว้บนเครื่อง ไม่ผ่านเซิร์ฟเวอร์</p>
+
+    <h2>การเก็บรักษาและการลบข้อมูล</h2>
+    <p>เราเก็บข้อมูลไว้ตราบเท่าที่บัญชีของคุณยังอยู่ คุณลบบัญชีได้เองในแอปที่ <strong>ตั้งค่า → บัญชีผู้ใช้ → ลบบัญชี</strong> ระบบจะลบบัญชีผู้ใช้ ข้อมูลการเงินทั้งหมด และไฟล์ที่คุณอัปโหลดทันที สำเนาสำรองของผู้ให้บริการอาจคงอยู่ช่วงสั้น ๆ ตามรอบการสำรองข้อมูลก่อนถูกลบไปเอง หากลบในแอปไม่ได้ ติดต่อเราตามช่องทางด้านล่างเพื่อขอให้ลบ</p>
+
+    <h2>เด็ก</h2>
+    <p>แอปนี้ไม่ได้ออกแบบมาสำหรับเด็กอายุต่ำกว่า 13 ปี และเราไม่ได้ตั้งใจเก็บข้อมูลของเด็ก</p>
+
+    <h2>การเปลี่ยนแปลงนโยบาย</h2>
+    <p>หากมีการแก้ไขนโยบายนี้ เราจะปรับปรุงหน้านี้และวันที่มีผลด้านบน</p>
+
+    <h2>ติดต่อ</h2>
+    <p>หากมีคำถามหรือต้องการใช้สิทธิ์เกี่ยวกับข้อมูลส่วนบุคคล ติดต่อ <a href="mailto:sumetph.dev@gmail.com">sumetph.dev@gmail.com</a></p>
+  </section>
+
+  <section id="en" lang="en">
+    <h1 style="margin-top:48px">Privacy Policy</h1>
+    <p class="meta">Money Vibe app · Effective October 20, 2026</p>
+
+    <p>Money Vibe is a personal finance app. This policy explains what data the app collects, how it is used, and how you can manage or delete it.</p>
+
+    <h2>Data we collect</h2>
+    <ul>
+      <li><strong>Account data</strong>: the email address and password you use to sign up and sign in. Passwords are handled and hashed by Supabase Auth; we never see them.</li>
+      <li><strong>Financial data you enter</strong>: accounts, balances, transactions, categories, budgets, recurring items, stock holdings and trades, investment plans, and notes.</li>
+      <li><strong>Photos</strong>: images you choose as account icons are uploaded to Supabase Storage. Trade screenshots used for text recognition (OCR) are processed on your device only and are never uploaded.</li>
+      <li><strong>On-device data</strong>: app settings and your Finnhub API key (if provided) stay on your device; the API key is kept in the operating system's secure storage.</li>
+    </ul>
+    <p>The app shows no ads, uses no analytics or tracking, and does not access your location, contacts, or real bank accounts.</p>
+
+    <h2>How we use data</h2>
+    <p>Data is used only to provide the app's features: syncing across devices, calculating balances and summaries, and sending verification and password reset emails. We do not sell, trade, or use your data for advertising.</p>
+
+    <h2>Third-party services</h2>
+    <ul>
+      <li><strong>Supabase</strong>: database, authentication, file storage, and delivery of verification and password reset emails. Your data is isolated per user with Row Level Security.</li>
+      <li><strong>Finnhub</strong>: when you provide your own API key, the app sends stock tickers and that key to Finnhub to fetch prices and company profiles.</li>
+      <li><strong>Frankfurter</strong>: receives currency codes to return exchange rates; no personal data is included.</li>
+    </ul>
+    <p>All connections to these services use HTTPS.</p>
+
+    <h2>Data export</h2>
+    <p>You can export your data as CSV or as a text summary. Exports are saved or shared only to destinations you choose.</p>
+
+    <h2>Notifications</h2>
+    <p>Recurring-item reminders are local notifications scheduled on your device, not sent through a server.</p>
+
+    <h2>Retention and deletion</h2>
+    <p>We keep your data while your account exists. You can delete your account in the app under <strong>Settings → Account → Delete account</strong>. This immediately deletes your account, all financial data, and uploaded files. Provider backups may persist briefly until they expire. If you cannot delete in the app, contact us below to request deletion.</p>
+
+    <h2>Children</h2>
+    <p>The app is not directed to children under 13, and we do not knowingly collect their data.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, we will update this page and the effective date above.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or data requests: <a href="mailto:sumetph.dev@gmail.com">sumetph.dev@gmail.com</a></p>
+  </section>
+</main>
+</body>
+</html>

@@ -452,7 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
-                      if (AppConfig.privacyPolicyUrl.isNotEmpty) ...[
+                      if (AppConfig.showPrivacyPolicy) ...[
                         Divider(
                           height: 1,
                           color: AppColors.listDividerFor(isDarkMode),
