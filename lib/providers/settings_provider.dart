@@ -29,7 +29,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _finnhubApiKey;
   bool _useFinnhub = true;
   bool _isDarkMode = true;
-  ThemeColorOption _themeColor = ThemeColorOption.classic;
+  ThemeColorOption _themeColor = ThemeColorOption.steel;
   bool _isLoaded = false;
   int _monthlyCycleStartDay = 1;
   int? _cashFlowAnchorDay; // วันเคลียร์ยอดของการคาดการณ์; null = ยังไม่ได้ตั้ง
