@@ -36,15 +36,15 @@ build_android() {
   echo "📦 Building Android App Bundle (store)..."
   flutter build appbundle "${STORE_ARGS[@]}" \
     --split-debug-info=build/symbols/android \
-    "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}"
-  echo "📍 AAB: build/app/outputs/bundle/release/app-release.aab"
+    "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" "${FLUTTER_FLAVOR_ARGS[@]}"
+  echo "📍 AAB: build/app/outputs/bundle/${FLUTTER_ENV_NAME}Release/app-${FLUTTER_ENV_NAME}-release.aab"
 }
 
 build_ios() {
   echo "📦 Building iOS IPA (store)..."
   flutter build ipa "${STORE_ARGS[@]}" \
     --split-debug-info=build/symbols/ios \
-    "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" \
+    "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" "${FLUTTER_FLAVOR_ARGS[@]}" \
     --export-options-plist=ios/ExportOptions-appstore.plist
   echo "📍 IPA: build/ios/ipa/"
 }

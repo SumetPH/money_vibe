@@ -54,11 +54,20 @@ android {
         }
     }
 
-    buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "MoneyVibe (Dev)")
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Money Vibe (Dev)")
         }
+        create("prod") {
+            dimension = "env"
+            resValue("string", "app_name", "Money Vibe")
+        }
+    }
+
+    buildTypes {
         release {
             // ไม่มี key.properties → ใช้ debug key เพื่อให้ `flutter run --release` ยังทำงานได้
             // (scripts/build_store.sh จะไม่ยอม build ถ้าไม่มี key.properties)

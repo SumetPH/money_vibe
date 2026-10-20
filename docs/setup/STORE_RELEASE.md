@@ -59,7 +59,7 @@
   ```
 - [ ] คัดลอก `android/key.properties.example` → `android/key.properties` แล้วกรอกค่า (ไฟล์นี้ถูก gitignore ไว้แล้ว)
 - [ ] Build: `scripts/build_store.sh android`
-- [ ] ตรวจ signature: `keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab`
+- [ ] ตรวจ signature: `keytool -printcert -jarfile build/app/outputs/bundle/prodRelease/app-prod-release.aab`
 - [ ] เปิด Play App Signing
 - [ ] กรอก **Data safety**: Email, Financial info (บันทึกโดยผู้ใช้), Photos (เลือกเอง ไม่ upload ยกเว้นไอคอนบัญชี), เข้ารหัสระหว่างส่ง, ผู้ใช้ขอลบข้อมูลได้ในแอป
 

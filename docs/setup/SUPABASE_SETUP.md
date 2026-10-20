@@ -93,7 +93,7 @@
 3. ห้ามใส่ `service_role` หรือ `SUPABASE_SERVICE_ROLE_KEY` ใน config ของแอป เพราะ key นั้นมีสิทธิ์สูงและต้องอยู่ฝั่ง server เท่านั้น
 4. รันหรือ build ด้วย config:
    ```bash
-   flutter run --dart-define-from-file=config/dev.json
+   flutter run --flavor dev --dart-define-from-file=config/dev.json
    ./scripts/build_android.sh prod
    ./scripts/build_web.sh prod
    ```

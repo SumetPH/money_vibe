@@ -42,6 +42,8 @@ resolve_flutter_env() {
   FLUTTER_ENV_NAME="$requested_env"
   FLUTTER_ENV_CONFIG_FILE="$config_file"
   FLUTTER_ENV_ARGS=(--dart-define-from-file="$config_file")
+  # web ไม่รองรับ --flavor จึงแยกไว้ใช้เฉพาะ build Android/iOS
+  FLUTTER_FLAVOR_ARGS=(--flavor "$requested_env")
 
   echo "🌿 Using ${FLUTTER_ENV_NAME} config: ${FLUTTER_ENV_CONFIG_FILE}"
 }

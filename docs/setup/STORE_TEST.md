@@ -37,7 +37,7 @@
    ```
 6. รันแอปแบบ store build
    ```bash
-   flutter run --dart-define-from-file=config/dev.json --dart-define=DISTRIBUTION=store
+   flutter run --flavor dev --dart-define-from-file=config/dev.json --dart-define=DISTRIBUTION=store
    ```
 
 ## 2. ตรวจ database หลัง push

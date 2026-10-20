@@ -15,12 +15,12 @@ resolve_flutter_build_version
 
 # Generate a build marker based on current timestamp
 BUILD_MARKER=$(date +%s)
-APK_PATH="./build/app/outputs/flutter-apk/app-release.apk"
+APK_PATH="./build/app/outputs/flutter-apk/app-${FLUTTER_ENV_NAME}-release.apk"
 
 echo "📦 Building Android APK (Release)..."
 echo "🔢 Using build marker: ${BUILD_MARKER}"
 
-flutter build apk --release --no-tree-shake-icons "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" --dart-define=APP_BUILD_MARKER="${BUILD_MARKER}"
+flutter build apk --release --no-tree-shake-icons "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}" "${FLUTTER_FLAVOR_ARGS[@]}" --dart-define=APP_BUILD_MARKER="${BUILD_MARKER}"
 
 echo "✅ Build complete!"
 echo "📍 APK Location: ${APK_PATH}"

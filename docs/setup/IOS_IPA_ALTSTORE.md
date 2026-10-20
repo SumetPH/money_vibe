@@ -7,7 +7,7 @@
 รันจาก root project:
 
 ```bash
-flutter build ipa --release --no-tree-shake-icons --export-options-plist=ios/ExportOptions-development.plist
+flutter build ipa --release --flavor prod --dart-define-from-file=config/prod.json --no-tree-shake-icons --export-options-plist=ios/ExportOptions-development.plist
 ```
 
 ```bash
@@ -25,7 +25,7 @@ build/ios/ipa/Money Vibe.ipa
 กำหนดเลข version ตอน build ได้ด้วย `--build-name` และ `--build-number`:
 
 ```bash
-flutter build ipa --release \
+flutter build ipa --release --flavor prod --dart-define-from-file=config/prod.json \
   --no-tree-shake-icons \
   --export-options-plist=ios/ExportOptions-development.plist \
   --build-name=1.0.1 \

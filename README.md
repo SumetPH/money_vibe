@@ -53,7 +53,7 @@ Money Vibe คือแอป Flutter สำหรับจัดการกา
    - ดูขั้นตอนละเอียดได้ที่ [SUPABASE_SETUP.md](docs/setup/SUPABASE_SETUP.md)
 
 3. **Run App**:
-   - รันพร้อมไฟล์ config เช่น `flutter run --dart-define-from-file=config/dev.json`
+   - รันพร้อมไฟล์ config เช่น `flutter run --flavor dev --dart-define-from-file=config/dev.json` (Android/iOS ต้องระบุ `--flavor dev|prod` ให้ตรงกับ config เสมอ, web ไม่ต้อง)
    - สมัครสมาชิก/เข้าสู่ระบบเพื่อเริ่มใช้งาน
 
 ## คำสั่งที่ใช้บ่อย
