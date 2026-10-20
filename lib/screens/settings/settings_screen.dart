@@ -117,11 +117,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (authProvider.isLoggedIn) {
                             return SettingsAccountSection(
                               userEmail: authProvider.userEmail,
+                              username: authProvider.username,
                               isDarkMode: isDarkMode,
-                              isBusy: authProvider.isLoading,
+                              isBusy:
+                                  authProvider.isLoading ||
+                                  authProvider.isDeletingAccount,
+                              isUpdatingUsername:
+                                  authProvider.isUpdatingUsername,
+                              onEditUsername: () =>
+                                  _showEditUsernameDialog(context),
                               onLogout: () => _showLogoutDialog(context),
-                              onDeleteAccount: () =>
-                                  _showDeleteAccountDialog(context),
                             );
                           } else {
                             // แสดงเมื่อยังไม่ได้ login
@@ -484,6 +489,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
+
+                // ลบบัญชีไว้ล่างสุด แยกจาก action อื่น
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, _) {
+                    if (!authProvider.isLoggedIn) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 24, bottom: 16),
+                      child: SettingsGroup(
+                        isDarkMode: isDarkMode,
+                        child: SettingsDeleteAccountTile(
+                          isDarkMode: isDarkMode,
+                          isBusy: authProvider.isLoading,
+                          isDeleting: authProvider.isDeletingAccount,
+                          onDeleteAccount: () =>
+                              _showDeleteAccountDialog(context),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           );
@@ -502,6 +529,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('เปิดนโยบายความเป็นส่วนตัวไม่สำเร็จ')),
       );
     }
+  }
+
+  Future<void> _showEditUsernameDialog(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
+    final currentUsername = authProvider.username ?? '';
+    var typedUsername = currentUsername;
+
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'เปลี่ยนชื่อผู้ใช้',
+      confirmLabel: 'บันทึก',
+      content: SettingsUsernameEditContent(
+        initialUsername: currentUsername,
+        isDarkMode: isDarkMode,
+        onUsernameChanged: (value) => typedUsername = value,
+      ),
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final username = typedUsername.trim();
+    if (username.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('กรุณากรอกชื่อผู้ใช้')),
+      );
+      return;
+    }
+    if (username == currentUsername) return;
+
+    final isUpdated = await authProvider.updateUsername(username);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          isUpdated
+              ? 'เปลี่ยนชื่อผู้ใช้เรียบร้อยแล้ว'
+              : authProvider.error ?? 'เปลี่ยนชื่อผู้ใช้ไม่สำเร็จ',
+        ),
+        backgroundColor: isUpdated ? null : AppColors.expenseFor(isDarkMode),
+      ),
+    );
   }
 
   Future<void> _showDeleteAccountDialog(BuildContext context) async {

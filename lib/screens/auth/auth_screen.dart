@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../config/app_config.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../settings/data_management_screen.dart';
+import 'auth_brand_panel.dart';
 import 'reset_password_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -28,8 +30,13 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   static const _minPasswordLength = 8;
 
+  static const _usernameMaxLength = 50;
+  static const _formMaxWidth = 480.0;
+  static const _twoColumnMinWidth = 900.0;
+
   bool _isLogin = true;
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -44,6 +51,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -78,6 +86,7 @@ class _AuthScreenState extends State<AuthScreen> {
       success = await authProvider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        username: _usernameController.text.trim(),
       );
     }
 
@@ -138,71 +147,58 @@ class _AuthScreenState extends State<AuthScreen> {
       settingsProvider.themeColor,
     );
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
-        foregroundColor: textColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leadingWidth: 64,
-        leading: Navigator.canPop(context) ? const AppBackButton() : null,
-        title: Text(
-          _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
-          ),
-        ),
-      ),
-      body: AbsorbPointer(
-        absorbing: authProvider.isLoading,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+    // web จอกว้าง: 2 คอลัมน์ (แผงแบรนด์ซ้าย + ฟอร์มขวา) ไม่มี AppBar
+    final isTwoColumn =
+        kIsWeb && MediaQuery.sizeOf(context).width >= _twoColumnMinWidth;
+
+    final formBody = AbsorbPointer(
+      absorbing: authProvider.isLoading,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _formMaxWidth),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo/Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: headerColor,
-                      borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  if (!isTwoColumn) ...[
+                    // Logo/Icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: headerColor,
+                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                      ),
+                      child: Icon(
+                        AppBrand.logo,
+                        size: 40,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                      ),
                     ),
-                    child: Icon(
-                      AppBrand.logo,
-                      size: 40,
-                      color: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
+                    const SizedBox(height: 24),
+                    // App Name
+                    Text(
+                      'Money Vibe',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // App Name
-                  Text(
-                    'Money Vibe',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
-                    style: TextStyle(fontSize: 18, color: secondaryTextColor),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
+                  ],
                   // Form
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: isTwoColumn
+                        ? const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 52,
+                          )
+                        : const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
@@ -223,6 +219,62 @@ class _AuthScreenState extends State<AuthScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
+                          Text(
+                            _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          // Username Field (เฉพาะตอนสมัคร)
+                          if (!_isLogin) ...[
+                            TextFormField(
+                              controller: _usernameController,
+                              enabled: !authProvider.isLoading,
+                              maxLength: _usernameMaxLength,
+                              style: TextStyle(color: textColor),
+                              decoration: InputDecoration(
+                                labelText: 'ชื่อผู้ใช้',
+                                counterText: '',
+                                labelStyle: TextStyle(
+                                  color: secondaryTextColor,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.person,
+                                  color: secondaryTextColor,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: isDarkMode
+                                        ? AppColors.darkDivider
+                                        : AppColors.divider,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: headerColor),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'กรุณากรอกชื่อผู้ใช้';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           // Email Field
                           TextFormField(
                             controller: _emailController,
@@ -497,6 +549,52 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
+    );
+
+    if (isTwoColumn) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Row(
+          children: [
+            Expanded(
+              flex: 5,
+              child: AuthBrandPanel(
+                headerColor: headerColor,
+                accentColor: AppColors.accentFor(
+                  isDarkMode,
+                  settingsProvider.themeColor,
+                ),
+                textColor: textColor,
+              ),
+            ),
+            Expanded(flex: 4, child: formBody),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leadingWidth: 64,
+        leading: Navigator.canPop(context) ? const AppBackButton() : null,
+        title: Text(
+          _isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
+        ),
+      ),
+      body: formBody,
     );
   }
 

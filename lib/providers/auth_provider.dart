@@ -30,6 +30,9 @@ class AuthProvider extends ChangeNotifier {
 
   User? _user;
   bool _isLoading = false;
+  bool _isUpdatingUsername = false;
+  bool _isSendingResetCode = false;
+  bool _isDeletingAccount = false;
   String? _error;
   bool _isInitialized = false;
 
@@ -39,10 +42,14 @@ class AuthProvider extends ChangeNotifier {
 
   User? get user => _user;
   bool get isLoading => _isLoading;
+  bool get isUpdatingUsername => _isUpdatingUsername;
+  bool get isSendingResetCode => _isSendingResetCode;
+  bool get isDeletingAccount => _isDeletingAccount;
   String? get error => _error;
   bool get isLoggedIn => _user != null;
   String? get userId => _user?.id;
   String? get userEmail => _user?.email;
+  String? get username => _user?.userMetadata?['username'] as String?;
   bool get isInitialized => _isInitialized;
 
   /// เริ่มต้นและตรวจสอบสถานะการ login
@@ -93,7 +100,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// สมัครสมาชิกด้วย Email/Password
-  Future<bool> signUp({required String email, required String password}) async {
+  Future<bool> signUp({
+    required String email,
+    required String password,
+    required String username,
+  }) async {
     _setLoading(true);
     _clearError();
     try {
@@ -107,6 +118,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await client.auth.signUp(
         email: email,
         password: password,
+        data: {'username': username},
       );
 
       if (response.user != null) {
@@ -193,7 +205,7 @@ class AuthProvider extends ChangeNotifier {
   /// ขอรหัส OTP สำหรับตั้งรหัสผ่านใหม่ทางอีเมล
   /// (email template "Reset Password" ต้องแสดง `{{ .Token }}`)
   Future<bool> resetPassword(String email) async {
-    _setLoading(true);
+    _setSendingResetCode(true);
     _clearError();
     try {
       final client = _safeClient;
@@ -216,7 +228,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } finally {
-      _setLoading(false);
+      _setSendingResetCode(false);
     }
   }
 
@@ -296,12 +308,44 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// เปลี่ยนชื่อผู้ใช้ (เก็บใน user_metadata)
+  Future<bool> updateUsername(String username) async {
+    _setUpdatingUsername(true);
+    _clearError();
+    try {
+      final client = _safeClient;
+      if (client == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        notifyListeners();
+        return false;
+      }
+
+      final response = await client.auth.updateUser(
+        UserAttributes(data: {'username': username}),
+      );
+      _user = response.user ?? _user;
+      return true;
+    } on AuthException catch (e) {
+      debugPrint('AuthProvider: auth error: ${e.message}');
+      _error = _getErrorMessage(e.message);
+      notifyListeners();
+      return false;
+    } catch (e) {
+      debugPrint('AuthProvider: unexpected error: $e');
+      _error = _unexpectedErrorMessage;
+      notifyListeners();
+      return false;
+    } finally {
+      _setUpdatingUsername(false);
+    }
+  }
+
   /// ลบบัญชีผู้ใช้ถาวร (ต้อง login ก่อน)
   ///
   /// เรียก Edge Function `delete-account` ซึ่งใช้ service role ลบไฟล์ใน storage
   /// และลบ auth user (ข้อมูลทุกตารางถูกลบตาม ON DELETE CASCADE)
   Future<bool> deleteAccount() async {
-    _setLoading(true);
+    _setDeletingAccount(true);
     _clearError();
     try {
       final client = _safeClient;
@@ -323,7 +367,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } finally {
-      _setLoading(false);
+      _setDeletingAccount(false);
     }
   }
 
@@ -335,6 +379,21 @@ class AuthProvider extends ChangeNotifier {
 
   void _setLoading(bool value) {
     _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setUpdatingUsername(bool value) {
+    _isUpdatingUsername = value;
+    notifyListeners();
+  }
+
+  void _setSendingResetCode(bool value) {
+    _isSendingResetCode = value;
+    notifyListeners();
+  }
+
+  void _setDeletingAccount(bool value) {
+    _isDeletingAccount = value;
     notifyListeners();
   }
 

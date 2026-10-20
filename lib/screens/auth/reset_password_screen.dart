@@ -95,7 +95,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final isDarkMode = settingsProvider.isDarkMode;
-    final isLoading = context.watch<AuthProvider>().isLoading;
+    final authProvider = context.watch<AuthProvider>();
+    final isLoading = authProvider.isLoading;
+    final isSendingCode = authProvider.isSendingResetCode;
     final backgroundColor = AppColors.backgroundFor(isDarkMode);
     final textColor = AppColors.textPrimaryFor(isDarkMode);
     final secondaryTextColor = AppColors.textSecondaryFor(isDarkMode);
@@ -257,7 +259,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: isLoading ? null : _resendCode,
+                      onPressed: isLoading || isSendingCode
+                          ? null
+                          : _resendCode,
                       child: Text(
                         'ไม่ได้รับรหัส? ส่งอีกครั้ง',
                         style: TextStyle(color: secondaryTextColor),

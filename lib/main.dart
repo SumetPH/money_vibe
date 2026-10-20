@@ -447,6 +447,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       child: child!,
                     );
 
+                    // หน้า auth ให้พื้นหลังเต็มจอ (ฟอร์มจำกัดความกว้างเองใน AuthScreen)
+                    if (currentPath == '/auth') return app;
+
                     return ColoredBox(
                       color: Theme.of(context).colorScheme.surfaceContainerLow,
                       child: Center(
