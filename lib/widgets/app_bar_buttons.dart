@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+import '../theme/theme_color_option.dart';
 
 /// Leading close button for add/edit forms: an `x` on a circular surface.
 class AppCloseButton extends StatelessWidget {
@@ -94,13 +95,16 @@ class AppSaveButton extends StatelessWidget {
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    const foreground = Colors.black;
+    final themeColor = context.select<SettingsProvider, ThemeColorOption>(
+      (s) => s.themeColor,
+    );
+    final foreground = AppColors.onFabFor(isDarkMode, themeColor);
 
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: Center(
         child: Material(
-          color: AppColors.saveButtonFor(isDarkMode),
+          color: AppColors.fabFor(isDarkMode, themeColor),
           borderRadius: BorderRadius.circular(AppRadii.full),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -108,7 +112,7 @@ class AppSaveButton extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: _spinnerSize,
                       height: _spinnerSize,
                       child: CircularProgressIndicator(
@@ -119,11 +123,11 @@ class AppSaveButton extends StatelessWidget {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check, size: 16, color: foreground),
+                        Icon(Icons.check, size: 16, color: foreground),
                         const SizedBox(width: 4),
                         Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: foreground,
