@@ -44,7 +44,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final authProvider = context.read<AuthProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
 
     final isReset = await authProvider.resetPasswordWithCode(
       email: widget.email,
@@ -56,7 +55,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(authProvider.error ?? 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ'),
-          backgroundColor: AppColors.expenseFor(isDarkMode),
+          backgroundColor: AppColors.expense,
         ),
       );
       return;
@@ -65,7 +64,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: const Text('ตั้งรหัสผ่านใหม่แล้ว กรุณาเข้าสู่ระบบ'),
-        backgroundColor: AppColors.incomeFor(isDarkMode),
+        backgroundColor: AppColors.income,
       ),
     );
     if (mounted) navigator.pop();
@@ -74,7 +73,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Future<void> _resendCode() async {
     final authProvider = context.read<AuthProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
 
     final isSent = await authProvider.resetPassword(widget.email);
     messenger.showSnackBar(
@@ -84,9 +82,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ? 'ส่งรหัสใหม่ไปยัง ${widget.email} แล้ว'
               : authProvider.error ?? 'ส่งรหัสไม่สำเร็จ',
         ),
-        backgroundColor: isSent
-            ? AppColors.incomeFor(isDarkMode)
-            : AppColors.expenseFor(isDarkMode),
+        backgroundColor: isSent ? AppColors.income : AppColors.expense,
       ),
     );
   }

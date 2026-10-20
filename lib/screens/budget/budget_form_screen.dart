@@ -219,7 +219,7 @@ class _BudgetFormScreenState extends State<BudgetFormScreen>
         };
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message, style: const TextStyle(color: Colors.white)),
+            content: Text(message),
             backgroundColor: AppColors.expense,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

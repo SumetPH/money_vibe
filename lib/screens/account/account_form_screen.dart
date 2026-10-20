@@ -234,10 +234,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              userErrorMessage(e, action: 'บันทึก'),
-              style: const TextStyle(color: Colors.white),
-            ),
+            content: Text(userErrorMessage(e, action: 'บันทึก')),
             backgroundColor: AppColors.expense,
           ),
         );

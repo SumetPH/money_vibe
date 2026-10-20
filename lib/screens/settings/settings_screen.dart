@@ -567,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ? 'เปลี่ยนชื่อผู้ใช้เรียบร้อยแล้ว'
               : authProvider.error ?? 'เปลี่ยนชื่อผู้ใช้ไม่สำเร็จ',
         ),
-        backgroundColor: isUpdated ? null : AppColors.expenseFor(isDarkMode),
+        backgroundColor: isUpdated ? null : AppColors.expense,
       ),
     );
   }
@@ -609,7 +609,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(authProvider.error ?? 'ลบบัญชีไม่สำเร็จ'),
-          backgroundColor: AppColors.expenseFor(isDarkMode),
+          backgroundColor: AppColors.expense,
         ),
       );
       return;

@@ -219,10 +219,7 @@ class _RecurringFormScreenState extends State<RecurringFormScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            userErrorMessage(e, action: 'บันทึกรายการ'),
-            style: const TextStyle(color: Colors.white),
-          ),
+          content: Text(userErrorMessage(e, action: 'บันทึกรายการ')),
           backgroundColor: AppColors.expense,
         ),
       );

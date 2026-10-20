@@ -78,6 +78,7 @@ class AppTheme {
       dragHandleColor: AppColors.divider,
       dragHandleSize: Size(36, 4),
     ),
+    snackBarTheme: _snackBarTheme(AppColors.textPrimary),
     dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
@@ -185,6 +186,7 @@ class AppTheme {
         dragHandleColor: darkDivider,
         dragHandleSize: const Size(36, 4),
       ),
+      snackBarTheme: _snackBarTheme(AppColors.darkSurfaceVariant),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: themeColor.darkFab,
         foregroundColor: themeColor.darkOnFab,
@@ -218,6 +220,15 @@ class AppTheme {
       useMaterial3: true,
     );
   }
+
+  /// Fixed dark background + white text so callers that override
+  /// `backgroundColor` (income/expense) still get readable content.
+  static SnackBarThemeData _snackBarTheme(Color backgroundColor) =>
+      SnackBarThemeData(
+        backgroundColor: backgroundColor,
+        contentTextStyle: GoogleFonts.ibmPlexSansThai(color: Colors.white),
+        closeIconColor: Colors.white,
+      );
 
   /// Cupertino widgets (CupertinoButton, CupertinoSearchTextField, pickers)
   /// read fonts from CupertinoTheme, not the Material textTheme, so they would
