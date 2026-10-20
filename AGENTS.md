@@ -27,6 +27,7 @@
 - ห้ามแปลง timezone ไปมาเองตอนอ่านหรือเขียนข้อมูล
 - ใช้ ISO8601 เมื่อต้อง serialize วันที่เวลาเข้า database
 - ห้ามใช้งานคอลัมน์ `tags` ของ transactions
+- ตารางใหม่ใน `public` ต้องมี `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated, service_role` ใน migration เดียวกับที่สร้างตาราง (Supabase ไม่ grant อัตโนมัติแล้ว)
 
 ## Architecture ที่ควรยึดตาม
 
