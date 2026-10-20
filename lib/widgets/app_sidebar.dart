@@ -358,7 +358,7 @@ class _SidebarFooter extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    email.split('@').first,
+                    authProvider.username ?? email.split('@').first,
                     style: TextStyle(
                       color: textColor,
                       fontWeight: FontWeight.w600,
