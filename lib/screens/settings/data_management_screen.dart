@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/app_config.dart';
+
 import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/budget_provider.dart';
@@ -310,163 +312,166 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildSectionTitle(
-                    'ฐานข้อมูล',
-                    textColor,
-                    secondaryTextColor,
-                    AppColors.accentFor(isDarkMode, themeColor),
-                  ),
-                  const SizedBox(height: 8),
-                  AppInsetCard(
-                    margin: EdgeInsets.zero,
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.cloud,
-                                color: dbManager.isConfigured
-                                    ? Colors.blue
-                                    : Colors.grey,
-                                size: 32,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
+                  if (AppConfig.showBackendDetails) ...[
+                    _buildSectionTitle(
+                      'ฐานข้อมูล',
+                      textColor,
+                      secondaryTextColor,
+                      AppColors.accentFor(isDarkMode, themeColor),
+                    ),
+                    const SizedBox(height: 8),
+                    AppInsetCard(
+                      margin: EdgeInsets.zero,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.cloud,
+                                  color: dbManager.isConfigured
+                                      ? Colors.blue
+                                      : Colors.grey,
+                                  size: 32,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Supabase (Cloud)',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        dbManager.isConfigured
+                                            ? 'เชื่อมต่อแล้ว'
+                                            : 'ยังไม่ได้ตั้งค่า',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: dbManager.isConfigured
+                                              ? incomeColor
+                                              : secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (showBuildDetails) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? AppColors.darkBackground
+                                      : AppColors.background,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: dividerColor),
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Supabase (Cloud)',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: textColor,
-                                      ),
+                                    _buildConfigRow(
+                                      label: 'Environment',
+                                      value:
+                                          dbManager.config?.environmentName ??
+                                          '-',
+                                      textColor: textColor,
+                                      secondaryTextColor: secondaryTextColor,
                                     ),
-                                    Text(
-                                      dbManager.isConfigured
-                                          ? 'เชื่อมต่อแล้ว'
-                                          : 'ยังไม่ได้ตั้งค่า',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: dbManager.isConfigured
-                                            ? incomeColor
-                                            : secondaryTextColor,
-                                      ),
+                                    Divider(color: dividerColor, height: 20),
+                                    _buildConfigRow(
+                                      label: 'Project',
+                                      value:
+                                          dbManager.config?.maskedSupabaseUrl ??
+                                          'ไม่ได้ตั้งค่า',
+                                      textColor: textColor,
+                                      secondaryTextColor: secondaryTextColor,
                                     ),
                                   ],
                                 ),
                               ),
                             ],
-                          ),
-                          if (showBuildDetails) ...[
+                            if (dbManager.error != null) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: expenseColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  dbManager.error!,
+                                  style: TextStyle(
+                                    color: expenseColor,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 16),
-                            Container(
+                            SizedBox(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isDarkMode
-                                    ? AppColors.darkBackground
-                                    : AppColors.background,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: dividerColor),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildConfigRow(
-                                    label: 'Environment',
-                                    value:
-                                        dbManager.config?.environmentName ??
-                                        '-',
-                                    textColor: textColor,
-                                    secondaryTextColor: secondaryTextColor,
-                                  ),
-                                  Divider(color: dividerColor, height: 20),
-                                  _buildConfigRow(
-                                    label: 'Project',
-                                    value:
-                                        dbManager.config?.maskedSupabaseUrl ??
-                                        'ไม่ได้ตั้งค่า',
-                                    textColor: textColor,
-                                    secondaryTextColor: secondaryTextColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (dbManager.error != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: expenseColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                dbManager.error!,
-                                style: TextStyle(
-                                  color: expenseColor,
-                                  fontSize: 12,
+                              child: OutlinedButton.icon(
+                                onPressed:
+                                    dbManager.isConfigured &&
+                                        !_isTestingConnection
+                                    ? _testConnection
+                                    : null,
+                                icon: _isTestingConnection
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.network_check, size: 18),
+                                label: const Text('ทดสอบการเชื่อมต่อ'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: textColor,
                                 ),
                               ),
                             ),
-                          ],
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed:
-                                  dbManager.isConfigured &&
-                                      !_isTestingConnection
-                                  ? _testConnection
-                                  : null,
-                              icon: _isTestingConnection
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.network_check, size: 18),
-                              label: const Text('ทดสอบการเชื่อมต่อ'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: textColor,
+                            if (!dbManager.isConfigured) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'ค่า Supabase ต้องมากับ build เท่านั้น ผู้ใช้ไม่สามารถแก้จากในแอปได้',
+                                style: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
                               ),
-                            ),
-                          ),
-                          if (!dbManager.isConfigured) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'ค่า Supabase ต้องมากับ build เท่านั้น ผู้ใช้ไม่สามารถแก้จากในแอปได้',
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 12,
-                                height: 1.4,
+                            ],
+                            if (_connectionStatus != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _connectionStatus!,
+                                style: TextStyle(
+                                  color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
+                                      ? incomeColor
+                                      : expenseColor,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                          if (_connectionStatus != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              _connectionStatus!,
-                              style: TextStyle(
-                                color: _connectionStatus == 'เชื่อมต่อสำเร็จ'
-                                    ? incomeColor
-                                    : expenseColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
 
                   if (authProvider.isLoggedIn) ...[
                     const SizedBox(height: 24),
@@ -648,15 +653,17 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildInfoItem(
-                            icon: Icons.cloud,
-                            title: 'Supabase',
-                            description:
-                                'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                          ),
-                          Divider(color: dividerColor, height: 24),
+                          if (AppConfig.showBackendDetails) ...[
+                            _buildInfoItem(
+                              icon: Icons.cloud,
+                              title: 'Supabase',
+                              description:
+                                  'เก็บข้อมูลบน Cloud ตรงกันทุกอุปกรณ์ ต้องมี internet',
+                              textColor: textColor,
+                              secondaryTextColor: secondaryTextColor,
+                            ),
+                            Divider(color: dividerColor, height: 24),
+                          ],
                           _buildInfoItem(
                             icon: Icons.help_outline,
                             title: 'CSV Export/Import',

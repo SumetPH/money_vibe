@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -63,11 +64,12 @@ class AppSidebar extends StatefulWidget {
       label: 'หมวดหมู่',
       route: '/categories',
     ),
-    SidebarItemData(
-      icon: Icons.show_chart,
-      label: 'บันทึกการลงทุน',
-      route: '/trade-tracker',
-    ),
+    if (AppConfig.showStockFeatures)
+      SidebarItemData(
+        icon: Icons.show_chart,
+        label: 'บันทึกการลงทุน',
+        route: '/trade-tracker',
+      ),
     SidebarItemData(
       icon: Icons.settings_outlined,
       label: 'การตั้งค่า',

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'config/app_config.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -262,10 +263,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           path: '/statistics',
           builder: (context, state) => const MainTabScreen(initialTab: 3),
         ),
-        GoRoute(
-          path: '/trade-tracker',
-          builder: (context, state) => const TradeTrackerScreen(),
-        ),
+        if (AppConfig.showStockFeatures)
+          GoRoute(
+            path: '/trade-tracker',
+            builder: (context, state) => const TradeTrackerScreen(),
+          ),
       ],
       redirect: (context, state) {
         final location = state.matchedLocation;

@@ -43,6 +43,12 @@ class AppConfig {
   /// เตือนให้ติดตั้งแอปใหม่ก่อน provisioning ของ build sideload หมดอายุ
   static const bool showReinstallReminder = !isStoreBuild;
 
+  /// ฟีเจอร์หุ้นทั้งหมด: บันทึกการลงทุน, บัญชีพอร์ตหุ้น, ตั้งค่าราคาหุ้น/Finnhub
+  static const bool showStockFeatures = !isStoreBuild;
+
+  /// UI ที่บอกรายละเอียด backend (Supabase) เช่นการ์ดสถานะฐานข้อมูล
+  static const bool showBackendDetails = !isStoreBuild;
+
   /// URL หน้า Privacy Policy (`--dart-define=PRIVACY_POLICY_URL=...`)
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',

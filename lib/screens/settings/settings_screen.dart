@@ -141,7 +141,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               subtitle: Text(
-                                'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase',
+                                AppConfig.showBackendDetails
+                                    ? 'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase'
+                                    : 'เข้าสู่ระบบเพื่อซิงค์ข้อมูล',
                                 style: TextStyle(color: secondaryTextColor),
                               ),
                               trailing: Icon(
@@ -153,7 +155,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                         },
                       ),
-                      if (!dbManager.isConfigured) ...[
+                      if (AppConfig.showBackendDetails &&
+                          !dbManager.isConfigured) ...[
                         ListTile(
                           leading: const SettingsIcon(
                             icon: Icons.cloud_off,
@@ -283,55 +286,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // API Section
-                AppSectionHeader('API'),
-                SettingsGroup(
-                  isDarkMode: isDarkMode,
-                  child: Column(
-                    children: [
-                      if (AppConfig.canUseYahooPrices)
-                        SettingsToggleTile(
-                          icon: Icons.show_chart,
-                          title: 'ใช้ Finnhub ดึงราคาหุ้น',
-                          subtitle: settings.useFinnhub
-                              ? 'Finnhub · ต้องใส่ API key'
-                              : 'Yahoo Finance · ไม่ต้องใช้ API key',
-                          value: settings.useFinnhub,
-                          onChanged: settings.setUseFinnhub,
-                          isDarkMode: isDarkMode,
-                        ),
-                      ListTile(
-                        leading: SettingsIcon(
-                          icon: Icons.api,
-                          color: secondaryTextColor,
-                        ),
-                        title: Text(
-                          'Finnhub API Key',
-                          style: TextStyle(color: textColor, fontSize: 16),
-                        ),
-                        subtitle: Text(
-                          'ใช้ดึงราคาหุ้นสหรัฐฯ และโลโก้',
-                          style: TextStyle(
-                            color: secondaryTextColor,
-                            fontSize: 13,
+                if (AppConfig.showStockFeatures) ...[
+                  AppSectionHeader('API'),
+                  SettingsGroup(
+                    isDarkMode: isDarkMode,
+                    child: Column(
+                      children: [
+                        if (AppConfig.canUseYahooPrices)
+                          SettingsToggleTile(
+                            icon: Icons.show_chart,
+                            title: 'ใช้ Finnhub ดึงราคาหุ้น',
+                            subtitle: settings.useFinnhub
+                                ? 'Finnhub · ต้องใส่ API key'
+                                : 'Yahoo Finance · ไม่ต้องใช้ API key',
+                            value: settings.useFinnhub,
+                            onChanged: settings.setUseFinnhub,
+                            isDarkMode: isDarkMode,
                           ),
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          color: secondaryTextColor,
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const FinnhubApiKeySettingsScreen(),
+                        ListTile(
+                          leading: SettingsIcon(
+                            icon: Icons.api,
+                            color: secondaryTextColor,
+                          ),
+                          title: Text(
+                            'Finnhub API Key',
+                            style: TextStyle(color: textColor, fontSize: 16),
+                          ),
+                          subtitle: Text(
+                            'ใช้ดึงราคาหุ้นสหรัฐฯ และโลโก้',
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 13,
                             ),
-                          );
-                        },
-                      ),
-                    ],
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right,
+                            color: secondaryTextColor,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const FinnhubApiKeySettingsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
 
                 // Data Management Section
                 AppSectionHeader('ข้อมูล'),
@@ -377,7 +382,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
-                          dbManager.isConfigured
+                          !AppConfig.showBackendDetails
+                              ? 'สำรอง กู้คืน และล้างข้อมูล'
+                              : dbManager.isConfigured
                               ? 'ฐานข้อมูล: Supabase (Cloud)'
                               : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
                           style: TextStyle(

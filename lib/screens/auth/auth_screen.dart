@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -176,7 +177,13 @@ class _AuthScreenState extends State<AuthScreen> {
                       color: headerColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                     ),
-                    child: Icon(AppBrand.logo, size: 40, color: fabColor),
+                    child: Icon(
+                      AppBrand.logo,
+                      size: 40,
+                      color: isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   // App Name
@@ -461,28 +468,30 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: TextStyle(color: secondaryTextColor),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const DataManagementScreen(),
-                              ),
-                            );
-                          },
-                    icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: const Text('สถานะฐานข้อมูล'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: secondaryTextColor,
-                      side: BorderSide(
-                        color: isDarkMode
-                            ? AppColors.darkDivider
-                            : AppColors.divider,
+                  if (AppConfig.showBackendDetails) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const DataManagementScreen(),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.settings_outlined, size: 18),
+                      label: const Text('สถานะฐานข้อมูล'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: secondaryTextColor,
+                        side: BorderSide(
+                          color: isDarkMode
+                              ? AppColors.darkDivider
+                              : AppColors.divider,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

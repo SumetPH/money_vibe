@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_config.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../providers/settings_provider.dart';
@@ -6,6 +7,10 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../utils/currency_utils.dart';
+
+final List<AccountType> _accountTypes = AccountType.values
+    .where((t) => AppConfig.showStockFeatures || !t.isPortfolio)
+    .toList(growable: false);
 
 void showAccountTypePicker(
   BuildContext context, {
@@ -38,13 +43,13 @@ void showAccountTypePicker(
                   child: ListView.separated(
                     shrinkWrap: true,
                     padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: AccountType.values.length,
+                    itemCount: _accountTypes.length,
                     separatorBuilder: (_, _) => Divider(
                       height: 1,
                       color: AppColors.listDividerFor(isDarkMode),
                     ),
                     itemBuilder: (_, i) {
-                      final type = AccountType.values[i];
+                      final type = _accountTypes[i];
                       final isSelected = selected == type;
                       return ListTile(
                         title: Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -152,23 +153,25 @@ class AppDrawer extends StatelessWidget {
                     ],
                   ),
 
-                  _buildSectionTitle('ข้อมูลเชิงลึก', textSecondary),
-                  _buildGroupedCard(
-                    surfaceColor: surfaceColor,
-                    dividerColor: dividerColor,
-                    children: [
-                      _DrawerRowItem(
-                        icon: Icons.trending_up_rounded,
-                        label: 'บันทึกการลงทุน',
-                        isSelected: currentRoute == '/trade-tracker',
-                        onTap: () => _navigate(context, '/trade-tracker'),
-                        accent: accent,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        isDarkMode: isDarkMode,
-                      ),
-                    ],
-                  ),
+                  if (AppConfig.showStockFeatures) ...[
+                    _buildSectionTitle('ข้อมูลเชิงลึก', textSecondary),
+                    _buildGroupedCard(
+                      surfaceColor: surfaceColor,
+                      dividerColor: dividerColor,
+                      children: [
+                        _DrawerRowItem(
+                          icon: Icons.trending_up_rounded,
+                          label: 'บันทึกการลงทุน',
+                          isSelected: currentRoute == '/trade-tracker',
+                          onTap: () => _navigate(context, '/trade-tracker'),
+                          accent: accent,
+                          textPrimary: textPrimary,
+                          textSecondary: textSecondary,
+                          isDarkMode: isDarkMode,
+                        ),
+                      ],
+                    ),
+                  ],
 
                   _buildSectionTitle('จัดการ', textSecondary),
                   _buildGroupedCard(
