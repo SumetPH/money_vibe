@@ -657,12 +657,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final rate = _effectiveRate(account);
 
     if (widget.accountId == null) {
-      if (tx.type == TransactionType.income ||
-          tx.type == TransactionType.increaseBalance) {
+      // ไม่นับการปรับยอด ให้ตรงกับหน้าสถิติ
+      if (tx.type == TransactionType.income) {
         return tx.amount * rate;
       }
-      if (TransactionProvider.isActualExpense(tx, accounts) ||
-          tx.type == TransactionType.decreaseBalance) {
+      if (TransactionProvider.isActualExpense(tx, accounts)) {
         return -tx.amount * rate;
       }
       return 0.0;

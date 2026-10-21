@@ -189,6 +189,7 @@ class StatisticsYearlyBarChart extends StatelessWidget {
         monthShort: _getMonthShort(index + 1),
       ),
     );
+    final accountsById = {for (final a in accounts) a.id: a};
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
       final isExpense = TransactionProvider.isActualExpense(tx, accounts);
@@ -198,10 +199,11 @@ class StatisticsYearlyBarChart extends StatelessWidget {
       if (cycleMonth.year != selectedYear) continue;
 
       final monthData = monthlyData[cycleMonth.month - 1];
+      final amount = TransactionProvider.amountInThb(tx, accountsById);
       if (isIncome) {
-        monthData.income += tx.amount;
+        monthData.income += amount;
       } else if (isExpense) {
-        monthData.expense += tx.amount;
+        monthData.expense += amount;
       }
       monthData.transactionIds.add(tx.id);
     }

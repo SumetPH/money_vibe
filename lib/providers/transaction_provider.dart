@@ -152,6 +152,15 @@ class TransactionProvider extends ChangeNotifier {
     return toAccount.type != AccountType.creditCard;
   }
 
+  /// ยอดเป็นบาทตาม exchangeRate ของบัญชีต้นทาง (สูตรเดียวกับหน้ารายการ)
+  static double amountInThb(
+    AppTransaction tx,
+    Map<String, Account> accountsById,
+  ) {
+    final rate = accountsById[tx.accountId]?.exchangeRate ?? 1.0;
+    return tx.amount * (rate > 0 ? rate : 1.0);
+  }
+
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   Future<void> addTransaction(AppTransaction tx) async {
