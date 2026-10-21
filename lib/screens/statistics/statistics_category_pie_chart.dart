@@ -237,6 +237,7 @@ class StatisticsCategoryPieChart extends StatelessWidget {
   ) {
     final Map<String, double> categoryAmounts = {};
     final Map<String, List<String>> categoryTransactionIds = {};
+    final accountsById = {for (final a in accounts) a.id: a};
 
     for (final tx in transactions) {
       final isIncome = tx.type == TransactionType.income;
@@ -249,7 +250,8 @@ class StatisticsCategoryPieChart extends StatelessWidget {
       final categoryId = tx.categoryId;
       if (categoryId != null) {
         categoryAmounts[categoryId] =
-            (categoryAmounts[categoryId] ?? 0) + tx.amount;
+            (categoryAmounts[categoryId] ?? 0) +
+            TransactionProvider.amountInThb(tx, accountsById);
         categoryTransactionIds.putIfAbsent(categoryId, () => []).add(tx.id);
       }
     }

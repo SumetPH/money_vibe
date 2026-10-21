@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../main.dart';
 import '../../models/category.dart';
+import '../../models/account.dart';
 import '../../models/transaction.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -212,7 +214,10 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     bool isDarkMode,
   ) {
     final allTransactions = txProvider.transactions;
-    final totalsByCategoryId = _buildCategoryTotals(allTransactions);
+    final totalsByCategoryId = _buildCategoryTotals(
+      allTransactions,
+      context.watch<AccountProvider>().accounts,
+    );
     final cats = catProvider.categoriesOfType(type);
     final filtered = _searchQuery.isEmpty
         ? cats
@@ -487,12 +492,23 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     );
   }
 
-  Map<String, double> _buildCategoryTotals(List<AppTransaction> transactions) {
+  // ใช้นิยามเดียวกับหน้าสถิติ: รายรับ = income, รายจ่าย = isActualExpense
+  Map<String, double> _buildCategoryTotals(
+    List<AppTransaction> transactions,
+    List<Account> accounts,
+  ) {
     final totals = <String, double>{};
+    final accountsById = {for (final a in accounts) a.id: a};
     for (final tx in transactions) {
       final categoryId = tx.categoryId;
-      if (categoryId == null || tx.type.isTransferLike) continue;
-      totals[categoryId] = (totals[categoryId] ?? 0.0) + tx.amount;
+      if (categoryId == null) continue;
+      final isCounted =
+          tx.type == TransactionType.income ||
+          TransactionProvider.isActualExpense(tx, accounts);
+      if (!isCounted) continue;
+      totals[categoryId] =
+          (totals[categoryId] ?? 0.0) +
+          TransactionProvider.amountInThb(tx, accountsById);
     }
     return totals;
   }
