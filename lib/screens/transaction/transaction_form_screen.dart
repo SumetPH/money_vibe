@@ -208,13 +208,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       if (_activeKeyboardController == controller) {
         return;
       }
-      _closeKeyboard();
+      // Close only the old sheet; _closeKeyboard() would also unfocus the
+      // field being switched to and close the new sheet before it mounts.
+      _keyboardController?.close();
     }
 
     _activeKeyboardController = controller;
     final actionColor = _getActionButtonColor();
 
-    _keyboardController = _scaffoldKey.currentState?.showBottomSheet(
+    final keyboardController = _scaffoldKey.currentState?.showBottomSheet(
       (context) {
         return CalculatorKeyboard(
           controller: controller,
@@ -228,7 +230,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       elevation: 0,
     );
 
-    _keyboardController?.closed.then((_) {
+    _keyboardController = keyboardController;
+
+    keyboardController?.closed.then((_) {
+      // Old sheet closes after a new one opened (switching amount fields):
+      // don't clear the new sheet's reference, or it can't be closed before pop.
+      if (_keyboardController != keyboardController) return;
       _keyboardController = null;
       _activeKeyboardController = null;
       if (mounted) {

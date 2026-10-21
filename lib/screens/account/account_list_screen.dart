@@ -93,7 +93,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
             )
           else
             Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(right: 8),
               child: Material(
                 color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
                 shape: RoundedRectangleBorder(
@@ -105,14 +105,35 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: IconButton(
-                  icon: const Icon(Icons.more_horiz),
+                  icon: const Icon(Icons.insert_chart_outlined),
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
-                  onPressed: () => _showAppMenu(context),
+                  onPressed: () => _showSummaryModal(context),
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Material(
+              color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                side: BorderSide(
+                  color: AppColors.borderFor(isDarkMode),
+                  width: 1,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                icon: const Icon(Icons.more_horiz),
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
+                onPressed: () => _showAppMenu(context),
+              ),
+            ),
+          ),
         ],
       ),
       body: Consumer2<AccountProvider, TransactionProvider>(

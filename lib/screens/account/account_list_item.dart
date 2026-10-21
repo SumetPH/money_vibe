@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_status_chip.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 
 class AccountListItem extends StatelessWidget {
@@ -51,67 +52,92 @@ class AccountListItem extends StatelessWidget {
               top: 12,
               bottom: 12,
             ),
-            child: Row(
-              children: [
-                // Drag handle (only visible in reorder mode)
-                if (reorderIndex != null) ...[
-                  ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: Icon(
-                      Icons.drag_indicator,
-                      color: dividerColor,
-                      size: 20,
+            child: Opacity(
+              opacity: account.isHidden ? 0.45 : 1.0,
+              child: Row(
+                children: [
+                  // Drag handle (only visible in reorder mode)
+                  if (reorderIndex != null) ...[
+                    ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                  ],
+                  // Account icon
+                  AccountIconWidget(
+                    account: account,
+                    size: 40,
+                    isDarkMode: isDarkMode,
                   ),
-                  const SizedBox(width: 8),
-                ],
-                // Account icon
-                AccountIconWidget(
-                  account: account,
-                  size: 40,
-                  isDarkMode: isDarkMode,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              account.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimaryColor,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                account.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: textPrimaryColor,
+                                ),
                               ),
                             ),
-                          ),
-                          if (account.isHidden) ...[
-                            const SizedBox(width: 6),
-                            Tooltip(
-                              message: 'บัญชีนี้ถูกซ่อน',
-                              child: Icon(
-                                Icons.visibility_off_outlined,
-                                size: 16,
+                            if (account.isHidden) ...[
+                              const SizedBox(width: 6),
+                              AppStatusChip(
+                                label: 'ซ่อน',
                                 color: isDarkMode
                                     ? AppColors.darkTextSecondary
                                     : AppColors.textSecondary,
                               ),
-                            ),
+                            ],
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          account.type.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        account.type.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        '฿ ${formatAmount(account.currency == 'USD' ? balance * account.exchangeRate : balance)}',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.getAmountColor(balance, isDarkMode),
+                        ),
+                      ),
+                      Text(
+                        account.currency == 'USD'
+                            ? '${formatAmount(balance)} USD'
+                            : 'THB',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           color: isDarkMode
                               ? AppColors.darkTextSecondary
                               : AppColors.textSecondary,
@@ -119,34 +145,8 @@ class AccountListItem extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '฿ ${formatAmount(account.currency == 'USD' ? balance * account.exchangeRate : balance)}',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.getAmountColor(balance, isDarkMode),
-                      ),
-                    ),
-                    Text(
-                      account.currency == 'USD'
-                          ? '${formatAmount(balance)} USD'
-                          : 'THB',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDarkMode
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

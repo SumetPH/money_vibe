@@ -41,9 +41,6 @@ class AccountTotalRow extends StatelessWidget {
     final textSecondaryColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final actionColor = isDarkMode
-        ? AppColors.darkSurfaceVariant
-        : AppColors.sectionHeader;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
 
     return Container(
@@ -105,87 +102,36 @@ class AccountTotalRow extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '฿ ${formatAmount(amount)}',
-                style: TextStyle(
-                  fontSize: 36,
-                  height: 1.15,
-                  fontWeight: FontWeight.w700,
-                  color: textPrimaryColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              spacing: 6.0,
               children: [
-                Expanded(
-                  child: _buildAction(
-                    icon: Icons.add,
-                    label: 'เพิ่มรายการ',
-                    color: actionColor,
-                    onTap: onAddTransaction,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    formatAmount(amount),
+                    style: TextStyle(
+                      fontSize: 32,
+                      height: 1.15,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimaryColor,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildAction(
-                    icon: Icons.insert_chart_outlined,
-                    label: 'สรุปผล',
-                    color: actionColor,
-                    onTap: onShowSummary,
+                Text(
+                  "บาท",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: textSecondaryColor,
                   ),
                 ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAction({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final textColor = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadii.large),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: textColor),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

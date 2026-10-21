@@ -88,13 +88,23 @@ class RecurringListItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        recurring.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              recurring.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (recurring.isHidden) ...[
+                            const SizedBox(width: 6),
+                            AppStatusChip(label: 'ซ่อน', color: textSecondary),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(
