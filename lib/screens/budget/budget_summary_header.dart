@@ -61,7 +61,7 @@ class BudgetSummaryHeader extends StatelessWidget {
         : (isDarkMode ? AppColors.darkIncome : AppColors.income);
 
     final statusLabel = hasOverspent
-        ? 'เกินงบรวม'
+        ? 'มีหมวดเกินงบ'
         : progress >= 0.8
         ? 'ใกล้เต็มงบ'
         : 'ปกติ';
@@ -206,7 +206,7 @@ class BudgetSummaryHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'เกินงบรวม ${formatAmount(totalOverspent)} บาท',
+                    'หมวดที่ใช้เกินงบ รวม ${formatAmount(totalOverspent)} บาท',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -242,13 +242,13 @@ class BudgetSummaryHeader extends StatelessWidget {
                 ),
               ),
               Text(
-                hasOverspent
+                progress > 1.0
                     ? 'เกินเป้า'
                     : 'เหลือ ${formatAmount(totalAvailable)}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: hasOverspent
+                  color: progress > 1.0
                       ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
                       : (isDarkMode ? AppColors.darkIncome : AppColors.income),
                 ),

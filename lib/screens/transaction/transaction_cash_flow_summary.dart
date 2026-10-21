@@ -8,11 +8,15 @@ class TransactionListHeaderAction extends StatelessWidget {
   final VoidCallback onTap;
   final bool isDarkMode;
 
+  /// สีไอคอนและขอบเมื่อ action กำลังทำงานอยู่ (เช่น มีคำค้นหา)
+  final Color? activeColor;
+
   const TransactionListHeaderAction({
     super.key,
     required this.icon,
     required this.onTap,
     required this.isDarkMode,
+    this.activeColor,
   });
 
   @override
@@ -23,16 +27,21 @@ class TransactionListHeaderAction extends StatelessWidget {
         color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.full),
-          side: BorderSide(color: AppColors.borderFor(isDarkMode), width: 1),
+          side: BorderSide(
+            color: activeColor ?? AppColors.borderFor(isDarkMode),
+            width: 1,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
           onPressed: onTap,
           icon: Icon(
             icon,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
+            color:
+                activeColor ??
+                (isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary),
           ),
         ),
       ),
@@ -48,6 +57,10 @@ class TransactionCashFlowSummary extends StatelessWidget {
   final bool hidePeriodSelector;
   final VoidCallback? onSelectPeriod;
 
+  /// กรองตามหมวด (ประเภทเดียว): แสดงเฉพาะฝั่งที่มียอด และซ่อนสุทธิถ้ามีฝั่งเดียว
+  final bool isSingleType;
+  final String title;
+
   const TransactionCashFlowSummary({
     super.key,
     required this.income,
@@ -56,6 +69,8 @@ class TransactionCashFlowSummary extends StatelessWidget {
     required this.isDarkMode,
     required this.hidePeriodSelector,
     required this.onSelectPeriod,
+    this.isSingleType = false,
+    this.title = 'กระแสเงินสด',
   });
 
   @override
@@ -70,6 +85,9 @@ class TransactionCashFlowSummary extends StatelessWidget {
     final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
     final net = income - expense;
+    final showIncome = !isSingleType || income > 0;
+    final showExpense = !isSingleType || expense > 0 || !showIncome;
+    final showNet = showIncome && showExpense;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -85,7 +103,9 @@ class TransactionCashFlowSummary extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'กระแสเงินสด',
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: textPrimary,
                     fontSize: 16,
@@ -122,41 +142,45 @@ class TransactionCashFlowSummary extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: TransactionSummaryAmount(
-                  label: 'รายรับ',
-                  amount: income,
-                  color: incomeColor,
+              if (showIncome)
+                Expanded(
+                  child: TransactionSummaryAmount(
+                    label: 'รายรับ',
+                    amount: income,
+                    color: incomeColor,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TransactionSummaryAmount(
-                  label: 'รายจ่าย',
-                  amount: expense,
-                  color: expenseColor,
+              if (showNet) const SizedBox(width: 16),
+              if (showExpense)
+                Expanded(
+                  child: TransactionSummaryAmount(
+                    label: 'รายจ่าย',
+                    amount: expense,
+                    color: expenseColor,
+                  ),
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Text(
-                'สุทธิ',
-                style: TextStyle(color: textSecondary, fontSize: 16),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
-                style: TextStyle(
-                  color: AppColors.getAmountColor(net, isDarkMode),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+          if (showNet) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  'สุทธิ',
+                  style: TextStyle(color: textSecondary, fontSize: 16),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Text(
+                  '${net < 0 ? '-' : ''}฿ ${formatAmount(net.abs())}',
+                  style: TextStyle(
+                    color: AppColors.getAmountColor(net, isDarkMode),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

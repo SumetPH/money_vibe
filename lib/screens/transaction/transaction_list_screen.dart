@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/transaction.dart';
@@ -11,7 +10,6 @@ import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
@@ -22,6 +20,7 @@ import 'transaction_list_models.dart';
 import 'transaction_cash_flow_summary.dart';
 import 'transaction_list_item.dart';
 import 'transaction_period_picker_sheet.dart';
+import 'transaction_search_sheet.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final bool showPrimaryNavigation;
@@ -96,6 +95,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               visibleTx,
               accountProvider,
             );
+            // ค้นหาอยู่: สรุปยอดจากผลการค้นหาแทนทั้งช่วงเวลา
+            final searchQuery = _searchQuery.trim();
+            final isSearching = searchQuery.isNotEmpty;
+            final cardData = isSearching ? listData : summaryData;
             final isFromAccount = widget.accountId != null;
             final isFiltered =
                 isFromAccount ||
@@ -166,6 +169,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     icon: Icons.search,
                     onTap: _showSearchSheet,
                     isDarkMode: isDarkMode,
+                    activeColor: isSearching
+                        ? AppColors.accentFor(
+                            isDarkMode,
+                            settingsProvider.themeColor,
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -207,11 +216,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     sliver: SliverToBoxAdapter(
                       child: TransactionCashFlowSummary(
-                        income: summaryData.totalIncome,
-                        expense: summaryData.totalExpense,
+                        income: cardData.totalIncome,
+                        expense: cardData.totalExpense,
+                        title: isSearching
+                            ? 'ค้นหา "$searchQuery" · ${listData.transactions.length} รายการ'
+                            : 'กระแสเงินสด',
                         periodLabel: _periodShortLabel(),
                         isDarkMode: isDarkMode,
                         hidePeriodSelector: _selectedCycleMonth != null,
+                        isSingleType: widget.categoryIds != null,
                         onSelectPeriod:
                             widget.fixedDateRange == null &&
                                 widget.transactionIds == null
@@ -227,21 +240,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       ),
                     ),
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: AppSegmentedTabs(
-                        segments: [
-                          for (final value in TransactionTypeFilter.values)
-                            AppSegment(
-                              label: value.label,
-                              isSelected: _typeFilter == value,
-                              onTap: () => setState(() => _typeFilter = value),
-                            ),
-                        ],
+                  // เปิดจากงบประมาณ: ประเภทถูกกำหนดโดยงบแล้ว ไม่ต้องมีแท็บ
+                  if (widget.categoryIds == null)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: SliverToBoxAdapter(
+                        child: AppSegmentedTabs(
+                          segments: [
+                            for (final value in TransactionTypeFilter.values)
+                              AppSegment(
+                                label: value.label,
+                                isSelected: _typeFilter == value,
+                                onTap: () =>
+                                    setState(() => _typeFilter = value),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   if (listData.transactions.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
@@ -439,82 +455,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   void _showSearchSheet() {
-    final isDarkMode = context.read<SettingsProvider>().isDarkMode;
-    final textPrimary = isDarkMode
-        ? AppColors.darkTextPrimary
-        : AppColors.textPrimary;
-    final textSecondary = isDarkMode
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
-
-    showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            20 + MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppModalBottomSheetHeader(title: 'ค้นหาธุรกรรม'),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 40,
-                child: CupertinoSearchTextField(
-                  controller: TextEditingController(text: _searchQuery)
-                    ..selection = TextSelection.collapsed(
-                      offset: _searchQuery.length,
-                    ),
-                  autofocus: true,
-                  onChanged: (value) => setState(() => _searchQuery = value),
-                  onSubmitted: (_) => Navigator.pop(sheetContext),
-                  onSuffixTap: () {
-                    setState(() => _searchQuery = '');
-                    Navigator.pop(sheetContext);
-                  },
-                  placeholder: 'ค้นหาบัญชี หมวดหมู่ หรือโน้ต...',
-                  placeholderStyle: TextStyle(
-                    fontSize: 14,
-                    color: textSecondary.withValues(alpha: 0.55),
-                  ),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: textPrimary,
-                  ),
-                  backgroundColor: isDarkMode
-                      ? AppColors.darkSurfaceVariant
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 0,
-                  ),
-                  prefixInsets: const EdgeInsetsDirectional.fromSTEB(
-                    10,
-                    0,
-                    6,
-                    0,
-                  ),
-                  suffixInsets: const EdgeInsetsDirectional.fromSTEB(
-                    0,
-                    0,
-                    8,
-                    0,
-                  ),
-                  itemColor: textSecondary.withValues(alpha: 0.6),
-                  itemSize: 18,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    showTransactionSearchSheet(
+      context,
+      context.read<SettingsProvider>().isDarkMode,
+      query: _searchQuery,
+      onChanged: (value) => setState(() => _searchQuery = value),
     );
   }
 
