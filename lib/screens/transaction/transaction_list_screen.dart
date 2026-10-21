@@ -225,6 +225,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         isDarkMode: isDarkMode,
                         hidePeriodSelector: _selectedCycleMonth != null,
                         isSingleType: widget.categoryIds != null,
+                        isAccountFlow: isFromAccount,
                         onSelectPeriod:
                             widget.fixedDateRange == null &&
                                 widget.transactionIds == null

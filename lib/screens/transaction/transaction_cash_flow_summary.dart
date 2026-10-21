@@ -59,6 +59,9 @@ class TransactionCashFlowSummary extends StatelessWidget {
 
   /// กรองตามหมวด (ประเภทเดียว): แสดงเฉพาะฝั่งที่มียอด และซ่อนสุทธิถ้ามีฝั่งเดียว
   final bool isSingleType;
+
+  /// เปิดจากบัญชี: ยอดคือเงินเข้า/ออกของบัญชี (รวมโอน/ปรับยอด) ไม่ใช่รายรับรายจ่ายจริง
+  final bool isAccountFlow;
   final String title;
 
   const TransactionCashFlowSummary({
@@ -70,6 +73,7 @@ class TransactionCashFlowSummary extends StatelessWidget {
     required this.hidePeriodSelector,
     required this.onSelectPeriod,
     this.isSingleType = false,
+    this.isAccountFlow = false,
     this.title = 'กระแสเงินสด',
   });
 
@@ -145,7 +149,7 @@ class TransactionCashFlowSummary extends StatelessWidget {
               if (showIncome)
                 Expanded(
                   child: TransactionSummaryAmount(
-                    label: 'รายรับ',
+                    label: isAccountFlow ? 'เงินเข้า' : 'รายรับ',
                     amount: income,
                     color: incomeColor,
                   ),
@@ -154,7 +158,7 @@ class TransactionCashFlowSummary extends StatelessWidget {
               if (showExpense)
                 Expanded(
                   child: TransactionSummaryAmount(
-                    label: 'รายจ่าย',
+                    label: isAccountFlow ? 'เงินออก' : 'รายจ่าย',
                     amount: expense,
                     color: expenseColor,
                   ),
