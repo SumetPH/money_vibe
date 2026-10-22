@@ -7,12 +7,14 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../widgets/account_icon_widget.dart';
+import '../../widgets/app_modal_bottom_sheet.dart';
 
 class TransactionListItem extends StatelessWidget {
   final AppTransaction tx;
   final AccountProvider accountProvider;
   final CategoryProvider catProvider;
   final VoidCallback onTap;
+  final VoidCallback? onCopy;
   final bool isDarkMode;
   final String? viewingAccountId;
 
@@ -22,6 +24,7 @@ class TransactionListItem extends StatelessWidget {
     required this.accountProvider,
     required this.catProvider,
     required this.onTap,
+    this.onCopy,
     required this.isDarkMode,
     this.viewingAccountId,
   });
@@ -89,6 +92,7 @@ class TransactionListItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onCopy == null ? null : () => _showMenu(context),
       borderRadius: BorderRadius.circular(AppRadii.xLarge),
       child: Container(
         color: surfaceColor,
@@ -291,5 +295,76 @@ class TransactionListItem extends StatelessWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  void _showMenu(BuildContext context) {
+    final textColor = isDarkMode
+        ? AppColors.darkTextPrimary
+        : AppColors.textPrimary;
+    final textSecondary = isDarkMode
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
+    final incomeColor = isDarkMode ? AppColors.darkIncome : AppColors.income;
+
+    showAppModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppModalBottomSheetHeader(title: 'รายการ'),
+              const SizedBox(height: 8),
+              Material(
+                color: isDarkMode
+                    ? AppColors.darkSurfaceVariant
+                    : AppColors.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xLarge),
+                  side: BorderSide(
+                    color: dividerColor.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  leading: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: incomeColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadii.medium),
+                    ),
+                    child: Icon(
+                      Icons.copy_rounded,
+                      color: incomeColor,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'คัดลอกรายการ',
+                    style: TextStyle(color: textColor, fontSize: 15),
+                  ),
+                  subtitle: Text(
+                    'สร้างรายการใหม่จากรายการนี้ด้วยวันเวลาปัจจุบัน',
+                    style: TextStyle(color: textSecondary, fontSize: 12),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: textSecondary.withValues(alpha: 0.6),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    onCopy?.call();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -291,9 +291,10 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
       _ticker.text = draft.ticker!;
     }
     void fill(TextEditingController controller, double? value, int digits) {
-      controller.text = value == null
-          ? ''
-          : formatStockHoldingEditableNumber(value, scale: digits);
+      controller.text = formatStockHoldingEditableNumber(
+        value ?? 0,
+        scale: digits,
+      );
     }
 
     fill(_shares, draft.shares, stockHoldingSharesDecimalPlaces);
@@ -307,8 +308,8 @@ class _HoldingBuyFormScreenState extends State<HoldingBuyFormScreen> {
     setState(() {
       _hasOcrDraft = true;
       _ocrTicker = draft.ticker;
-      _ocrDate = null;
-      _ocrTime = draft.completedTime;
+      _ocrDate = DateTime.now();
+      _ocrTime = draft.completedTime ?? TimeOfDay.now();
     });
   }
 
