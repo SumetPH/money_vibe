@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
@@ -75,9 +77,19 @@ class RecurringTransactionProvider extends ChangeNotifier {
       _occurrences.clear();
       _occurrences.addAll(occurrences);
 
-      await _notificationService.rescheduleAllNotifications(
-        recurring: _recurring,
-        occurrences: _occurrences,
+      // ไม่ await: ตั้ง notification ทีละรายการผ่าน platform channel ช้า
+      // ส่ง copy เพราะ list จริงอาจถูก reload ระหว่างวน schedule
+      unawaited(
+        _notificationService
+            .rescheduleAllNotifications(
+              recurring: List.of(_recurring),
+              occurrences: List.of(_occurrences),
+            )
+            .catchError(
+              (Object e) => debugPrint(
+                'RecurringTransactionProvider: Reschedule error: $e',
+              ),
+            ),
       );
 
       debugPrint(
