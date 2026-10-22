@@ -116,8 +116,8 @@ class _BrokerOrderImportButtonState extends State<BrokerOrderImportButton> {
           'VAT ${value(draft.vatUsd, 4)} USD\n'
           'SEC/TAF ${value(draft.exchangeFeeUsd, 4)} USD\n'
           'ยอดสุทธิ ${value(draft.netUsd, 2)} USD\n\n'
-          'เมื่อกดเติมฟอร์ม ค่าที่มีอยู่จะถูกเขียนทับ และช่องที่อ่านไม่ได้จะถูกเว้นว่าง\n\n'
-          'เลือกวันที่และตรวจข้อมูลก่อนบันทึก',
+          'เมื่อกดเติมฟอร์ม ค่าที่มีอยู่จะถูกเขียนทับ และช่องที่อ่านไม่ได้จะเป็น 0\n\n'
+          'วันที่เริ่มต้นเป็นวันนี้ ตรวจข้อมูลก่อนบันทึก',
           style: TextStyle(color: textColor),
         ),
       ),

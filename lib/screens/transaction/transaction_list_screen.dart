@@ -361,6 +361,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                               catProvider: catProvider,
                                               onTap: () =>
                                                   _openForm(context, tx),
+                                              onCopy: () =>
+                                                  _openCopyForm(context, tx),
                                               isDarkMode: isDarkMode,
                                               viewingAccountId:
                                                   widget.accountId,
@@ -731,6 +733,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       MaterialPageRoute(
         builder: (_) =>
             TransactionFormScreen(transaction: tx, initialValues: initialTx),
+      ),
+    );
+  }
+
+  // คัดลอกรายการเดิมเป็นรายการใหม่ โดยใช้วันเวลาปัจจุบัน
+  void _openCopyForm(BuildContext context, AppTransaction tx) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionFormScreen(
+          initialValues: tx.copyWith(id: '', dateTime: DateTime.now()),
+        ),
       ),
     );
   }

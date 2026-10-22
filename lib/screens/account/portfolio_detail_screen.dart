@@ -594,6 +594,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
                   purchase: purchase,
                   updatedHolding: updatedHolding,
                 );
+                if (holding == null) unawaited(_refreshPrices());
                 if (updatedHolding.logoUrl.isEmpty) {
                   unawaited(_backfillHoldingLogo(provider, purchase));
                 }
