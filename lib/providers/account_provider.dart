@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
@@ -161,7 +163,8 @@ class AccountProvider extends ChangeNotifier {
         'AccountProvider: Loaded ${_accounts.length} accounts, ${holdings.length} holdings, ${stockTrades.length} stock trades, ${annualReports.length} annual reports, ${investmentPlanStatuses.length} investment plan statuses, ${allocationTargets.length} allocation targets',
       );
 
-      if (refreshExchangeRate) await _refreshUsdExchangeRate();
+      // ไม่ await: เรียก API ภายนอก (timeout 10s) ไม่ควรบล็อกการเปิดแอพ
+      if (refreshExchangeRate) unawaited(_refreshUsdExchangeRate());
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
       rethrow;
@@ -192,13 +195,19 @@ class AccountProvider extends ChangeNotifier {
       final rate = await const ExchangeRateService().fetchUsdThbRate();
       debugPrint('AccountProvider: USD/THB rate fetched: $rate');
       // fetch ครั้งเดียว แล้ว apply ให้ทุก USD account
+      // อ่าน account ล่าสุดจาก _accounts เพราะอาจถูก reload ระหว่างรอ API
       for (final acc in usdAccounts) {
-        final updated = acc.copyWith(exchangeRate: rate);
         final idx = _accounts.indexWhere((a) => a.id == acc.id);
-        if (idx != -1) _accounts[idx] = updated;
-        await _db.updateAccountExchangeRate(acc.id, exchangeRate: rate);
+        if (idx != -1) {
+          _accounts[idx] = _accounts[idx].copyWith(exchangeRate: rate);
+        }
       }
       notifyListeners();
+      await Future.wait(
+        usdAccounts.map(
+          (acc) => _db.updateAccountExchangeRate(acc.id, exchangeRate: rate),
+        ),
+      );
     } catch (e) {
       // Silently fail — ใช้ rate เก่าต่อไป (offline-safe)
       debugPrint('AccountProvider: Failed to fetch USD/THB rate: $e');

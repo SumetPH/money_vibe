@@ -42,38 +42,38 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
   Future<List<AppTransaction>> getTransactions() async {
     _requireAuth();
     repo.log('Fetching transactions for user: $currentUserId');
-    final allTransactions = <AppTransaction>[];
-    int offset = 0;
     const int pageSize = 1000;
 
-    while (true) {
-      final response = await client
-          .from('transactions')
-          .select()
-          .eq('user_id', currentUserId!)
-          .order('date_time', ascending: false)
-          .range(offset, offset + pageSize - 1);
+    // หน้าแรกขอ count มาด้วย แล้วยิงหน้าที่เหลือพร้อมกัน แทนการรอทีละหน้า
+    final firstPage = await _transactionPage(
+      0,
+      pageSize,
+    ).count(CountOption.exact);
+    final remainingPages = await Future.wait([
+      for (var offset = pageSize; offset < firstPage.count; offset += pageSize)
+        _transactionPage(offset, pageSize),
+    ]);
 
-      final batch = (response as List)
-          .map((row) => _transactionFromSupabase(row))
-          .toList();
-
-      if (batch.isEmpty) {
-        break;
-      }
-
-      allTransactions.addAll(batch);
-
-      if (batch.length < pageSize) {
-        break;
-      }
-
-      offset += pageSize;
-    }
+    final allTransactions = [
+      for (final page in [firstPage.data, ...remainingPages])
+        for (final row in page) _transactionFromSupabase(row),
+    ];
 
     repo.log('Fetched ${allTransactions.length} transactions total');
     return allTransactions;
   }
+
+  // order ด้วย id ต่อท้ายเพื่อให้ลำดับคงที่ข้ามหน้า (date_time ซ้ำกันได้)
+  PostgrestTransformBuilder<PostgrestList> _transactionPage(
+    int offset,
+    int pageSize,
+  ) => client
+      .from('transactions')
+      .select()
+      .eq('user_id', currentUserId!)
+      .order('date_time', ascending: false)
+      .order('id')
+      .range(offset, offset + pageSize - 1);
 
   @override
   Future<void> insertTransaction(AppTransaction transaction) async {
