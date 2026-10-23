@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
 import '../../services/stock_price_service.dart';
@@ -64,6 +65,10 @@ class PortfolioGroupSection extends StatelessWidget {
     final sortedHoldings = List<StockHolding>.from(groupHoldings);
     if (sortType == 'value') {
       sortedHoldings.sort((a, b) => b.valueUsd.compareTo(a.valueUsd));
+    } else if (sortType == 'pnl_amount') {
+      sortedHoldings.sort(
+        (a, b) => b.unrealizedPnlUsd.compareTo(a.unrealizedPnlUsd),
+      );
     } else {
       sortedHoldings.sort(
         (a, b) => b.unrealizedPnlPct.compareTo(a.unrealizedPnlPct),
@@ -245,78 +250,89 @@ class PortfolioGroupSection extends StatelessWidget {
                 ],
               ),
             ),
-            if (groupName != 'ทั่วไป')
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: dividerColor.withValues(alpha: 0.25),
-                      width: 0.5,
-                    ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: dividerColor.withValues(alpha: 0.25),
+                    width: 0.5,
                   ),
                 ),
-                alignment: Alignment.centerLeft,
-                child: PopupMenuButton<String>(
-                  initialValue: sortType,
-                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  padding: EdgeInsets.zero,
-                  tooltip: 'เปลี่ยนรูปแบบการเรียง',
-                  onSelected: (val) => onSortTypeChanged(val),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        sortType == 'value'
-                            ? 'เรียงตามมูลค่า'
-                            : 'เรียงตามกำไร/ขาดทุน',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: secondaryColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.arrow_drop_down,
-                        size: 16,
+              ),
+              alignment: Alignment.centerLeft,
+              child: PopupMenuButton<String>(
+                initialValue: sortType,
+                color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
+                padding: EdgeInsets.zero,
+                tooltip: 'เปลี่ยนรูปแบบการเรียง',
+                onSelected: (val) => onSortTypeChanged(val),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      switch (sortType) {
+                        'value' => 'เรียงตามมูลค่า',
+                        'pnl_amount' => 'เรียงตามกำไร/ขาดทุน (จำนวนเงิน)',
+                        _ => 'เรียงตามกำไร/ขาดทุน (%)',
+                      },
+                      style: TextStyle(
+                        fontSize: 12,
                         color: secondaryColor,
-                      ),
-                    ],
-                  ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'value',
-                      child: Text(
-                        'เรียงตามมูลค่า',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textColor,
-                          fontWeight: sortType == 'value'
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    PopupMenuItem(
-                      value: 'pnl',
-                      child: Text(
-                        'เรียงตามกำไร/ขาดทุน',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textColor,
-                          fontWeight: sortType == 'pnl'
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      size: 16,
+                      color: secondaryColor,
                     ),
                   ],
                 ),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'value',
+                    child: Text(
+                      'เรียงตามมูลค่า',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                        fontWeight: sortType == 'value'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pnl',
+                    child: Text(
+                      'เรียงตามกำไร/ขาดทุน (%)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                        fontWeight: sortType == 'pnl'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pnl_amount',
+                    child: Text(
+                      'เรียงตามกำไร/ขาดทุน (จำนวนเงิน)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                        fontWeight: sortType == 'pnl_amount'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

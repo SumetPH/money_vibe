@@ -53,7 +53,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   int _selectedTab = 0;
   bool _isRefreshing = false;
   Map<String, String> _groupSortTypes =
-      {}; // Key: groupName, Value: 'value' หรือ 'pnl'
+      {}; // Key: groupName, Value: 'value', 'pnl' หรือ 'pnl_amount'
   List<String> _groupOrder = [];
 
   @override
