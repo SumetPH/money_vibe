@@ -85,7 +85,10 @@
 - ไม่มีราคา Pre/Post; โลโก้/ชื่อบริษัทยังใช้ Finnhub และอัตราแลกเปลี่ยนยังใช้ Frankfurter
 - Yahoo ล้มเหลวให้คงราคาเดิมตามกติกา snapshot ครบทั้งพอร์ต; ไม่มีการสลับผู้ให้บริการอัตโนมัติ
 - พอร์ตหุ้นไทยไม่มีราคาอัตโนมัติ ต้องกรอกเองในช่อง "ราคาปัจจุบัน"
-- Yahoo เป็น endpoint ไม่เป็นทางการ อาจถูกจำกัดหรือเปลี่ยนรูปแบบได้; Flutter Web อาจติด CORS
+- Yahoo เป็น endpoint ไม่เป็นทางการ อาจถูกจำกัดหรือเปลี่ยนรูปแบบได้
+- Flutter Web build ส่วนตัวเรียก Yahoo ตรงไม่ได้ (ไม่มี CORS header) จึงเรียกผ่าน edge function `yahoo-quote` (ต้อง login) แทน; Store build ไม่เรียก function นี้เลย
+  - deploy ไป project ที่ web build ส่วนตัวใช้: `supabase functions deploy yahoo-quote --project-ref <ref>`
+  - ตั้ง secret `ALLOWED_ORIGINS` ให้มี origin ของ web (เช่น `http://localhost:5000,https://your-web-domain`) ไม่งั้น browser ยังบล็อก CORS
 
 ### สถานะการเชื่อม Yahoo สำหรับ build ส่วนตัว
 
