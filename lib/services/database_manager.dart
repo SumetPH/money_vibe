@@ -77,16 +77,6 @@ class DatabaseManager extends ChangeNotifier {
 
   // ── Health Check ───────────────────────────────────────────────────────────
 
-  Future<bool> testSupabaseConnection() async {
-    if (!isConfigured) return false;
-    try {
-      return await _repository!.isConnected();
-    } catch (e) {
-      debugPrint('[DatabaseManager] Connection test failed: $e');
-      return false;
-    }
-  }
-
   Future<Map<String, dynamic>> healthCheck() async {
     if (_repository == null) {
       return {'status': 'not_configured'};
