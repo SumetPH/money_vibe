@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../models/stock_quote.dart';
@@ -19,6 +20,7 @@ class StockCompanyProfile {
 /// ราคาหุ้นจากแหล่งที่เลือก; company profile ใช้ Finnhub เสมอ
 class StockPriceService {
   static const _finnhubHost = 'finnhub.io';
+  static const _yahooProxyFunction = 'yahoo-quote';
   static const _maxConcurrentPriceRequests = 4;
   static const _maxPriceFetchAttempts = 3;
   static const _singlePriceTimeout = Duration(seconds: 12);
@@ -106,6 +108,7 @@ class StockPriceService {
 
   Future<StockQuote?> _fetchYahooQuote(String ticker) async {
     if (!AppConfig.canUseYahooPrices) return null;
+    if (kIsWeb) return _fetchYahooQuoteViaProxy(ticker);
     try {
       final uri = Uri.https(
         'query1.finance.yahoo.com',
@@ -124,6 +127,26 @@ class StockPriceService {
       final meta = result['meta'] as Map<String, dynamic>?;
       return meta == null ? null : StockQuote.fromYahooMeta(meta);
     } catch (_) {
+      return null;
+    }
+  }
+
+  // Yahoo ไม่ส่ง CORS header จึงให้ Flutter Web เรียกผ่าน edge function แทน
+  Future<StockQuote?> _fetchYahooQuoteViaProxy(String ticker) async {
+    try {
+      final client = Supabase.instance.client;
+      if (client.auth.currentUser == null) return null;
+      final response = await client.functions
+          .invoke(_yahooProxyFunction, body: {'ticker': ticker})
+          .timeout(_requestTimeout);
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+      final meta = data['meta'];
+      return meta is Map<String, dynamic>
+          ? StockQuote.fromYahooMeta(meta)
+          : null;
+    } catch (e) {
+      debugPrint('StockPriceService: yahoo proxy $ticker error: $e');
       return null;
     }
   }
