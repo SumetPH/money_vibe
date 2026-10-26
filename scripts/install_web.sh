@@ -19,10 +19,10 @@ echo "📦 Building for Web..."
 flutter build web --release --no-tree-shake-icons "${FLUTTER_BUILD_VERSION_ARGS[@]}" "${FLUTTER_ENV_ARGS[@]}"
 
 echo "👀 Copying web build to github folder..."
-cp -R ./build/web/* /Users/sumetph/Development/money/money-vibe-build/web/
+cp -R ./build/web/* /Users/sumetph/Development/repositories/money-vibe-build/web/
 
 echo "🐰 Git commit and push to github..."
-cd /Users/sumetph/Development/money/money-vibe-build/web/
+cd /Users/sumetph/Development/repositories/money-vibe-build/web/
 git add .
 git commit -m "deploy web build"
 git push origin main
