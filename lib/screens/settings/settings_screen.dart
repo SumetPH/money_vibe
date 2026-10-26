@@ -146,9 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               subtitle: Text(
-                                AppConfig.showBackendDetails
-                                    ? 'เข้าสู่ระบบเพื่อซิงค์ข้อมูลกับ Supabase'
-                                    : 'เข้าสู่ระบบเพื่อซิงค์ข้อมูล',
+                                'เข้าสู่ระบบเพื่อซิงค์ข้อมูล',
                                 style: TextStyle(color: secondaryTextColor),
                               ),
                               trailing: Icon(
@@ -160,36 +158,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                         },
                       ),
-                      if (AppConfig.showBackendDetails &&
-                          !dbManager.isConfigured) ...[
-                        ListTile(
-                          leading: const SettingsIcon(
-                            icon: Icons.cloud_off,
-                            color: Colors.orange,
-                          ),
-                          title: Text(
-                            'ยังไม่ได้ตั้งค่า Supabase',
-                            style: TextStyle(color: textColor),
-                          ),
-                          subtitle: Text(
-                            'แอปนี้ต้องถูก build พร้อมค่า Supabase',
-                            style: TextStyle(color: secondaryTextColor),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            color: secondaryTextColor,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const DataManagementScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -378,20 +346,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ListTile(
                         leading: SettingsIcon(
                           icon: Icons.cloud,
-                          color: dbManager.isConfigured
-                              ? Colors.blue
-                              : Colors.orange,
+                          color: Colors.blue,
                         ),
                         title: Text(
                           'จัดการข้อมูล',
                           style: TextStyle(color: textColor, fontSize: 16),
                         ),
                         subtitle: Text(
-                          !AppConfig.showBackendDetails
-                              ? 'สำรอง กู้คืน และล้างข้อมูล'
-                              : dbManager.isConfigured
-                              ? 'ฐานข้อมูล: Supabase (Cloud)'
-                              : 'ฐานข้อมูล: ยังไม่ได้ตั้งค่าจาก build',
+                          'สำรอง กู้คืน และล้างข้อมูล',
                           style: TextStyle(
                             color: secondaryTextColor,
                             fontSize: 13,

@@ -46,9 +46,6 @@ class AppConfig {
   /// ฟีเจอร์หุ้นทั้งหมด: บันทึกการลงทุน, บัญชีพอร์ตหุ้น, ตั้งค่าราคาหุ้น/Finnhub
   static const bool showStockFeatures = !isStoreBuild;
 
-  /// UI ที่บอกรายละเอียด backend (Supabase) เช่นการ์ดสถานะฐานข้อมูล
-  static const bool showBackendDetails = !isStoreBuild;
-
   /// URL หน้า Privacy Policy (`--dart-define=PRIVACY_POLICY_URL=...`)
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',
@@ -106,15 +103,7 @@ class AppConfig {
     );
   }
 
-  bool get isProduction => environment == AppEnvironment.prod;
-
   String get environmentName => environment.name;
-
-  String get maskedSupabaseUrl {
-    final uri = Uri.tryParse(supabaseUrl);
-    if (uri == null || uri.host.isEmpty) return 'configured';
-    return uri.host;
-  }
 
   static String? _normalizeUrl(String value) {
     var normalized = value.trim();

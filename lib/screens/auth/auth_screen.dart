@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../../config/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -12,7 +11,6 @@ import '../../providers/budget_provider.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/sync_provider.dart';
-import '../settings/data_management_screen.dart';
 import 'auth_brand_panel.dart';
 import 'reset_password_screen.dart';
 import '../../theme/app_colors.dart';
@@ -519,30 +517,6 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: TextStyle(color: secondaryTextColor),
                       ),
                     ),
-                  if (AppConfig.showBackendDetails) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: authProvider.isLoading
-                          ? null
-                          : () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const DataManagementScreen(),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                      label: const Text('สถานะฐานข้อมูล'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: secondaryTextColor,
-                        side: BorderSide(
-                          color: isDarkMode
-                              ? AppColors.darkDivider
-                              : AppColors.divider,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
