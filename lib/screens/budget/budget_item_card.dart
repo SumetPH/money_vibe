@@ -136,21 +136,6 @@ class BudgetItemRow extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Reorder Handle if active
-                  if (reorderIndex != null) ...[
-                    ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: Icon(
-                          Icons.drag_indicator_rounded,
-                          color: dividerColor,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-
                   // Squircle Avatar
                   Container(
                     width: 40,
@@ -284,6 +269,20 @@ class BudgetItemRow extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                  // Reorder Handle if active
+                  if (reorderIndex != null) ...[
+                    ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          color: dividerColor,
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ],
                 ],

@@ -57,21 +57,6 @@ class CategoryListItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
             child: Row(
               children: [
-                // Drag handle (visible only in reorder mode)
-                if (reorderIndex != null) ...[
-                  ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Icon(
-                        Icons.drag_indicator_rounded,
-                        color: textSecondaryColor,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
-
                 // Squircle Icon Container
                 Container(
                   width: 40,
@@ -151,6 +136,20 @@ class CategoryListItem extends StatelessWidget {
                       color: AppColors.getAmountColor(
                         displayAmount,
                         isDarkMode,
+                      ),
+                    ),
+                  ),
+                ],
+                // Drag handle (visible only in reorder mode)
+                if (reorderIndex != null) ...[
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        color: textSecondaryColor,
+                        size: 22,
                       ),
                     ),
                   ),

@@ -56,18 +56,6 @@ class AccountListItem extends StatelessWidget {
               opacity: account.isHidden ? 0.45 : 1.0,
               child: Row(
                 children: [
-                  // Drag handle (only visible in reorder mode)
-                  if (reorderIndex != null) ...[
-                    ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: Icon(
-                        Icons.drag_indicator,
-                        color: dividerColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   // Account icon
                   AccountIconWidget(
                     account: account,
@@ -145,6 +133,18 @@ class AccountListItem extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Drag handle (only visible in reorder mode)
+                  if (reorderIndex != null) ...[
+                    const SizedBox(width: 8),
+                    ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

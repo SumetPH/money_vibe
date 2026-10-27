@@ -61,19 +61,6 @@ class RecurringListItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                if (reorderIndex != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: Icon(
-                        Icons.drag_indicator,
-                        color: dividerColor,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
                 Container(
                   width: 40,
                   height: 40,
@@ -174,6 +161,19 @@ class RecurringListItem extends StatelessWidget {
                       color: typeColor,
                     ),
                   ),
+                if (reorderIndex != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: ReorderableDragStartListener(
+                      index: reorderIndex!,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: dividerColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
