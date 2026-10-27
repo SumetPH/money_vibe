@@ -115,11 +115,6 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Drag handle (only visible in reorder mode)
-                  if (widget.isReorderMode) ...[
-                    Icon(Icons.drag_indicator, color: dividerColor, size: 20),
-                    const SizedBox(width: 8),
-                  ],
                   Expanded(
                     child: Row(
                       children: [
@@ -215,6 +210,11 @@ class _PortfolioHoldingItemWidgetState extends State<PortfolioHoldingItemWidget>
                       ],
                     ),
                   ),
+                  // Drag handle (only visible in reorder mode)
+                  if (widget.isReorderMode) ...[
+                    const SizedBox(width: 8),
+                    Icon(Icons.drag_indicator, color: dividerColor, size: 20),
+                  ],
                 ],
               ),
             ),
