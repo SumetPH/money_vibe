@@ -82,6 +82,18 @@ void main() async {
     isAuthenticated: () => dbManager.repositoryOrNull?.isAuthenticated ?? false,
     getSyncLogs: () async =>
         await dbManager.repositoryOrNull?.getSyncLogs() ?? <String, DateTime>{},
+    loaders: {
+      SyncModule.accounts: () => _initProvider('Account', accountProvider.init),
+      SyncModule.budgets: () => _initProvider('Budget', budgetProvider.init),
+      SyncModule.categories: () =>
+          _initProvider('Category', categoryProvider.init),
+      SyncModule.transactions: () =>
+          _initProvider('Transaction', transactionProvider.init),
+      SyncModule.recurring: () =>
+          _initProvider('Recurring', recurringProvider.init),
+      SyncModule.cashFlow: () =>
+          _initProvider('Cash-flow forecast', cashFlowProvider.init),
+    },
     refreshers: {
       SyncModule.accounts: accountProvider.reloadPersistedData,
       SyncModule.categories: categoryProvider.reload,
@@ -106,16 +118,7 @@ void main() async {
 
     // โหลดข้อมูลถ้า Login แล้ว
     if (authProvider.isLoggedIn) {
-      await syncProvider.initialize(
-        () => Future.wait([
-          _initProvider('Account', accountProvider.init),
-          _initProvider('Budget', budgetProvider.init),
-          _initProvider('Category', categoryProvider.init),
-          _initProvider('Transaction', transactionProvider.init),
-          _initProvider('Recurring', recurringProvider.init),
-          _initProvider('Cash-flow forecast', cashFlowProvider.init),
-        ]),
-      );
+      await syncProvider.initialize();
     }
 
     await _initProvider(

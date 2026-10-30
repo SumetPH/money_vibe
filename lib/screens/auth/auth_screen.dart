@@ -4,12 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/account_provider.dart';
-import '../../providers/category_provider.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/budget_provider.dart';
-import '../../providers/recurring_transaction_provider.dart';
-import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/sync_provider.dart';
 import 'auth_brand_panel.dart';
 import 'reset_password_screen.dart';
@@ -63,14 +57,6 @@ class _AuthScreenState extends State<AuthScreen> {
     // หน้านี้ทันที (State ถูก unmount) จึงใช้ context หลัง signIn ไม่ได้
     final authProvider = context.read<AuthProvider>();
     final syncProvider = context.read<SyncProvider>();
-    final reloaders = <Future<void> Function()>[
-      context.read<AccountProvider>().reload,
-      context.read<CategoryProvider>().reload,
-      context.read<TransactionProvider>().reload,
-      context.read<BudgetProvider>().reload,
-      context.read<RecurringTransactionProvider>().reload,
-      context.read<CashFlowForecastProvider>().reload,
-    ];
     final router = GoRouter.of(context);
     final isLoginMode = _isLogin;
     bool success;
@@ -93,9 +79,7 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('[AuthScreen] Login success, reloading providers...');
 
       // โหลดข้อมูลใหม่ตาม user ที่ login
-      await syncProvider.initialize(
-        () => Future.wait(reloaders.map((reload) => reload())),
-      );
+      await syncProvider.initialize();
 
       debugPrint('[AuthScreen] Providers reloaded, navigating to home');
       router.go('/accounts');

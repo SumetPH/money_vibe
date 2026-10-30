@@ -2,15 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/budget_provider.dart';
-import '../../providers/category_provider.dart';
-import '../../providers/recurring_transaction_provider.dart';
-import '../../providers/cash_flow_forecast_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
-import '../../providers/transaction_provider.dart';
 import '../../services/csv_service.dart';
 import '../../services/database_manager.dart';
 import '../../theme/app_colors.dart';
@@ -80,16 +74,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (result.canceled) return;
 
       if (result.hasData) {
-        await context.read<SyncProvider>().initialize(
-          () => Future.wait([
-            context.read<AccountProvider>().reload(),
-            context.read<CategoryProvider>().reload(),
-            context.read<TransactionProvider>().reload(),
-            context.read<BudgetProvider>().reload(),
-            context.read<RecurringTransactionProvider>().reload(),
-            context.read<CashFlowForecastProvider>().reload(),
-          ]),
-        );
+        await context.read<SyncProvider>().initialize();
       }
 
       if (!mounted) return;
@@ -115,12 +100,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     final expenseColor = isDarkMode ? AppColors.darkExpense : AppColors.expense;
 
     // Read providers first (before any await)
-    final accountProvider = context.read<AccountProvider>();
-    final budgetProvider = context.read<BudgetProvider>();
-    final categoryProvider = context.read<CategoryProvider>();
-    final transactionProvider = context.read<TransactionProvider>();
-    final recurringProvider = context.read<RecurringTransactionProvider>();
-    final cashFlowProvider = context.read<CashFlowForecastProvider>();
+    final syncProvider = context.read<SyncProvider>();
 
     final confirmed = await showAppConfirmDialog(
       context: context,
@@ -180,16 +160,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
         if (!mounted) return;
 
-        await context.read<SyncProvider>().initialize(
-          () => Future.wait([
-            accountProvider.reload(),
-            budgetProvider.reload(),
-            categoryProvider.reload(),
-            transactionProvider.reload(),
-            recurringProvider.reload(),
-            cashFlowProvider.reload(),
-          ]),
-        );
+        await syncProvider.initialize();
 
         if (!mounted) return;
 

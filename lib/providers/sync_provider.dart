@@ -25,14 +25,24 @@ enum SyncModule {
   }
 }
 
+/// ความพร้อมของข้อมูล module: `ready` คือเคยโหลดสำเร็จแล้วอย่างน้อยหนึ่งครั้ง
+/// ส่วน `failed` ใช้เฉพาะ module ที่ยังไม่เคยโหลดสำเร็จ
+enum DataReadiness { notLoaded, loading, ready, failed }
+
 class SyncProvider extends ChangeNotifier {
   final bool Function() isAuthenticated;
   final SyncLogReader getSyncLogs;
+
+  /// โหลดข้อมูลเต็มของแต่ละ module (ใช้ตอน Initial Load)
+  final Map<SyncModule, SyncRefreshCallback> loaders;
+
+  /// โหลดเฉพาะข้อมูลที่ Background Sync ต้องใช้
   final Map<SyncModule, SyncRefreshCallback> refreshers;
   final DateTime Function() _now;
   final Duration cooldown;
 
   final Map<SyncModule, DateTime> _localTimestamps = {};
+  final Map<SyncModule, DataReadiness> _readiness = {};
   Future<void>? _activeCheck;
   Future<void>? _activeInitialization;
   DateTime? _lastCheckTime;
@@ -40,9 +50,23 @@ class SyncProvider extends ChangeNotifier {
 
   bool get hasBaseline => _hasBaseline;
 
+  /// สถานะรวม: มีตัวไหนล้มเหลวถือว่าล้มเหลว, ทุกตัวพร้อมถือว่าพร้อม
+  DataReadiness readinessOf(Iterable<SyncModule> modules) {
+    final states = modules
+        .map((module) => _readiness[module.refreshTarget])
+        .toList();
+    if (states.contains(DataReadiness.failed)) return DataReadiness.failed;
+    if (states.every((state) => state == DataReadiness.ready)) {
+      return DataReadiness.ready;
+    }
+    if (states.contains(DataReadiness.loading)) return DataReadiness.loading;
+    return DataReadiness.notLoaded;
+  }
+
   SyncProvider({
     required this.isAuthenticated,
     required this.getSyncLogs,
+    required this.loaders,
     required this.refreshers,
     DateTime Function()? now,
     this.cooldown = const Duration(seconds: 30),
@@ -68,43 +92,86 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> initialize(Future<void> Function() loadInitialData) {
+  Future<void> initialize() {
     final activeInitialization = _activeInitialization;
     if (activeInitialization != null) return activeInitialization;
 
-    final initialization = _runInitialization(loadInitialData);
+    final initialization = _runInitialization();
     _activeInitialization = initialization;
     return initialization;
   }
 
-  Future<void> _runInitialization(
-    Future<void> Function() loadInitialData,
-  ) async {
+  Future<void> _runInitialization() async {
     try {
       final activeCheck = _activeCheck;
       if (activeCheck != null) await activeCheck;
-      await _initialize(loadInitialData);
+      await _initialize();
     } finally {
       _activeInitialization = null;
     }
   }
 
-  Future<void> _initialize(Future<void> Function() loadInitialData) async {
+  Future<void> _initialize() async {
     if (!isAuthenticated()) {
-      await loadInitialData();
+      _throwFirstError(await _loadModules(loaders.keys));
       return;
     }
 
     final before = await _readRemoteLogs();
-    await loadInitialData();
+    final errors = await _loadModules(loaders.keys);
     final after = await _readRemoteLogs();
 
+    // ตั้ง baseline เฉพาะ module ที่โหลดสำเร็จ module ที่ล้มเหลวรอ Manual Refresh
+    final loaded = {
+      for (final module in SyncModule.values)
+        if (_readiness[module.refreshTarget] == DataReadiness.ready) module,
+    };
     _localTimestamps
       ..clear()
-      ..addAll(before);
+      ..addEntries(before.entries.where((e) => loaded.contains(e.key)));
     _hasBaseline = true;
-    await _refreshChanged(after);
+    await _refreshChanged({
+      for (final entry in after.entries)
+        if (loaded.contains(entry.key)) entry.key: entry.value,
+    });
     _lastCheckTime = _now();
+    _throwFirstError(errors);
+  }
+
+  /// โหลดทุก module ขนานกัน module ที่ล้มเหลวไม่ทำให้ตัวอื่นหยุด คืน error ที่เกิดขึ้น
+  Future<List<(Object, StackTrace)>> _loadModules(
+    Iterable<SyncModule> modules,
+  ) async {
+    final targets = modules.toSet();
+    for (final module in targets) {
+      if (_readiness[module] != DataReadiness.ready) {
+        _readiness[module] = DataReadiness.loading;
+      }
+    }
+    notifyListeners();
+
+    final errors = <(Object, StackTrace)>[];
+    await Future.wait(
+      targets.map((module) async {
+        try {
+          await loaders[module]!();
+          _readiness[module] = DataReadiness.ready;
+        } catch (error, stackTrace) {
+          if (_readiness[module] != DataReadiness.ready) {
+            _readiness[module] = DataReadiness.failed;
+          }
+          errors.add((error, stackTrace));
+        }
+      }),
+    );
+    notifyListeners();
+    return errors;
+  }
+
+  void _throwFirstError(List<(Object, StackTrace)> errors) {
+    if (errors.isEmpty) return;
+    final (error, stackTrace) = errors.first;
+    Error.throwWithStackTrace(error, stackTrace);
   }
 
   Future<void> _checkAndSync() async {
@@ -153,12 +220,18 @@ class SyncProvider extends ChangeNotifier {
       }
       await refresh();
       _localTimestamps.addAll(entry.value);
+      if (_readiness[entry.key] != DataReadiness.ready) {
+        _readiness[entry.key] = DataReadiness.ready;
+        notifyListeners();
+      }
     }
   }
 
   void reset() {
     _localTimestamps.clear();
+    _readiness.clear();
     _lastCheckTime = null;
     _hasBaseline = false;
+    notifyListeners();
   }
 }

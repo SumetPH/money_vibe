@@ -10,6 +10,7 @@ void main() {
     final provider = SyncProvider(
       isAuthenticated: () => true,
       getSyncLogs: () async => {'accounts': changedAt, 'portfolio': changedAt},
+      loaders: const {},
       refreshers: {SyncModule.accounts: () async => refreshCount++},
     );
 
@@ -31,10 +32,11 @@ void main() {
           logReads++;
           return {'accounts': baseline};
         },
+        loaders: {SyncModule.accounts: () async => initialLoads++},
         refreshers: {SyncModule.accounts: () async => refreshes++},
       );
 
-      await provider.initialize(() async => initialLoads++);
+      await provider.initialize();
 
       expect(logReads, 2);
       expect(initialLoads, 1);
@@ -54,10 +56,11 @@ void main() {
         getSyncLogs: () async => {
           'transactions': logReads++ == 0 ? before : after,
         },
+        loaders: {SyncModule.transactions: () async {}},
         refreshers: {SyncModule.transactions: () async => refreshes++},
       );
 
-      await provider.initialize(() async {});
+      await provider.initialize();
 
       expect(refreshes, 1);
     },
@@ -69,6 +72,7 @@ void main() {
     final provider = SyncProvider(
       isAuthenticated: () => true,
       getSyncLogs: () async => {'budgets': DateTime.utc(2026, 9, 23)},
+      loaders: const {},
       refreshers: {
         SyncModule.budgets: () async {
           attempts++;
@@ -94,6 +98,7 @@ void main() {
         logReads++;
         return response.future;
       },
+      loaders: const {},
       refreshers: const {},
     );
 
@@ -114,10 +119,11 @@ void main() {
         logReads++;
         return {};
       },
+      loaders: {SyncModule.accounts: () => initialLoad.future},
       refreshers: const {},
     );
 
-    final initialization = provider.initialize(() => initialLoad.future);
+    final initialization = provider.initialize();
     final check = provider.checkAndSync();
     expect(identical(initialization, check), isTrue);
 
@@ -136,6 +142,7 @@ void main() {
         logReads++;
         return {};
       },
+      loaders: const {},
       refreshers: const {},
       now: () => now,
     );
@@ -157,6 +164,7 @@ void main() {
         logReads++;
         return {};
       },
+      loaders: const {},
       refreshers: const {},
     );
 
@@ -177,6 +185,7 @@ void main() {
           if (reads == 1) throw StateError('offline');
           return {};
         },
+        loaders: const {},
         refreshers: const {},
         now: () => now,
       );
@@ -189,6 +198,85 @@ void main() {
     },
   );
 
+  test(
+    'initial load marks loaded modules ready and failed modules failed',
+    () async {
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {},
+        loaders: {
+          SyncModule.accounts: () async {},
+          SyncModule.transactions: () async => throw StateError('offline'),
+        },
+        refreshers: const {},
+      );
+
+      await expectLater(provider.initialize(), throwsStateError);
+
+      expect(provider.readinessOf({SyncModule.accounts}), DataReadiness.ready);
+      expect(
+        provider.readinessOf({SyncModule.transactions}),
+        DataReadiness.failed,
+      );
+      expect(
+        provider.readinessOf({SyncModule.accounts, SyncModule.transactions}),
+        DataReadiness.failed,
+      );
+    },
+  );
+
+  test('portfolio readiness follows accounts', () async {
+    final provider = SyncProvider(
+      isAuthenticated: () => true,
+      getSyncLogs: () async => {},
+      loaders: {SyncModule.accounts: () async {}},
+      refreshers: const {},
+    );
+
+    expect(
+      provider.readinessOf({SyncModule.portfolio}),
+      DataReadiness.notLoaded,
+    );
+    await provider.initialize();
+
+    expect(provider.readinessOf({SyncModule.portfolio}), DataReadiness.ready);
+  });
+
+  test('initial load does not background-refresh a failed module', () async {
+    var logReads = 0;
+    var refreshes = 0;
+    final provider = SyncProvider(
+      isAuthenticated: () => true,
+      getSyncLogs: () async => {
+        'budgets': DateTime.utc(2026, 9, 23, 1, logReads++),
+      },
+      loaders: {SyncModule.budgets: () async => throw StateError('offline')},
+      refreshers: {SyncModule.budgets: () async => refreshes++},
+    );
+
+    await expectLater(provider.initialize(), throwsStateError);
+
+    expect(refreshes, 0);
+    expect(provider.readinessOf({SyncModule.budgets}), DataReadiness.failed);
+  });
+
+  test('reset returns every module to not loaded', () async {
+    final provider = SyncProvider(
+      isAuthenticated: () => true,
+      getSyncLogs: () async => {},
+      loaders: {SyncModule.categories: () async {}},
+      refreshers: const {},
+    );
+
+    await provider.initialize();
+    provider.reset();
+
+    expect(
+      provider.readinessOf({SyncModule.categories}),
+      DataReadiness.notLoaded,
+    );
+  });
+
   test('reset clears checkpoints and cooldown for a new user', () async {
     var reads = 0;
     final provider = SyncProvider(
@@ -197,6 +285,7 @@ void main() {
         reads++;
         return {};
       },
+      loaders: const {},
       refreshers: const {},
     );
 
