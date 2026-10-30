@@ -8,10 +8,12 @@ import '../../models/transaction.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -68,6 +70,11 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+    final isDataReady = context.select<SyncProvider, bool>(
+      (syncProvider) =>
+          syncProvider.readinessOf(ScreenModules.categories) ==
+          DataReadiness.ready,
+    );
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -128,7 +135,9 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                   icon: const Icon(Icons.add_rounded, size: 22),
                   color: textPrimary,
                   tooltip: 'เพิ่มหมวดหมู่ใหม่',
-                  onPressed: () => _openForm(context, null),
+                  onPressed: isDataReady
+                      ? () => _openForm(context, null)
+                      : null,
                 ),
               ),
             ),
@@ -148,41 +157,49 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                   icon: const Icon(Icons.more_horiz_rounded, size: 20),
                   color: textPrimary,
                   tooltip: 'ตัวเลือกเพิ่มเติม',
-                  onPressed: () => _showMenuBottomSheet(context),
+                  onPressed: isDataReady
+                      ? () => _showMenuBottomSheet(context)
+                      : null,
                 ),
               ),
             ),
           ],
         ],
       ),
-      body: Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
-        builder: (context, catProvider, txProvider, settingsProvider, _) {
-          return SafeArea(
-            child: Column(
-              children: [
-                // Reorder Mode Active Banner
-                if (_isReorderMode)
-                  const AppReorderBanner(
-                    message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
-                  ),
+      body: AppDataStateView(
+        modules: ScreenModules.categories,
+        enablePullToRefresh: false,
+        builder: (context) =>
+            Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
+              builder: (context, catProvider, txProvider, settingsProvider, _) {
+                return SafeArea(
+                  child: Column(
+                    children: [
+                      // Reorder Mode Active Banner
+                      if (_isReorderMode)
+                        const AppReorderBanner(
+                          message:
+                              'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
+                        ),
 
-                // Segmented control fixed ด้านบน ไม่เลื่อนไปพร้อมรายการ
-                _buildSegmentedControl(),
+                      // Segmented control fixed ด้านบน ไม่เลื่อนไปพร้อมรายการ
+                      _buildSegmentedControl(),
 
-                // Category List View
-                // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
-                Expanded(
-                  child: _buildCategoryList(
-                    catProvider,
-                    txProvider,
-                    _currentType,
-                    isDarkMode,
+                      // Category List View
+                      // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+                      Expanded(
+                        child: _buildCategoryList(
+                          catProvider,
+                          txProvider,
+                          _currentType,
+                          isDarkMode,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
       ),
     );
   }

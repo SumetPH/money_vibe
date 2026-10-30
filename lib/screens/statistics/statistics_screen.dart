@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../providers/sync_provider.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../models/category.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
@@ -109,6 +112,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
+            actions: [
+              if (isLargeScreen)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: AppRefreshActionButton(
+                    modules: ScreenModules.statistics,
+                  ),
+                ),
+            ],
           ),
           body: SafeArea(
             bottom: false,
@@ -130,52 +142,56 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                 ),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final bottomPadding = MediaQuery.paddingOf(
-                        context,
-                      ).bottom;
-                      return SingleChildScrollView(
-                        padding: EdgeInsets.only(bottom: bottomPadding),
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
-                          // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
-                          children:
-                              [
-                                    StatisticsNetWorthLineChart(),
-                                    StatisticsYearlyBarChart(
-                                      selectedYear: selectedYear,
-                                      onYearChanged: (year) =>
-                                          setState(() => _selectedYear = year),
-                                    ),
-                                    StatisticsCategoryPieChart(
-                                      type: CategoryType.expense,
-                                    ),
-                                    StatisticsCategoryPieChart(
-                                      type: CategoryType.income,
-                                    ),
-                                  ].indexed
-                                  .map(
-                                    (entry) => Visibility(
-                                      visible: entry.$1 == _selectedTab,
-                                      maintainState: true,
-                                      // สูงอย่างน้อยเต็มจอ เพื่อให้ empty state อยู่กลางจอ
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minHeight:
-                                              constraints.maxHeight -
-                                              bottomPadding,
+                  child: AppDataStateView(
+                    modules: ScreenModules.statistics,
+                    builder: (context) => LayoutBuilder(
+                      builder: (context, constraints) {
+                        final bottomPadding = MediaQuery.paddingOf(
+                          context,
+                        ).bottom;
+                        return SingleChildScrollView(
+                          padding: EdgeInsets.only(bottom: bottomPadding),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
+                            // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
+                            children:
+                                [
+                                      StatisticsNetWorthLineChart(),
+                                      StatisticsYearlyBarChart(
+                                        selectedYear: selectedYear,
+                                        onYearChanged: (year) => setState(
+                                          () => _selectedYear = year,
                                         ),
-                                        child: entry.$2,
                                       ),
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                      );
-                    },
+                                      StatisticsCategoryPieChart(
+                                        type: CategoryType.expense,
+                                      ),
+                                      StatisticsCategoryPieChart(
+                                        type: CategoryType.income,
+                                      ),
+                                    ].indexed
+                                    .map(
+                                      (entry) => Visibility(
+                                        visible: entry.$1 == _selectedTab,
+                                        maintainState: true,
+                                        // สูงอย่างน้อยเต็มจอ เพื่อให้ empty state อยู่กลางจอ
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minHeight:
+                                                constraints.maxHeight -
+                                                bottomPadding,
+                                          ),
+                                          child: entry.$2,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],

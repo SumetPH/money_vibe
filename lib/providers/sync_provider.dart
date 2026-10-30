@@ -301,13 +301,18 @@ abstract final class ScreenModules {
     SyncModule.budgets,
     SyncModule.transactions,
     SyncModule.categories,
+    SyncModule.accounts,
   };
   static const transactions = {
     SyncModule.transactions,
     SyncModule.accounts,
     SyncModule.categories,
   };
-  static const statistics = {SyncModule.transactions, SyncModule.accounts};
+  static const statistics = {
+    SyncModule.transactions,
+    SyncModule.accounts,
+    SyncModule.categories,
+  };
   static const cashFlow = {
     SyncModule.cashFlow,
     SyncModule.accounts,
@@ -318,6 +323,7 @@ abstract final class ScreenModules {
     SyncModule.recurring,
     SyncModule.accounts,
     SyncModule.categories,
+    SyncModule.transactions,
   };
-  static const categories = {SyncModule.categories};
+  static const categories = {SyncModule.categories, SyncModule.transactions};
 }

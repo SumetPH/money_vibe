@@ -5,10 +5,12 @@ import '../../models/recurring_transaction.dart';
 import '../../models/transaction.dart';
 import '../../providers/recurring_transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -77,6 +79,11 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
         };
 
         final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+        final isDataReady = context.select<SyncProvider, bool>(
+          (syncProvider) =>
+              syncProvider.readinessOf(ScreenModules.recurring) ==
+              DataReadiness.ready,
+        );
 
         return Scaffold(
           backgroundColor: bgColor,
@@ -116,6 +123,8 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ],
             ),
             actions: [
+              if (isLargeScreen && !_isReorderMode)
+                const AppRefreshActionButton(modules: ScreenModules.recurring),
               if (_isReorderMode)
                 AppReorderDoneButton(
                   onPressed: () => setState(() => _isReorderMode = false),
@@ -141,100 +150,109 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                             ? AppColors.darkTextPrimary
                             : AppColors.textPrimary,
                       ),
-                      onPressed: () => _showMenuBottomSheet(context, isDark),
+                      onPressed: isDataReady
+                          ? () => _showMenuBottomSheet(context, isDark)
+                          : null,
                     ),
                   ),
                 ),
             ],
           ),
           body: SafeArea(
-            child: list.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.repeat,
-                          size: 64,
-                          color: textSecondary.withValues(alpha: 0.4),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'ยังไม่มีรายการประจำ',
-                          style: TextStyle(color: textSecondary, fontSize: 15),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: () => _openForm(context, null),
-                          icon: const Icon(Icons.add),
-                          label: const Text('เพิ่มรายการประจำ'),
-                        ),
-                      ],
-                    ),
-                  )
-                : ReorderableListView.builder(
-                    buildDefaultDragHandles: false,
-                    header: _isReorderMode
-                        ? const AppReorderBanner(
-                            message:
-                                'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับรายการประจำ',
-                          )
-                        : null,
-                    onReorderItem: _isReorderMode
-                        ? provider.reorderRecurringGroups
-                        : (_, _) {},
-                    itemCount: grouped.length,
-                    itemBuilder: (_, groupIndex) {
-                      final entry = grouped.entries.elementAt(groupIndex);
-                      return Column(
-                        key: ValueKey('recurring_group_${entry.key.name}'),
+            child: AppDataStateView(
+              modules: ScreenModules.recurring,
+              builder: (context) => list.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          RecurringSection(
-                            title: entry.key.label,
-                            trailing: _isReorderMode
-                                ? [
-                                    ReorderableDragStartListener(
-                                      index: groupIndex,
-                                      child: Icon(
-                                        Icons.drag_indicator,
-                                        color: dividerColor,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ]
-                                : const [],
-                            child: ReorderableListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              buildDefaultDragHandles: false,
-                              onReorderItem: _isReorderMode
-                                  ? (oldIndex, newIndex) =>
-                                        provider.reorderRecurring(
-                                          entry.key,
-                                          oldIndex,
-                                          newIndex,
-                                        )
-                                  : (_, _) {},
-                              itemCount: entry.value.length,
-                              itemBuilder: (_, index) => _buildRecurringItem(
-                                context: context,
-                                provider: provider,
-                                recurring: entry.value[index],
-                                transactionsById: transactionsById,
-                                index: index,
-                                isDark: isDark,
-                                surfaceColor: surfaceColor,
-                                textPrimary: textPrimary,
-                                textSecondary: textSecondary,
-                                dividerColor: dividerColor,
-                                showDivider: index != entry.value.length - 1,
-                              ),
+                          Icon(
+                            Icons.repeat,
+                            size: 64,
+                            color: textSecondary.withValues(alpha: 0.4),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'ยังไม่มีรายการประจำ',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 15,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () => _openForm(context, null),
+                            icon: const Icon(Icons.add),
+                            label: const Text('เพิ่มรายการประจำ'),
+                          ),
                         ],
-                      );
-                    },
-                  ),
+                      ),
+                    )
+                  : ReorderableListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      header: _isReorderMode
+                          ? const AppReorderBanner(
+                              message:
+                                  'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับรายการประจำ',
+                            )
+                          : null,
+                      onReorderItem: _isReorderMode
+                          ? provider.reorderRecurringGroups
+                          : (_, _) {},
+                      itemCount: grouped.length,
+                      itemBuilder: (_, groupIndex) {
+                        final entry = grouped.entries.elementAt(groupIndex);
+                        return Column(
+                          key: ValueKey('recurring_group_${entry.key.name}'),
+                          children: [
+                            RecurringSection(
+                              title: entry.key.label,
+                              trailing: _isReorderMode
+                                  ? [
+                                      ReorderableDragStartListener(
+                                        index: groupIndex,
+                                        child: Icon(
+                                          Icons.drag_indicator,
+                                          color: dividerColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ]
+                                  : const [],
+                              child: ReorderableListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                buildDefaultDragHandles: false,
+                                onReorderItem: _isReorderMode
+                                    ? (oldIndex, newIndex) =>
+                                          provider.reorderRecurring(
+                                            entry.key,
+                                            oldIndex,
+                                            newIndex,
+                                          )
+                                    : (_, _) {},
+                                itemCount: entry.value.length,
+                                itemBuilder: (_, index) => _buildRecurringItem(
+                                  context: context,
+                                  provider: provider,
+                                  recurring: entry.value[index],
+                                  transactionsById: transactionsById,
+                                  index: index,
+                                  isDark: isDark,
+                                  surfaceColor: surfaceColor,
+                                  textPrimary: textPrimary,
+                                  textSecondary: textSecondary,
+                                  dividerColor: dividerColor,
+                                  showDivider: index != entry.value.length - 1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+            ),
           ),
         );
       },

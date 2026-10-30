@@ -10,7 +10,9 @@ import '../theme/app_radii.dart';
 class AppBottomNavigation extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelectTab;
-  final VoidCallback onAdd;
+
+  /// null ระหว่างที่ข้อมูลยังไม่พร้อม (ปุ่มเพิ่มรายการจะ disabled)
+  final VoidCallback? onAdd;
 
   const AppBottomNavigation({
     super.key,
