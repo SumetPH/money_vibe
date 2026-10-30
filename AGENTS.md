@@ -23,11 +23,12 @@
 - ใช้ Supabase เท่านั้น ห้ามเพิ่มหรือพาโค้ดกลับไปพึ่ง SQLite
 - หากมีการแก้ schema database ให้สร้างหรือแก้ migration ใน `supabase/migrations`
 - apply migration ด้วย Supabase CLI (`supabase db push`)
-- การเก็บเวลาใช้ local time ตามเครื่องผู้ใช้
-- ห้ามแปลง timezone ไปมาเองตอนอ่านหรือเขียนข้อมูล
-- ใช้ ISO8601 เมื่อต้อง serialize วันที่เวลาเข้า database
-- ห้ามใช้งานคอลัมน์ `tags` ของ transactions
+- การเก็บเวลาใช้ local time ตามเครื่องผู้ใช้ คอลัมน์วันที่เวลาใช้ `timestamp without time zone`
+- ห้ามแปลง timezone ไปมาเองตอนอ่านหรือเขียนข้อมูล (ห้ามเรียก `.toUtc()` / `.toLocal()`)
+- serialize วันที่เวลาเข้า database ด้วย `DateTime.toIso8601String()` จาก local `DateTime` ตรง ๆ
+- คอลัมน์ `tags` ของ transactions ถูกลบไปแล้ว ห้ามเพิ่มกลับหรืออ้างถึงในโค้ด
 - ตารางใหม่ใน `public` ต้องมี `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated, service_role` ใน migration เดียวกับที่สร้างตาราง (Supabase ไม่ grant อัตโนมัติแล้ว)
+- Edge Function อยู่ใน `supabase/functions/<name>/index.ts` deploy ด้วย `supabase functions deploy <name> --project-ref <ref>` (ดูขั้นตอน release ใน `docs/setup/`)
 
 ## Architecture ที่ควรยึดตาม
 
@@ -48,6 +49,7 @@
 ยึดแบบ `lib/screens/cash_flow/`
 
 - ไฟล์ screen ควรยาวไม่เกิน ~400 บรรทัด และห้ามเกิน 800 บรรทัด
+- ไฟล์เดิมที่ยาวเกิน ~400 บรรทัดอยู่แล้ว ไม่ต้อง refactor แยกไฟล์ เว้นแต่ผู้ใช้สั่ง หรือการแก้ครั้งนั้นทำให้ไฟล์เกิน 800 บรรทัด
 - แยก tab, section, bottom sheet, dialog, list item, summary card ออกเป็นไฟล์ของตัวเองในโฟลเดอร์ module เดียวกัน (ไม่สร้างโฟลเดอร์ย่อย) ตั้งชื่อ `<feature>_<role>.dart` เช่น `trade_annual_tax_tab.dart`
 - widget ที่สั้นกว่า ~40 บรรทัดและใช้ที่เดียวไม่ต้องแยก
 - class ที่แยกออกมาเป็น public พร้อม prefix ของ feature (`_MetricTile` → `BudgetMetricTile`) ห้ามใช้ `part` / `part of`
@@ -63,11 +65,13 @@
 - ห้าม hard-code API key, secret หรือข้อมูลส่วนตัวลงในโค้ด
 - หากมี logic ซับซ้อน ให้ใส่คอมเมนต์สั้น ๆ เท่าที่จำเป็นเพื่อช่วยการดูแลต่อ
 - ไม่ต้องทดสอบผ่าน browser เว้นแต่ผู้ใช้สั่งโดยตรง
-- ไม่เสนอ TDD หรือเขียน unit test เว้นแต่ผู้ใช้สั่งโดยตรง
+- เขียนเทสต์ตามความเหมาะสม (เช่น logic คำนวณใน service/provider) หรือตามที่ spec กำหนด ไม่บังคับ TDD
+- ถ้าแก้โค้ดที่มีเทสต์อยู่แล้วใน `test/` ต้องรัน `flutter test` ให้ผ่าน และแก้เทสต์ที่พังเพราะการเปลี่ยนแปลงนั้น
 
 ## ก่อนส่งงาน
 
 ต้องรันคำสั่งต่อไปนี้เสมอเมื่อมีการแก้โค้ด:
 
 1. `dart format .`
-2. `tool/check_design.sh` (ตรวจว่าไม่ได้สร้าง UI primitive ซ้ำแทน shared widget/token ใน `docs/design.md`)
+2. `flutter analyze` (ต้องไม่มี error หรือ warning ใหม่)
+3. `bash tool/check_design.sh` (ตรวจว่าไม่ได้สร้าง UI primitive ซ้ำแทน shared widget/token ใน `docs/design.md` บน Windows ให้รันผ่าน Git Bash)
