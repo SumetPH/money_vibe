@@ -45,6 +45,7 @@ class SyncProvider extends ChangeNotifier {
   final Map<SyncModule, DataReadiness> _readiness = {};
   Future<void>? _activeCheck;
   Future<void>? _activeInitialization;
+  final Map<String, Future<void>> _activeRefreshes = {};
   DateTime? _lastCheckTime;
   bool _hasBaseline = false;
 
@@ -90,6 +91,62 @@ class SyncProvider extends ChangeNotifier {
     } finally {
       _activeCheck = null;
     }
+  }
+
+  /// Manual Refresh: โหลด [modules] ใหม่ทั้งหมดโดยไม่ดู sync_logs และไม่ติด cooldown
+  Future<void> refresh(Set<SyncModule> modules) {
+    final targets = modules.map((module) => module.refreshTarget).toSet()
+      ..retainAll(loaders.keys);
+    final key = (targets.map((module) => module.index).toList()..sort()).join(
+      ',',
+    );
+
+    final activeRefresh = _activeRefreshes[key];
+    if (activeRefresh != null) return activeRefresh;
+
+    final refresh = _runRefresh(targets).whenComplete(() {
+      _activeRefreshes.remove(key);
+    });
+    _activeRefreshes[key] = refresh;
+    return refresh;
+  }
+
+  Future<void> _runRefresh(Set<SyncModule> targets) async {
+    final activeInitialization = _activeInitialization;
+    if (activeInitialization != null) {
+      // Initial Load กำลังโหลด module เดียวกันอยู่ รอผลแทนการยิงซ้ำ
+      // แล้วโหลดใหม่เฉพาะ module ที่ยังไม่พร้อม
+      try {
+        await activeInitialization;
+      } catch (_) {}
+      targets.removeWhere(
+        (module) => _readiness[module] == DataReadiness.ready,
+      );
+      if (targets.isEmpty) return;
+    }
+
+    final activeCheck = _activeCheck;
+    if (activeCheck != null) {
+      try {
+        await activeCheck;
+      } catch (_) {}
+    }
+
+    if (!isAuthenticated()) {
+      _throwFirstError(await _loadModules(targets));
+      return;
+    }
+
+    // อ่าน log ก่อนโหลด เพื่อให้การแก้ที่เกิดระหว่างโหลดยังถูก Background Sync เก็บต่อ
+    final logs = await _readRemoteLogs();
+    final errors = await _loadModules(targets);
+    for (final entry in logs.entries) {
+      final target = entry.key.refreshTarget;
+      if (targets.contains(target) && !errors.containsKey(target)) {
+        _localTimestamps[entry.key] = entry.value;
+      }
+    }
+    _throwFirstError(errors);
   }
 
   Future<void> initialize() {
@@ -139,7 +196,7 @@ class SyncProvider extends ChangeNotifier {
   }
 
   /// โหลดทุก module ขนานกัน module ที่ล้มเหลวไม่ทำให้ตัวอื่นหยุด คืน error ที่เกิดขึ้น
-  Future<List<(Object, StackTrace)>> _loadModules(
+  Future<Map<SyncModule, (Object, StackTrace)>> _loadModules(
     Iterable<SyncModule> modules,
   ) async {
     final targets = modules.toSet();
@@ -150,7 +207,7 @@ class SyncProvider extends ChangeNotifier {
     }
     notifyListeners();
 
-    final errors = <(Object, StackTrace)>[];
+    final errors = <SyncModule, (Object, StackTrace)>{};
     await Future.wait(
       targets.map((module) async {
         try {
@@ -160,7 +217,7 @@ class SyncProvider extends ChangeNotifier {
           if (_readiness[module] != DataReadiness.ready) {
             _readiness[module] = DataReadiness.failed;
           }
-          errors.add((error, stackTrace));
+          errors[module] = (error, stackTrace);
         }
       }),
     );
@@ -168,9 +225,9 @@ class SyncProvider extends ChangeNotifier {
     return errors;
   }
 
-  void _throwFirstError(List<(Object, StackTrace)> errors) {
+  void _throwFirstError(Map<SyncModule, (Object, StackTrace)> errors) {
     if (errors.isEmpty) return;
-    final (error, stackTrace) = errors.first;
+    final (error, stackTrace) = errors.values.first;
     Error.throwWithStackTrace(error, stackTrace);
   }
 
@@ -229,9 +286,38 @@ class SyncProvider extends ChangeNotifier {
 
   void reset() {
     _localTimestamps.clear();
+    _activeRefreshes.clear();
     _readiness.clear();
     _lastCheckTime = null;
     _hasBaseline = false;
     notifyListeners();
   }
+}
+
+/// ชุด module ที่แต่ละหน้าอ่าน ใช้ร่วมกันทั้ง skeleton, error state และ Manual Refresh
+abstract final class ScreenModules {
+  static const accounts = {SyncModule.accounts, SyncModule.transactions};
+  static const budgets = {
+    SyncModule.budgets,
+    SyncModule.transactions,
+    SyncModule.categories,
+  };
+  static const transactions = {
+    SyncModule.transactions,
+    SyncModule.accounts,
+    SyncModule.categories,
+  };
+  static const statistics = {SyncModule.transactions, SyncModule.accounts};
+  static const cashFlow = {
+    SyncModule.cashFlow,
+    SyncModule.accounts,
+    SyncModule.budgets,
+    SyncModule.transactions,
+  };
+  static const recurring = {
+    SyncModule.recurring,
+    SyncModule.accounts,
+    SyncModule.categories,
+  };
+  static const categories = {SyncModule.categories};
 }

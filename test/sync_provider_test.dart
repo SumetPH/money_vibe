@@ -295,4 +295,139 @@ void main() {
 
     expect(reads, 2);
   });
+
+  group('manual refresh', () {
+    test('reloads modules even when sync logs are unchanged', () async {
+      var now = DateTime.utc(2026, 9, 23, 1);
+      var loads = 0;
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {'accounts': DateTime.utc(2026, 9, 23)},
+        loaders: {SyncModule.accounts: () async => loads++},
+        refreshers: const {},
+        now: () => now,
+      );
+
+      await provider.initialize();
+      await provider.refresh({SyncModule.portfolio});
+      await provider.refresh({SyncModule.accounts});
+
+      expect(loads, 3);
+    });
+
+    test('waits for an in-flight initial load instead of reloading', () async {
+      var loads = 0;
+      final initialLoad = Completer<void>();
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {},
+        loaders: {
+          SyncModule.budgets: () {
+            loads++;
+            return initialLoad.future;
+          },
+        },
+        refreshers: const {},
+      );
+
+      final initialization = provider.initialize();
+      final refresh = provider.refresh({SyncModule.budgets});
+      initialLoad.complete();
+      await Future.wait([initialization, refresh]);
+
+      expect(loads, 1);
+      expect(provider.readinessOf({SyncModule.budgets}), DataReadiness.ready);
+    });
+
+    test('recovers a module whose initial load failed', () async {
+      var attempts = 0;
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {},
+        loaders: {
+          SyncModule.transactions: () async {
+            if (attempts++ == 0) throw StateError('offline');
+          },
+        },
+        refreshers: const {},
+      );
+
+      await expectLater(provider.initialize(), throwsStateError);
+      await provider.refresh({SyncModule.transactions});
+
+      expect(
+        provider.readinessOf({SyncModule.transactions}),
+        DataReadiness.ready,
+      );
+    });
+
+    test('keeps a ready module ready when the refresh fails', () async {
+      var attempts = 0;
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {},
+        loaders: {
+          SyncModule.categories: () async {
+            if (attempts++ > 0) throw StateError('offline');
+          },
+        },
+        refreshers: const {},
+      );
+
+      await provider.initialize();
+
+      await expectLater(
+        provider.refresh({SyncModule.categories}),
+        throwsStateError,
+      );
+      expect(
+        provider.readinessOf({SyncModule.categories}),
+        DataReadiness.ready,
+      );
+    });
+
+    test('background sync skips modules it just reloaded', () async {
+      var now = DateTime.utc(2026, 9, 23, 1);
+      var changedAt = DateTime.utc(2026, 9, 23);
+      var refreshes = 0;
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {'recurring': changedAt},
+        loaders: {SyncModule.recurring: () async {}},
+        refreshers: {SyncModule.recurring: () async => refreshes++},
+        now: () => now,
+      );
+
+      await provider.initialize();
+      changedAt = DateTime.utc(2026, 9, 23, 1);
+      await provider.refresh({SyncModule.recurring});
+      now = now.add(const Duration(minutes: 1));
+      await provider.checkAndSync();
+
+      expect(refreshes, 0);
+    });
+
+    test('concurrent refreshes of the same modules share one load', () async {
+      var loads = 0;
+      final load = Completer<void>();
+      final provider = SyncProvider(
+        isAuthenticated: () => true,
+        getSyncLogs: () async => {},
+        loaders: {
+          SyncModule.cashFlow: () {
+            loads++;
+            return load.future;
+          },
+        },
+        refreshers: const {},
+      );
+
+      final first = provider.refresh({SyncModule.cashFlow});
+      final second = provider.refresh({SyncModule.cashFlow});
+      load.complete();
+      await Future.wait([first, second]);
+
+      expect(loads, 1);
+    });
+  });
 }
