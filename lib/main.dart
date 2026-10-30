@@ -116,9 +116,10 @@ void main() async {
       await DebugBootstrapService.instance.signInIfNeeded(authProvider);
     }
 
-    // โหลดข้อมูลถ้า Login แล้ว
+    // Initial Load ทำงานเบื้องหลัง ไม่ต้องรอก่อนปิด splash แต่ละหน้าจะแสดง
+    // skeleton หรือ error state ตามความพร้อมของข้อมูลเอง
     if (authProvider.isLoggedIn) {
-      await syncProvider.initialize();
+      _startInitialLoad(syncProvider);
     }
 
     await _initProvider(
@@ -150,6 +151,13 @@ void main() async {
 
   // Remove native splash screen after app is built
   SplashService.remove();
+}
+
+void _startInitialLoad(SyncProvider syncProvider) {
+  syncProvider.initialize().catchError((Object error, StackTrace stackTrace) {
+    debugPrint('Main: Initial load failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  });
 }
 
 Future<void> _initProvider(String name, Future<void> Function() initFn) async {

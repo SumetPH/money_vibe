@@ -75,13 +75,13 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     if (success && isLoginMode) {
-      // Login สำเร็จ → reload providers แล้วค่อยกลับ (ทำต่อแม้หน้านี้ถูก unmount แล้ว)
-      debugPrint('[AuthScreen] Login success, reloading providers...');
+      // Login สำเร็จ → เริ่ม Initial Load ของ user นี้เบื้องหลังแล้วไปหน้าหลักทันที
+      // หน้าหลักแสดง skeleton จนกว่าข้อมูลจะพร้อม
+      debugPrint('[AuthScreen] Login success, starting initial load');
+      syncProvider.initialize().catchError((Object error) {
+        debugPrint('[AuthScreen] Initial load failed: $error');
+      });
 
-      // โหลดข้อมูลใหม่ตาม user ที่ login
-      await syncProvider.initialize();
-
-      debugPrint('[AuthScreen] Providers reloaded, navigating to home');
       router.go('/accounts');
     } else if (success && mounted) {
       _passwordController.clear();
