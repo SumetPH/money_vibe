@@ -56,6 +56,10 @@ check 'Use AppSegmentedTabs instead of TabBar / TabBarView / SegmentedButton' \
 check 'Use IconPickerFormRow / ColorPickerFormRow instead of local picker rows' \
   'Widget _build(Icon|Color)(Picker)?Row\(' $(files_except '^$')
 
+check 'Use AppRefreshIndicator instead of RefreshIndicator' \
+  '(^|[^A-Za-z0-9_])RefreshIndicator(\.adaptive)?\(' \
+  $(files_except 'lib/widgets/app_refresh_indicator\.dart')
+
 check 'Use AppColors tokens instead of hard-coded Color(0x...) values' \
   'Color\(0x[0-9A-Fa-f]+\)' $(files_except '^$')
 

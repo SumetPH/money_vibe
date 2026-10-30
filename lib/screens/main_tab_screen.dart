@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../providers/sync_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
 import '../widgets/app_drawer.dart';
 import 'account/account_list_screen.dart';
@@ -38,11 +36,6 @@ class _MainTabScreenState extends State<MainTabScreen> {
   void _selectTab(int index) {
     if (index == _selectedTab) return;
     setState(() => _selectedTab = index);
-    final syncProvider = context.read<SyncProvider>();
-    if (!syncProvider.hasBaseline) return;
-    syncProvider.checkAndSync().catchError((error) {
-      debugPrint('[MainTabScreen] Background sync failed: $error');
-    });
   }
 
   @override

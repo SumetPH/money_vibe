@@ -5,9 +5,11 @@ import '../../providers/budget_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
+import '../../widgets/app_refresh_indicator.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/monthly_cycle_selector.dart';
@@ -294,62 +296,77 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           ),
           body: SafeArea(
             bottom: false,
-            child: budgets.isEmpty
-                ? BudgetEmptyState(
-                    surfaceColor: surfaceColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    dividerColor: dividerColor,
-                    isDarkMode: isDarkMode,
-                  )
-                : _buildBudgetList(
-                    context,
-                    header: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_isReorderMode)
-                          const AppReorderBanner(
-                            message:
-                                'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับงบประมาณ',
+            child: AppRefreshIndicator(
+              onRefresh: () => context.read<SyncProvider>().refresh(
+                forceModules: {SyncModule.budgets},
+              ),
+              child: budgets.isEmpty
+                  ? LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
                           ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: MonthlyCycleSelector(
-                            selectedMonth: _selectedMonth,
-                            onPrevMonth: _prevMonth,
-                            onNextMonth: _nextMonth,
+                          child: BudgetEmptyState(
+                            surfaceColor: surfaceColor,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                            dividerColor: dividerColor,
+                            isDarkMode: isDarkMode,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _buildBudgetList(
+                      context,
+                      header: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_isReorderMode)
+                            const AppReorderBanner(
+                              message:
+                                  'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับงบประมาณ',
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: MonthlyCycleSelector(
+                              selectedMonth: _selectedMonth,
+                              onPrevMonth: _prevMonth,
+                              onNextMonth: _nextMonth,
+                              surfaceColor: surfaceColor,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              dividerColor: dividerColor,
+                            ),
+                          ),
+                          BudgetSummaryHeader(
+                            totalBudget: totalBudget,
+                            totalSpent: totalSpent,
+                            totalAvailable: totalAvailable,
+                            totalOverspent: totalOverspent,
+                            progress: overallProgress,
+                            isDarkMode: isDarkMode,
                             surfaceColor: surfaceColor,
                             textPrimary: textPrimary,
                             textSecondary: textSecondary,
                             dividerColor: dividerColor,
                           ),
-                        ),
-                        BudgetSummaryHeader(
-                          totalBudget: totalBudget,
-                          totalSpent: totalSpent,
-                          totalAvailable: totalAvailable,
-                          totalOverspent: totalOverspent,
-                          progress: overallProgress,
-                          isDarkMode: isDarkMode,
-                          surfaceColor: surfaceColor,
-                          textPrimary: textPrimary,
-                          textSecondary: textSecondary,
-                          dividerColor: dividerColor,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                      budgets: budgets,
+                      spentByCategoryId: spentByCategoryId,
+                      period: period,
+                      totalBudget: totalBudget,
+                      budgetProvider: budgetProvider,
+                      isDarkMode: isDarkMode,
+                      surfaceColor: surfaceColor,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      dividerColor: dividerColor,
                     ),
-                    budgets: budgets,
-                    spentByCategoryId: spentByCategoryId,
-                    period: period,
-                    totalBudget: totalBudget,
-                    budgetProvider: budgetProvider,
-                    isDarkMode: isDarkMode,
-                    surfaceColor: surfaceColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    dividerColor: dividerColor,
-                  ),
+            ),
           ),
           bottomNavigationBar: null,
         );
@@ -379,6 +396,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     if (!hasGroups) {
       return ReorderableListView.builder(
         header: header,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         buildDefaultDragHandles: false,
         onReorderItem: _isReorderMode
@@ -560,6 +578,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
 
     return ReorderableListView.builder(
       header: listHeader,
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       buildDefaultDragHandles: false,
       onReorderItem: _isReorderMode

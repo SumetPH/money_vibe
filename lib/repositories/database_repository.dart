@@ -160,6 +160,16 @@ abstract class CashFlowRepositoryInterface {
 abstract class SyncRepositoryInterface {
   /// ดึงข้อมูล Sync Log ทั้งหมดของผู้ใช้ปัจจุบัน
   Future<Map<String, DateTime>> getSyncLogs();
+
+  /// ผู้รับแจ้งก่อน/หลังการเขียนตารางที่มี trigger อัปเดต sync_logs
+  SyncWriteObserver? syncWriteObserver;
+}
+
+/// รับแจ้งรอบการเขียนข้อมูลของเครื่องนี้ เพื่อไม่ต้องโหลด module ที่ตัวเองเพิ่งเขียนซ้ำ
+/// [moduleKeys] คือค่า sync_logs.module_name เช่น 'transactions'
+abstract interface class SyncWriteObserver {
+  Future<void> beforeWrite(Set<String> moduleKeys);
+  void afterWrite(Set<String> moduleKeys, {required bool success});
 }
 
 // ── Composite Repository Interface ──────────────────────────────────────────

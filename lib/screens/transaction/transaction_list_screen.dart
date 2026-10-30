@@ -9,7 +9,9 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_refresh_indicator.dart';
 import '../../widgets/monthly_cycle_selector.dart';
 import '../../utils/monthly_cycle.dart';
 import 'transaction_form_screen.dart';
@@ -179,214 +181,223 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   const SizedBox(width: 12),
                 ],
               ),
-              body: CustomScrollView(
-                slivers: [
-                  if (_selectedCycleMonth != null)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      sliver: SliverToBoxAdapter(
-                        child: MonthlyCycleSelector(
-                          selectedMonth: _selectedCycleMonth!,
-                          onPrevMonth: () => setState(
-                            () => _selectedCycleMonth = DateTime(
-                              _selectedCycleMonth!.year,
-                              _selectedCycleMonth!.month - 1,
-                            ),
-                          ),
-                          onNextMonth: () => setState(
-                            () => _selectedCycleMonth = DateTime(
-                              _selectedCycleMonth!.year,
-                              _selectedCycleMonth!.month + 1,
-                            ),
-                          ),
-                          surfaceColor: isDarkMode
-                              ? AppColors.darkSurface
-                              : AppColors.surface,
-                          textPrimary: isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.textPrimary,
-                          textSecondary: isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary,
-                          dividerColor: AppColors.listDividerFor(isDarkMode),
-                        ),
-                      ),
-                    ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: TransactionCashFlowSummary(
-                        income: cardData.totalIncome,
-                        expense: cardData.totalExpense,
-                        title: isSearching
-                            ? 'ค้นหา "$searchQuery" · ${listData.transactions.length} รายการ'
-                            : 'กระแสเงินสด',
-                        periodLabel: _periodShortLabel(),
-                        isDarkMode: isDarkMode,
-                        hidePeriodSelector: _selectedCycleMonth != null,
-                        isSingleType: widget.categoryIds != null,
-                        isAccountFlow: isFromAccount,
-                        onSelectPeriod:
-                            widget.fixedDateRange == null &&
-                                widget.transactionIds == null
-                            ? () => showTransactionPeriodPicker(
-                                this.context,
-                                isDarkMode,
-                                selected: _filter,
-                                customRange: _customRange,
-                                onPickCustomRange: _pickCustomRange,
-                                onSelected: (f) => setState(() => _filter = f),
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                  // เปิดจากงบประมาณ: ประเภทถูกกำหนดโดยงบแล้ว ไม่ต้องมีแท็บ
-                  if (widget.categoryIds == null)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      sliver: SliverToBoxAdapter(
-                        child: AppSegmentedTabs(
-                          segments: [
-                            for (final value in TransactionTypeFilter.values)
-                              AppSegment(
-                                label: value.label,
-                                isSelected: _typeFilter == value,
-                                onTap: () =>
-                                    setState(() => _typeFilter = value),
+              body: AppRefreshIndicator(
+                onRefresh: () => context.read<SyncProvider>().refresh(
+                  forceModules: {SyncModule.transactions},
+                ),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    if (_selectedCycleMonth != null)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        sliver: SliverToBoxAdapter(
+                          child: MonthlyCycleSelector(
+                            selectedMonth: _selectedCycleMonth!,
+                            onPrevMonth: () => setState(
+                              () => _selectedCycleMonth = DateTime(
+                                _selectedCycleMonth!.year,
+                                _selectedCycleMonth!.month - 1,
                               ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (listData.transactions.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Text(
-                          _searchQuery.isEmpty
-                              ? 'ยังไม่มีรายการ'
-                              : 'ไม่พบรายการที่ค้นหา',
-                          style: TextStyle(
-                            color: isDarkMode
+                            ),
+                            onNextMonth: () => setState(
+                              () => _selectedCycleMonth = DateTime(
+                                _selectedCycleMonth!.year,
+                                _selectedCycleMonth!.month + 1,
+                              ),
+                            ),
+                            surfaceColor: isDarkMode
+                                ? AppColors.darkSurface
+                                : AppColors.surface,
+                            textPrimary: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
+                            textSecondary: isDarkMode
                                 ? AppColors.darkTextSecondary
                                 : AppColors.textSecondary,
+                            dividerColor: AppColors.listDividerFor(isDarkMode),
                           ),
                         ),
                       ),
-                    )
-                  else
                     SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        0,
-                        16,
-                        24 + MediaQuery.paddingOf(context).bottom,
-                      ),
-                      sliver: SliverList.builder(
-                        itemCount: listData.groups.length,
-                        itemBuilder: (context, i) {
-                          final group = listData.groups[i];
-                          final txs = group.transactions;
-                          final dailyNet = group.income - group.expense;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          formatTransactionDate(group.date),
-                                          style: TextStyle(
-                                            color: isDarkMode
-                                                ? AppColors.darkTextSecondary
-                                                : AppColors.textSecondary,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      if (dailyNet != 0)
-                                        Text(
-                                          '${dailyNet > 0 ? '+' : '-'}฿ ${formatAmount(dailyNet.abs())}',
-                                          style: TextStyle(
-                                            color: AppColors.getAmountColor(
-                                              dailyNet,
-                                              isDarkMode,
-                                            ),
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode
-                                        ? AppColors.darkSurface
-                                        : AppColors.surface,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.xLarge,
-                                    ),
-                                    border: Border.all(
-                                      color: isDarkMode
-                                          ? AppColors.darkDivider.withValues(
-                                              alpha: 0.4,
-                                            )
-                                          : AppColors.divider.withValues(
-                                              alpha: 0.4,
-                                            ),
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.xLarge,
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Column(
-                                      children: txs.asMap().entries.map((
-                                        entry,
-                                      ) {
-                                        final tx = entry.value;
-                                        return Column(
-                                          children: [
-                                            TransactionListItem(
-                                              tx: tx,
-                                              accountProvider: accountProvider,
-                                              catProvider: catProvider,
-                                              onTap: () =>
-                                                  _openForm(context, tx),
-                                              onCopy: () =>
-                                                  _openCopyForm(context, tx),
-                                              isDarkMode: isDarkMode,
-                                              viewingAccountId:
-                                                  widget.accountId,
-                                            ),
-                                            if (entry.key < txs.length - 1)
-                                              Divider(
-                                                height: 1,
-                                                color: AppColors.listDividerFor(
-                                                  isDarkMode,
-                                                ),
-                                              ),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: SliverToBoxAdapter(
+                        child: TransactionCashFlowSummary(
+                          income: cardData.totalIncome,
+                          expense: cardData.totalExpense,
+                          title: isSearching
+                              ? 'ค้นหา "$searchQuery" · ${listData.transactions.length} รายการ'
+                              : 'กระแสเงินสด',
+                          periodLabel: _periodShortLabel(),
+                          isDarkMode: isDarkMode,
+                          hidePeriodSelector: _selectedCycleMonth != null,
+                          isSingleType: widget.categoryIds != null,
+                          isAccountFlow: isFromAccount,
+                          onSelectPeriod:
+                              widget.fixedDateRange == null &&
+                                  widget.transactionIds == null
+                              ? () => showTransactionPeriodPicker(
+                                  this.context,
+                                  isDarkMode,
+                                  selected: _filter,
+                                  customRange: _customRange,
+                                  onPickCustomRange: _pickCustomRange,
+                                  onSelected: (f) =>
+                                      setState(() => _filter = f),
+                                )
+                              : null,
+                        ),
                       ),
                     ),
-                ],
+                    // เปิดจากงบประมาณ: ประเภทถูกกำหนดโดยงบแล้ว ไม่ต้องมีแท็บ
+                    if (widget.categoryIds == null)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        sliver: SliverToBoxAdapter(
+                          child: AppSegmentedTabs(
+                            segments: [
+                              for (final value in TransactionTypeFilter.values)
+                                AppSegment(
+                                  label: value.label,
+                                  isSelected: _typeFilter == value,
+                                  onTap: () =>
+                                      setState(() => _typeFilter = value),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (listData.transactions.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Text(
+                            _searchQuery.isEmpty
+                                ? 'ยังไม่มีรายการ'
+                                : 'ไม่พบรายการที่ค้นหา',
+                            style: TextStyle(
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          24 + MediaQuery.paddingOf(context).bottom,
+                        ),
+                        sliver: SliverList.builder(
+                          itemCount: listData.groups.length,
+                          itemBuilder: (context, i) {
+                            final group = listData.groups[i];
+                            final txs = group.transactions;
+                            final dailyNet = group.income - group.expense;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            formatTransactionDate(group.date),
+                                            style: TextStyle(
+                                              color: isDarkMode
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors.textSecondary,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        if (dailyNet != 0)
+                                          Text(
+                                            '${dailyNet > 0 ? '+' : '-'}฿ ${formatAmount(dailyNet.abs())}',
+                                            style: TextStyle(
+                                              color: AppColors.getAmountColor(
+                                                dailyNet,
+                                                isDarkMode,
+                                              ),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? AppColors.darkSurface
+                                          : AppColors.surface,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.xLarge,
+                                      ),
+                                      border: Border.all(
+                                        color: isDarkMode
+                                            ? AppColors.darkDivider.withValues(
+                                                alpha: 0.4,
+                                              )
+                                            : AppColors.divider.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.xLarge,
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Column(
+                                        children: txs.asMap().entries.map((
+                                          entry,
+                                        ) {
+                                          final tx = entry.value;
+                                          return Column(
+                                            children: [
+                                              TransactionListItem(
+                                                tx: tx,
+                                                accountProvider:
+                                                    accountProvider,
+                                                catProvider: catProvider,
+                                                onTap: () =>
+                                                    _openForm(context, tx),
+                                                onCopy: () =>
+                                                    _openCopyForm(context, tx),
+                                                isDarkMode: isDarkMode,
+                                                viewingAccountId:
+                                                    widget.accountId,
+                                              ),
+                                              if (entry.key < txs.length - 1)
+                                                Divider(
+                                                  height: 1,
+                                                  color:
+                                                      AppColors.listDividerFor(
+                                                        isDarkMode,
+                                                      ),
+                                                ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
               ),
             );
           },

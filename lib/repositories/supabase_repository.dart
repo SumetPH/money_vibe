@@ -63,6 +63,29 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     required this.supabaseAnonKey,
   });
 
+  @override
+  SyncWriteObserver? syncWriteObserver;
+
+  /// แจ้ง [syncWriteObserver] รอบการเขียนตารางที่มี trigger อัปเดต sync_logs
+  /// [modules] ต้องตรงกับ module ของตารางที่เขียนโดยตรง (ไม่รวม side effect)
+  Future<T> _trackWrite<T>(
+    Set<String> modules,
+    Future<T> Function() write,
+  ) async {
+    final observer = syncWriteObserver;
+    if (observer == null) return write();
+
+    await observer.beforeWrite(modules);
+    try {
+      final result = await write();
+      observer.afterWrite(modules, success: true);
+      return result;
+    } catch (_) {
+      observer.afterWrite(modules, success: false);
+      rethrow;
+    }
+  }
+
   SupabaseClient get client {
     if (_client == null) {
       throw StateError('Supabase not initialized. Call init() first.');
@@ -192,38 +215,50 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<List<Account>> getAccounts() => _accountAdapter.getAccounts();
 
   @override
-  Future<void> insertAccount(Account account) =>
-      _accountAdapter.insertAccount(account);
+  Future<void> insertAccount(Account account) => _trackWrite(const {
+    'accounts',
+  }, () => _accountAdapter.insertAccount(account));
 
   @override
-  Future<void> updateAccount(Account account) =>
-      _accountAdapter.updateAccount(account);
+  Future<void> updateAccount(Account account) => _trackWrite(const {
+    'accounts',
+  }, () => _accountAdapter.updateAccount(account));
 
   @override
   Future<void> updateAccountCashBalance(String id, double cashBalance) =>
-      _accountAdapter.updateAccountCashBalance(id, cashBalance);
+      _trackWrite(const {
+        'accounts',
+      }, () => _accountAdapter.updateAccountCashBalance(id, cashBalance));
 
   @override
   Future<void> updateAccountExchangeRate(
     String id, {
     required double exchangeRate,
     bool? autoUpdateRate,
-  }) => _accountAdapter.updateAccountExchangeRate(
-    id,
-    exchangeRate: exchangeRate,
-    autoUpdateRate: autoUpdateRate,
+  }) => _trackWrite(
+    const {'accounts'},
+    () => _accountAdapter.updateAccountExchangeRate(
+      id,
+      exchangeRate: exchangeRate,
+      autoUpdateRate: autoUpdateRate,
+    ),
   );
 
   @override
-  Future<void> updateAccountSortOrder(String id, int sortOrder) =>
-      _accountAdapter.updateAccountSortOrder(id, sortOrder);
+  Future<void> updateAccountSortOrder(String id, int sortOrder) => _trackWrite(
+    const {'accounts'},
+    () => _accountAdapter.updateAccountSortOrder(id, sortOrder),
+  );
 
   @override
-  Future<void> updateAccountSortOrders(List<Account> accounts) =>
-      _accountAdapter.updateAccountSortOrders(accounts);
+  Future<void> updateAccountSortOrders(List<Account> accounts) => _trackWrite(
+    const {'accounts'},
+    () => _accountAdapter.updateAccountSortOrders(accounts),
+  );
 
   @override
-  Future<void> deleteAccount(String id) => _accountAdapter.deleteAccount(id);
+  Future<void> deleteAccount(String id) =>
+      _trackWrite(const {'accounts'}, () => _accountAdapter.deleteAccount(id));
 
   // ── Categories (Delegated to Adapter) ─────────────────────────────────────
 
@@ -231,23 +266,31 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   Future<List<Category>> getCategories() => _categoryAdapter.getCategories();
 
   @override
-  Future<void> insertCategory(Category category) =>
-      _categoryAdapter.insertCategory(category);
+  Future<void> insertCategory(Category category) => _trackWrite(const {
+    'categories',
+  }, () => _categoryAdapter.insertCategory(category));
 
   @override
-  Future<void> updateCategory(Category category) =>
-      _categoryAdapter.updateCategory(category);
+  Future<void> updateCategory(Category category) => _trackWrite(const {
+    'categories',
+  }, () => _categoryAdapter.updateCategory(category));
 
   @override
-  Future<void> updateCategorySortOrder(String id, int sortOrder) =>
-      _categoryAdapter.updateCategorySortOrder(id, sortOrder);
+  Future<void> updateCategorySortOrder(String id, int sortOrder) => _trackWrite(
+    const {'categories'},
+    () => _categoryAdapter.updateCategorySortOrder(id, sortOrder),
+  );
 
   @override
   Future<void> updateCategorySortOrders(List<Category> categories) =>
-      _categoryAdapter.updateCategorySortOrders(categories);
+      _trackWrite(const {
+        'categories',
+      }, () => _categoryAdapter.updateCategorySortOrders(categories));
 
   @override
-  Future<void> deleteCategory(String id) => _categoryAdapter.deleteCategory(id);
+  Future<void> deleteCategory(String id) => _trackWrite(const {
+    'categories',
+  }, () => _categoryAdapter.deleteCategory(id));
 
   // ── Transactions (Delegated to Adapter) ───────────────────────────────────
 
@@ -256,16 +299,21 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _transactionAdapter.getTransactions();
 
   @override
-  Future<void> insertTransaction(AppTransaction transaction) =>
-      _transactionAdapter.insertTransaction(transaction);
+  Future<void> insertTransaction(AppTransaction transaction) => _trackWrite(
+    const {'transactions'},
+    () => _transactionAdapter.insertTransaction(transaction),
+  );
 
   @override
-  Future<void> updateTransaction(AppTransaction transaction) =>
-      _transactionAdapter.updateTransaction(transaction);
+  Future<void> updateTransaction(AppTransaction transaction) => _trackWrite(
+    const {'transactions'},
+    () => _transactionAdapter.updateTransaction(transaction),
+  );
 
   @override
-  Future<void> deleteTransaction(String id) =>
-      _transactionAdapter.deleteTransaction(id);
+  Future<void> deleteTransaction(String id) => _trackWrite(const {
+    'transactions',
+  }, () => _transactionAdapter.deleteTransaction(id));
 
   // ── Portfolio Holdings (Delegated to Adapter) ─────────────────────────────
 
@@ -274,27 +322,37 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _portfolioAdapter.getPortfolioHoldings();
 
   @override
-  Future<void> insertHolding(StockHolding holding) =>
-      _portfolioAdapter.insertHolding(holding);
+  Future<void> insertHolding(StockHolding holding) => _trackWrite(const {
+    'portfolio',
+  }, () => _portfolioAdapter.insertHolding(holding));
 
   @override
-  Future<void> updateHolding(StockHolding holding) =>
-      _portfolioAdapter.updateHolding(holding);
+  Future<void> updateHolding(StockHolding holding) => _trackWrite(const {
+    'portfolio',
+  }, () => _portfolioAdapter.updateHolding(holding));
 
   @override
-  Future<void> updateHoldingMarketData(StockHolding holding) =>
-      _portfolioAdapter.updateHoldingMarketData(holding);
+  Future<void> updateHoldingMarketData(StockHolding holding) => _trackWrite(
+    const {'portfolio'},
+    () => _portfolioAdapter.updateHoldingMarketData(holding),
+  );
 
   @override
-  Future<void> updateHoldingSortOrder(String id, int sortOrder) =>
-      _portfolioAdapter.updateHoldingSortOrder(id, sortOrder);
+  Future<void> updateHoldingSortOrder(String id, int sortOrder) => _trackWrite(
+    const {'portfolio'},
+    () => _portfolioAdapter.updateHoldingSortOrder(id, sortOrder),
+  );
 
   @override
-  Future<void> deleteHolding(String id) => _portfolioAdapter.deleteHolding(id);
+  Future<void> deleteHolding(String id) => _trackWrite(const {
+    'portfolio',
+  }, () => _portfolioAdapter.deleteHolding(id));
 
   @override
-  Future<void> deleteHoldingsByPortfolio(String portfolioId) =>
-      _portfolioAdapter.deleteHoldingsByPortfolio(portfolioId);
+  Future<void> deleteHoldingsByPortfolio(String portfolioId) => _trackWrite(
+    const {'portfolio'},
+    () => _portfolioAdapter.deleteHoldingsByPortfolio(portfolioId),
+  );
 
   // ── Stock Trades (Delegated to Adapter) ───────────────────────────────────
 
@@ -303,32 +361,40 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _stockTradeAdapter.getStockTrades();
 
   @override
-  Future<void> insertStockTrade(StockTrade trade) =>
-      _stockTradeAdapter.insertStockTrade(trade);
+  Future<void> insertStockTrade(StockTrade trade) => _trackWrite(const {
+    'portfolio',
+  }, () => _stockTradeAdapter.insertStockTrade(trade));
 
   @override
-  Future<void> updateStockTrade(StockTrade trade) =>
-      _stockTradeAdapter.updateStockTrade(trade);
+  Future<void> updateStockTrade(StockTrade trade) => _trackWrite(const {
+    'portfolio',
+  }, () => _stockTradeAdapter.updateStockTrade(trade));
 
   @override
-  Future<void> deleteStockTrade(String id) =>
-      _stockTradeAdapter.deleteStockTrade(id);
+  Future<void> deleteStockTrade(String id) => _trackWrite(const {
+    'portfolio',
+  }, () => _stockTradeAdapter.deleteStockTrade(id));
 
   @override
   Future<List<StockPurchase>> getStockPurchases() =>
       _stockPurchaseAdapter.getStockPurchases();
 
   @override
-  Future<void> insertStockPurchase(StockPurchase purchase) =>
-      _stockPurchaseAdapter.insertStockPurchase(purchase);
+  Future<void> insertStockPurchase(StockPurchase purchase) => _trackWrite(
+    const {'portfolio'},
+    () => _stockPurchaseAdapter.insertStockPurchase(purchase),
+  );
 
   @override
-  Future<void> updateStockPurchase(StockPurchase purchase) =>
-      _stockPurchaseAdapter.updateStockPurchase(purchase);
+  Future<void> updateStockPurchase(StockPurchase purchase) => _trackWrite(
+    const {'portfolio'},
+    () => _stockPurchaseAdapter.updateStockPurchase(purchase),
+  );
 
   @override
-  Future<void> deleteStockPurchase(String id) =>
-      _stockPurchaseAdapter.deleteStockPurchase(id);
+  Future<void> deleteStockPurchase(String id) => _trackWrite(const {
+    'portfolio',
+  }, () => _stockPurchaseAdapter.deleteStockPurchase(id));
 
   // ── Portfolio Annual Reports (Delegated to Adapter) ───────────────────────
 
@@ -338,15 +404,22 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   @override
   Future<void> insertPortfolioAnnualReport(PortfolioAnnualReport report) =>
-      _portfolioAnnualReportAdapter.insertPortfolioAnnualReport(report);
+      _trackWrite(
+        const {'portfolio'},
+        () => _portfolioAnnualReportAdapter.insertPortfolioAnnualReport(report),
+      );
 
   @override
   Future<void> updatePortfolioAnnualReport(PortfolioAnnualReport report) =>
-      _portfolioAnnualReportAdapter.updatePortfolioAnnualReport(report);
+      _trackWrite(
+        const {'portfolio'},
+        () => _portfolioAnnualReportAdapter.updatePortfolioAnnualReport(report),
+      );
 
   @override
-  Future<void> deletePortfolioAnnualReport(String id) =>
-      _portfolioAnnualReportAdapter.deletePortfolioAnnualReport(id);
+  Future<void> deletePortfolioAnnualReport(String id) => _trackWrite(const {
+    'portfolio',
+  }, () => _portfolioAnnualReportAdapter.deletePortfolioAnnualReport(id));
 
   // ── Investment Plans (Delegated to Adapter) ───────────────────────────────
 
@@ -357,7 +430,9 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> upsertInvestmentPlanMonthStatus(
     InvestmentPlanMonthStatus status,
-  ) => _investmentPlanAdapter.upsertInvestmentPlanMonthStatus(status);
+  ) => _trackWrite(const {
+    'portfolio',
+  }, () => _investmentPlanAdapter.upsertInvestmentPlanMonthStatus(status));
 
   @override
   Future<List<PortfolioAllocationTarget>> getPortfolioAllocationTargets() =>
@@ -366,7 +441,9 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   @override
   Future<void> upsertPortfolioAllocationTarget(
     PortfolioAllocationTarget target,
-  ) => _investmentPlanAdapter.upsertPortfolioAllocationTarget(target);
+  ) => _trackWrite(const {
+    'portfolio',
+  }, () => _investmentPlanAdapter.upsertPortfolioAllocationTarget(target));
 
   // ── Cash-flow forecast (Delegated to Adapter) ─────────────────────────────
 
@@ -375,32 +452,42 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _cashFlowAdapter.getFixedCashFlowItems();
 
   @override
-  Future<void> insertFixedCashFlowItem(FixedCashFlowItem item) =>
-      _cashFlowAdapter.insertFixedCashFlowItem(item);
+  Future<void> insertFixedCashFlowItem(FixedCashFlowItem item) => _trackWrite(
+    const {'cash_flow'},
+    () => _cashFlowAdapter.insertFixedCashFlowItem(item),
+  );
 
   @override
-  Future<void> updateFixedCashFlowItem(FixedCashFlowItem item) =>
-      _cashFlowAdapter.updateFixedCashFlowItem(item);
+  Future<void> updateFixedCashFlowItem(FixedCashFlowItem item) => _trackWrite(
+    const {'cash_flow'},
+    () => _cashFlowAdapter.updateFixedCashFlowItem(item),
+  );
 
   @override
-  Future<void> deleteFixedCashFlowItem(String id) =>
-      _cashFlowAdapter.deleteFixedCashFlowItem(id);
+  Future<void> deleteFixedCashFlowItem(String id) => _trackWrite(const {
+    'cash_flow',
+  }, () => _cashFlowAdapter.deleteFixedCashFlowItem(id));
 
   @override
   Future<List<PlannedPurchase>> getPlannedPurchases() =>
       _cashFlowAdapter.getPlannedPurchases();
 
   @override
-  Future<void> insertPlannedPurchase(PlannedPurchase purchase) =>
-      _cashFlowAdapter.insertPlannedPurchase(purchase);
+  Future<void> insertPlannedPurchase(PlannedPurchase purchase) => _trackWrite(
+    const {'cash_flow'},
+    () => _cashFlowAdapter.insertPlannedPurchase(purchase),
+  );
 
   @override
-  Future<void> updatePlannedPurchase(PlannedPurchase purchase) =>
-      _cashFlowAdapter.updatePlannedPurchase(purchase);
+  Future<void> updatePlannedPurchase(PlannedPurchase purchase) => _trackWrite(
+    const {'cash_flow'},
+    () => _cashFlowAdapter.updatePlannedPurchase(purchase),
+  );
 
   @override
-  Future<void> deletePlannedPurchase(String id) =>
-      _cashFlowAdapter.deletePlannedPurchase(id);
+  Future<void> deletePlannedPurchase(String id) => _trackWrite(const {
+    'cash_flow',
+  }, () => _cashFlowAdapter.deletePlannedPurchase(id));
 
   @override
   Future<List<BudgetForecastSetting>> getBudgetForecastSettings() =>
@@ -408,13 +495,17 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   @override
   Future<void> upsertBudgetForecastSetting(BudgetForecastSetting setting) =>
-      _cashFlowAdapter.upsertBudgetForecastSetting(setting);
+      _trackWrite(const {
+        'cash_flow',
+      }, () => _cashFlowAdapter.upsertBudgetForecastSetting(setting));
 
   @override
   Future<void> deleteBudgetForecastSetting(
     String budgetId,
     DateTime periodEnd,
-  ) => _cashFlowAdapter.deleteBudgetForecastSetting(budgetId, periodEnd);
+  ) => _trackWrite(const {
+    'cash_flow',
+  }, () => _cashFlowAdapter.deleteBudgetForecastSetting(budgetId, periodEnd));
 
   // ── Budgets ────────────────────────────────────────────────────────────────
 
@@ -425,22 +516,26 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   @override
   Future<void> insertBudget(Budget budget) =>
-      _budgetAdapter.insertBudget(budget);
+      _trackWrite(const {'budgets'}, () => _budgetAdapter.insertBudget(budget));
 
   @override
   Future<void> updateBudget(Budget budget) =>
-      _budgetAdapter.updateBudget(budget);
+      _trackWrite(const {'budgets'}, () => _budgetAdapter.updateBudget(budget));
 
   @override
-  Future<void> updateBudgets(List<Budget> budgets) =>
-      _budgetAdapter.updateBudgets(budgets);
+  Future<void> updateBudgets(List<Budget> budgets) => _trackWrite(const {
+    'budgets',
+  }, () => _budgetAdapter.updateBudgets(budgets));
 
   @override
-  Future<void> updateBudgetSortOrder(String id, int sortOrder) =>
-      _budgetAdapter.updateBudgetSortOrder(id, sortOrder);
+  Future<void> updateBudgetSortOrder(String id, int sortOrder) => _trackWrite(
+    const {'budgets'},
+    () => _budgetAdapter.updateBudgetSortOrder(id, sortOrder),
+  );
 
   @override
-  Future<void> deleteBudget(String id) => _budgetAdapter.deleteBudget(id);
+  Future<void> deleteBudget(String id) =>
+      _trackWrite(const {'budgets'}, () => _budgetAdapter.deleteBudget(id));
 
   // ── Recurring Transactions (Delegated to Adapter) ─────────────────────────
 
@@ -450,24 +545,33 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   @override
   Future<void> insertRecurringTransaction(RecurringTransaction recurring) =>
-      _recurringAdapter.insertRecurringTransaction(recurring);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.insertRecurringTransaction(recurring));
 
   @override
   Future<void> updateRecurringTransaction(RecurringTransaction recurring) =>
-      _recurringAdapter.updateRecurringTransaction(recurring);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.updateRecurringTransaction(recurring));
 
   @override
-  Future<void> deleteRecurringTransaction(String id) =>
-      _recurringAdapter.deleteRecurringTransaction(id);
+  Future<void> deleteRecurringTransaction(String id) => _trackWrite(const {
+    'recurring',
+  }, () => _recurringAdapter.deleteRecurringTransaction(id));
 
   @override
   Future<void> updateRecurringSortOrder(String id, int sortOrder) =>
-      _recurringAdapter.updateRecurringSortOrder(id, sortOrder);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.updateRecurringSortOrder(id, sortOrder));
 
   @override
   Future<void> updateRecurringSortOrders(
     List<RecurringTransaction> recurring,
-  ) => _recurringAdapter.updateRecurringSortOrders(recurring);
+  ) => _trackWrite(const {
+    'recurring',
+  }, () => _recurringAdapter.updateRecurringSortOrders(recurring));
 
   // ── Recurring Occurrences (Delegated to Adapter) ──────────────────────────
 
@@ -481,15 +585,20 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
 
   @override
   Future<void> insertRecurringOccurrence(RecurringOccurrence occurrence) =>
-      _recurringAdapter.insertRecurringOccurrence(occurrence);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.insertRecurringOccurrence(occurrence));
 
   @override
-  Future<void> deleteOccurrence(String id) =>
-      _recurringAdapter.deleteOccurrence(id);
+  Future<void> deleteOccurrence(String id) => _trackWrite(const {
+    'recurring',
+  }, () => _recurringAdapter.deleteOccurrence(id));
 
   @override
-  Future<void> deleteOccurrencesByRecurring(String recurringId) =>
-      _recurringAdapter.deleteOccurrencesByRecurring(recurringId);
+  Future<void> deleteOccurrencesByRecurring(String recurringId) => _trackWrite(
+    const {'recurring'},
+    () => _recurringAdapter.deleteOccurrencesByRecurring(recurringId),
+  );
 
   // ── Sync Logs ─────────────────────────────────────────────────────────────
 
@@ -514,7 +623,17 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   // ── Migration Helpers ──────────────────────────────────────────────────────
 
   @override
-  Future<void> clearAllData() async {
+  Future<void> clearAllData() => _trackWrite(const {
+    'accounts',
+    'portfolio',
+    'categories',
+    'transactions',
+    'budgets',
+    'recurring',
+    'cash_flow',
+  }, _clearAllData);
+
+  Future<void> _clearAllData() async {
     _requireAuth();
     log('Clearing all data for user: $currentUserId');
 
@@ -675,36 +794,50 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
   static const int _batchSize = 500;
 
   @override
-  Future<void> bulkInsertAccounts(List<Account> accounts) =>
-      _accountAdapter.bulkInsertAccounts(accounts);
+  Future<void> bulkInsertAccounts(List<Account> accounts) => _trackWrite(const {
+    'accounts',
+  }, () => _accountAdapter.bulkInsertAccounts(accounts));
 
   @override
-  Future<void> bulkInsertCategories(List<Category> categories) =>
-      _categoryAdapter.bulkInsertCategories(categories);
+  Future<void> bulkInsertCategories(List<Category> categories) => _trackWrite(
+    const {'categories'},
+    () => _categoryAdapter.bulkInsertCategories(categories),
+  );
 
   @override
   Future<void> bulkInsertTransactions(List<AppTransaction> transactions) =>
-      _transactionAdapter.bulkInsertTransactions(transactions);
+      _trackWrite(const {
+        'transactions',
+      }, () => _transactionAdapter.bulkInsertTransactions(transactions));
 
   @override
-  Future<void> bulkInsertBudgets(List<Budget> budgets) =>
-      _budgetAdapter.bulkInsertBudgets(budgets);
+  Future<void> bulkInsertBudgets(List<Budget> budgets) => _trackWrite(const {
+    'budgets',
+  }, () => _budgetAdapter.bulkInsertBudgets(budgets));
 
   @override
-  Future<void> bulkInsertHoldings(List<StockHolding> holdings) =>
-      _portfolioAdapter.bulkInsertHoldings(holdings);
+  Future<void> bulkInsertHoldings(List<StockHolding> holdings) => _trackWrite(
+    const {'portfolio'},
+    () => _portfolioAdapter.bulkInsertHoldings(holdings),
+  );
 
   @override
-  Future<void> bulkInsertStockTrades(List<StockTrade> trades) =>
-      _stockTradeAdapter.bulkInsertStockTrades(trades);
+  Future<void> bulkInsertStockTrades(List<StockTrade> trades) => _trackWrite(
+    const {'portfolio'},
+    () => _stockTradeAdapter.bulkInsertStockTrades(trades),
+  );
 
   @override
   Future<void> bulkInsertRecurring(List<RecurringTransaction> recurring) =>
-      _recurringAdapter.bulkInsertRecurring(recurring);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.bulkInsertRecurring(recurring));
 
   @override
   Future<void> bulkInsertOccurrences(List<RecurringOccurrence> occurrences) =>
-      _recurringAdapter.bulkInsertOccurrences(occurrences);
+      _trackWrite(const {
+        'recurring',
+      }, () => _recurringAdapter.bulkInsertOccurrences(occurrences));
 
   // ── Bulk Import: Get Existing IDs ──────────────────────────────────────────
 

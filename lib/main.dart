@@ -91,6 +91,7 @@ void main() async {
       SyncModule.cashFlow: cashFlowProvider.reload,
     },
   );
+  dbManager.syncWriteObserver = syncProvider;
 
   try {
     await RecurringNotificationService.instance.init();
@@ -294,12 +295,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       },
     );
     _routeInformationListener = () {
-      if (mounted) {
-        if (widget.authProvider.isLoggedIn && widget.syncProvider.hasBaseline) {
-          _checkAndSync();
-        }
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     };
     _router.routeInformationProvider.addListener(_routeInformationListener);
     _syncUserId = widget.authProvider.userId;

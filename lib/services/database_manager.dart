@@ -29,7 +29,15 @@ class DatabaseManager extends ChangeNotifier {
   }
 
   set repository(DatabaseRepository repo) {
-    _repository = repo;
+    _repository = repo..syncWriteObserver = _syncWriteObserver;
+  }
+
+  SyncWriteObserver? _syncWriteObserver;
+
+  /// ผู้รับแจ้งการเขียนข้อมูล คงไว้ให้ทุก repository ที่สร้างใหม่
+  set syncWriteObserver(SyncWriteObserver? observer) {
+    _syncWriteObserver = observer;
+    _repository?.syncWriteObserver = observer;
   }
 
   DatabaseRepository? get repositoryOrNull => _repository;
@@ -52,7 +60,7 @@ class DatabaseManager extends ChangeNotifier {
       _repository = SupabaseRepository(
         supabaseUrl: config.supabaseUrl,
         supabaseAnonKey: config.supabaseAnonKey,
-      );
+      )..syncWriteObserver = _syncWriteObserver;
       await _repository!.init();
       debugPrint(
         '[DatabaseManager] Connected to Supabase (${config.environmentName})',
