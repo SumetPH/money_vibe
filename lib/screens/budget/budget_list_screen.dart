@@ -589,6 +589,16 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
         final groupBudgets = entry.value;
         final groupTotal = groupBudgets.fold(0.0, (s, b) => s + b.amount);
         final groupPct = totalBudget > 0 ? groupTotal / totalBudget * 100 : 0.0;
+        final groupSpent = groupBudgets.fold(
+          0.0,
+          (s, b) => s + BudgetSpendingService.spentFor(b, spentByCategoryId),
+        );
+        final groupRemaining = groupTotal - groupSpent;
+        final remainingColor = groupRemaining.abs() <= 0.001
+            ? textSecondary
+            : groupRemaining > 0
+            ? (isDarkMode ? AppColors.darkIncome : AppColors.income)
+            : (isDarkMode ? AppColors.darkExpense : AppColors.expense);
 
         return Column(
           key: ValueKey('group_${entry.key}'),
@@ -610,8 +620,20 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                       ),
                     ),
                   ),
-                  Text(
-                    formatAmount(groupTotal),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: formatAmount(groupTotal)),
+                        TextSpan(
+                          text: ' · ',
+                          style: TextStyle(color: textSecondary),
+                        ),
+                        TextSpan(
+                          text: formatAmount(groupRemaining),
+                          style: TextStyle(color: remainingColor),
+                        ),
+                      ],
+                    ),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
