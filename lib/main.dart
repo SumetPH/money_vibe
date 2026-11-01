@@ -33,6 +33,7 @@ import 'services/splash_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 import 'utils/web_safe_area_insets.dart';
+import 'widgets/app_loading_view.dart';
 import 'widgets/app_sidebar.dart';
 
 void main() async {
@@ -601,7 +602,7 @@ class _RecurringDetailRouteScreenState
           });
         }
 
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(body: Center(child: AppLoadingView()));
       },
     );
   }

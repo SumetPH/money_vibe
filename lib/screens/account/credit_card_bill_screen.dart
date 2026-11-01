@@ -14,6 +14,7 @@ import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_cupertino_refresh.dart';
 import '../../widgets/app_data_state_view.dart';
+import '../../widgets/app_loading_view.dart';
 import 'credit_card_bill_hero_card.dart';
 import 'credit_card_bill_item_card.dart';
 
@@ -223,7 +224,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
           body: SafeArea(
             top: false,
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: AppLoadingView())
                 : AppCupertinoRefresh(
                     // ยอดบิลคำนวณจากรายการ จึงโหลดชุดเดียวกับหน้าบัญชี
                     onRefresh: () =>
