@@ -6,11 +6,13 @@ import '../../models/stock_trade.dart';
 import '../../models/stock_purchase.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'broker_report_list_screen.dart';
@@ -105,98 +107,102 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
             ),
           ],
         ),
-        actions: _buildAppBarActions(context),
+        actions: [
+          if (isLargeScreen)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: AppRefreshActionButton(modules: ScreenModules.accounts),
+            ),
+          ..._buildAppBarActions(context),
+        ],
       ),
-      body: Consumer<AccountProvider>(
-        builder: (context, accountProvider, _) {
-          final transactions = context
-              .watch<TransactionProvider>()
-              .transactions;
-          final trades = _filteredTrades(accountProvider.stockTrades);
-          final portfolioAccounts = accountProvider.accounts
-              .where((account) => account.isPortfolio)
-              .toList();
-          final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
-            sum,
-            portfolio,
-          ) {
-            final previousPrincipal = accountProvider.getRemainingPrincipalPool(
-              portfolio.id,
-              transactions,
-              targetYear: _selectedYear - 1,
-            );
-            final currentYearInflow = accountProvider
-                .getPortfolioAnnualReportsForPortfolio(portfolio.id)
-                .where((report) => report.year == _selectedYear)
-                .fold(0.0, (reportSum, report) => reportSum + report.inflowUsd);
-            return sum + previousPrincipal + currentYearInflow;
-          });
-          final principalQuotaRemainingUsd = portfolioAccounts
-              .where((account) => account.isPortfolio)
-              .fold(
-                0.0,
-                (sum, portfolio) =>
-                    sum +
-                    accountProvider.getRemainingPrincipalPool(
+      body: SafeArea(
+        // แถบแท็บ fixed ด้านบน ถูกดันลงพร้อมเนื้อหาตอนดึง refresh
+        child: AppDataStateView(
+          modules: ScreenModules.accounts,
+          header: tabBar,
+          builder: (context) => Consumer<AccountProvider>(
+            builder: (context, accountProvider, _) {
+              final transactions = context
+                  .watch<TransactionProvider>()
+                  .transactions;
+              final trades = _filteredTrades(accountProvider.stockTrades);
+              final portfolioAccounts = accountProvider.accounts
+                  .where((account) => account.isPortfolio)
+                  .toList();
+              final principalAvailableForYearUsd = portfolioAccounts.fold(0.0, (
+                sum,
+                portfolio,
+              ) {
+                final previousPrincipal = accountProvider
+                    .getRemainingPrincipalPool(
                       portfolio.id,
                       transactions,
-                      targetYear: _selectedYear,
-                    ),
-              );
+                      targetYear: _selectedYear - 1,
+                    );
+                final currentYearInflow = accountProvider
+                    .getPortfolioAnnualReportsForPortfolio(portfolio.id)
+                    .where((report) => report.year == _selectedYear)
+                    .fold(
+                      0.0,
+                      (reportSum, report) => reportSum + report.inflowUsd,
+                    );
+                return sum + previousPrincipal + currentYearInflow;
+              });
+              final principalQuotaRemainingUsd = portfolioAccounts
+                  .where((account) => account.isPortfolio)
+                  .fold(
+                    0.0,
+                    (sum, portfolio) =>
+                        sum +
+                        accountProvider.getRemainingPrincipalPool(
+                          portfolio.id,
+                          transactions,
+                          targetYear: _selectedYear,
+                        ),
+                  );
 
-          return SafeArea(
-            child: Column(
-              children: [
-                tabBar,
-                // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
-                Expanded(
-                  child: [
-                    TradeYearlyTab(
-                      trades: accountProvider.stockTrades,
-                      selectedYear: _selectedYear,
-                      onYearChanged: (year) =>
-                          setState(() => _selectedYear = year),
-                      isDarkMode: isDarkMode,
-                    ),
-                    TradeSaleHistoryTab(
-                      trades: trades,
-                      isDarkMode: isDarkMode,
-                      portfolioNameOf: (trade) =>
-                          accountProvider.findById(trade.portfolioId)?.name ??
-                          'พอร์ตหุ้น',
-                      onEdit: (trade) => _openTradeForm(context, trade),
-                      onDelete: (trade) => _confirmDeleteTrade(context, trade),
-                    ),
-                    TradePurchaseHistoryTab(
-                      purchases: accountProvider.stockPurchases,
-                      isDarkMode: isDarkMode,
-                      portfolioNameOf: (purchase) =>
-                          accountProvider
-                              .findById(purchase.portfolioId)
-                              ?.name ??
-                          'พอร์ตหุ้น',
-                      onEdit: (purchase) =>
-                          _openPurchaseHistoryForm(context, purchase),
-                      onDelete: (purchase) =>
-                          _confirmDeletePurchase(context, purchase),
-                    ),
-                    TradeAnnualTaxTab(
-                      trades: accountProvider.stockTrades,
-                      annualReports: accountProvider.portfolioAnnualReports,
-                      selectedYear: _selectedYear,
-                      principalAvailableForYearUsd:
-                          principalAvailableForYearUsd,
-                      principalQuotaRemainingUsd: principalQuotaRemainingUsd,
-                      onYearChanged: (year) =>
-                          setState(() => _selectedYear = year),
-                      isDarkMode: isDarkMode,
-                    ),
-                  ][_selectedTab],
+              // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+              return [
+                TradeYearlyTab(
+                  trades: accountProvider.stockTrades,
+                  selectedYear: _selectedYear,
+                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                  isDarkMode: isDarkMode,
                 ),
-              ],
-            ),
-          );
-        },
+                TradeSaleHistoryTab(
+                  trades: trades,
+                  isDarkMode: isDarkMode,
+                  portfolioNameOf: (trade) =>
+                      accountProvider.findById(trade.portfolioId)?.name ??
+                      'พอร์ตหุ้น',
+                  onEdit: (trade) => _openTradeForm(context, trade),
+                  onDelete: (trade) => _confirmDeleteTrade(context, trade),
+                ),
+                TradePurchaseHistoryTab(
+                  purchases: accountProvider.stockPurchases,
+                  isDarkMode: isDarkMode,
+                  portfolioNameOf: (purchase) =>
+                      accountProvider.findById(purchase.portfolioId)?.name ??
+                      'พอร์ตหุ้น',
+                  onEdit: (purchase) =>
+                      _openPurchaseHistoryForm(context, purchase),
+                  onDelete: (purchase) =>
+                      _confirmDeletePurchase(context, purchase),
+                ),
+                TradeAnnualTaxTab(
+                  trades: accountProvider.stockTrades,
+                  annualReports: accountProvider.portfolioAnnualReports,
+                  selectedYear: _selectedYear,
+                  principalAvailableForYearUsd: principalAvailableForYearUsd,
+                  principalQuotaRemainingUsd: principalQuotaRemainingUsd,
+                  onYearChanged: (year) => setState(() => _selectedYear = year),
+                  isDarkMode: isDarkMode,
+                ),
+              ][_selectedTab];
+            },
+          ),
+        ),
       ),
     );
   }

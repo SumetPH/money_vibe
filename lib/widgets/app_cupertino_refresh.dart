@@ -14,10 +14,15 @@ class AppCupertinoRefresh extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final Widget child;
 
+  /// ส่วนที่ fixed อยู่เหนือ [child] เช่น แถบแท็บ: ถูกดันลงไปพร้อมเนื้อหา
+  /// เพื่อให้ spinner อยู่บนสุดเหนือแท็บ
+  final Widget? header;
+
   const AppCupertinoRefresh({
     super.key,
     required this.onRefresh,
     required this.child,
+    this.header,
   });
 
   @override
@@ -153,9 +158,25 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
           onNotification: _handleScroll,
           child: Transform.translate(
             offset: Offset(0, gap),
-            child: ScrollConfiguration(behavior: behavior, child: widget.child),
+            child: _withHeader(
+              ScrollConfiguration(behavior: behavior, child: widget.child),
+            ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _withHeader(Widget scrollView) {
+    final header = widget.header;
+    if (header == null) return scrollView;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // เนื้อหาใน scroll view เลื่อนลงตาม overscroll อยู่แล้ว จึงเลื่อน header
+        // ตามระยะเดียวกันให้ติดไปกับเนื้อหา
+        Transform.translate(offset: Offset(0, _overscroll), child: header),
+        Expanded(child: scrollView),
       ],
     );
   }

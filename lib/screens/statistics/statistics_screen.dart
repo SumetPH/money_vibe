@@ -125,76 +125,65 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           body: SafeArea(
             bottom: false,
             // แท็บ fixed ด้านบน เนื้อหาเลื่อนอยู่ด้านล่าง
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: AppSegmentedTabs(
-                    segments: [
-                      for (final (index, label) in _tabLabels.indexed)
-                        AppSegment(
-                          label: label,
-                          isSelected: _selectedTab == index,
-                          onTap: () => setState(() => _selectedTab = index),
-                        ),
-                    ],
-                  ),
+            child: AppDataStateView(
+              modules: ScreenModules.statistics,
+              header: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: AppSegmentedTabs(
+                  segments: [
+                    for (final (index, label) in _tabLabels.indexed)
+                      AppSegment(
+                        label: label,
+                        isSelected: _selectedTab == index,
+                        onTap: () => setState(() => _selectedTab = index),
+                      ),
+                  ],
                 ),
-                Expanded(
-                  child: AppDataStateView(
-                    modules: ScreenModules.statistics,
-                    builder: (context) => LayoutBuilder(
-                      builder: (context, constraints) {
-                        final bottomPadding = MediaQuery.paddingOf(
-                          context,
-                        ).bottom;
-                        return SingleChildScrollView(
-                          padding: EdgeInsets.only(bottom: bottomPadding),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
-                            // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
-                            children:
-                                [
-                                      StatisticsNetWorthLineChart(),
-                                      StatisticsYearlyBarChart(
-                                        selectedYear: selectedYear,
-                                        onYearChanged: (year) => setState(
-                                          () => _selectedYear = year,
-                                        ),
-                                      ),
-                                      StatisticsCategoryPieChart(
-                                        type: CategoryType.expense,
-                                      ),
-                                      StatisticsCategoryPieChart(
-                                        type: CategoryType.income,
-                                      ),
-                                    ].indexed
-                                    .map(
-                                      (entry) => Visibility(
-                                        visible: entry.$1 == _selectedTab,
-                                        maintainState: true,
-                                        // สูงอย่างน้อยเต็มจอ เพื่อให้ empty state อยู่กลางจอ
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            minHeight:
-                                                constraints.maxHeight -
-                                                bottomPadding,
-                                          ),
-                                          child: entry.$2,
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                        );
-                      },
+              ),
+              builder: (context) => LayoutBuilder(
+                builder: (context, constraints) {
+                  final bottomPadding = MediaQuery.paddingOf(context).bottom;
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.only(bottom: bottomPadding),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // ใช้ Visibility + maintainState แทน IndexedStack เพื่อให้ความสูง
+                      // เท่ากับแท็บที่เลือก และยังคง state ของแต่ละแท็บไว้
+                      children:
+                          [
+                                StatisticsNetWorthLineChart(),
+                                StatisticsYearlyBarChart(
+                                  selectedYear: selectedYear,
+                                  onYearChanged: (year) =>
+                                      setState(() => _selectedYear = year),
+                                ),
+                                StatisticsCategoryPieChart(
+                                  type: CategoryType.expense,
+                                ),
+                                StatisticsCategoryPieChart(
+                                  type: CategoryType.income,
+                                ),
+                              ].indexed
+                              .map(
+                                (entry) => Visibility(
+                                  visible: entry.$1 == _selectedTab,
+                                  maintainState: true,
+                                  // สูงอย่างน้อยเต็มจอ เพื่อให้ empty state อยู่กลางจอ
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minHeight:
+                                          constraints.maxHeight - bottomPadding,
+                                    ),
+                                    child: entry.$2,
+                                  ),
+                                ),
+                              )
+                              .toList(),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
           ),
         );

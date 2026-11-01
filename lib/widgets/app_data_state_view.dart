@@ -39,11 +39,15 @@ class AppDataStateView extends StatelessWidget {
   /// false สำหรับหน้าที่แสดงแค่ loading/error โดยไม่มี pull-to-refresh
   final bool enablePullToRefresh;
 
+  /// แถบแท็บที่ fixed เหนือเนื้อหา แสดงทุกสถานะ และถูกดันลงพร้อมเนื้อหาตอนดึง refresh
+  final Widget? header;
+
   const AppDataStateView({
     super.key,
     required this.modules,
     required this.builder,
     this.enablePullToRefresh = true,
+    this.header,
   });
 
   @override
@@ -67,9 +71,20 @@ class AppDataStateView extends StatelessWidget {
       ),
     };
 
-    if (!enablePullToRefresh) return content;
+    if (!enablePullToRefresh) {
+      final header = this.header;
+      if (header == null) return content;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          Expanded(child: content),
+        ],
+      );
+    }
     return AppCupertinoRefresh(
       onRefresh: () => refreshDataModules(context, modules),
+      header: header,
       child: content,
     );
   }

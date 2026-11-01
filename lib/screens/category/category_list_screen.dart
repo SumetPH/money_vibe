@@ -119,6 +119,13 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               onPressed: () => setState(() => _isReorderMode = false),
             )
           else ...[
+            if (isLargeScreen)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: AppRefreshActionButton(
+                  modules: ScreenModules.categories,
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Material(
@@ -166,40 +173,41 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           ],
         ],
       ),
-      body: AppDataStateView(
-        modules: ScreenModules.categories,
-        enablePullToRefresh: false,
-        builder: (context) =>
-            Consumer3<CategoryProvider, TransactionProvider, SettingsProvider>(
-              builder: (context, catProvider, txProvider, settingsProvider, _) {
-                return SafeArea(
-                  child: Column(
-                    children: [
-                      // Reorder Mode Active Banner
-                      if (_isReorderMode)
-                        const AppReorderBanner(
-                          message:
-                              'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
-                        ),
-
-                      // Segmented control fixed ด้านบน ไม่เลื่อนไปพร้อมรายการ
-                      _buildSegmentedControl(),
-
-                      // Category List View
-                      // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
-                      Expanded(
-                        child: _buildCategoryList(
+      body: SafeArea(
+        child: AppDataStateView(
+          modules: ScreenModules.categories,
+          // แบนเนอร์จัดเรียงและ segmented control fixed ด้านบน ไม่เลื่อนไปพร้อมรายการ
+          // แต่ถูกดันลงพร้อมเนื้อหาตอนดึง refresh
+          header: isDataReady
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_isReorderMode)
+                      const AppReorderBanner(
+                        message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับหมวดหมู่',
+                      ),
+                    _buildSegmentedControl(),
+                  ],
+                )
+              : null,
+          // แสดงเฉพาะแท็บที่เลือก (ไม่สไลด์ ใช้แบบเดียวกับหน้าสถิติ)
+          builder: (context) =>
+              Consumer3<
+                CategoryProvider,
+                TransactionProvider,
+                SettingsProvider
+              >(
+                builder:
+                    (context, catProvider, txProvider, settingsProvider, _) =>
+                        _buildCategoryList(
                           catProvider,
                           txProvider,
                           _currentType,
                           isDarkMode,
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+              ),
+        ),
       ),
     );
   }

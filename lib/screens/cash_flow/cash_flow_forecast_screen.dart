@@ -57,6 +57,10 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
           syncProvider.readinessOf(ScreenModules.cashFlow) ==
           DataReadiness.ready,
     );
+    final hasForecast = isDataReady && forecast != null;
+    final next = hasForecast
+        ? watchNextPeriodForecast(context, forecast)
+        : null;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -121,16 +125,24 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       body: SafeArea(
         child: AppDataStateView(
           modules: ScreenModules.cashFlow,
+          // แบนเนอร์จัดเรียงและแท็บ fixed ด้านบน เนื้อหาของแท็บเลื่อนอยู่ด้านล่าง
+          header: hasForecast ? _buildHeader(hasNext: next != null) : null,
           builder: (context) => forecast == null
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
                   children: _buildWithoutAnchor(isDarkMode),
                 )
-              : _buildForecast(
-                  forecast,
-                  watchNextPeriodForecast(context, forecast),
-                  isDarkMode,
+              : ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 32),
+                  children: switch (_tab) {
+                    _ForecastTab.next when next != null => _buildNextTab(
+                      next,
+                      isDarkMode,
+                    ),
+                    _ => _buildCurrentTab(forecast, isDarkMode),
+                  },
                 ),
         ),
       ),
@@ -146,32 +158,16 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     ),
   ];
 
-  // แบนเนอร์จัดเรียงและแท็บ fixed ด้านบน เนื้อหาของแท็บเลื่อนอยู่ด้านล่าง
-  Widget _buildForecast(
-    CashFlowForecast forecast,
-    NextPeriodForecast? next,
-    bool isDarkMode,
-  ) => Column(
+  Widget _buildHeader({required bool hasNext}) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       if (_isReorderMode)
         const AppReorderBanner(
           message:
               'แตะค้างที่ไอคอนลากเพื่อจัดเรียงรายการเงินเข้าออกและอยากซื้อ',
         ),
-      _buildTabs(hasNext: next != null),
-      Expanded(
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 32),
-          children: switch (_tab) {
-            _ForecastTab.next when next != null => _buildNextTab(
-              next,
-              isDarkMode,
-            ),
-            _ => _buildCurrentTab(forecast, isDarkMode),
-          },
-        ),
-      ),
+      _buildTabs(hasNext: hasNext),
     ],
   );
 
