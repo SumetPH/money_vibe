@@ -5,5 +5,7 @@
   "DEBUG_WEB_BOOTSTRAP": "true",
   "DEBUG_LOGIN_EMAIL": "dev@example.com",
   "DEBUG_LOGIN_PASSWORD": "local-dev-password",
-  "DEBUG_FINNHUB_API_KEY": "optional-local-dev-finnhub-key"
+  "DEBUG_FINNHUB_API_KEY": "optional-local-dev-finnhub-key",
+  "GOOGLE_WEB_CLIENT_ID": "",
+  "GOOGLE_IOS_CLIENT_ID": ""
 }

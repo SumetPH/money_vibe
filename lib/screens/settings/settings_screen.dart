@@ -27,6 +27,7 @@ import 'data_management_screen.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import 'settings_account_section.dart';
+import 'settings_sign_in_methods_section.dart';
 import 'settings_install_section.dart';
 import 'settings_widgets.dart';
 import 'settings_sheets.dart';
@@ -163,6 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Appearance Section
+                const SettingsSignInMethodsSection(),
                 AppSectionHeader('ลักษณะ'),
                 SettingsGroup(
                   isDarkMode: isDarkMode,

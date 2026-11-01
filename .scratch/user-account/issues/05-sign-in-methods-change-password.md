@@ -4,13 +4,19 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] migration ใหม่สร้าง `public.has_password()` แบบ `security definer` และ `stable` คืนว่า `encrypted_password` ของ `auth.uid()` ไม่เป็น null และไม่ว่าง โดย `GRANT EXECUTE` ให้ `authenticated` และ revoke จาก `anon`/`public` จากนั้น apply ด้วย `supabase db push`
-- [ ] AuthProvider มี state `hasPassword` โหลดตอน init, ตอน signedIn และหลังเปลี่ยนรหัสสำเร็จ
-- [ ] AuthProvider มี `changePassword(currentPassword, newPassword)` ตรวจรหัสเดิมด้วย `signInWithPassword` ก่อน แล้วจึง `updateUser`
-- [ ] ฟอร์มเปลี่ยนรหัสผ่านใช้ pattern เดียวกับ settings sheets ที่มีอยู่ และใช้ `AutofillGroup` (hints password, newPassword) เรียก `finishAutofillContext()` เมื่อเปลี่ยนสำเร็จ
-- [ ] กรณีรหัสเดิมผิด, รหัสใหม่ไม่ตรงกัน, รหัสสั้นไป, ซ้ำรหัสเดิม หรือเคยรั่วไหล ขึ้นข้อความภาษาไทย
-- [ ] แถวรหัสผ่านแสดง "เปลี่ยนรหัสผ่าน" หรือ "ตั้งรหัสผ่าน" ตาม `hasPassword`
+- [x] AuthProvider มี state `hasPassword` โหลดตอน init, ตอน signedIn และหลังเปลี่ยนรหัสสำเร็จ
+- [x] AuthProvider มี `changePassword(currentPassword, newPassword)` ตรวจรหัสเดิมด้วย `signInWithPassword` ก่อน แล้วจึง `updateUser`
+- [x] ฟอร์มเปลี่ยนรหัสผ่านใช้ pattern เดียวกับ settings sheets ที่มีอยู่ และใช้ `AutofillGroup` (hints password, newPassword) เรียก `finishAutofillContext()` เมื่อเปลี่ยนสำเร็จ
+- [x] กรณีรหัสเดิมผิด, รหัสใหม่ไม่ตรงกัน, รหัสสั้นไป, ซ้ำรหัสเดิม หรือเคยรั่วไหล ขึ้นข้อความภาษาไทย
+- [x] แถวรหัสผ่านแสดง "เปลี่ยนรหัสผ่าน" หรือ "ตั้งรหัสผ่าน" ตาม `hasPassword`
 - [ ] ทดสอบด้วยมือแล้ว: เปลี่ยนรหัส, logout แล้ว login ด้วยรหัสใหม่ได้, และรหัสเดิมผิดถูกปฏิเสธ
-- [ ] `dart format .` และ `tool/check_design.sh` ผ่าน
+- [x] `dart format .` และ `tool/check_design.sh` ผ่าน
+
+
+## Comments
+
+- เพิ่ม RPC has_password(), state ตอน init/auth events และฟอร์มเปลี่ยนรหัสผ่านที่ตรวจรหัสเดิมก่อน updateUser โดยไม่ signOut session อื่น ลอง npx --yes supabase db push แล้วพบ ProjectRefNotLinkedError; ลอง link dev จาก config แล้วพบ AccessTokenRequiredError ต้อง supabase login ก่อน apply migration และทดสอบจริง
+- ตรวจอัตโนมัติ: dart format ., tool/check_design.sh และ flutter analyze --no-pub ผ่าน; flutter test --no-pub ผ่านทั้งหมด 50 tests ไม่เพิ่ม unit test ใหม่และไม่ได้ทดสอบผ่าน browser

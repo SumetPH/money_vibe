@@ -37,6 +37,7 @@ import 'widgets/app_loading_view.dart';
 import 'widgets/app_sidebar.dart';
 
 void main() async {
+  final initialAuthUri = kIsWeb ? Uri.base : null;
   // ไม่พิมพ์ log ใน release build เพื่อไม่ให้ข้อมูลภายในหลุดไปใน device log
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
@@ -113,7 +114,10 @@ void main() async {
     ]);
     // Initialize AuthProvider หลังจาก DatabaseManager (Supabase) พร้อมแล้ว
     if (dbManager.isConfigured) {
-      await _initProvider('Auth', authProvider.init);
+      await _initProvider(
+        'Auth',
+        () => authProvider.init(callbackUri: initialAuthUri),
+      );
       await DebugBootstrapService.instance.signInIfNeeded(authProvider);
     }
 
@@ -320,6 +324,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (userId == _syncUserId) return;
       _syncUserId = userId;
       widget.syncProvider.reset();
+      if (userId != null) {
+        unawaited(
+          widget.syncProvider.initialize().catchError((Object error) {
+            debugPrint('[MyApp] Initial load after sign-in failed: $error');
+          }),
+        );
+      }
     };
     widget.authProvider.addListener(_authStateListener);
 
@@ -353,6 +364,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (!widget.authProvider.isLoggedIn) {
       return '/auth';
+    }
+
+    if (widget.authProvider.returnToSettings) {
+      return '/settings';
     }
 
     return '/accounts';

@@ -21,13 +21,16 @@
 2. คลิก **Providers** จาก sidebar
 3. เปิดใช้งาน **Email** provider:
    - ✅ Enable Sign up
-   - ✅ Confirm email (แนะนำให้เปิดเพื่อความปลอดภัย)
+   - ✅ Confirm email (ต้องเปิด ก่อนใช้ automatic identity linking กับ Google)
    - ✅ Secure email change
    - ✅ Secure password change
+   - ตั้ง Email templates **Confirm signup**, **Reset Password** และ **Reauthentication** ให้แสดง `{{ .Token }}` เช่น `<p>รหัสยืนยันของคุณ: {{ .Token }}</p>` แอปให้กรอกรหัสในฟอร์ม ไม่ใช้ลิงก์อีเมลสำหรับขั้นตอนเหล่านี้
+   - Secure password change อาจขอยืนยันตัวตนซ้ำเมื่อ session ไม่ใหม่ แอปส่งรหัสด้วย `reauthenticate()` และรับ nonce ในฟอร์มตั้งรหัสผ่าน
 4. ตั้งค่า **Site URL**:
    - ไปที่ **URL Configuration**
-   - Site URL: `io.supabase.flutterquickstart://login-callback/` (สำหรับ mobile)
-   - หรือ `http://localhost:3000` (สำหรับ web development)
+   - Site URL: origin ของเว็บที่ใช้จริง เช่น `http://localhost:3000` สำหรับ dev หรือโดเมน production
+   - เพิ่ม origins เหล่านี้ใน Redirect URLs ด้วย Google บนเว็บ redirect กลับ origin ปัจจุบัน ส่วน Android/iOS ใช้ native ID token
+5. หากเปิด Google ให้ทำตาม [GOOGLE_AUTH_SETUP.md](GOOGLE_AUTH_SETUP.md) รวม Allow manual linking, Client IDs ของแต่ละ env และ iOS URL scheme
 
 ---
 

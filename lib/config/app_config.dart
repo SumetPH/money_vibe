@@ -30,6 +30,13 @@ class AppConfigException implements Exception {
 }
 
 class AppConfig {
+  static const googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+  );
+  static const googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+  );
+
   /// build สำหรับ App Store / Play Store (`--dart-define=DISTRIBUTION=store`)
   /// ใช้ซ่อนฟีเจอร์ที่ใช้เฉพาะ build ส่วนตัว/sideload
   static const bool isStoreBuild =

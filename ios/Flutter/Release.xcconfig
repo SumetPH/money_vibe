@@ -1,2 +1,4 @@
 #include "Generated.xcconfig"
 TREE_SHAKE_ICONS=false
+
+#include? "GoogleAuth.xcconfig"

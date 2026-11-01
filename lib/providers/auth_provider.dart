@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/google_auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +15,27 @@ class AuthProvider extends ChangeNotifier {
   factory AuthProvider() => _instance;
   AuthProvider._internal();
 
+  final _google = GoogleAuthService();
+  bool get isGoogleAvailable => _google.isAvailable;
+  bool _hasPassword = false;
+  bool _signInMethodsReady = false;
+  bool _refreshingAccount = false;
+  bool _refreshAccountAgain = false;
+  bool _requiresPasswordNonce = false;
+  bool get hasPassword => _hasPassword;
+  bool get signInMethodsReady => _signInMethodsReady;
+  bool get requiresPasswordNonce => _requiresPasswordNonce;
+  bool returnToSettings = false;
+  static const _pendingGoogleLinkKey = 'pending_google_link_user';
+  UserIdentity? get linkedGoogleIdentity {
+    for (final identity in _user?.identities ?? <UserIdentity>[]) {
+      if (identity.provider == 'google') return identity;
+    }
+    return null;
+  }
+
+  bool get canUnlinkGoogle =>
+      linkedGoogleIdentity != null && (_user?.identities?.length ?? 0) >= 2;
   SupabaseClient? _client;
   bool _isSupabaseInitialized = false;
 
@@ -35,6 +60,10 @@ class AuthProvider extends ChangeNotifier {
   bool _isDeletingAccount = false;
   String? _error;
   bool _isInitialized = false;
+  String? _emailNeedingConfirmation;
+  String? get emailNeedingConfirmation => _emailNeedingConfirmation;
+  static const _duplicateEmailMessage =
+      'อีเมลนี้มีบัญชีผู้ใช้แล้ว ลองเข้าสู่ระบบด้วยรหัสผ่านหรือ Google';
 
   // ระหว่างตั้งรหัสผ่านใหม่ด้วยรหัส OTP จะมี session ชั่วคราว ไม่ให้ถือว่า login
   // (ไม่งั้น router จะ redirect ออกจากหน้าตั้งรหัสใหม่กลางทาง)
@@ -54,7 +83,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// เริ่มต้นและตรวจสอบสถานะการ login
   /// ต้องเรียกหลังจาก Supabase ถูก initialize แล้วเท่านั้น
-  Future<void> init() async {
+  Future<void> init({Uri? callbackUri}) async {
     if (_isInitialized) return;
 
     _setLoading(true);
@@ -69,26 +98,67 @@ class AuthProvider extends ChangeNotifier {
       // ตรวจสอบ session ปัจจุบัน
       final session = client.auth.currentSession;
       _user = session?.user;
+      final preferences = await SharedPreferences.getInstance();
+      returnToSettings =
+          _user != null &&
+          preferences.getString(_pendingGoogleLinkKey) == _user!.id;
+      if (_user != null) await _refreshAccount();
 
       // ฟังการเปลี่ยนแปลง auth state
-      client.auth.onAuthStateChange.listen((data) {
-        if (_isRecoveringPassword) return;
-        final AuthChangeEvent event = data.event;
-        final Session? session = data.session;
+      client.auth.onAuthStateChange.listen(
+        (data) {
+          if (_isRecoveringPassword) return;
+          final AuthChangeEvent event = data.event;
+          final Session? session = data.session;
 
-        switch (event) {
-          case AuthChangeEvent.signedIn:
-          case AuthChangeEvent.tokenRefreshed:
-            _user = session?.user;
-            break;
-          case AuthChangeEvent.signedOut:
-            _user = null;
-            break;
-          default:
-            break;
+          switch (event) {
+            case AuthChangeEvent.signedIn:
+            case AuthChangeEvent.tokenRefreshed:
+            case AuthChangeEvent.userUpdated:
+              if (_user?.id != session?.user.id) {
+                _hasPassword = false;
+                _signInMethodsReady = false;
+                _requiresPasswordNonce = false;
+              }
+              _user = session?.user;
+              break;
+            case AuthChangeEvent.signedOut:
+              _user = null;
+              _hasPassword = false;
+              _signInMethodsReady = false;
+              _requiresPasswordNonce = false;
+              break;
+            default:
+              break;
+          }
+          notifyListeners();
+          if (_user != null && event != AuthChangeEvent.initialSession) {
+            // Leave the SDK event callback before making more Auth requests.
+            Timer.run(_refreshAccount);
+          }
+        },
+        onError: (Object error) {
+          if (error is AuthException) {
+            _setOAuthError(error.code ?? '', error.message);
+            notifyListeners();
+          }
+        },
+      );
+
+      if (callbackUri != null) {
+        final params = {
+          ...callbackUri.queryParameters,
+          if (callbackUri.fragment.contains('=') &&
+              !callbackUri.fragment.startsWith('/'))
+            ...Uri.splitQueryString(callbackUri.fragment),
+        };
+        if (params['error'] != null) {
+          _setOAuthError(
+            params['error_code'] ?? params['error']!,
+            params['error_description'] ?? '',
+          );
         }
-        notifyListeners();
-      });
+      }
 
       _isInitialized = true;
     } catch (e) {
@@ -122,11 +192,12 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.user != null) {
-        if (response.session != null) {
-          await client.auth.signOut();
+        if (response.user!.identities?.isEmpty == true) {
+          _error = _duplicateEmailMessage;
+          return false;
         }
-        _user = null;
-        notifyListeners();
+        _emailNeedingConfirmation = response.session == null ? email : null;
+        _user = response.session?.user;
         return true;
       }
       return false;
@@ -170,6 +241,10 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on AuthException catch (e) {
       debugPrint('AuthProvider: auth error: ${e.message}');
+      if (e.code == 'email_not_confirmed' ||
+          e.message.contains('Email not confirmed')) {
+        _emailNeedingConfirmation = email;
+      }
       _error = _getErrorMessage(e.message);
       notifyListeners();
       return false;
@@ -183,7 +258,101 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// ออกจากระบบ
+  Future<void> _refreshAccount() async {
+    if (_user == null) return;
+    if (_refreshingAccount) {
+      _refreshAccountAgain = true;
+      return;
+    }
+    _refreshingAccount = true;
+    final userId = _user!.id;
+    try {
+      final client = _safeClient!;
+      final current = (await client.auth.getUser()).user;
+      if (_user?.id != userId || current?.id != userId) return;
+      _user = current;
+      final google = linkedGoogleIdentity;
+      final googleEmail = google?.identityData?['email'] as String?;
+      if (google != null &&
+          googleEmail?.toLowerCase() != userEmail?.toLowerCase()) {
+        await client.auth.unlinkIdentity(google);
+        final refreshedUser = (await client.auth.getUser()).user;
+        if (_user?.id != userId) return;
+        _user = refreshedUser;
+        _error = 'ต้องใช้บัญชี Google ที่อีเมลตรงกับบัญชีผู้ใช้';
+      }
+      final metadata = _user?.userMetadata;
+      if (linkedGoogleIdentity != null &&
+          ((metadata?['username'] as String?)?.trim().isEmpty ?? true)) {
+        final name =
+            [
+              metadata?['full_name'],
+              metadata?['name'],
+              userEmail?.split('@').first,
+            ].whereType<String>().firstWhere(
+              (value) => value.trim().isNotEmpty,
+              orElse: () => 'ผู้ใช้',
+            );
+        final response = await client.auth.updateUser(
+          UserAttributes(data: {'username': name}),
+        );
+        if (_user?.id != userId) return;
+        _user = response.user;
+      }
+      final password = await client.rpc('has_password');
+      if (_user?.id != userId) return;
+      _hasPassword = password == true;
+      _signInMethodsReady = true;
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getString(_pendingGoogleLinkKey) == userId) {
+        await prefs.remove(_pendingGoogleLinkKey);
+      }
+    } catch (e) {
+      if (_user?.id == userId) {
+        _signInMethodsReady = false;
+        _error = 'โหลดช่องทางเข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่';
+      }
+    } finally {
+      _refreshingAccount = false;
+      notifyListeners();
+      if (_refreshAccountAgain) {
+        _refreshAccountAgain = false;
+        Timer.run(_refreshAccount);
+      }
+    }
+  }
+
+  Future<void> reloadSignInMethods() => _refreshAccount();
+
+  void _setOAuthError(String code, String message) {
+    if (code == 'access_denied' && !message.contains('identity')) {
+      _error = null;
+      return;
+    }
+    _error = _getErrorMessage('$code $message');
+  }
+
+  Future<bool> signInWithGoogle() => _performAuth(() async {
+    if (!isGoogleAvailable) throw StateError('Google unavailable');
+    if (kIsWeb) {
+      final launched = await _safeClient!.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: Uri.base.origin,
+        queryParams: {'prompt': 'select_account'},
+      );
+      if (!launched) throw StateError('OAuth launch failed');
+    } else {
+      final credential = await _google.authenticate();
+      final response = await _safeClient!.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: credential.idToken,
+        accessToken: credential.accessToken,
+      );
+      _user = response.user;
+      await _refreshAccount();
+    }
+  });
+
   Future<void> signOut() async {
     _setLoading(true);
     try {
@@ -192,6 +361,9 @@ class AuthProvider extends ChangeNotifier {
         await client.auth.signOut();
       }
       _user = null;
+      _hasPassword = false;
+      _signInMethodsReady = false;
+      await _clearGoogleSession();
       notifyListeners();
     } catch (e) {
       debugPrint('AuthProvider: sign out error: $e');
@@ -359,6 +531,9 @@ class AuthProvider extends ChangeNotifier {
       // ลบ session ในเครื่อง; user ฝั่ง server ถูกลบไปแล้วจึงไม่ต้องเรียก global sign out
       await client.auth.signOut(scope: SignOutScope.local);
       _user = null;
+      _hasPassword = false;
+      _signInMethodsReady = false;
+      await _clearGoogleSession();
       notifyListeners();
       return true;
     } catch (e) {
@@ -399,14 +574,35 @@ class AuthProvider extends ChangeNotifier {
 
   void _clearError() {
     _error = null;
+    _emailNeedingConfirmation = null;
   }
 
   /// แปลงข้อความ error ให้เข้าใจง่าย
   String _getErrorMessage(String message) {
+    if (message.contains('password_nonce_sent')) {
+      return 'กรุณากรอกรหัสยืนยันที่ส่งไปทางอีเมล';
+    }
+    if (message.contains('reauthentication_not_valid')) {
+      return 'รหัสยืนยันไม่ถูกต้องหรือหมดอายุ กรุณาขอรหัสใหม่';
+    }
+    if (message.contains('identity_already_exists') ||
+        message.contains('Identity is already linked')) {
+      return 'บัญชี Google นี้ถูกใช้กับบัญชีผู้ใช้อื่นแล้ว';
+    }
+    if (message.contains('email_mismatch')) {
+      return 'ต้องใช้บัญชี Google ที่อีเมลตรงกับบัญชีผู้ใช้';
+    }
+    if (message.contains('same_password')) {
+      return 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม';
+    }
+    if (message.contains('email_exists') ||
+        message.contains('user_already_exists')) {
+      return _duplicateEmailMessage;
+    }
     if (message.contains('Invalid login credentials')) {
       return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
     } else if (message.contains('User already registered')) {
-      return 'อีเมลนี้มีการลงทะเบียนแล้ว';
+      return _duplicateEmailMessage;
     } else if (message.contains('Password should be at least')) {
       return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
     } else if (message.contains('Password should contain') ||
@@ -430,5 +626,161 @@ class AuthProvider extends ChangeNotifier {
       return 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ';
     }
     return _unexpectedErrorMessage;
+  }
+
+  Future<bool> verifySignUpCode(String email, String code) =>
+      _performAuth(() async {
+        final response = await _safeClient!.auth.verifyOTP(
+          email: email,
+          token: code,
+          type: OtpType.signup,
+        );
+        _user = response.user;
+        _emailNeedingConfirmation = null;
+      });
+
+  Future<bool> resendSignUpCode(String email) => _performAuth(() async {
+    await _safeClient!.auth.resend(type: OtpType.signup, email: email);
+  });
+
+  Future<bool> _performAuth(Future<void> Function() action) async {
+    if (_isLoading) return false;
+    _setLoading(true);
+    _clearError();
+    try {
+      if (_safeClient == null) {
+        _error = 'Supabase ยังไม่ได้ตั้งค่า';
+        return false;
+      }
+      await action();
+      return true;
+    } on GoogleSignInException catch (e) {
+      _error = e.code == GoogleSignInExceptionCode.canceled
+          ? null
+          : 'ดำเนินการกับ Google ไม่สำเร็จ กรุณาลองใหม่';
+      return false;
+    } on AuthException catch (e) {
+      _error = _getErrorMessage('${e.code ?? ''} ${e.message}');
+      return false;
+    } catch (e) {
+      _error = _unexpectedErrorMessage;
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) =>
+      _performAuth(() async {
+        final client = _safeClient!;
+        final id = userId;
+        final email = userEmail;
+        if (!_hasPassword || email == null) {
+          throw const AuthException('Password unavailable');
+        }
+        await client.auth.signInWithPassword(
+          email: email,
+          password: currentPassword,
+        );
+        if (userId != id) throw const AuthException('User changed');
+        if (currentPassword == newPassword) {
+          throw const AuthException('New password should be different');
+        }
+        final response = await client.auth.updateUser(
+          UserAttributes(password: newPassword),
+        );
+        _user = response.user;
+        await _refreshAccount();
+      });
+
+  Future<bool> setPassword(String newPassword, {String? nonce}) =>
+      _performAuth(() async {
+        final client = _safeClient!;
+        try {
+          final response = await client.auth.updateUser(
+            UserAttributes(password: newPassword, nonce: nonce),
+          );
+          _user = response.user;
+          _requiresPasswordNonce = false;
+          await _refreshAccount();
+        } on AuthException catch (e) {
+          if (e.code == 'reauthentication_needed' ||
+              e.message.toLowerCase().contains('reauthentication') &&
+                  e.code != 'reauthentication_not_valid') {
+            await client.auth.reauthenticate();
+            _requiresPasswordNonce = true;
+            throw const AuthException(
+              'Password nonce sent',
+              code: 'password_nonce_sent',
+            );
+          }
+          rethrow;
+        }
+      });
+
+  Future<bool> resendPasswordNonce() => _performAuth(() async {
+    await _safeClient!.auth.reauthenticate();
+    _requiresPasswordNonce = true;
+  });
+
+  Future<bool> linkGoogle() => _performAuth(() async {
+    if (!isGoogleAvailable || _user == null) {
+      throw StateError('Google unavailable');
+    }
+    final client = _safeClient!;
+    final id = userId;
+    final email = userEmail;
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_pendingGoogleLinkKey, id!);
+      final launched = await client.auth.linkIdentity(
+        OAuthProvider.google,
+        redirectTo: Uri.base.origin,
+        queryParams: {'prompt': 'select_account'},
+      );
+      if (!launched) {
+        await prefs.remove(_pendingGoogleLinkKey);
+        throw StateError('OAuth launch failed');
+      }
+    } else {
+      final credential = await _google.authenticate();
+      if (credential.email.toLowerCase() != email?.toLowerCase()) {
+        await _google.signOut();
+        throw const AuthException(
+          'Google email mismatch',
+          code: 'email_mismatch',
+        );
+      }
+      if (userId != id) throw StateError('User changed');
+      final response = await client.auth.linkIdentityWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: credential.idToken,
+        accessToken: credential.accessToken,
+      );
+      _user = response.user;
+      await _refreshAccount();
+    }
+  });
+
+  Future<bool> unlinkGoogle() => _performAuth(() async {
+    // Refresh identities before guarding the last available sign-in method.
+    _user = (await _safeClient!.auth.getUser()).user;
+    if (!canUnlinkGoogle) {
+      throw const AuthException('Cannot remove last identity');
+    }
+    await _safeClient!.auth.unlinkIdentity(linkedGoogleIdentity!);
+    await _clearGoogleSession();
+    _user = (await _safeClient!.auth.getUser()).user;
+    await _refreshAccount();
+  });
+
+  Future<void> _clearGoogleSession() async {
+    try {
+      await _google.signOut();
+    } catch (e) {
+      debugPrint('Google sign-out failed');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingGoogleLinkKey);
   }
 }

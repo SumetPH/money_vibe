@@ -1,0 +1,3 @@
+// Copy to GoogleAuth.xcconfig and fill each flavor's reversed iOS client ID.
+GOOGLE_REVERSED_CLIENT_ID_DEV =
+GOOGLE_REVERSED_CLIENT_ID_PROD =

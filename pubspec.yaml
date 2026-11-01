@@ -60,6 +60,7 @@ dependencies:
   calendar_date_picker2: ^3.0.0
   flutter_secure_storage: ^10.3.4
   url_launcher: ^6.3.3
+  google_sign_in: 7.2.0
 
 dev_dependencies:
   flutter_test:

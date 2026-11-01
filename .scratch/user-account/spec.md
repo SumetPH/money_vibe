@@ -1,6 +1,6 @@
 # Spec: ระบบบัญชีผู้ใช้ (Autofill, รหัสผ่าน, Google)
 
-Status: ready-for-agent
+Status: ready-for-human
 
 อ้างอิง: `GLOSSARY.md` (บัญชีผู้ใช้, ช่องทางเข้าสู่ระบบ), `docs/adr/0002-single-user-account-per-email.md`
 
@@ -169,3 +169,8 @@ Status: ready-for-agent
 - ต้องตรวจกับ Supabase จริงว่าคนที่สมัครด้วย Google แล้วตั้งรหัสผ่านได้ identity `email` เพิ่มหรือไม่ ถ้าไม่ได้ คนกลุ่มนี้จะยกเลิกการเชื่อม Google ไม่ได้ ซึ่งเป็นไปตามที่ตั้งใจ
 - ผู้ใช้เดิมที่สมัครตอนปิด Confirm email ถือว่ายืนยันอีเมลแล้วในระบบ ไม่ต้องทำ migration ใด ๆ
 - ตรวจ version ของ `supabase_flutter` ให้รองรับ `linkIdentityWithIdToken` ถ้ายังไม่รองรับให้ upgrade
+
+
+## Implementation progress
+
+ทำโค้ด issues 01–08 ตามลำดับแล้ว รายการที่ต้องตรวจด้วยบัญชี/อุปกรณ์จริงยังไม่ถือว่าปิด ดู Comments และ checklist ในแต่ละ issue; migration ยังรอ Supabase CLI login เพื่อ link dev และ db push ไม่แก้ Dashboard หรือเติม Client IDs แทนผู้ใช้
