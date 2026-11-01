@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../utils/user_error_message.dart';
 import 'app_bar_action_button.dart';
-import 'app_inset_card.dart';
+import 'app_loading_view.dart';
 
 /// สั่ง Manual Refresh ของ [modules] และแสดง SnackBar เมื่อโหลดไม่สำเร็จ
 /// (ข้อมูลเดิมยังแสดงอยู่ตามเดิม)
@@ -26,7 +26,7 @@ Future<void> refreshDataModules(
   }
 }
 
-/// แสดงเนื้อหาของหน้าตามความพร้อมของ [modules]: skeleton ระหว่างรอ Initial Load,
+/// แสดงเนื้อหาของหน้าตามความพร้อมของ [modules]: [AppLoadingView] ระหว่างรอ Initial Load,
 /// error state เมื่อโหลดไม่สำเร็จ และ [builder] เมื่อทุก module พร้อม
 ///
 /// [builder] ต้องคืน scroll view ที่ใช้ `AlwaysScrollableScrollPhysics`
@@ -35,7 +35,7 @@ class AppDataStateView extends StatelessWidget {
   final Set<SyncModule> modules;
   final WidgetBuilder builder;
 
-  /// false สำหรับหน้าที่แสดงแค่ skeleton/error โดยไม่มี pull-to-refresh
+  /// false สำหรับหน้าที่แสดงแค่ loading/error โดยไม่มี pull-to-refresh
   final bool enablePullToRefresh;
 
   const AppDataStateView({
@@ -58,7 +58,7 @@ class AppDataStateView extends StatelessWidget {
           onRetry: () => refreshDataModules(context, modules),
         ),
       ),
-      _ => const _StateScrollView(child: AppSkeletonList()),
+      _ => const _StateScrollView(child: AppLoadingView()),
     };
 
     if (!enablePullToRefresh) return content;
@@ -112,96 +112,6 @@ class _AppRefreshActionButtonState extends State<AppRefreshActionButton> {
       tooltip: 'โหลดข้อมูลใหม่',
       isLoading: _isRefreshing,
       onPressed: _refresh,
-    );
-  }
-}
-
-/// โครงร่างแบบนิ่งแทนข้อมูลที่ยังโหลดไม่เสร็จ: การ์ดสรุปหนึ่งใบตามด้วยการ์ดรายการ
-class AppSkeletonList extends StatelessWidget {
-  final int rowCount;
-
-  const AppSkeletonList({super.key, this.rowCount = 5});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const AppInsetCard(
-          margin: AppInsetCard.stackedMargin,
-          padding: EdgeInsets.all(16),
-          children: [
-            AppSkeletonBar(width: 96, height: 12),
-            SizedBox(height: 12),
-            AppSkeletonBar(width: 180, height: 28),
-          ],
-        ),
-        AppInsetCard(
-          children: [
-            for (var i = 0; i < rowCount; i++) ...[
-              if (i > 0) const AppCardDivider(),
-              const _SkeletonRow(),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _SkeletonRow extends StatelessWidget {
-  const _SkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          AppSkeletonBar(width: 36, height: 36, radius: AppRadii.full),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppSkeletonBar(width: 140, height: 14),
-                SizedBox(height: 8),
-                AppSkeletonBar(width: 80, height: 10),
-              ],
-            ),
-          ),
-          AppSkeletonBar(width: 72, height: 14),
-        ],
-      ),
-    );
-  }
-}
-
-/// แท่ง placeholder สีพื้นยุบ (`insetFillFor`) สำหรับประกอบ skeleton
-class AppSkeletonBar extends StatelessWidget {
-  final double width;
-  final double height;
-  final double radius;
-
-  const AppSkeletonBar({
-    super.key,
-    required this.width,
-    required this.height,
-    this.radius = AppRadii.small,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = context.select<SettingsProvider, bool>(
-      (s) => s.isDarkMode,
-    );
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.insetFillFor(isDarkMode),
-        borderRadius: BorderRadius.circular(radius),
-      ),
     );
   }
 }
