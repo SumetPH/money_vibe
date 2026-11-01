@@ -9,6 +9,8 @@ PROFILE_DIR="${HOME:-}/Library/Developer/Xcode/UserData/Provisioning Profiles"
 PROFILE_PLIST=""
 XCODE_CONFIGURATION="Release-prod"
 APP_BUNDLE="$PROJECT_ROOT/build/ios/iphoneos/Runner.app"
+DEVICECTL_MAX_ATTEMPTS=3
+DEVICECTL_RETRY_DELAY_SECONDS=5
 
 log() {
   printf '[install-ios] %s\n' "$*"
@@ -25,7 +27,7 @@ die() {
 
 on_error() {
   local status=$?
-  error "คำสั่งล้มเหลวที่บรรทัด ${BASH_LINENO[0]} (exit ${status})"
+  error "คำสั่งล้มเหลวที่บรรทัด ${1:-?} (exit ${status})"
   exit "$status"
 }
 
@@ -37,6 +39,21 @@ cleanup() {
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || die "ไม่พบคำสั่ง '$1'"
+}
+
+# Wi-Fi tunnel ของ CoreDevice มักหลุดในครั้งแรกหลัง build นาน (error 4000 / connection reset) จึงลองใหม่
+devicectl_with_retry() {
+  local attempt
+  for (( attempt = 1; attempt <= DEVICECTL_MAX_ATTEMPTS; attempt++ )); do
+    if xcrun devicectl "$@"; then
+      return 0
+    fi
+    if (( attempt < DEVICECTL_MAX_ATTEMPTS )); then
+      log "เชื่อมต่อ device ไม่สำเร็จ (ครั้งที่ ${attempt}/${DEVICECTL_MAX_ATTEMPTS}) ลองใหม่ใน ${DEVICECTL_RETRY_DELAY_SECONDS} วินาที..."
+      sleep "$DEVICECTL_RETRY_DELAY_SECONDS"
+    fi
+  done
+  die "devicectl ล้มเหลว ${DEVICECTL_MAX_ATTEMPTS} ครั้ง; ปลดล็อก iPhone ให้อยู่วง Wi-Fi เดียวกับ Mac แล้วลองใหม่"
 }
 
 setting_value() {
@@ -199,14 +216,14 @@ main() {
   # ใช้ devicectl ติดตั้งทับแอปเดิม (flutter install จะ uninstall ก่อนทำให้ข้อมูลในเครื่องหาย)
   [[ -d "$APP_BUNDLE" ]] || die "ไม่พบ app bundle: $APP_BUNDLE"
   log "กำลังติดตั้งทับบน $DEVICE_ID..."
-  xcrun devicectl device install app --device "$DEVICE_ID" "$APP_BUNDLE"
+  devicectl_with_retry device install app --device "$DEVICE_ID" "$APP_BUNDLE"
 
   log "กำลังเปิดแอป $BUNDLE_ID..."
-  xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
+  devicectl_with_retry device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
   log "ติดตั้งและรันสำเร็จ"
 }
 
-trap on_error ERR
+trap 'on_error $LINENO' ERR
 trap cleanup EXIT
 
 main "$@"

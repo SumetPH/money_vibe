@@ -23,6 +23,8 @@ class _AppLoadingViewState extends State<AppLoadingView>
   // ตำแหน่งช่องหยอดของ Icons.savings_rounded บน grid 24×24
   static const _slotCenterX = _iconSize * 10.5 / 24;
   static const _slotCenterY = _dropHeight + _iconSize * 8 / 24;
+  // ขอบบนลำตัวหมู: ซ่อนเหรียญส่วนที่เลยเส้นนี้ ไม่ให้โผล่ผ่านช่องโปร่งของ icon
+  static const _bodyTopY = _dropHeight + _iconSize * 5 / 24;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -103,31 +105,43 @@ class _AppLoadingViewState extends State<AppLoadingView>
                     height: _iconSize + _dropHeight,
                     child: Stack(
                       children: [
-                        // วาดเหรียญก่อนกระปุก เพื่อให้ดูเหมือนหล่นลงในช่อง
+                        // วาดเหรียญก่อนกระปุก และ clip ที่ขอบบนลำตัว
+                        // ให้ดูเหมือนหล่นหายเข้าไปในกระปุก
                         Positioned(
-                          left: _slotCenterX - _coinSize / 2,
-                          top: drop * (_slotCenterY - _coinSize / 2),
-                          child: Opacity(
-                            opacity: _coinOpacity.value,
-                            child: Transform.scale(
-                              scaleX: 1 - 0.65 * drop,
-                              child: Container(
-                                width: _coinSize,
-                                height: _coinSize,
-                                decoration: BoxDecoration(
-                                  color: coinColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Color.lerp(
-                                      coinColor,
-                                      Colors.black,
-                                      0.25,
-                                    )!,
-                                    width: 2.5,
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: _bodyTopY,
+                          child: Stack(
+                            clipBehavior: Clip.hardEdge,
+                            children: [
+                              Positioned(
+                                left: _slotCenterX - _coinSize / 2,
+                                top: drop * (_slotCenterY - _coinSize / 2),
+                                child: Opacity(
+                                  opacity: _coinOpacity.value,
+                                  child: Transform.scale(
+                                    scaleX: 1 - 0.65 * drop,
+                                    child: Container(
+                                      width: _coinSize,
+                                      height: _coinSize,
+                                      decoration: BoxDecoration(
+                                        color: coinColor,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Color.lerp(
+                                            coinColor,
+                                            Colors.black,
+                                            0.25,
+                                          )!,
+                                          width: 2.5,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                         Positioned(
