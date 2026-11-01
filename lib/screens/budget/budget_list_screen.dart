@@ -242,7 +242,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                   onPressed: () => setState(() => _isReorderMode = false),
                 )
               else ...[
-                if (isLargeScreen)
+                if (isLargeScreen && AppRefreshActionButton.isAvailable)
                   const AppRefreshActionButton(modules: ScreenModules.budgets),
                 Material(
                   color: surfaceColor,

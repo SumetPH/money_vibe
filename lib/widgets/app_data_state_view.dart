@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -182,6 +183,9 @@ class AppRefreshActionButton extends StatefulWidget {
   final Set<SyncModule> modules;
 
   const AppRefreshActionButton({super.key, required this.modules});
+
+  /// web ใช้ปุ่ม reload ของ browser แทน จึงไม่ต้องแสดงปุ่มนี้
+  static const isAvailable = !kIsWeb;
 
   @override
   State<AppRefreshActionButton> createState() => _AppRefreshActionButtonState();

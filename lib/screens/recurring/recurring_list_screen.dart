@@ -123,7 +123,9 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
               ],
             ),
             actions: [
-              if (isLargeScreen && !_isReorderMode)
+              if (isLargeScreen &&
+                  !_isReorderMode &&
+                  AppRefreshActionButton.isAvailable)
                 const AppRefreshActionButton(modules: ScreenModules.recurring),
               if (_isReorderMode)
                 AppReorderDoneButton(

@@ -94,7 +94,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
           ],
         ),
         actions: [
-          if (isLargeScreen && !_isReorderMode)
+          if (isLargeScreen &&
+              !_isReorderMode &&
+              AppRefreshActionButton.isAvailable)
             const AppRefreshActionButton(modules: ScreenModules.accounts),
           if (_isReorderMode)
             AppReorderDoneButton(

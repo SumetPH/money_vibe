@@ -113,7 +113,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ],
             ),
             actions: [
-              if (isLargeScreen)
+              if (isLargeScreen && AppRefreshActionButton.isAvailable)
                 const Padding(
                   padding: EdgeInsets.only(right: 8),
                   child: AppRefreshActionButton(

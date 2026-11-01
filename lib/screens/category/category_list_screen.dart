@@ -119,7 +119,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               onPressed: () => setState(() => _isReorderMode = false),
             )
           else ...[
-            if (isLargeScreen)
+            if (isLargeScreen && AppRefreshActionButton.isAvailable)
               const Padding(
                 padding: EdgeInsets.only(right: 8),
                 child: AppRefreshActionButton(

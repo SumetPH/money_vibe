@@ -100,7 +100,9 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
           ],
         ),
         actions: [
-          if (isLargeScreen && !_isReorderMode)
+          if (isLargeScreen &&
+              !_isReorderMode &&
+              AppRefreshActionButton.isAvailable)
             const AppRefreshActionButton(modules: ScreenModules.cashFlow),
           if (_isReorderMode)
             AppReorderDoneButton(

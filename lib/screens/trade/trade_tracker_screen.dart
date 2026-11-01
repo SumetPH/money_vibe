@@ -108,7 +108,7 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
           ],
         ),
         actions: [
-          if (isLargeScreen)
+          if (isLargeScreen && AppRefreshActionButton.isAvailable)
             const Padding(
               padding: EdgeInsets.only(right: 8),
               child: AppRefreshActionButton(modules: ScreenModules.accounts),

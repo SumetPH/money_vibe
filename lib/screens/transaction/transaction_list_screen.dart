@@ -167,7 +167,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
                 actions: [
-                  if (isLargeScreen)
+                  if (isLargeScreen && AppRefreshActionButton.isAvailable)
                     const AppRefreshActionButton(
                       modules: ScreenModules.transactions,
                     ),
