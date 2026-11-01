@@ -1,14 +1,24 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 
-/// สถานะรอข้อมูลครั้งแรก: เหรียญหยอดลงกระปุกออมสิน (โลโก้แอป) พร้อมข้อความ
+/// สถานะรอข้อมูลครั้งแรก: วงแหวนหมุนรอบกระปุกออมสิน (โลโก้แอป) พร้อมข้อความมีแสงวิ่ง
 class AppLoadingView extends StatefulWidget {
   final String label;
 
-  const AppLoadingView({super.key, this.label = 'กำลังโหลดข้อมูล'});
+  /// บรรทัดรองใต้ข้อความหลัก สลับทีละข้อความตามจังหวะ animation (ว่าง = ไม่แสดง)
+  final List<String> subtitles;
+
+  const AppLoadingView({
+    super.key,
+    this.label = 'กำลังโหลดข้อมูล',
+    this.subtitles = const [],
+  });
 
   @override
   State<AppLoadingView> createState() => _AppLoadingViewState();
@@ -16,63 +26,52 @@ class AppLoadingView extends StatefulWidget {
 
 class _AppLoadingViewState extends State<AppLoadingView>
     with SingleTickerProviderStateMixin {
-  static const _iconSize = 72.0;
-  static const _coinSize = 16.0;
-  static const _dropHeight = 24.0;
+  static const _ringSize = 112.0;
+  static const _ringStroke = 4.0;
+  static const _iconSize = 54.0;
 
-  // ตำแหน่งช่องหยอดของ Icons.savings_rounded บน grid 24×24
-  static const _slotCenterX = _iconSize * 10.5 / 24;
-  static const _slotCenterY = _dropHeight + _iconSize * 8 / 24;
-  // ขอบบนลำตัวหมู: ซ่อนเหรียญส่วนที่เลยเส้นนี้ ไม่ให้โผล่ผ่านช่องโปร่งของ icon
-  static const _bodyTopY = _dropHeight + _iconSize * 5 / 24;
+  // หนึ่งรอบ controller = วงแหวนหมุน 3 รอบ, เส้นยืด/หด/กระปุกหายใจ/แสงวิ่ง 2 รอบ
+  static const _ringTurns = 3;
+  static const _pulseCycles = 2;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: const Duration(milliseconds: 3200),
   );
 
-  // เหรียญตกถึงช่องหยอดใน 40% แรกของรอบ แล้วจางหายภายใน 48%
-  late final Animation<double> _coinDrop = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0, 0.4, curve: Curves.easeIn),
-  );
-  late final Animation<double> _coinOpacity = TweenSequence<double>([
-    TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 15),
-    TweenSequenceItem(tween: ConstantTween(1), weight: 25),
-    TweenSequenceItem(tween: Tween(begin: 1, end: 0), weight: 8),
-    TweenSequenceItem(tween: ConstantTween(0), weight: 52),
-  ]).animate(_controller);
-
-  // กระปุกยุบรับเหรียญแล้วเด้งกลับ (1 = ยุบสุด, ค่าลบ = ยืดขึ้น)
-  late final Animation<double> _squash = TweenSequence<double>([
-    TweenSequenceItem(tween: ConstantTween(0), weight: 40),
-    TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 8),
-    TweenSequenceItem(tween: Tween(begin: 1, end: -0.5), weight: 10),
-    TweenSequenceItem(tween: Tween(begin: -0.5, end: 0), weight: 12),
-    TweenSequenceItem(tween: ConstantTween(0), weight: 30),
-  ]).animate(_controller);
+  // สลับบรรทัดรองทุกครึ่งรอบ controller ให้ตรงจังหวะแสงวิ่ง
+  static const _subtitleInterval = Duration(milliseconds: 1600);
+  static const _subtitleFade = Duration(milliseconds: 250);
+  Timer? _subtitleTimer;
+  int _subtitleIndex = 0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.stop();
+      _subtitleTimer?.cancel();
+      _subtitleTimer = null;
     } else if (!_controller.isAnimating) {
       _controller.repeat();
+      _subtitleTimer ??= Timer.periodic(
+        _subtitleInterval,
+        (_) => setState(() => _subtitleIndex++),
+      );
     }
   }
 
   @override
   void dispose() {
+    _subtitleTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  /// จุดท้ายข้อความสว่างไล่กันทีละจุด
-  double _dotOpacity(int index) {
-    final phase = (_controller.value - index * 0.15) % 1.0;
-    final peak = phase < 0.4 ? phase / 0.4 : 1 - (phase - 0.4) / 0.6;
-    return 0.2 + 0.8 * peak;
+  /// 0 → 1 → 0 แบบนุ่มนวล วน [_pulseCycles] ครั้งต่อรอบ controller
+  double get _pulse {
+    final phase = (_controller.value * _pulseCycles) % 1.0;
+    return (1 - math.cos(phase * 2 * math.pi)) / 2;
   }
 
   @override
@@ -81,7 +80,7 @@ class _AppLoadingViewState extends State<AppLoadingView>
       (s) => s.isDarkMode,
     );
     final color = AppColors.textSecondaryFor(isDarkMode);
-    final coinColor = AppColors.saveButtonFor(isDarkMode);
+    final trackColor = AppColors.insetFillFor(isDarkMode);
     final textStyle = TextStyle(
       color: color,
       fontSize: 14,
@@ -91,98 +90,127 @@ class _AppLoadingViewState extends State<AppLoadingView>
     return Semantics(
       label: widget.label,
       child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 120),
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              final drop = _coinDrop.value;
-              final squash = _squash.value;
-              return Column(
-                children: [
-                  SizedBox(
-                    width: _iconSize,
-                    height: _iconSize + _dropHeight,
-                    child: Stack(
-                      children: [
-                        // วาดเหรียญก่อนกระปุก และ clip ที่ขอบบนลำตัว
-                        // ให้ดูเหมือนหล่นหายเข้าไปในกระปุก
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          top: 0,
-                          height: _bodyTopY,
-                          child: Stack(
-                            clipBehavior: Clip.hardEdge,
-                            children: [
-                              Positioned(
-                                left: _slotCenterX - _coinSize / 2,
-                                top: drop * (_slotCenterY - _coinSize / 2),
-                                child: Opacity(
-                                  opacity: _coinOpacity.value,
-                                  child: Transform.scale(
-                                    scaleX: 1 - 0.65 * drop,
-                                    child: Container(
-                                      width: _coinSize,
-                                      height: _coinSize,
-                                      decoration: BoxDecoration(
-                                        color: coinColor,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Color.lerp(
-                                            coinColor,
-                                            Colors.black,
-                                            0.25,
-                                          )!,
-                                          width: 2.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final pulse = _pulse;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox.square(
+                  dimension: _ringSize,
+                  child: CustomPaint(
+                    painter: _LoadingRingPainter(
+                      rotation: _controller.value * _ringTurns,
+                      sweepFraction: 0.06 + 0.4 * pulse,
+                      color: color,
+                      trackColor: trackColor,
+                      strokeWidth: _ringStroke,
+                    ),
+                    child: Center(
+                      child: Transform.scale(
+                        scale: 0.94 + 0.1 * pulse,
+                        child: Icon(
+                          Icons.savings_rounded,
+                          size: _iconSize,
+                          color: color,
                         ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Transform(
-                            alignment: Alignment.bottomCenter,
-                            transform: Matrix4.diagonal3Values(
-                              1 + 0.06 * squash,
-                              1 - 0.06 * squash,
-                              1,
-                            ),
-                            child: Icon(
-                              Icons.savings_rounded,
-                              size: _iconSize,
-                              color: color,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(widget.label, style: textStyle),
-                      for (var i = 0; i < 3; i++)
-                        Opacity(
-                          opacity: _dotOpacity(i),
-                          child: Text('.', style: textStyle),
-                        ),
-                    ],
-                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildShimmerLabel(textStyle, color),
+                if (widget.subtitles.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  _buildSubtitle(color),
                 ],
-              );
-            },
-          ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
+
+  Widget _buildSubtitle(Color color) {
+    final subtitles = widget.subtitles;
+    final text = subtitles[_subtitleIndex % subtitles.length];
+    return AnimatedSwitcher(
+      duration: _subtitleFade,
+      child: Text(
+        text,
+        key: ValueKey(text),
+        textAlign: TextAlign.center,
+        style: TextStyle(color: color.withValues(alpha: 0.65), fontSize: 12),
+      ),
+    );
+  }
+
+  /// แถบจางวิ่งผ่านข้อความจากซ้ายไปขวา
+  Widget _buildShimmerLabel(TextStyle textStyle, Color color) {
+    final phase = (_controller.value * _pulseCycles) % 1.0;
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => LinearGradient(
+        colors: [color, color, color.withValues(alpha: 0.25), color, color],
+        stops: const [0, 0.4, 0.5, 0.6, 1],
+        transform: _SlideGradientTransform(-1 + 2 * phase),
+      ).createShader(bounds),
+      child: Text(widget.label, style: textStyle),
+    );
+  }
+}
+
+class _SlideGradientTransform extends GradientTransform {
+  final double offset;
+
+  const _SlideGradientTransform(this.offset);
+
+  @override
+  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) =>
+      Matrix4.translationValues(bounds.width * offset, 0, 0);
+}
+
+class _LoadingRingPainter extends CustomPainter {
+  final double rotation;
+  final double sweepFraction;
+  final Color color;
+  final Color trackColor;
+  final double strokeWidth;
+
+  const _LoadingRingPainter({
+    required this.rotation,
+    required this.sweepFraction,
+    required this.color,
+    required this.trackColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final arcRect = rect.deflate(strokeWidth / 2);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawOval(arcRect, paint..color = trackColor);
+    canvas.drawArc(
+      arcRect,
+      rotation * 2 * math.pi - math.pi / 2,
+      sweepFraction * 2 * math.pi,
+      false,
+      paint..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LoadingRingPainter oldDelegate) =>
+      rotation != oldDelegate.rotation ||
+      sweepFraction != oldDelegate.sweepFraction ||
+      color != oldDelegate.color ||
+      trackColor != oldDelegate.trackColor ||
+      strokeWidth != oldDelegate.strokeWidth;
 }

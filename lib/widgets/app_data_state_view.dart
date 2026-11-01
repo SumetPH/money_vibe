@@ -58,7 +58,12 @@ class AppDataStateView extends StatelessWidget {
           onRetry: () => refreshDataModules(context, modules),
         ),
       ),
-      _ => const _StateScrollView(child: AppLoadingView()),
+      _ => _StateScrollView(
+        isCentered: true,
+        child: AppLoadingView(
+          subtitles: [for (final m in modules) _syncModuleLabels[m]!],
+        ),
+      ),
     };
 
     if (!enablePullToRefresh) return content;
@@ -69,19 +74,89 @@ class AppDataStateView extends StatelessWidget {
   }
 }
 
+const _syncModuleLabels = {
+  SyncModule.accounts: 'บัญชีและยอดคงเหลือ',
+  SyncModule.portfolio: 'พอร์ตการลงทุน',
+  SyncModule.categories: 'หมวดหมู่',
+  SyncModule.transactions: 'รายการล่าสุด',
+  SyncModule.budgets: 'งบประมาณเดือนนี้',
+  SyncModule.recurring: 'รายการประจำ',
+  SyncModule.cashFlow: 'กระแสเงินสด',
+};
+
 class _StateScrollView extends StatelessWidget {
   final Widget child;
 
-  const _StateScrollView({required this.child});
+  /// true = วาง [child] กลางจอในแนวตั้ง
+  final bool isCentered;
+
+  const _StateScrollView({required this.child, this.isCentered = false});
 
   @override
   Widget build(BuildContext context) {
+    if (isCentered) {
+      // SliverFillRemaining ให้ child เต็มความสูงที่เหลือ แต่ยังดึงลงเพื่อ refresh ได้
+      return CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _ScreenCenteredBox(child: child),
+          ),
+        ],
+      );
+    }
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(
         bottom: 24 + MediaQuery.paddingOf(context).bottom,
       ),
       children: [child],
+    );
+  }
+}
+
+/// จัด [child] ให้อยู่กลางจอทั้งจอ แทนกลางพื้นที่ของตัวเอง เพื่อชดเชย AppBar/header
+/// ด้านบนและ bottom navigation ที่สูงไม่เท่ากัน
+class _ScreenCenteredBox extends StatefulWidget {
+  final Widget child;
+
+  const _ScreenCenteredBox({required this.child});
+
+  @override
+  State<_ScreenCenteredBox> createState() => _ScreenCenteredBoxState();
+}
+
+class _ScreenCenteredBoxState extends State<_ScreenCenteredBox> {
+  // เลื่อนได้ไม่เกิน 1/4 ของพื้นที่ เพื่อไม่ให้ child ล้นออกนอกพื้นที่
+  static const _maxShiftFraction = 0.25;
+
+  double _shiftY = 0;
+
+  void _measure() {
+    if (!mounted) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final areaTop = box.localToGlobal(Offset.zero).dy;
+    final areaHeight = box.size.height;
+    final screenCenter = MediaQuery.sizeOf(context).height / 2;
+    final maxShift = areaHeight * _maxShiftFraction;
+    final shift = (screenCenter - (areaTop + areaHeight / 2)).clamp(
+      -maxShift,
+      maxShift,
+    );
+    if ((shift - _shiftY).abs() > 0.5) setState(() => _shiftY = shift);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // วัดตำแหน่งหลัง layout ทุกครั้ง (ขนาดจอ/header เปลี่ยนได้)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+    return Center(
+      child: Transform.translate(
+        offset: Offset(0, _shiftY),
+        child: widget.child,
+      ),
     );
   }
 }
