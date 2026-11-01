@@ -49,6 +49,8 @@
 4. Debug/Release xcconfig รวมไฟล์นี้ไว้แล้ว และ Runner build settings เลือกค่าตาม flavor ผ่าน `GOOGLE_REVERSED_CLIENT_ID`; Info.plist นำไปใช้เป็น URL scheme ไฟล์ค่าจริงถูก gitignore; ใน CI ให้สร้างไฟล์นี้ก่อน build
 5. แอปส่ง `clientId` และ `serverClientId` ผ่าน Dart จึงไม่ต้องเพิ่ม GIDClientID/GIDServerClientID ใน plist อีก
 
+เมื่อยังไม่ตั้งค่า Google ไฟล์ build ใช้ URL scheme สำรอง `moneyvibe-google-disabled-dev` / `moneyvibe-google-disabled-prod` เพื่อไม่ให้ plist มี scheme ว่าง ค่านี้ใช้ login ไม่ได้ ให้แทนที่ด้วย reversed client ID จริงก่อนเปิด Google ใน config
+
 ## 5. เปิด Google provider ใน Supabase
 
 1. เปิด Authentication → Sign In / Providers → Google

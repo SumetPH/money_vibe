@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_inset_card.dart';
 import 'settings_password_sheet.dart';
+import 'settings_account_section.dart';
 import 'settings_widgets.dart';
 
 class SettingsSignInMethodsSection extends StatelessWidget {
@@ -27,7 +28,12 @@ class SettingsSignInMethodsSection extends StatelessWidget {
           isDarkMode: dark,
           child: Column(
             children: [
-              if (!auth.signInMethodsReady)
+              if (auth.isLoadingSignInMethods)
+                ListTile(
+                  title: const Text('กำลังโหลดช่องทางเข้าสู่ระบบ…'),
+                  trailing: SettingsBusyIndicator(color: color),
+                )
+              else if (!auth.signInMethodsReady)
                 ListTile(
                   title: const Text('โหลดช่องทางเข้าสู่ระบบไม่สำเร็จ'),
                   trailing: TextButton(

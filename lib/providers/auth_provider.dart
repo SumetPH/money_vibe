@@ -19,11 +19,14 @@ class AuthProvider extends ChangeNotifier {
   bool get isGoogleAvailable => _google.isAvailable;
   bool _hasPassword = false;
   bool _signInMethodsReady = false;
+  bool _signInMethodsFailed = false;
   bool _refreshingAccount = false;
   bool _refreshAccountAgain = false;
   bool _requiresPasswordNonce = false;
   bool get hasPassword => _hasPassword;
   bool get signInMethodsReady => _signInMethodsReady;
+  bool get isLoadingSignInMethods =>
+      !_signInMethodsReady && !_signInMethodsFailed;
   bool get requiresPasswordNonce => _requiresPasswordNonce;
   bool returnToSettings = false;
   static const _pendingGoogleLinkKey = 'pending_google_link_user';
@@ -118,6 +121,7 @@ class AuthProvider extends ChangeNotifier {
               if (_user?.id != session?.user.id) {
                 _hasPassword = false;
                 _signInMethodsReady = false;
+                _signInMethodsFailed = false;
                 _requiresPasswordNonce = false;
               }
               _user = session?.user;
@@ -265,6 +269,9 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
     _refreshingAccount = true;
+    if (_signInMethodsFailed) _error = null;
+    _signInMethodsFailed = false;
+    notifyListeners();
     final userId = _user!.id;
     try {
       final client = _safeClient!;
@@ -310,6 +317,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       if (_user?.id == userId) {
         _signInMethodsReady = false;
+        _signInMethodsFailed = true;
         _error = 'โหลดช่องทางเข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่';
       }
     } finally {
