@@ -21,6 +21,7 @@ import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_cupertino_refresh.dart';
 import '../../widgets/app_segmented_tabs.dart';
+import '../../widgets/app_shimmer_text.dart';
 import 'portfolio_hero_summary_card.dart';
 import 'portfolio_edit_dialogs.dart';
 import 'portfolio_group_section.dart';
@@ -370,16 +371,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Text(
-                  acc.type.label,
-                  style: TextStyle(
-                    color: isDarkMode
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                _buildSubtitle(acc, isDarkMode),
               ],
             ),
             actions: [
@@ -403,6 +395,29 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
           ),
         );
       },
+    );
+  }
+
+  /// บรรทัดรองใต้ชื่อพอร์ต: ระหว่างอัปเดตราคาแสดงข้อความโหลดที่มีแสงวิ่ง
+  Widget _buildSubtitle(Account acc, bool isDarkMode) {
+    final style = TextStyle(
+      color: AppColors.textSecondaryFor(isDarkMode),
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+    );
+    // ข้อความเดิมจางออกครึ่งแรก แล้วข้อความใหม่จางเข้าครึ่งหลัง ไม่ให้สองข้อความซ้อนกัน
+    const fadeHalf = Interval(0.5, 1);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: fadeHalf,
+      switchOutCurve: fadeHalf,
+      child: _isRefreshing
+          ? AppShimmerText(
+              'กำลังโหลดข้อมูล',
+              key: const ValueKey('loading'),
+              style: style,
+            )
+          : Text(acc.type.label, key: const ValueKey('label'), style: style),
     );
   }
 

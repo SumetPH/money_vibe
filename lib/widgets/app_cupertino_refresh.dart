@@ -31,12 +31,11 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
   // ความสูงของช่อง spinner ที่ค้างไว้ระหว่างโหลด
   static const _holdExtent = 60.0;
   static const _indicatorRadius = 12.0;
-  static const _collapseDuration = Duration(milliseconds: 250);
+  static const _settleDuration = Duration(milliseconds: 250);
 
-  /// สัดส่วนช่องที่ค้างไว้ (1 = เต็ม [_holdExtent]) ยุบลงเป็น 0 เมื่อโหลดเสร็จ
-  late final AnimationController _hold = AnimationController(
+  /// ระยะที่เลื่อนเนื้อหาลงเพื่อเปิดช่อง spinner ระหว่างโหลด (px)
+  late final AnimationController _gap = AnimationController.unbounded(
     vsync: this,
-    duration: _collapseDuration,
   )..addListener(() => setState(() {}));
 
   /// ระยะที่ scroll view ถูกดึงเกินขอบบน (ค่าบวก)
@@ -46,14 +45,9 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
 
   @override
   void dispose() {
-    _hold.dispose();
+    _gap.dispose();
     super.dispose();
   }
-
-  // ช่องที่ต้องเติมเพิ่มจาก overscroll เพื่อให้เนื้อหาไม่ขึ้นสูงกว่าช่อง spinner
-  // ขณะ bouncing ดีดกลับ ทำให้เนื้อหาเลื่อนจากระยะดึงลงมาค้างที่ช่องอย่างต่อเนื่อง
-  double get _gap =>
-      (_hold.value * _holdExtent - _overscroll).clamp(0.0, _holdExtent);
 
   bool _handleScroll(ScrollNotification notification) {
     if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
@@ -76,7 +70,7 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
     } else if (_isArmed &&
         (notification is ScrollUpdateNotification ||
             notification is ScrollEndNotification)) {
-      _startRefresh();
+      _startRefresh(notification.context, overscroll);
     }
     return false;
   }
@@ -87,26 +81,43 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
     setState(() => _isArmed = isArmed);
   }
 
-  Future<void> _startRefresh() async {
+  Future<void> _startRefresh(
+    BuildContext? scrollContext,
+    double overscroll,
+  ) async {
     setState(() {
       _isArmed = false;
       _isRefreshing = true;
     });
-    _hold.value = 1;
+    // ย้ายระยะ overscroll มาเป็นช่องของเราเอง แล้วหยุดการดีดกลับของ scroll view
+    // ถ้าปล่อยให้ดีดกลับต่อ เนื้อหาที่เปลี่ยนขนาดระหว่างโหลดจะทำให้ตำแหน่ง scroll
+    // กระโดดและเลื่อนต่อด้วยแรงดีด จนเนื้อหาขึ้นไปทับ spinner
+    _gap.value = overscroll;
+    final position = scrollContext == null
+        ? null
+        : Scrollable.maybeOf(scrollContext)?.position;
+    position?.jumpTo(position.minScrollExtent);
+    _animateGap(_holdExtent);
     try {
       await widget.onRefresh();
     } finally {
-      if (mounted) await _collapse();
+      if (mounted) {
+        await _animateGap(0);
+        if (mounted) setState(() => _isRefreshing = false);
+      }
     }
   }
 
-  Future<void> _collapse() async {
+  Future<void> _animateGap(double target) async {
     if (MediaQuery.disableAnimationsOf(context)) {
-      _hold.value = 0;
-    } else {
-      await _hold.animateTo(0, curve: Curves.easeOutCubic);
+      _gap.value = target;
+      return;
     }
-    if (mounted) setState(() => _isRefreshing = false);
+    await _gap.animateTo(
+      target,
+      duration: _settleDuration,
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -114,7 +125,7 @@ class _AppCupertinoRefreshState extends State<AppCupertinoRefresh>
     final isDarkMode = context.select<SettingsProvider, bool>(
       (s) => s.isDarkMode,
     );
-    final gap = _gap;
+    final gap = _gap.value;
     final revealedExtent = _overscroll + gap;
     final behavior = ScrollConfiguration.of(context).copyWith(
       physics: const BouncingScrollPhysics(
