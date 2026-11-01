@@ -5,12 +5,14 @@ import '../../main.dart';
 import '../../models/fixed_cash_flow_item.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../services/cash_flow_forecast_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/monthly_cycle.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_bar_action_button.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_reorder_mode.dart';
@@ -50,6 +52,11 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
     final bgColor = AppColors.backgroundFor(isDarkMode);
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+    final isDataReady = context.select<SyncProvider, bool>(
+      (syncProvider) =>
+          syncProvider.readinessOf(ScreenModules.cashFlow) ==
+          DataReadiness.ready,
+    );
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -89,6 +96,8 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
           ],
         ),
         actions: [
+          if (isLargeScreen && !_isReorderMode)
+            const AppRefreshActionButton(modules: ScreenModules.cashFlow),
           if (_isReorderMode)
             AppReorderDoneButton(
               onPressed: () => setState(() => _isReorderMode = false),
@@ -102,22 +111,28 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
                   color: AppColors.textPrimaryFor(isDarkMode),
                 ),
                 tooltip: 'ตัวเลือกเพิ่มเติม',
-                onPressed: () => _showMenuSheet(isDarkMode),
+                onPressed: isDataReady
+                    ? () => _showMenuSheet(isDarkMode)
+                    : null,
               ),
             ),
         ],
       ),
       body: SafeArea(
-        child: forecast == null
-            ? ListView(
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
-                children: _buildWithoutAnchor(isDarkMode),
-              )
-            : _buildForecast(
-                forecast,
-                watchNextPeriodForecast(context, forecast),
-                isDarkMode,
-              ),
+        child: AppDataStateView(
+          modules: ScreenModules.cashFlow,
+          builder: (context) => forecast == null
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
+                  children: _buildWithoutAnchor(isDarkMode),
+                )
+              : _buildForecast(
+                  forecast,
+                  watchNextPeriodForecast(context, forecast),
+                  isDarkMode,
+                ),
+        ),
       ),
     );
   }
@@ -146,6 +161,7 @@ class _CashFlowForecastScreenState extends State<CashFlowForecastScreen> {
       _buildTabs(hasNext: next != null),
       Expanded(
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 32),
           children: switch (_tab) {
             _ForecastTab.next when next != null => _buildNextTab(

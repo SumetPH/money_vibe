@@ -5,7 +5,7 @@ import '../../main.dart';
 
 class TransactionListHeaderAction extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isDarkMode;
 
   /// สีไอคอนและขอบเมื่อ action กำลังทำงานอยู่ (เช่น มีคำค้นหา)

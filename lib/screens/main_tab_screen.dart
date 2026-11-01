@@ -72,12 +72,21 @@ class _MainTabScreenState extends State<MainTabScreen> {
               builder: (context) => AppBottomNavigation(
                 selectedIndex: _selectedTab,
                 onSelectTab: _selectTab,
-                onAdd: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TransactionFormScreen(),
-                  ),
-                ),
+                onAdd:
+                    context.select<SyncProvider, bool>(
+                      (syncProvider) =>
+                          syncProvider.readinessOf(
+                            ScreenModules.transactions,
+                          ) ==
+                          DataReadiness.ready,
+                    )
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TransactionFormScreen(),
+                        ),
+                      )
+                    : null,
               ),
             ),
     );

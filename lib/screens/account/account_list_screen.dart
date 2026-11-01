@@ -4,12 +4,14 @@ import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
+import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
@@ -42,6 +44,11 @@ class _AccountListScreenState extends State<AccountListScreen> {
     );
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
+    final isDataReady = context.select<SyncProvider, bool>(
+      (syncProvider) =>
+          syncProvider.readinessOf(ScreenModules.accounts) ==
+          DataReadiness.ready,
+    );
 
     return Scaffold(
       drawer: isLargeScreen || !widget.showPrimaryNavigation
@@ -87,6 +94,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
           ],
         ),
         actions: [
+          if (isLargeScreen && !_isReorderMode)
+            const AppRefreshActionButton(modules: ScreenModules.accounts),
           if (_isReorderMode)
             AppReorderDoneButton(
               onPressed: () => setState(() => _isReorderMode = false),
@@ -109,7 +118,9 @@ class _AccountListScreenState extends State<AccountListScreen> {
                   color: isDarkMode
                       ? AppColors.darkTextPrimary
                       : AppColors.textPrimary,
-                  onPressed: () => _showSummaryModal(context),
+                  onPressed: isDataReady
+                      ? () => _showSummaryModal(context)
+                      : null,
                 ),
               ),
             ),
@@ -130,121 +141,123 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 color: isDarkMode
                     ? AppColors.darkTextPrimary
                     : AppColors.textPrimary,
-                onPressed: () => _showAppMenu(context),
+                onPressed: isDataReady ? () => _showAppMenu(context) : null,
               ),
             ),
           ),
         ],
       ),
-      body: Consumer2<AccountProvider, TransactionProvider>(
-        builder: (context, accountProvider, txProvider, _) {
-          final transactions = txProvider.transactions;
-          final allAccounts = accountProvider.accounts;
-          final accounts = accountProvider.visibleAccounts;
-          final isReorderMode = _isReorderMode;
-          final totals = buildAccountTotals(
-            accountProvider: accountProvider,
-            allAccounts: allAccounts,
-            visibleAccounts: accounts,
-            transactions: transactions,
-            filterIds: filterIds,
-          );
+      body: AppDataStateView(
+        modules: ScreenModules.accounts,
+        builder: (context) => _buildAccountList(context, isDarkMode, filterIds),
+      ),
+      bottomNavigationBar: null,
+    );
+  }
 
-          // Group accounts by display group
-          final Map<String, List<Account>> groupedAccounts = {};
-          for (final account in accounts) {
-            final group = accountTypeDisplayGroup(account.type);
-            groupedAccounts.putIfAbsent(group, () => []).add(account);
-          }
-          final orderedGroups = groupedAccounts.entries.toList();
+  Widget _buildAccountList(
+    BuildContext context,
+    bool isDarkMode,
+    Set<String>? filterIds,
+  ) {
+    return Consumer2<AccountProvider, TransactionProvider>(
+      builder: (context, accountProvider, txProvider, _) {
+        final transactions = txProvider.transactions;
+        final allAccounts = accountProvider.accounts;
+        final accounts = accountProvider.visibleAccounts;
+        final isReorderMode = _isReorderMode;
+        final totals = buildAccountTotals(
+          accountProvider: accountProvider,
+          allAccounts: allAccounts,
+          visibleAccounts: accounts,
+          transactions: transactions,
+          filterIds: filterIds,
+        );
 
-          return CustomScrollView(
-            slivers: [
-              if (isReorderMode)
-                const SliverToBoxAdapter(
-                  child: AppReorderBanner(
-                    message:
-                        'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับกลุ่มและบัญชี',
-                  ),
-                ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                sliver: SliverToBoxAdapter(
-                  child: AccountTotalRow(
-                    label: 'ยอดเงินสุทธิ',
-                    amount: totals.netWorth,
-                    isDarkMode: isDarkMode,
-                    accounts: allAccounts,
-                    filterIds: filterIds,
-                    isReorderMode: isReorderMode,
-                    onAddTransaction: () => _openAddTransactionForm(context),
-                    onAddAccount: () => _openAddAccountForm(context),
-                    onShowSummary: () => _showSummaryModal(context),
-                  ),
+        // Group accounts by display group
+        final Map<String, List<Account>> groupedAccounts = {};
+        for (final account in accounts) {
+          final group = accountTypeDisplayGroup(account.type);
+          groupedAccounts.putIfAbsent(group, () => []).add(account);
+        }
+        final orderedGroups = groupedAccounts.entries.toList();
+
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            if (isReorderMode)
+              const SliverToBoxAdapter(
+                child: AppReorderBanner(
+                  message: 'แตะค้างที่ไอคอนลากเพื่อจัดเรียงลำดับกลุ่มและบัญชี',
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'บัญชีของฉัน',
-                          style: TextStyle(
-                            color: isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              sliver: SliverToBoxAdapter(
+                child: AccountTotalRow(
+                  label: 'ยอดเงินสุทธิ',
+                  amount: totals.netWorth,
+                  isDarkMode: isDarkMode,
+                  accounts: allAccounts,
+                  filterIds: filterIds,
+                  isReorderMode: isReorderMode,
+                  onAddTransaction: () => _openAddTransactionForm(context),
+                  onAddAccount: () => _openAddAccountForm(context),
+                  onShowSummary: () => _showSummaryModal(context),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'บัญชีของฉัน',
+                        style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  0,
-                  16,
-                  24 + MediaQuery.paddingOf(context).bottom,
-                ),
-                sliver: SliverReorderableList(
-                  itemCount: orderedGroups.length,
-                  onReorderItem: isReorderMode
-                      ? accountProvider.reorderAccountGroups
-                      : (_, _) {},
-                  proxyDecorator: (child, index, animation) =>
-                      Material(color: Colors.transparent, child: child),
-                  itemBuilder: (context, groupIndex) {
-                    final entry = orderedGroups[groupIndex];
-                    final groupTotal = totals.groupTotals[entry.key] ?? 0;
-                    return Padding(
-                      key: ValueKey('account_group_${entry.key}'),
-                      padding: const EdgeInsets.only(bottom: 22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    entry.key,
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? AppColors.darkTextSecondary
-                                          : AppColors.textSecondary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '${formatAmount(groupTotal)} บาท',
+            ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                0,
+                16,
+                24 + MediaQuery.paddingOf(context).bottom,
+              ),
+              sliver: SliverReorderableList(
+                itemCount: orderedGroups.length,
+                onReorderItem: isReorderMode
+                    ? accountProvider.reorderAccountGroups
+                    : (_, _) {},
+                proxyDecorator: (child, index, animation) =>
+                    Material(color: Colors.transparent, child: child),
+                itemBuilder: (context, groupIndex) {
+                  final entry = orderedGroups[groupIndex];
+                  final groupTotal = totals.groupTotals[entry.key] ?? 0;
+                  return Padding(
+                    key: ValueKey('account_group_${entry.key}'),
+                    padding: const EdgeInsets.only(bottom: 22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  entry.key,
                                   style: TextStyle(
                                     color: isDarkMode
                                         ? AppColors.darkTextSecondary
@@ -253,112 +266,114 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                if (isReorderMode)
-                                  ReorderableDragStartListener(
-                                    index: groupIndex,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: Icon(
-                                        Icons.drag_indicator,
-                                        color: isDarkMode
-                                            ? AppColors.darkDivider
-                                            : AppColors.divider,
-                                      ),
+                              ),
+                              Text(
+                                '${formatAmount(groupTotal)} บาท',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.textSecondary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (isReorderMode)
+                                ReorderableDragStartListener(
+                                  index: groupIndex,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: Icon(
+                                      Icons.drag_indicator,
+                                      color: isDarkMode
+                                          ? AppColors.darkDivider
+                                          : AppColors.divider,
                                     ),
                                   ),
-                              ],
-                            ),
+                                ),
+                            ],
                           ),
-                          Theme(
-                            data: Theme.of(context).copyWith(
-                              splashFactory: NoSplash.splashFactory,
-                              splashColor: Colors.transparent,
-                              highlightColor: Colors.transparent,
-                              hoverColor: Colors.transparent,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
+                        ),
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            splashFactory: NoSplash.splashFactory,
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? AppColors.darkSurface
+                                  : AppColors.surface,
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.xLarge,
+                              ),
+                              border: Border.all(
                                 color: isDarkMode
-                                    ? AppColors.darkSurface
-                                    : AppColors.surface,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadii.xLarge,
-                                ),
-                                border: Border.all(
-                                  color: isDarkMode
-                                      ? AppColors.darkDivider.withValues(
-                                          alpha: 0.4,
-                                        )
-                                      : AppColors.divider.withValues(
-                                          alpha: 0.4,
-                                        ),
-                                ),
+                                    ? AppColors.darkDivider.withValues(
+                                        alpha: 0.4,
+                                      )
+                                    : AppColors.divider.withValues(alpha: 0.4),
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  AppRadii.xLarge,
-                                ),
-                                child: ReorderableListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  buildDefaultDragHandles: false,
-                                  itemCount: entry.value.length,
-                                  onReorderItem: isReorderMode
-                                      ? (oldIndex, newIndex) {
-                                          accountProvider
-                                              .reorderAccountsInGroup(
-                                                entry.key,
-                                                oldIndex,
-                                                newIndex,
-                                              );
-                                        }
-                                      : (_, _) {},
-                                  proxyDecorator: (child, index, animation) =>
-                                      Material(
-                                        elevation: 6,
-                                        color: Colors.transparent,
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadii.xLarge,
-                                        ),
-                                        child: child,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.xLarge,
+                              ),
+                              child: ReorderableListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                buildDefaultDragHandles: false,
+                                itemCount: entry.value.length,
+                                onReorderItem: isReorderMode
+                                    ? (oldIndex, newIndex) {
+                                        accountProvider.reorderAccountsInGroup(
+                                          entry.key,
+                                          oldIndex,
+                                          newIndex,
+                                        );
+                                      }
+                                    : (_, _) {},
+                                proxyDecorator: (child, index, animation) =>
+                                    Material(
+                                      elevation: 6,
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.xLarge,
                                       ),
-                                  itemBuilder: (context, index) {
-                                    final account = entry.value[index];
-                                    final balance =
-                                        totals.balancesByAccountId[account
-                                            .id] ??
-                                        0;
-                                    return AccountListItem(
-                                      key: ValueKey(account.id),
-                                      account: account,
-                                      balance: balance,
-                                      isReorderMode: isReorderMode,
-                                      reorderIndex: isReorderMode
-                                          ? index
-                                          : null,
-                                      onTap: () => _openForm(context, account),
-                                      onTapEdit: () =>
-                                          _openEditForm(context, account),
-                                      isDarkMode: isDarkMode,
-                                      showDivider:
-                                          index < entry.value.length - 1,
-                                    );
-                                  },
-                                ),
+                                      child: child,
+                                    ),
+                                itemBuilder: (context, index) {
+                                  final account = entry.value[index];
+                                  final balance =
+                                      totals.balancesByAccountId[account.id] ??
+                                      0;
+                                  return AccountListItem(
+                                    key: ValueKey(account.id),
+                                    account: account,
+                                    balance: balance,
+                                    isReorderMode: isReorderMode,
+                                    reorderIndex: isReorderMode ? index : null,
+                                    onTap: () => _openForm(context, account),
+                                    onTapEdit: () =>
+                                        _openEditForm(context, account),
+                                    isDarkMode: isDarkMode,
+                                    showDivider: index < entry.value.length - 1,
+                                  );
+                                },
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            ],
-          );
-        },
-      ),
-      bottomNavigationBar: null,
+            ),
+          ],
+        );
+      },
     );
   }
 
