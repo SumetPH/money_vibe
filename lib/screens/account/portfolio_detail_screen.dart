@@ -14,11 +14,12 @@ import '../../providers/settings_provider.dart';
 import '../../services/stock_logo_storage_service.dart';
 import '../../services/stock_price_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import 'holding_form_screen.dart';
 import 'holding_buy_form_screen.dart';
 import 'portfolio_investment_plan_screen.dart';
+import '../../widgets/app_bar_action_button.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_cupertino_refresh.dart';
 import '../../widgets/app_segmented_tabs.dart';
 import 'portfolio_hero_summary_card.dart';
 import 'portfolio_edit_dialogs.dart';
@@ -36,8 +37,7 @@ class PortfolioDetailScreen extends StatefulWidget {
   State<PortfolioDetailScreen> createState() => _PortfolioDetailScreenState();
 }
 
-class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
-    with SingleTickerProviderStateMixin {
+class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
   // Finnhub free tier จำกัดต่อนาที จึงเว้นระยะให้รอบท้ายพ้นช่วง rate limit
   static const List<Duration> _logoBackfillDelays = [
     Duration(seconds: 2),
@@ -49,7 +49,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   late StockPriceService _priceService;
   Map<String, StockQuote> _quotes = {};
   late StockLogoStorageService _logoStorageService;
-  late final AnimationController _refreshIconController;
   int _selectedTab = 0;
   bool _isRefreshing = false;
   Map<String, String> _groupSortTypes =
@@ -62,17 +61,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
     _loadGroupOrder();
     _priceService = _buildPriceService();
     _logoStorageService = StockLogoStorageService();
-    _refreshIconController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
-  }
-
-  @override
-  void dispose() {
-    _refreshIconController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadGroupOrder() async {
@@ -128,7 +117,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
   Future<void> _refreshPrices() async {
     if (_isRefreshing) return;
     final provider = context.read<AccountProvider>();
-    _refreshIconController.repeat();
     setState(() {
       _isRefreshing = true;
       _quotes = {};
@@ -254,9 +242,6 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
       }
     } finally {
       if (mounted) {
-        _refreshIconController
-          ..stop()
-          ..reset();
         setState(() => _isRefreshing = false);
       }
     }
@@ -276,6 +261,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
           (sum, holding) => sum + holding.valueUsd,
         );
         final tabContent = SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
               PortfolioHeroSummaryCard(
@@ -397,65 +383,23 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen>
               ],
             ),
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Material(
-                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: AppColors.borderFor(isDarkMode),
-                      width: 1,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: _isRefreshing
-                        ? RotationTransition(
-                            turns: _refreshIconController,
-                            child: const Icon(Icons.refresh_rounded, size: 20),
-                          )
-                        : Icon(
-                            Icons.refresh_rounded,
-                            size: 20,
-                            color: isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary,
-                          ),
-                    tooltip: 'อัปเดตราคาหุ้น',
-                    onPressed: _isRefreshing ? null : _refreshPrices,
-                  ),
+              AppBarActionButton(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  size: 20,
+                  color: AppColors.textPrimaryFor(isDarkMode),
                 ),
+                tooltip: 'เมนูเพิ่มเติม',
+                onPressed: () => _showMenuSheet(context),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Material(
-                  color: isDarkMode ? AppColors.darkSurface : AppColors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                    side: BorderSide(
-                      color: AppColors.borderFor(isDarkMode),
-                      width: 1,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.more_vert_rounded,
-                      size: 20,
-                      color: isDarkMode
-                          ? AppColors.darkTextPrimary
-                          : AppColors.textPrimary,
-                    ),
-                    tooltip: 'เมนูเพิ่มเติม',
-                    onPressed: () => _showMenuSheet(context),
-                  ),
-                ),
-              ),
+              const SizedBox(width: 8),
             ],
           ),
           body: SafeArea(
-            child: kIsWeb ? SelectionArea(child: tabContent) : tabContent,
+            child: AppCupertinoRefresh(
+              onRefresh: _refreshPrices,
+              child: kIsWeb ? SelectionArea(child: tabContent) : tabContent,
+            ),
           ),
         );
       },

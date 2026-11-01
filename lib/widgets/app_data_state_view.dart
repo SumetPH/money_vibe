@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../utils/user_error_message.dart';
 import 'app_bar_action_button.dart';
+import 'app_cupertino_refresh.dart';
 import 'app_loading_view.dart';
 
 /// สั่ง Manual Refresh ของ [modules] และแสดง SnackBar เมื่อโหลดไม่สำเร็จ
@@ -67,7 +68,7 @@ class AppDataStateView extends StatelessWidget {
     };
 
     if (!enablePullToRefresh) return content;
-    return RefreshIndicator(
+    return AppCupertinoRefresh(
       onRefresh: () => refreshDataModules(context, modules),
       child: content,
     );

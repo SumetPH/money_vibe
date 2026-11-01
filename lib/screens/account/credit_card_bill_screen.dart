@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/transaction.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../services/credit_card_bill_service.dart';
 import '../../theme/app_colors.dart';
@@ -11,6 +12,8 @@ import '../../theme/app_radii.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../transaction/transaction_list_screen.dart';
 import '../../widgets/app_bar_buttons.dart';
+import '../../widgets/app_cupertino_refresh.dart';
+import '../../widgets/app_data_state_view.dart';
 import 'credit_card_bill_hero_card.dart';
 import 'credit_card_bill_item_card.dart';
 
@@ -221,17 +224,31 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
             top: false,
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : bills.isEmpty
-                ? _buildEmptyState(
-                    isDarkMode,
-                    textSecondaryColor,
-                    hasStatementDay: widget.account.statementDay != null,
-                  )
-                : _buildBillList(
-                    bills,
-                    isDarkMode,
-                    textPrimaryColor,
-                    textSecondaryColor,
+                : AppCupertinoRefresh(
+                    // ยอดบิลคำนวณจากรายการ จึงโหลดชุดเดียวกับหน้าบัญชี
+                    onRefresh: () =>
+                        refreshDataModules(context, ScreenModules.accounts),
+                    child: bills.isEmpty
+                        ? CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _buildEmptyState(
+                                  isDarkMode,
+                                  textSecondaryColor,
+                                  hasStatementDay:
+                                      widget.account.statementDay != null,
+                                ),
+                              ),
+                            ],
+                          )
+                        : _buildBillList(
+                            bills,
+                            isDarkMode,
+                            textPrimaryColor,
+                            textSecondaryColor,
+                          ),
                   ),
           ),
         );
@@ -319,6 +336,7 @@ class _CreditCardBillScreenState extends State<CreditCardBillScreen> {
 
     return ListView(
       key: const PageStorageKey('credit_card_bill_list'),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
         // 1. Hero Summary Card ด้านบน

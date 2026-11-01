@@ -167,7 +167,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
                 actions: [
-                  if (isLargeScreen && !isFiltered)
+                  if (isLargeScreen)
                     const AppRefreshActionButton(
                       modules: ScreenModules.transactions,
                     ),
@@ -192,7 +192,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               ),
               body: AppDataStateView(
                 modules: ScreenModules.transactions,
-                enablePullToRefresh: !isFiltered,
                 builder: (context) => CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
