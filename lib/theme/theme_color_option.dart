@@ -75,13 +75,13 @@ class ThemeColorOption {
   static const copper = ThemeColorOption(
     id: 'copper',
     label: 'Copper',
-    lightHeader: Color(0xFF393E46),
-    lightAccent: Color(0xFF393E46),
-    lightFab: Color(0xFFFFB74D),
+    lightHeader: Color(0xFF5B4433),
+    lightAccent: Color(0xFF8A6548),
+    lightFab: Color(0xFFB17A4F),
     lightOnFab: Colors.white,
-    darkHeader: Color(0xFF2C333A),
-    darkAccent: Color(0xFF66BB6A),
-    darkFab: Color(0xFFFFB74D),
+    darkHeader: Color(0xFF352D26),
+    darkAccent: Color(0xFFC08A62),
+    darkFab: Color(0xFFD39A6A),
     darkOnFab: Colors.black,
   );
 
