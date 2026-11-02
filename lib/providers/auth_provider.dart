@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/google_auth_service.dart';
+import '../utils/web_redirect.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -343,12 +344,12 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithGoogle() => _performAuth(() async {
     if (!isGoogleAvailable) throw StateError('Google unavailable');
     if (kIsWeb) {
-      final launched = await _safeClient!.auth.signInWithOAuth(
-        OAuthProvider.google,
+      final response = await _safeClient!.auth.getOAuthSignInUrl(
+        provider: OAuthProvider.google,
         redirectTo: Uri.base.origin,
         queryParams: {'prompt': 'select_account'},
       );
-      if (!launched) throw StateError('OAuth launch failed');
+      redirectWebTo(response.url);
     } else {
       final credential = await _google.authenticate();
       final response = await _safeClient!.auth.signInWithIdToken(
@@ -741,14 +742,16 @@ class AuthProvider extends ChangeNotifier {
     if (kIsWeb) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_pendingGoogleLinkKey, id!);
-      final launched = await client.auth.linkIdentity(
-        OAuthProvider.google,
-        redirectTo: Uri.base.origin,
-        queryParams: {'prompt': 'select_account'},
-      );
-      if (!launched) {
+      try {
+        final response = await client.auth.getLinkIdentityUrl(
+          OAuthProvider.google,
+          redirectTo: Uri.base.origin,
+          queryParams: {'prompt': 'select_account'},
+        );
+        redirectWebTo(response.url);
+      } catch (_) {
         await prefs.remove(_pendingGoogleLinkKey);
-        throw StateError('OAuth launch failed');
+        rethrow;
       }
     } else {
       final credential = await _google.authenticate();

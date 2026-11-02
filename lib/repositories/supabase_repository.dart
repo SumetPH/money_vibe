@@ -111,7 +111,10 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
     debugPrint(
       '[SupabaseRepository] Initializing Supabase with URL: $supabaseUrl',
     );
-    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+    await Supabase.initialize(
+      url: supabaseUrl,
+      publishableKey: supabaseAnonKey,
+    );
 
     _client = Supabase.instance.client;
     _initialized = true;
