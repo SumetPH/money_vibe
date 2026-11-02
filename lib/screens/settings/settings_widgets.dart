@@ -99,8 +99,12 @@ class SettingsGroup extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: ListTileTheme(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            minVerticalPadding: 10,
+            // ความสูงขั้นต่ำเท่ากันทั้งแถวบรรทัดเดียวและสองบรรทัด ให้ระยะบน/ล่างสม่ำเสมอ
+            data: const ListTileThemeData(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              minTileHeight: 64,
+              minVerticalPadding: 12,
+            ),
             child: child,
           ),
         ),

@@ -12,6 +12,12 @@ import 'settings_widgets.dart';
 class SettingsSignInMethodsSection extends StatelessWidget {
   const SettingsSignInMethodsSection({super.key});
 
+  // ปุ่มท้ายแถวแบบกะทัดรัด เพื่อเหลือที่ให้อีเมลแสดงได้เต็มบรรทัด
+  static final _compactButtonStyle = TextButton.styleFrom(
+    visualDensity: VisualDensity.compact,
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+  );
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -63,14 +69,19 @@ class SettingsSignInMethodsSection extends StatelessWidget {
                     identity == null
                         ? 'ยังไม่ได้เชื่อม'
                         : identity.identityData?['email'] as String? ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: color, fontSize: 13),
                   ),
                   trailing: identity == null
                       ? TextButton(
+                          style: _compactButtonStyle,
                           onPressed: busy ? null : () => _link(context, auth),
                           child: const Text('เชื่อม Google'),
                         )
                       : auth.canUnlinkGoogle
                       ? TextButton(
+                          style: _compactButtonStyle,
                           onPressed: busy ? null : () => _unlink(context, auth),
                           child: const Text('ยกเลิกการเชื่อม'),
                         )

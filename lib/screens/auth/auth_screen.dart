@@ -263,6 +263,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       },
                     ),
                   // Toggle Login/Register
+                  const SizedBox(height: 24),
                   TextButton(
                     onPressed: authProvider.isLoading
                         ? null

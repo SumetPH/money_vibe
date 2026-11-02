@@ -85,6 +85,7 @@ class _AuthSignUpCodeFormState extends State<AuthSignUpCodeForm> {
             onPressed: widget.isLoading ? null : _verify,
             child: Text(widget.isLoading ? 'กำลังตรวจสอบ…' : 'ยืนยันอีเมล'),
           ),
+          const SizedBox(height: 8),
           TextButton(
             onPressed: widget.isLoading || _seconds > 0
                 ? null

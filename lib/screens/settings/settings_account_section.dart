@@ -36,10 +36,14 @@ class SettingsAccountSection extends StatelessWidget {
           leading: SettingsIcon(icon: Icons.person, color: secondaryTextColor),
           title: Text(
             username ?? userEmail ?? 'ผู้ใช้',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: textColor, fontSize: 16),
           ),
           subtitle: Text(
             username != null ? userEmail ?? '' : 'อีเมลปัจจุบัน',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: secondaryTextColor, fontSize: 13),
           ),
           trailing: isUpdatingUsername
