@@ -83,7 +83,7 @@ class SettingsSignInMethodsSection extends StatelessWidget {
                       ? TextButton(
                           style: _compactButtonStyle,
                           onPressed: busy ? null : () => _unlink(context, auth),
-                          child: const Text('ยกเลิกการเชื่อม'),
+                          child: const Text('ยกเลิก'),
                         )
                       : null,
                 ),
