@@ -115,6 +115,9 @@ class AppTheme {
     ),
     cupertinoOverrideTheme: cupertinoTheme(),
     useMaterial3: true,
+    // ใช้ขนาด widget แบบ mobile ทุก platform (web บน desktop ค่า default จะเป็น compact)
+    visualDensity: VisualDensity.standard,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
   );
 
   static ThemeData darkTheme(ThemeColorOption themeColor) {
@@ -218,6 +221,8 @@ class AppTheme {
       ),
       cupertinoOverrideTheme: cupertinoTheme(),
       useMaterial3: true,
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
     );
   }
 
