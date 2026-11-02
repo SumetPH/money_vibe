@@ -124,6 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             return SettingsAccountSection(
                               userEmail: authProvider.userEmail,
                               username: authProvider.username,
+                              avatarUrl: authProvider.avatarUrl,
                               isDarkMode: isDarkMode,
                               isBusy:
                                   authProvider.isLoading ||

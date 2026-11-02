@@ -9,6 +9,8 @@ import '../services/reinstall_reminder_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_color_option.dart';
 import '../theme/app_brand.dart';
+import '../theme/app_radii.dart';
+import 'app_user_avatar.dart';
 
 class SidebarItemData {
   final IconData icon;
@@ -121,7 +123,7 @@ class _AppSidebarState extends State<AppSidebar> {
                       height: 42,
                       decoration: BoxDecoration(
                         color: AppColors.headerFor(isDarkMode, themeColor),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(AppRadii.large),
                       ),
                       child: const Icon(
                         AppBrand.logo,
@@ -341,6 +343,7 @@ class _SidebarFooter extends StatelessWidget {
         : AppColors.textSecondary;
     final dividerColor = isDarkMode ? AppColors.darkDivider : AppColors.divider;
     final email = authProvider.userEmail ?? 'ผู้ใช้';
+    final avatarUrl = authProvider.avatarUrl;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -351,6 +354,7 @@ class _SidebarFooter extends StatelessWidget {
         top: false,
         child: Row(
           children: [
+            AppUserAvatar(url: avatarUrl, size: 32),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

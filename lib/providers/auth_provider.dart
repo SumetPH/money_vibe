@@ -38,6 +38,17 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  /// URL รูปโปรไฟล์จากบัญชี Google ที่ผูกอยู่ (ยกเลิกผูกแล้วรูปหายตาม)
+  String? get avatarUrl {
+    final googleData = linkedGoogleIdentity?.identityData;
+    return _firstNonEmpty([googleData?['avatar_url'], googleData?['picture']]);
+  }
+
+  static String? _firstNonEmpty(List<Object?> values) => values
+      .whereType<String>()
+      .where((value) => value.trim().isNotEmpty)
+      .firstOrNull;
+
   bool get canUnlinkGoogle =>
       linkedGoogleIdentity != null && (_user?.identities?.length ?? 0) >= 2;
   SupabaseClient? _client;
@@ -263,6 +274,27 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// ค่าที่ต้องเติมลง user metadata จากบัญชี Google ที่ผูกไว้
+  /// การผูก Google ไม่ได้ copy ชื่อมาให้ (ได้เฉพาะตอน login ด้วย Google)
+  Map<String, dynamic> _googleProfileUpdates() {
+    final googleData = linkedGoogleIdentity?.identityData;
+    if (googleData == null) return const {};
+    final metadata = _user?.userMetadata;
+    if (_firstNonEmpty([metadata?['username']]) != null) return const {};
+
+    return {
+      'username':
+          _firstNonEmpty([
+            metadata?['full_name'],
+            metadata?['name'],
+            googleData['full_name'],
+            googleData['name'],
+            userEmail?.split('@').first,
+          ]) ??
+          'ผู้ใช้',
+    };
+  }
+
   Future<void> _refreshAccount() async {
     if (_user == null) return;
     if (_refreshingAccount) {
@@ -289,20 +321,10 @@ class AuthProvider extends ChangeNotifier {
         _user = refreshedUser;
         _error = 'ต้องใช้บัญชี Google ที่อีเมลตรงกับบัญชีผู้ใช้';
       }
-      final metadata = _user?.userMetadata;
-      if (linkedGoogleIdentity != null &&
-          ((metadata?['username'] as String?)?.trim().isEmpty ?? true)) {
-        final name =
-            [
-              metadata?['full_name'],
-              metadata?['name'],
-              userEmail?.split('@').first,
-            ].whereType<String>().firstWhere(
-              (value) => value.trim().isNotEmpty,
-              orElse: () => 'ผู้ใช้',
-            );
+      final profileUpdates = _googleProfileUpdates();
+      if (profileUpdates.isNotEmpty) {
         final response = await client.auth.updateUser(
-          UserAttributes(data: {'username': name}),
+          UserAttributes(data: profileUpdates),
         );
         if (_user?.id != userId) return;
         _user = response.user;

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../widgets/app_user_avatar.dart';
 import 'settings_widgets.dart';
 
 /// รายการในหมวด "บัญชีผู้ใช้" เมื่อ login แล้ว: ชื่อผู้ใช้/อีเมล และออกจากระบบ
 class SettingsAccountSection extends StatelessWidget {
   final String? userEmail;
   final String? username;
+  final String? avatarUrl;
   final bool isDarkMode;
   final bool isBusy;
   final bool isUpdatingUsername;
@@ -17,6 +19,7 @@ class SettingsAccountSection extends StatelessWidget {
     super.key,
     required this.userEmail,
     this.username,
+    this.avatarUrl,
     required this.isDarkMode,
     required this.isBusy,
     required this.isUpdatingUsername,
@@ -33,7 +36,14 @@ class SettingsAccountSection extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: SettingsIcon(icon: Icons.person, color: secondaryTextColor),
+          leading: AppUserAvatar(
+            url: avatarUrl,
+            size: 40,
+            fallback: SettingsIcon(
+              icon: Icons.person,
+              color: secondaryTextColor,
+            ),
+          ),
           title: Text(
             username ?? userEmail ?? 'ผู้ใช้',
             maxLines: 1,

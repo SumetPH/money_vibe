@@ -21,6 +21,7 @@
 | `showAppDatePicker` (`includeTime` สำหรับวัน+เวลา), `showAppDateRangePicker` | `showDatePicker` / `showDateRangePicker` ของ Material — ใช้ปฏิทิน `calendar_date_picker2` ใน bottom sheet, เดือนภาษาไทย ปี ค.ศ., ปุ่มลัด (วันนี้/เมื่อวาน หรือ 7 วัน/30 วัน/เดือนนี้/เดือนที่แล้ว) | `lib/widgets/app_date_picker_sheet.dart` |
 | `AppMetricText`, `AppYearSelector` | คู่ label/ค่าตัวเลขใน metric grid (label 11sp `w600`, ค่า 13sp `w700`) และแถวลูกศรเลือกปีที่เขียนเองในหน้า | `lib/widgets/app_metric_text.dart`, `app_year_selector.dart` |
 | `AppDataStateView`, `AppLoadingView`, `AppDataErrorView`, `AppRefreshActionButton`, `refreshDataModules` | spinner/skeleton/empty state ระหว่างรอข้อมูลครั้งแรก, หน้า error และ `RefreshIndicator`/`CupertinoSliverRefreshControl`/ปุ่ม refresh ที่เขียนเองในหน้า | `lib/widgets/app_data_state_view.dart`, `app_loading_view.dart` |
+| `AppUserAvatar` | รูปโปรไฟล์ผู้ใช้ (`AuthProvider.avatarUrl`) ทรงสี่เหลี่ยมมุมมน (`AppRadii.large`) ที่เขียนเองในหน้า — ไม่มีรูป/กำลังโหลด/โหลดไม่ได้ใช้ `fallback` | `lib/widgets/app_user_avatar.dart` |
 | `AppShimmerText` | ข้อความสถานะกำลังโหลดที่ทำแสงวิ่ง (`ShaderMask`) เองในหน้า เช่น บรรทัดรองของ header ระหว่าง refresh | `lib/widgets/app_shimmer_text.dart` |
 | `AppColors.*For(isDarkMode)` และ `AppRadii`                           | `Color(0x…)` และ ternary สี dark/light ในหน้า          | `lib/theme/`                              |
 
