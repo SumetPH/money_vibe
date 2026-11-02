@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -70,6 +71,55 @@ class AppBackButton extends StatelessWidget {
         ),
         tooltip: 'ย้อนกลับ',
         onPressed: onPressed ?? () => Navigator.maybePop(context),
+      ),
+    );
+  }
+}
+
+/// Android edge-swipe is taken by the system back gesture, so screens with a
+/// drawer show an explicit drawer button there.
+bool get showsDrawerButton =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+/// Leading menu button that opens the nearest ancestor Scaffold drawer.
+/// Pair with `leadingWidth: AppDrawerButton.leadingWidth`.
+class AppDrawerButton extends StatelessWidget {
+  static const double leadingWidth = 64;
+
+  const AppDrawerButton({super.key});
+
+  // Tab screens have their own Scaffold without a drawer; the drawer lives on
+  // the enclosing MainTabScreen Scaffold, so walk up until one has it.
+  void _openDrawer(BuildContext context) {
+    var scaffold = Scaffold.maybeOf(context);
+    while (scaffold != null && !scaffold.hasDrawer) {
+      scaffold = Scaffold.maybeOf(scaffold.context);
+    }
+    scaffold?.openDrawer();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.select<SettingsProvider, bool>(
+      (s) => s.isDarkMode,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Center(
+        child: Material(
+          color: AppColors.surfaceFor(isDarkMode),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.full),
+            side: BorderSide(color: AppColors.borderFor(isDarkMode)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: IconButton(
+            icon: Icon(Icons.menu, color: AppColors.textPrimaryFor(isDarkMode)),
+            tooltip: 'เมนู',
+            onPressed: () => _openDrawer(context),
+          ),
+        ),
       ),
     );
   }

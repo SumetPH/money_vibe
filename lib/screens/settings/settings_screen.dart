@@ -20,6 +20,7 @@ import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
@@ -70,6 +71,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: !isLargeScreen && showsDrawerButton
+            ? const AppDrawerButton()
+            : null,
+        leadingWidth: AppDrawerButton.leadingWidth,
         toolbarHeight: 100,
         backgroundColor: backgroundColor,
         foregroundColor: textColor,

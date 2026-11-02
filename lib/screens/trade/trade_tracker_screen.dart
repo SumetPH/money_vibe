@@ -13,6 +13,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/csv_file_io.dart';
 import '../../widgets/app_data_state_view.dart';
+import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'broker_report_list_screen.dart';
@@ -77,6 +78,10 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
           : const AppDrawer(currentRoute: '/trade-tracker'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: !isLargeScreen && showsDrawerButton
+            ? const AppDrawerButton()
+            : null,
+        leadingWidth: AppDrawerButton.leadingWidth,
         toolbarHeight: 100,
         backgroundColor: bgColor,
         foregroundColor: textPrimary,
@@ -84,7 +89,6 @@ class _TradeTrackerScreenState extends State<TradeTrackerScreen> {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: isLargeScreen ? 24 : 16,
-        leading: null,
         title: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
