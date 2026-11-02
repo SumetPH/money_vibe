@@ -45,6 +45,9 @@ class SyncProvider extends ChangeNotifier {
   final Map<SyncModule, DataReadiness> _readiness = {};
   Future<void>? _activeCheck;
   Future<void>? _activeInitialization;
+  int _generation = 0;
+  int? _initializationGeneration;
+  Future<void>? _previousUserOperations;
   final Map<String, Future<void>> _activeRefreshes = {};
   DateTime? _lastCheckTime;
   bool _hasBaseline = false;
@@ -86,7 +89,11 @@ class SyncProvider extends ChangeNotifier {
   }
 
   Future<void> _runCheck() async {
+    final generation = _generation;
+    final previousUserOperations = _previousUserOperations;
     try {
+      if (previousUserOperations != null) await previousUserOperations;
+      if (generation != _generation) return;
       await _checkAndSync();
     } finally {
       _activeCheck = null;
@@ -104,14 +111,21 @@ class SyncProvider extends ChangeNotifier {
     final activeRefresh = _activeRefreshes[key];
     if (activeRefresh != null) return activeRefresh;
 
-    final refresh = _runRefresh(targets).whenComplete(() {
-      _activeRefreshes.remove(key);
+    late final Future<void> refresh;
+    refresh = _runRefresh(targets).whenComplete(() {
+      if (identical(_activeRefreshes[key], refresh)) {
+        _activeRefreshes.remove(key);
+      }
     });
     _activeRefreshes[key] = refresh;
     return refresh;
   }
 
   Future<void> _runRefresh(Set<SyncModule> targets) async {
+    final generation = _generation;
+    final previousUserOperations = _previousUserOperations;
+    if (previousUserOperations != null) await previousUserOperations;
+    if (generation != _generation) return;
     final activeInitialization = _activeInitialization;
     if (activeInitialization != null) {
       // Initial Load กำลังโหลด module เดียวกันอยู่ รอผลแทนการยิงซ้ำ
@@ -119,6 +133,7 @@ class SyncProvider extends ChangeNotifier {
       try {
         await activeInitialization;
       } catch (_) {}
+      if (generation != _generation) return;
       targets.removeWhere(
         (module) => _readiness[module] == DataReadiness.ready,
       );
@@ -131,6 +146,7 @@ class SyncProvider extends ChangeNotifier {
         await activeCheck;
       } catch (_) {}
     }
+    if (generation != _generation) return;
 
     if (!isAuthenticated()) {
       _throwFirstError(await _loadModules(targets));
@@ -139,7 +155,9 @@ class SyncProvider extends ChangeNotifier {
 
     // อ่าน log ก่อนโหลด เพื่อให้การแก้ที่เกิดระหว่างโหลดยังถูก Background Sync เก็บต่อ
     final logs = await _readRemoteLogs();
+    if (generation != _generation) return;
     final errors = await _loadModules(targets);
+    if (generation != _generation) return;
     for (final entry in logs.entries) {
       final target = entry.key.refreshTarget;
       if (targets.contains(target) && !errors.containsKey(target)) {
@@ -151,32 +169,57 @@ class SyncProvider extends ChangeNotifier {
 
   Future<void> initialize() {
     final activeInitialization = _activeInitialization;
-    if (activeInitialization != null) return activeInitialization;
+    if (activeInitialization != null) {
+      if (_initializationGeneration == _generation) return activeInitialization;
+      return _initializeAfterPreviousUser(activeInitialization, _generation);
+    }
 
-    final initialization = _runInitialization();
+    _initializationGeneration = _generation;
+    final initialization = _runInitialization(
+      _generation,
+      _previousUserOperations,
+    );
     _activeInitialization = initialization;
     return initialization;
   }
 
-  Future<void> _runInitialization() async {
+  Future<void> _initializeAfterPreviousUser(
+    Future<void> previous,
+    int generation,
+  ) async {
     try {
+      await previous;
+    } catch (_) {}
+    if (generation == _generation) await initialize();
+  }
+
+  Future<void> _runInitialization(
+    int generation,
+    Future<void>? previousUserOperations,
+  ) async {
+    try {
+      if (previousUserOperations != null) await previousUserOperations;
       final activeCheck = _activeCheck;
       if (activeCheck != null) await activeCheck;
-      await _initialize();
+      if (generation != _generation) return;
+      await _initialize(generation);
     } finally {
       _activeInitialization = null;
     }
   }
 
-  Future<void> _initialize() async {
+  Future<void> _initialize(int generation) async {
     if (!isAuthenticated()) {
       _throwFirstError(await _loadModules(loaders.keys));
       return;
     }
 
     final before = await _readRemoteLogs();
+    if (generation != _generation) return;
     final errors = await _loadModules(loaders.keys);
+    if (generation != _generation) return;
     final after = await _readRemoteLogs();
+    if (generation != _generation) return;
 
     // ตั้ง baseline เฉพาะ module ที่โหลดสำเร็จ module ที่ล้มเหลวรอ Manual Refresh
     final loaded = {
@@ -191,6 +234,7 @@ class SyncProvider extends ChangeNotifier {
       for (final entry in after.entries)
         if (loaded.contains(entry.key)) entry.key: entry.value,
     });
+    if (generation != _generation) return;
     _lastCheckTime = _now();
     _throwFirstError(errors);
   }
@@ -199,6 +243,7 @@ class SyncProvider extends ChangeNotifier {
   Future<Map<SyncModule, (Object, StackTrace)>> _loadModules(
     Iterable<SyncModule> modules,
   ) async {
+    final generation = _generation;
     final targets = modules.toSet();
     for (final module in targets) {
       if (_readiness[module] != DataReadiness.ready) {
@@ -212,8 +257,10 @@ class SyncProvider extends ChangeNotifier {
       targets.map((module) async {
         try {
           await loaders[module]!();
+          if (generation != _generation) return;
           _readiness[module] = DataReadiness.ready;
         } catch (error, stackTrace) {
+          if (generation != _generation) return;
           if (_readiness[module] != DataReadiness.ready) {
             _readiness[module] = DataReadiness.failed;
           }
@@ -233,6 +280,7 @@ class SyncProvider extends ChangeNotifier {
 
   Future<void> _checkAndSync() async {
     if (!isAuthenticated()) return;
+    final generation = _generation;
 
     final now = _now();
     if (_lastCheckTime != null && now.difference(_lastCheckTime!) < cooldown) {
@@ -240,7 +288,9 @@ class SyncProvider extends ChangeNotifier {
     }
     _lastCheckTime = now;
 
-    await _refreshChanged(await _readRemoteLogs());
+    final logs = await _readRemoteLogs();
+    if (generation != _generation) return;
+    await _refreshChanged(logs);
   }
 
   Future<Map<SyncModule, DateTime>> _readRemoteLogs() async {
@@ -259,6 +309,7 @@ class SyncProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshChanged(Map<SyncModule, DateTime> remoteLogs) async {
+    final generation = _generation;
     final changedByTarget = <SyncModule, Map<SyncModule, DateTime>>{};
 
     for (final entry in remoteLogs.entries) {
@@ -270,12 +321,14 @@ class SyncProvider extends ChangeNotifier {
     }
 
     for (final entry in changedByTarget.entries) {
+      if (generation != _generation) return;
       final refresh = refreshers[entry.key];
       if (refresh == null) {
         debugPrint('[SyncProvider] No refresher for ${entry.key.name}');
         continue;
       }
       await refresh();
+      if (generation != _generation) return;
       _localTimestamps.addAll(entry.value);
       if (_readiness[entry.key] != DataReadiness.ready) {
         _readiness[entry.key] = DataReadiness.ready;
@@ -285,6 +338,22 @@ class SyncProvider extends ChangeNotifier {
   }
 
   void reset() {
+    // Drain old requests before loading another user. Their results must never
+    // mark the new user's modules ready while old providers are still writing.
+    final pending = <Future<void>>[
+      ?_previousUserOperations,
+      ?_activeInitialization,
+      ?_activeCheck,
+      ..._activeRefreshes.values,
+    ];
+    _previousUserOperations = Future.wait(
+      pending.map((operation) async {
+        try {
+          await operation;
+        } catch (_) {}
+      }),
+    ).then((_) {});
+    _generation++;
     _localTimestamps.clear();
     _activeRefreshes.clear();
     _readiness.clear();

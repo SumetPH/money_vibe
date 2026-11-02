@@ -20,6 +20,7 @@ import '../../services/ai_finance_export_service.dart';
 import '../../services/database_manager.dart';
 import '../../services/reinstall_reminder_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import 'finnhubapi_key_settings_screen.dart';
@@ -27,6 +28,7 @@ import 'data_management_screen.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import 'settings_account_section.dart';
+import 'settings_sign_in_methods_section.dart';
 import 'settings_install_section.dart';
 import 'settings_widgets.dart';
 import 'settings_sheets.dart';
@@ -69,6 +71,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: !isLargeScreen && showsDrawerButton
+            ? const AppDrawerButton()
+            : null,
+        leadingWidth: AppDrawerButton.leadingWidth,
         toolbarHeight: 100,
         backgroundColor: backgroundColor,
         foregroundColor: textColor,
@@ -163,6 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Appearance Section
+                const SettingsSignInMethodsSection(),
                 AppSectionHeader('ลักษณะ'),
                 SettingsGroup(
                   isDarkMode: isDarkMode,

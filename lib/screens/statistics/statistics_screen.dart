@@ -6,8 +6,8 @@ import '../../widgets/app_data_state_view.dart';
 import '../../models/category.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import '../../utils/monthly_cycle.dart';
+import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_segmented_tabs.dart';
 import 'statistics_yearly_bar_chart.dart';
@@ -42,9 +42,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final backgroundColor = isDarkMode
             ? AppColors.darkBackground
             : AppColors.background;
-        final surfaceColor = isDarkMode
-            ? AppColors.darkSurface
-            : AppColors.surface;
         final textColor = isDarkMode
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary;
@@ -58,29 +55,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               : const AppDrawer(currentRoute: '/statistics'),
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            leading: isLargeScreen || !widget.showPrimaryNavigation
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Material(
-                      color: surfaceColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                        side: BorderSide(
-                          color: AppColors.borderFor(isDarkMode),
-                          width: 1,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Builder(
-                        builder: (ctx) => IconButton(
-                          icon: Icon(Icons.menu, color: textColor),
-                          onPressed: () => Scaffold.of(ctx).openDrawer(),
-                        ),
-                      ),
-                    ),
-                  ),
-            leadingWidth: 64,
+            leading:
+                !isLargeScreen &&
+                    (widget.showPrimaryNavigation || showsDrawerButton)
+                ? const AppDrawerButton()
+                : null,
+            leadingWidth: AppDrawerButton.leadingWidth,
             toolbarHeight: 100,
             titleSpacing: isLargeScreen ? 24 : 16,
             centerTitle: false,

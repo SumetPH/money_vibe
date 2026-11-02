@@ -93,6 +93,7 @@ dart format .    # จัดรูปแบบโค้ดตามมาตร�
 
 - [AGENTS.md](AGENTS.md) - มาตรฐานการพัฒนาสำหรับ Developer/Agent
 - [SUPABASE_SETUP.md](docs/setup/SUPABASE_SETUP.md) - คู่มือตั้งค่าระบบ Cloud
+- [GOOGLE_AUTH_SETUP.md](docs/setup/GOOGLE_AUTH_SETUP.md) - ตั้งค่า Google Sign-In, OTP และช่องทางเข้าสู่ระบบแยก dev/prod
 - [IOS_IPA_ALTSTORE.md](docs/setup/IOS_IPA_ALTSTORE.md) - คู่มือ Build สำหรับ iOS (AltStore)
 
 ---

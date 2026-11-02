@@ -10,6 +10,8 @@ Future<T?> showAppModalBottomSheet<T>({
   required WidgetBuilder builder,
   bool isScrollControlled = false,
   bool showDragHandle = true,
+  bool isDismissible = true,
+  bool enableDrag = true,
   Color? backgroundColor,
 }) {
   final isDarkMode = context.read<SettingsProvider>().isDarkMode;
@@ -19,6 +21,8 @@ Future<T?> showAppModalBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     useSafeArea: true,
     showDragHandle: showDragHandle,
+    isDismissible: isDismissible,
+    enableDrag: enableDrag,
     backgroundColor:
         backgroundColor ??
         (isDarkMode ? AppColors.darkSurface : AppColors.surface),

@@ -14,6 +14,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_reorder_mode.dart';
 import '../../widgets/app_data_state_view.dart';
+import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -83,13 +84,16 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           : const AppDrawer(currentRoute: '/categories'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: !isLargeScreen && showsDrawerButton
+            ? const AppDrawerButton()
+            : null,
+        leadingWidth: AppDrawerButton.leadingWidth,
         backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: isLargeScreen ? 24 : 16,
         toolbarHeight: 100,
-        leading: null,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

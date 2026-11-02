@@ -63,3 +63,5 @@ android/key.properties
 *.keystore
 
 /supabase/.temp/
+# Per-environment native Google OAuth client IDs
+ios/Flutter/GoogleAuth.xcconfig

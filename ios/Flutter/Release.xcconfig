@@ -1,2 +1,6 @@
 #include "Generated.xcconfig"
 TREE_SHAKE_ICONS=false
+
+GOOGLE_REVERSED_CLIENT_ID_DEV = moneyvibe-google-disabled-dev
+GOOGLE_REVERSED_CLIENT_ID_PROD = moneyvibe-google-disabled-prod
+#include? "GoogleAuth.xcconfig"

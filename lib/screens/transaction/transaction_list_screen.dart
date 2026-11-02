@@ -137,7 +137,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     : AppColors.textPrimary,
                 centerTitle: false,
                 titleSpacing: isFiltered ? 0 : (isLargeScreen ? 24 : 16),
-                leading: isFiltered ? const AppBackButton() : null,
+                leading: isFiltered
+                    ? const AppBackButton()
+                    : !isLargeScreen && showsDrawerButton
+                    ? const AppDrawerButton()
+                    : null,
+                leadingWidth: isFiltered ? null : AppDrawerButton.leadingWidth,
                 title: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

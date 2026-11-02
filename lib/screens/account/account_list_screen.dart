@@ -13,6 +13,7 @@ import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/app_data_state_view.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_bar_buttons.dart';
 import 'account_form_screen.dart';
 import 'portfolio_detail_screen.dart';
 import 'credit_card_bill_screen.dart';
@@ -56,6 +57,10 @@ class _AccountListScreenState extends State<AccountListScreen> {
           : const AppDrawer(currentRoute: '/accounts'),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: !isLargeScreen && showsDrawerButton
+            ? const AppDrawerButton()
+            : null,
+        leadingWidth: AppDrawerButton.leadingWidth,
         toolbarHeight: 100,
         elevation: 0,
         scrolledUnderElevation: 0,
