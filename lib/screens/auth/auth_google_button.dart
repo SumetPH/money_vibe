@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'auth_google_logo.dart';
+
 class AuthGoogleButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onPressed;
@@ -27,9 +29,10 @@ class AuthGoogleButton extends StatelessWidget {
       ),
       SizedBox(
         width: double.infinity,
-        child: OutlinedButton(
+        child: OutlinedButton.icon(
           onPressed: isLoading ? null : onPressed,
-          child: const Text('ดำเนินการต่อด้วย Google'),
+          icon: const AuthGoogleLogo(),
+          label: const Text('Google'),
         ),
       ),
     ],

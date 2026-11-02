@@ -238,7 +238,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                           ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
                   if (_signUpEmail == null && authProvider.error != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -263,7 +263,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       },
                     ),
                   // Toggle Login/Register
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: authProvider.isLoading
                         ? null
