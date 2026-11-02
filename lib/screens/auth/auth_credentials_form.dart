@@ -12,7 +12,11 @@ class AuthCredentialsForm extends StatelessWidget {
       emailController,
       passwordController,
       confirmPasswordController;
-  final Color textColor, secondaryTextColor, headerColor;
+  final Color textColor,
+      secondaryTextColor,
+      accentColor,
+      buttonColor,
+      onButtonColor;
   final VoidCallback onSubmit, onTogglePassword, onToggleConfirmPassword;
   const AuthCredentialsForm({
     super.key,
@@ -28,7 +32,9 @@ class AuthCredentialsForm extends StatelessWidget {
     required this.confirmPasswordController,
     required this.textColor,
     required this.secondaryTextColor,
-    required this.headerColor,
+    required this.accentColor,
+    required this.buttonColor,
+    required this.onButtonColor,
     required this.onSubmit,
     required this.onTogglePassword,
     required this.onToggleConfirmPassword,
@@ -81,7 +87,7 @@ class AuthCredentialsForm extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: headerColor),
+                    borderSide: BorderSide(color: accentColor, width: 1.5),
                   ),
                 ),
                 validator: (value) {
@@ -123,7 +129,7 @@ class AuthCredentialsForm extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: headerColor),
+                  borderSide: BorderSide(color: accentColor, width: 1.5),
                 ),
               ),
               validator: (value) {
@@ -179,7 +185,7 @@ class AuthCredentialsForm extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: headerColor),
+                  borderSide: BorderSide(color: accentColor, width: 1.5),
                 ),
               ),
               validator: (value) {
@@ -240,7 +246,7 @@ class AuthCredentialsForm extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: headerColor),
+                    borderSide: BorderSide(color: accentColor, width: 1.5),
                   ),
                 ),
                 validator: (value) {
@@ -262,21 +268,22 @@ class AuthCredentialsForm extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: isLoading ? null : onSubmit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: headerColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: buttonColor,
+                  foregroundColor: onButtonColor,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  disabledBackgroundColor: headerColor.withValues(alpha: 0.6),
+                  disabledBackgroundColor: buttonColor.withValues(alpha: 0.6),
                 ),
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            onButtonColor,
                           ),
                         ),
                       )

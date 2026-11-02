@@ -119,10 +119,10 @@ class _AuthScreenState extends State<AuthScreen> {
     final secondaryTextColor = isDarkMode
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
-    final headerColor = AppColors.headerFor(
-      isDarkMode,
-      settingsProvider.themeColor,
-    );
+    final themeColor = settingsProvider.themeColor;
+    final accentColor = AppColors.accentFor(isDarkMode, themeColor);
+    final fabColor = AppColors.fabFor(isDarkMode, themeColor);
+    final onFabColor = AppColors.onFabFor(isDarkMode, themeColor);
 
     // web จอกว้าง: 2 คอลัมน์ (แผงแบรนด์ซ้าย + ฟอร์มขวา) ไม่มี AppBar
     final isTwoColumn =
@@ -145,16 +145,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: headerColor,
+                        color: fabColor,
                         borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       ),
-                      child: Icon(
-                        AppBrand.logo,
-                        size: 40,
-                        color: isDarkMode
-                            ? AppColors.darkTextPrimary
-                            : AppColors.textPrimary,
-                      ),
+                      child: Icon(AppBrand.logo, size: 40, color: onFabColor),
                     ),
                     const SizedBox(height: 24),
                     // App Name
@@ -170,27 +164,13 @@ class _AuthScreenState extends State<AuthScreen> {
                   ],
                   // Form
                   Container(
-                    padding: isTwoColumn
-                        ? const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 52,
-                          )
-                        : const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(isTwoColumn ? 32 : 24),
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(AppRadii.xLarge),
                       border: Border.all(
                         color: AppColors.borderFor(isDarkMode),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDarkMode
-                              ? Colors.black.withValues(alpha: 0.3)
-                              : Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: _signUpEmail != null
                         ? AuthSignUpCodeForm(
@@ -213,57 +193,69 @@ class _AuthScreenState extends State<AuthScreen> {
                               authProvider.clearError();
                             }),
                           )
-                        : AuthCredentialsForm(
-                            formKey: _formKey,
-                            isLogin: _isLogin,
-                            isLoading: authProvider.isLoading,
-                            isDarkMode: isDarkMode,
-                            obscurePassword: _obscurePassword,
-                            obscureConfirmPassword: _obscureConfirmPassword,
-                            usernameController: _usernameController,
-                            emailController: _emailController,
-                            passwordController: _passwordController,
-                            confirmPasswordController:
-                                _confirmPasswordController,
-                            textColor: textColor,
-                            secondaryTextColor: secondaryTextColor,
-                            headerColor: headerColor,
-                            onSubmit: _submit,
-                            onTogglePassword: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                            onToggleConfirmPassword: () => setState(
-                              () => _obscureConfirmPassword =
-                                  !_obscureConfirmPassword,
-                            ),
+                        : Column(
+                            children: [
+                              AuthCredentialsForm(
+                                formKey: _formKey,
+                                isLogin: _isLogin,
+                                isLoading: authProvider.isLoading,
+                                isDarkMode: isDarkMode,
+                                obscurePassword: _obscurePassword,
+                                obscureConfirmPassword: _obscureConfirmPassword,
+                                usernameController: _usernameController,
+                                emailController: _emailController,
+                                passwordController: _passwordController,
+                                confirmPasswordController:
+                                    _confirmPasswordController,
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                                accentColor: accentColor,
+                                buttonColor: fabColor,
+                                onButtonColor: onFabColor,
+                                onSubmit: _submit,
+                                onTogglePassword: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                                onToggleConfirmPassword: () => setState(
+                                  () => _obscureConfirmPassword =
+                                      !_obscureConfirmPassword,
+                                ),
+                              ),
+                              if (authProvider.error != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Text(
+                                    authProvider.error!,
+                                    style: TextStyle(
+                                      color: AppColors.expenseFor(isDarkMode),
+                                    ),
+                                  ),
+                                ),
+                              if (authProvider.isGoogleAvailable)
+                                AuthGoogleButton(
+                                  isLoading: authProvider.isLoading,
+                                  isDarkMode: isDarkMode,
+                                  onPressed: () async {
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
+                                    final success = await authProvider
+                                        .signInWithGoogle();
+                                    if (!success &&
+                                        authProvider.error != null) {
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(authProvider.error!),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                            ],
                           ),
                   ),
-                  const SizedBox(height: 8),
-                  if (_signUpEmail == null && authProvider.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        authProvider.error!,
-                        style: TextStyle(
-                          color: AppColors.expenseFor(isDarkMode),
-                        ),
-                      ),
-                    ),
-                  if (_signUpEmail == null && authProvider.isGoogleAvailable)
-                    AuthGoogleButton(
-                      isLoading: authProvider.isLoading,
-                      onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        final success = await authProvider.signInWithGoogle();
-                        if (!success && authProvider.error != null) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text(authProvider.error!)),
-                          );
-                        }
-                      },
-                    ),
+                  const SizedBox(height: 16),
                   // Toggle Login/Register
-                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: authProvider.isLoading
                         ? null
@@ -273,14 +265,21 @@ class _AuthScreenState extends State<AuthScreen> {
                               authProvider.clearError();
                             });
                           },
-                    child: Text(
-                      _isLogin
-                          ? 'ยังไม่มีบัญชี? สมัครสมาชิก'
-                          : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ',
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? AppColors.darkTransfer
-                            : AppColors.transfer,
+                    child: Text.rich(
+                      TextSpan(
+                        text: _isLogin
+                            ? 'ยังไม่มีบัญชี? '
+                            : 'มีบัญชีอยู่แล้ว? ',
+                        style: TextStyle(color: secondaryTextColor),
+                        children: [
+                          TextSpan(
+                            text: _isLogin ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ',
+                            style: TextStyle(
+                              color: accentColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -314,12 +313,10 @@ class _AuthScreenState extends State<AuthScreen> {
             Expanded(
               flex: 5,
               child: AuthBrandPanel(
-                headerColor: headerColor,
-                accentColor: AppColors.accentFor(
-                  isDarkMode,
-                  settingsProvider.themeColor,
-                ),
-                textColor: textColor,
+                isDarkMode: isDarkMode,
+                accentColor: accentColor,
+                fabColor: fabColor,
+                onFabColor: onFabColor,
               ),
             ),
             Expanded(flex: 4, child: formBody),
