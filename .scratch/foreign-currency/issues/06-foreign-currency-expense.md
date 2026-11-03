@@ -12,7 +12,7 @@
 - [x] ยอดที่ตัดบัญชีเติมให้โดยประมาณจาก rate ตลาดปัจจุบัน และผู้ใช้แก้ได้ ไม่มีสถานะ pending
 - [x] รายการในลิสต์แสดง "¥3,000 → ฿702"
 - [x] แก้รายการเดิมแล้วข้อมูลสกุลต่างประเทศยังอยู่ และถ้าปิดสวิตช์ข้อมูลนี้จะถูกล้าง
-- [x] CSV export และ AI finance export มี `foreign_amount` และ `foreign_currency`
+- [x] CSV export (AI finance export ไม่เกี่ยว: สรุปเฉพาะยอดรวม ไม่มีรายการรายตัว) — มี `foreign_amount` และ `foreign_currency`
 - [x] เพิ่มคำศัพท์ "สกุลต่างประเทศของรายการ" ใน `GLOSSARY.md`
 - [x] `dart format .` และ `tool/check_design.sh` ผ่าน
 

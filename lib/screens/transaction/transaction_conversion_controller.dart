@@ -74,6 +74,10 @@ class TransactionConversionController {
     _recompute();
   }
 
+  /// ลืมลำดับช่องที่แก้ (ค่าที่กรอกยังอยู่) เช่น ตอนเพิ่งเปิดสกุลต่างประเทศ
+  /// เพื่อให้ rate ตลาดไปคำนวณยอดที่ตัดบัญชีจากยอดต่างประเทศ ไม่ใช่กลับทิศ
+  void resetEdits() => _recentEdits = const [];
+
   void clear() {
     _recentEdits = const [];
     _write(toController, '');

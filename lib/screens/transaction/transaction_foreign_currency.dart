@@ -65,8 +65,10 @@ mixin TransactionForeignCurrencyHost<T extends StatefulWidget> on State<T> {
   void initForeignCurrency(String? currency) => _foreignCurrency = currency;
 
   void setForeignCurrency(String? currency) {
+    final wasOff = _foreignCurrency == null;
     setState(() => _foreignCurrency = currency);
     if (currency == null) foreignConversion.clear();
+    if (currency != null && wasOff) foreignConversion.resetEdits();
     onForeignCurrencyChanged();
     if (currency != null) _suggestMarketRate();
   }

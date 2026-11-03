@@ -9,7 +9,9 @@ SET type = 'exchange'
 FROM public.accounts AS source, public.accounts AS destination
 WHERE t.type = 'transfer'
   AND source.id = t.account_id
+  AND source.user_id = t.user_id
   AND destination.id = t.to_account_id
+  AND destination.user_id = t.user_id
   AND source.currency <> destination.currency;
 
 ALTER TABLE public.transactions ENABLE TRIGGER sync_transfer_portfolio_cash;

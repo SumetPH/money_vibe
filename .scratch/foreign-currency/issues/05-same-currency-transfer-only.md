@@ -20,3 +20,5 @@
 - migration `20261103140000_convert_cross_currency_transfers.sql` แปลง transfer ข้ามสกุลเป็น exchange โดยปิด trigger พอร์ตระหว่าง UPDATE (ยอดและ `portfolio_cash_applied` คงเดิม) แล้วให้ trigger รับเฉพาะ exchange (ยังไม่ได้ `supabase db push`)
 - ฟอร์ม: transfer/debtRepay/debtTransfer เลือกปลายทางได้เฉพาะสกุลเดียวกัน, ช่องยอดปลายทางแสดงเฉพาะ exchange, บันทึก transfer ข้ามสกุลจะเตือนให้ใช้แลกเงิน; ฟอร์มรายการประจำกรองปลายทางให้สกุลเดียวกันด้วย
 - ตรวจยอดก่อน/หลัง: logic ยอดคงเหลือใช้ `usesDestinationAccount` + `toAmount ?? amount` เหมือนกันทั้งสองประเภท และ migration ไม่แตะยอด จึงไม่เปลี่ยน (ยังไม่ได้ตรวจกับข้อมูลจริงหลัง push)
+
+- แก้ตาม code review: ล้างยอดแปลงสกุลเมื่อเปลี่ยนประเภท, เปิดสกุลต่างประเทศแล้ว rate ตลาดคำนวณยอดที่ตัดบัญชีจากยอดต่างประเทศเสมอ, ตรวจสกุลเดียวกันของ debtRepay/debtTransfer ตอนบันทึก, ยอดตอนแก้ไขใช้ทศนิยมตามสกุล, CSV import แปลงโอนข้ามสกุลเป็นแลกเงินและไม่รับ foreign_amount ≤ 0, migration match user_id

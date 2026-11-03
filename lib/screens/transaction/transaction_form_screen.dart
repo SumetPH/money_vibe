@@ -25,6 +25,7 @@ import 'transaction_delete_button.dart';
 import 'transaction_form_accounts.dart';
 import 'transaction_keyboard_host.dart';
 import 'transaction_foreign_currency.dart';
+import '../../utils/currency_utils.dart';
 import '../../utils/exchange_rate_utils.dart';
 import '../../utils/user_error_message.dart';
 
@@ -108,11 +109,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
     _type = tx?.type ?? TransactionType.expense;
     _selectedAccountId = tx?.accountId;
     _selectedCategoryId = tx?.categoryId;
-    _selectedToAccountId = _usesTargetAccount(_type) ? tx?.toAccountId : null;
+    _selectedToAccountId = _type.movesBetweenAccounts ? tx?.toAccountId : null;
     _selectedDebtAccountId = _type.requiresDebtAccount ? tx?.toAccountId : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
     _amountController.text = (tx != null && tx.amount > 0)
-        ? formatAmount(tx.amount)
+        ? CurrencyUtils.formatAmount(
+            tx.amount,
+            foreignSourceAccount?.currency ?? CurrencyUtils.baseCurrency,
+          )
         : '';
     if (_supportsForeign(_type) && tx != null && tx.hasForeignAmount) {
       initForeignCurrency(tx.foreignCurrency);
@@ -159,9 +163,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
     _noteController.dispose();
     super.dispose();
   }
-
-  static bool _usesTargetAccount(TransactionType type) =>
-      type == TransactionType.transfer || type == TransactionType.exchange;
 
   void _syncConversionCurrencies() {
     final accountProvider = context.read<AccountProvider>();
@@ -327,7 +328,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
     }
 
     String? toAccountId;
-    if (_usesTargetAccount(_type)) {
+    if (_type.movesBetweenAccounts) {
       toAccountId = _selectedToAccountId;
     } else if (_type.requiresDebtAccount) {
       toAccountId = _selectedDebtAccountId;
@@ -431,11 +432,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
   void _selectType(TransactionType t) {
     closeTransactionKeyboard();
     final wasAdjustment = _isAdjustment;
+    // ยอดปลายทาง/rate ของประเภทเดิมใช้กับประเภทใหม่ไม่ได้
+    if (t != _type) _conversion.clear();
     setState(() {
       _type = t;
       if (wasAdjustment != _isAdjustment) _amountController.clear();
       _selectedCategoryId = null;
-      if (!_usesTargetAccount(t)) {
+      if (!t.movesBetweenAccounts) {
         _selectedToAccountId = null;
       }
       _dropInvalidAccountSelections();

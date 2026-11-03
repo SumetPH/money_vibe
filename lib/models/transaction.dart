@@ -19,6 +19,16 @@ enum TransactionType {
   bool get isTransferLike =>
       this == TransactionType.transfer || this == TransactionType.debtTransfer;
 
+  /// ย้ายเงินระหว่างบัญชีของตัวเอง (ไม่ใช่รายรับ/รายจ่าย)
+  bool get movesBetweenAccounts =>
+      this == TransactionType.transfer || this == TransactionType.exchange;
+
+  /// ปลายทางต้องเป็นสกุลเดียวกับต้นทาง (ข้ามสกุลต้องใช้ exchange)
+  bool get requiresSameCurrency =>
+      this == TransactionType.transfer ||
+      this == TransactionType.debtRepay ||
+      this == TransactionType.debtTransfer;
+
   bool get usesDestinationAccount =>
       this == TransactionType.transfer ||
       this == TransactionType.exchange ||
@@ -58,7 +68,7 @@ class AppTransaction {
   String? toAccountId;
   DateTime dateTime;
   String? note;
-  // toAmount: จำนวนเงินในสกุลของ destination account สำหรับ cross-currency transfer
+  // toAmount: จำนวนเงินในสกุลของบัญชีปลายทาง สำหรับรายการแลกเงิน
   // null = same currency (ใช้ amount เดิม)
   double? toAmount;
   // ยอดเดิมในสกุลต่างประเทศของรายรับ/รายจ่าย (ข้อมูลประกอบ)

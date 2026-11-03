@@ -48,9 +48,7 @@ List<Account> transactionTargetAccounts(
   return switch (type) {
     TransactionType.exchange =>
       candidates.where((a) => a.currency != currency).toList(),
-    TransactionType.transfer ||
-    TransactionType.debtRepay ||
-    TransactionType.debtTransfer =>
+    _ when type.requiresSameCurrency =>
       candidates.where((a) => a.currency == currency).toList(),
     _ => candidates,
   };
@@ -73,8 +71,10 @@ String? validateTransactionConversion({
     if (!isCrossCurrency) return 'แลกเงินต้องเป็นบัญชีคนละสกุลเงิน';
     if (!hasAmount) return 'กรุณากรอกจำนวนที่ได้รับ';
   }
-  if (type == TransactionType.transfer && isCrossCurrency) {
-    return 'โอนได้เฉพาะบัญชีสกุลเดียวกัน ใช้ "แลกเงิน" แทน';
+  if (type.requiresSameCurrency && isCrossCurrency) {
+    return type == TransactionType.transfer
+        ? 'โอนได้เฉพาะบัญชีสกุลเดียวกัน ใช้ "แลกเงิน" แทน'
+        : 'บัญชีหนี้สินต้องเป็นสกุลเดียวกับบัญชีต้นทาง';
   }
   if (foreignCurrency != null) {
     if (foreignCurrency == source?.currency) {

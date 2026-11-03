@@ -50,7 +50,7 @@ class TransactionListItem extends StatelessWidget {
               tx.type == TransactionType.debtTransfer) &&
           tx.toAccountId == viewingAccountId) {
         displayAmount = tx.amount;
-      } else if (_isMovement(tx.type)) {
+      } else if (tx.type.movesBetweenAccounts) {
         if (tx.accountId == viewingAccountId) {
           displayAmount = -tx.amount;
         } else if (tx.toAccountId == viewingAccountId) {
@@ -79,14 +79,16 @@ class TransactionListItem extends StatelessWidget {
       exchangeSummary:
           _exchangeSummary(account, toAccount) ?? _foreignSummary(account),
     );
-    final amountColor = (_isMovement(tx.type) && viewingAccountId == null)
+    final amountColor =
+        (tx.type.movesBetweenAccounts && viewingAccountId == null)
         ? typeColor
         : (tx.type == TransactionType.debtRepay && viewingAccountId == null)
         ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
         : (tx.type == TransactionType.debtTransfer && viewingAccountId == null)
         ? (isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer)
         : AppColors.getAmountColor(displayAmount, isDarkMode);
-    final amountText = (_isMovement(tx.type) && viewingAccountId == null)
+    final amountText =
+        (tx.type.movesBetweenAccounts && viewingAccountId == null)
         ? _formatCurrencyAmount(tx.amount, account?.currency)
         : '${displayAmount < 0
               ? '-'
@@ -292,9 +294,6 @@ class TransactionListItem extends StatelessWidget {
       ],
     );
   }
-
-  static bool _isMovement(TransactionType type) =>
-      type == TransactionType.transfer || type == TransactionType.exchange;
 
   /// แลกเงิน: "ได้ ¥ 42,700 • 1 JPY = 0.2342 ฿"
   String? _exchangeSummary(Account? account, Account? toAccount) {

@@ -14,7 +14,7 @@
 - [x] ยอดคงเหลือ: ต้นทาง −amount ปลายทาง +to_amount
 - [x] ไม่นับในรายรับรายจ่าย งบประมาณ cash flow และสถิติรายรับรายจ่าย
 - [x] รายการในลิสต์แสดงยอดทั้งสองฝั่งและ rate
-- [x] CSV export และ AI finance export รองรับ type `exchange`
+- [x] CSV export (AI finance export ไม่เกี่ยว: สรุปเฉพาะยอดรวม ไม่มีรายการรายตัว) — รองรับ type `exchange`
 - [x] เพิ่มคำว่า "แลกเงิน" ใน `GLOSSARY.md`
 - [x] `dart format .` และ `tool/check_design.sh` ผ่าน
 

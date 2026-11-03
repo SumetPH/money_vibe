@@ -50,7 +50,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
     final bool isDebtRepay = type == TransactionType.debtRepay;
     final bool isDebtTransfer = type == TransactionType.debtTransfer;
     final bool isExchange = type == TransactionType.exchange;
-    final bool isTransfer = type == TransactionType.transfer || isExchange;
+    final bool isTransfer = type.movesBetweenAccounts;
     final bool isAdjust =
         type == TransactionType.increaseBalance ||
         type == TransactionType.decreaseBalance;

@@ -21,15 +21,9 @@ void showCurrencyPickerSheet(
     builder: (_) => Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final isDarkMode = settingsProvider.isDarkMode;
-        final surfaceColor = isDarkMode
-            ? AppColors.darkSurface
-            : AppColors.surface;
-        final textPrimaryColor = isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-        final textSecondaryColor = isDarkMode
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
+        final surfaceColor = AppColors.surfaceFor(isDarkMode);
+        final textPrimaryColor = AppColors.textPrimaryFor(isDarkMode);
+        final textSecondaryColor = AppColors.textSecondaryFor(isDarkMode);
         final headerColor = isDarkMode
             ? AppColors.darkIncome
             : AppColors.header;
