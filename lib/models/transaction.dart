@@ -2,6 +2,7 @@ enum TransactionType {
   expense('รายจ่าย'),
   income('รายรับ'),
   transfer('โอน'),
+  exchange('แลกเงิน'),
   debtRepay('ชำระหนี้สิน'),
   debtTransfer('โอนหนี้'),
   decreaseBalance('ปรับลดยอดบัญชี'),
@@ -20,6 +21,7 @@ enum TransactionType {
 
   bool get usesDestinationAccount =>
       this == TransactionType.transfer ||
+      this == TransactionType.exchange ||
       this == TransactionType.debtRepay ||
       this == TransactionType.debtTransfer;
 

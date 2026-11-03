@@ -4,8 +4,9 @@ import '../../models/account.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../utils/currency_utils.dart';
-import '../../widgets/app_inset_card.dart';
+import '../../utils/exchange_rate_utils.dart';
 import '../../widgets/calculator_text_field_config.dart';
+import 'transaction_conversion_fields.dart';
 
 class TransactionAmountHeroCard extends StatelessWidget {
   final TransactionType type;
@@ -13,6 +14,8 @@ class TransactionAmountHeroCard extends StatelessWidget {
   final FocusNode amountFocusNode;
   final TextEditingController toAmountController;
   final FocusNode toAmountFocusNode;
+  final TextEditingController rateController;
+  final FocusNode rateFocusNode;
   final Account? selectedAccount;
   final Account? selectedToAccount;
   final double accountBalance;
@@ -25,6 +28,8 @@ class TransactionAmountHeroCard extends StatelessWidget {
     required this.amountFocusNode,
     required this.toAmountController,
     required this.toAmountFocusNode,
+    required this.rateController,
+    required this.rateFocusNode,
     required this.selectedAccount,
     required this.selectedToAccount,
     required this.accountBalance,
@@ -49,7 +54,8 @@ class TransactionAmountHeroCard extends StatelessWidget {
     final toCurrency =
         selectedToAccount?.currency ?? CurrencyUtils.baseCurrency;
     final isCrossCurrency =
-        type == TransactionType.transfer &&
+        (type == TransactionType.transfer ||
+            type == TransactionType.exchange) &&
         selectedAccount != null &&
         selectedToAccount != null &&
         selectedAccount!.currency != selectedToAccount!.currency;
@@ -65,6 +71,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
         isDarkMode ? AppColors.darkExpense : AppColors.expense,
       TransactionType.transfer =>
         isDarkMode ? AppColors.darkTransfer : AppColors.transfer,
+      TransactionType.exchange => AppColors.exchangeFor(isDarkMode),
       TransactionType.debtRepay || TransactionType.debtTransfer =>
         isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer,
     };
@@ -72,6 +79,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
     final amountLabel = switch (type) {
       TransactionType.debtRepay => 'เงินต้น',
       TransactionType.debtTransfer => 'ยอดโยก',
+      TransactionType.exchange => 'จ่าย',
       TransactionType.increaseBalance ||
       TransactionType.decreaseBalance => 'ยอดคงเหลือที่ต้องการ',
       _ => 'จำนวนเงิน',
@@ -188,105 +196,21 @@ class TransactionAmountHeroCard extends StatelessWidget {
               ),
 
               // Cross-currency conversion field
-              if (isCrossCurrency) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: AppCardDivider(),
+              if (isCrossCurrency)
+                TransactionConversionFields(
+                  label: 'จำนวนที่ได้รับปลายทาง',
+                  currency: toCurrency,
+                  amountController: toAmountController,
+                  amountFocusNode: toAmountFocusNode,
+                  rateController: rateController,
+                  rateFocusNode: rateFocusNode,
+                  quote: ExchangeQuote(
+                    fromCurrency: fromCurrency,
+                    toCurrency: toCurrency,
+                  ),
+                  accentColor: typeColor,
+                  isDarkMode: isDarkMode,
                 ),
-                Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: typeColor.withValues(alpha: 0.16),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.arrow_downward_rounded,
-                        size: 14,
-                        color: typeColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'จำนวนที่ได้รับปลายทาง',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: surfaceVariant,
-                        borderRadius: BorderRadius.circular(AppRadii.small),
-                      ),
-                      child: Text(
-                        toCurrency,
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${CurrencyUtils.getCurrencySymbol(toCurrency)} ',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: typeColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: toAmountController,
-                        focusNode: toAmountFocusNode,
-                        readOnly: calculatorTextFieldReadOnly,
-                        showCursor: true,
-                        keyboardType: calculatorTextInputType,
-                        inputFormatters: calculatorTextInputFormatters,
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '0.00',
-                          hintStyle: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
-                            color: isDarkMode
-                                ? AppColors.darkDivider
-                                : AppColors.divider,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          focusedErrorBorder: InputBorder.none,
-                          filled: false,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
 
               // Balance preview badge (for increase/decrease balance)
               if (isAdjust) ...[

@@ -10,11 +10,9 @@ import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/account_picker_bottom_sheet.dart';
 import '../../widgets/category_picker_bottom_sheet.dart';
-import '../../widgets/calculator_keyboard.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_confirm_dialog.dart';
 import '../../widgets/app_date_picker_sheet.dart';
@@ -22,6 +20,11 @@ import 'transaction_type_picker.dart';
 import 'transaction_amount_hero_card.dart';
 import 'transaction_selection_group_card.dart';
 import 'transaction_meta_info_card.dart';
+import 'transaction_conversion_controller.dart';
+import 'transaction_delete_button.dart';
+import 'transaction_form_accounts.dart';
+import 'transaction_keyboard_host.dart';
+import '../../utils/exchange_rate_utils.dart';
 import '../../utils/user_error_message.dart';
 
 class TransactionFormScreen extends StatefulWidget {
@@ -40,19 +43,24 @@ class TransactionFormScreen extends StatefulWidget {
   State<TransactionFormScreen> createState() => _TransactionFormScreenState();
 }
 
-class _TransactionFormScreenState extends State<TransactionFormScreen> {
+class _TransactionFormScreenState extends State<TransactionFormScreen>
+    with TransactionKeyboardHost {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _amountFocusNode = FocusNode();
   final _toAmountFocusNode = FocusNode();
-  PersistentBottomSheetController? _keyboardController;
-  TextEditingController? _activeKeyboardController;
+  final _rateFocusNode = FocusNode();
   bool _isUpdatingController = false;
   late TextEditingValue _previousAmountValue;
   late TextEditingValue _previousToAmountValue;
+  late TextEditingValue _previousRateValue;
 
   final _amountController = TextEditingController();
-  final _toAmountController =
-      TextEditingController(); // cross-currency transfer
+  // cross-currency: ยอดปลายทางและ rate
+  late final _conversion = TransactionConversionController(
+    fromController: _amountController,
+  );
+  TextEditingController get _toAmountController => _conversion.toController;
+  TextEditingController get _rateController => _conversion.rateController;
   final _noteController = TextEditingController();
 
   late TransactionType _type;
@@ -64,6 +72,19 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   double _accountBalance = 0.0;
   bool _isLoading = false;
+
+  @override
+  GlobalKey<ScaffoldState> get keyboardScaffoldKey => _scaffoldKey;
+
+  @override
+  Color get keyboardActionColor => _getActionButtonColor();
+
+  @override
+  late final Map<FocusNode, TextEditingController> keyboardFields = {
+    _amountFocusNode: _amountController,
+    _toAmountFocusNode: _toAmountController,
+    _rateFocusNode: _rateController,
+  };
 
   bool get _isEditing => widget.transaction != null;
   bool get _isAdjustment => _type.isIncreaseBalance || _type.isDecreaseBalance;
@@ -86,17 +107,17 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _type = tx?.type ?? TransactionType.expense;
     _selectedAccountId = tx?.accountId;
     _selectedCategoryId = tx?.categoryId;
-    _selectedToAccountId = _type == TransactionType.transfer
-        ? tx?.toAccountId
-        : null;
+    _selectedToAccountId = _usesTargetAccount(_type) ? tx?.toAccountId : null;
     _selectedDebtAccountId = _type.requiresDebtAccount ? tx?.toAccountId : null;
     _selectedDateTime = tx?.dateTime ?? DateTime.now();
     _amountController.text = (tx != null && tx.amount > 0)
         ? formatAmount(tx.amount)
         : '';
-    _toAmountController.text = (tx?.toAmount != null && tx!.toAmount! > 0)
-        ? formatAmount(tx.toAmount!)
-        : '';
+    _syncConversionCurrencies();
+    final initialToAmount = tx?.toAmount;
+    if (initialToAmount != null && initialToAmount > 0) {
+      _conversion.seedFromAmounts(toAmount: initialToAmount);
+    }
     _noteController.text = tx?.note ?? '';
     if (_isAdjustment && tx != null) {
       final balance = _balanceBeforeAdjustment();
@@ -106,11 +127,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
     _previousAmountValue = _amountController.value;
     _previousToAmountValue = _toAmountController.value;
+    _previousRateValue = _rateController.value;
 
-    _amountFocusNode.addListener(_onFocusChange);
-    _toAmountFocusNode.addListener(_onFocusChange);
+    attachTransactionKeyboard();
     _amountController.addListener(_handleAmountChanged);
     _toAmountController.addListener(_handleToAmountChanged);
+    _rateController.addListener(_handleRateChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateAccountBalance();
@@ -119,16 +141,41 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
   @override
   void dispose() {
-    _amountFocusNode.removeListener(_onFocusChange);
-    _toAmountFocusNode.removeListener(_onFocusChange);
+    detachTransactionKeyboard();
     _amountController.removeListener(_handleAmountChanged);
     _toAmountController.removeListener(_handleToAmountChanged);
+    _rateController.removeListener(_handleRateChanged);
     _amountFocusNode.dispose();
     _toAmountFocusNode.dispose();
+    _rateFocusNode.dispose();
+    _conversion.dispose();
     _amountController.dispose();
-    _toAmountController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  static bool _usesTargetAccount(TransactionType type) =>
+      type == TransactionType.transfer || type == TransactionType.exchange;
+
+  void _syncConversionCurrencies() {
+    final accountProvider = context.read<AccountProvider>();
+    final from = _selectedAccountId == null
+        ? null
+        : accountProvider.findById(_selectedAccountId!);
+    final to = _selectedToAccountId == null
+        ? null
+        : accountProvider.findById(_selectedToAccountId!);
+    _conversion.setCurrencies(
+      fromCurrency: _usesTargetAccount(_type) ? from?.currency : null,
+      toCurrency: _usesTargetAccount(_type) ? to?.currency : null,
+    );
+    _syncPreviousConversionValues();
+  }
+
+  void _syncPreviousConversionValues() {
+    _previousAmountValue = _amountController.value;
+    _previousToAmountValue = _toAmountController.value;
+    _previousRateValue = _rateController.value;
   }
 
   void _calculateAccountBalance() {
@@ -137,30 +184,18 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
-  void _onFocusChange() {
-    if (!mounted) return;
-
-    final hasAmountFocus = _amountFocusNode.hasFocus;
-    final hasToAmountFocus = _toAmountFocusNode.hasFocus;
-
-    if (hasAmountFocus) {
-      _showKeyboard(_amountController);
-    } else if (hasToAmountFocus) {
-      _showKeyboard(_toAmountController);
-    } else {
-      _closeKeyboard();
-    }
-  }
-
   void _handleAmountChanged() {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      formatCalculatorAmountInput(
-        _amountController,
-        previousValue: _previousAmountValue,
-      );
-      _previousAmountValue = _amountController.value;
+      if (!_conversion.isWriting) {
+        formatCalculatorAmountInput(
+          _amountController,
+          previousValue: _previousAmountValue,
+        );
+        _conversion.onUserEdited(ExchangeField.from);
+      }
+      _syncPreviousConversionValues();
       _calculateAccountBalance();
       if (_type.requiresDebtAccount) {
         setState(() {});
@@ -170,15 +205,29 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
-  void _handleToAmountChanged() {
+  void _handleToAmountChanged() =>
+      _handleConversionFieldChanged(_toAmountController, ExchangeField.to);
+
+  void _handleRateChanged() =>
+      _handleConversionFieldChanged(_rateController, ExchangeField.rate);
+
+  void _handleConversionFieldChanged(
+    TextEditingController controller,
+    ExchangeField field,
+  ) {
     if (_isUpdatingController) return;
     _isUpdatingController = true;
     try {
-      formatCalculatorAmountInput(
-        _toAmountController,
-        previousValue: _previousToAmountValue,
-      );
-      _previousToAmountValue = _toAmountController.value;
+      if (!_conversion.isWriting) {
+        formatCalculatorAmountInput(
+          controller,
+          previousValue: field == ExchangeField.rate
+              ? _previousRateValue
+              : _previousToAmountValue,
+        );
+        _conversion.onUserEdited(field);
+      }
+      _syncPreviousConversionValues();
       setState(() {});
     } finally {
       _isUpdatingController = false;
@@ -196,70 +245,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         return isDarkMode ? AppColors.darkExpense : AppColors.expense;
       case TransactionType.transfer:
         return isDarkMode ? AppColors.darkTransfer : AppColors.transfer;
+      case TransactionType.exchange:
+        return AppColors.exchangeFor(isDarkMode);
       case TransactionType.debtRepay:
         return isDarkMode ? AppColors.darkDebtRepay : AppColors.debtRepay;
       case TransactionType.debtTransfer:
         return isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer;
-    }
-  }
-
-  void _showKeyboard(TextEditingController controller) {
-    if (_keyboardController != null) {
-      if (_activeKeyboardController == controller) {
-        return;
-      }
-      // Close only the old sheet; _closeKeyboard() would also unfocus the
-      // field being switched to and close the new sheet before it mounts.
-      _keyboardController?.close();
-    }
-
-    _activeKeyboardController = controller;
-    final actionColor = _getActionButtonColor();
-
-    final keyboardController = _scaffoldKey.currentState?.showBottomSheet(
-      (context) {
-        return CalculatorKeyboard(
-          controller: controller,
-          actionButtonColor: actionColor,
-          onDone: () {
-            _closeKeyboard();
-          },
-        );
-      },
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
-
-    _keyboardController = keyboardController;
-
-    keyboardController?.closed.then((_) {
-      // Old sheet closes after a new one opened (switching amount fields):
-      // don't clear the new sheet's reference, or it can't be closed before pop.
-      if (_keyboardController != keyboardController) return;
-      _keyboardController = null;
-      _activeKeyboardController = null;
-      if (mounted) {
-        if (_amountFocusNode.hasFocus) {
-          _amountFocusNode.unfocus();
-        }
-        if (_toAmountFocusNode.hasFocus) {
-          _toAmountFocusNode.unfocus();
-        }
-      }
-    });
-  }
-
-  void _closeKeyboard() {
-    if (_keyboardController != null) {
-      _keyboardController?.close();
-      _keyboardController = null;
-      _activeKeyboardController = null;
-    }
-    if (_amountFocusNode.hasFocus) {
-      _amountFocusNode.unfocus();
-    }
-    if (_toAmountFocusNode.hasFocus) {
-      _toAmountFocusNode.unfocus();
     }
   }
 
@@ -311,8 +302,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       amount = difference.abs();
     }
 
+    if (_type == TransactionType.exchange && _selectedToAccountId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชีปลายทาง')));
+      return;
+    }
+
     String? toAccountId;
-    if (_type == TransactionType.transfer) {
+    if (_usesTargetAccount(_type)) {
       toAccountId = _selectedToAccountId;
     } else if (_type.requiresDebtAccount) {
       toAccountId = _selectedDebtAccountId;
@@ -320,16 +318,21 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
     // cross-currency: ตรวจสอบว่า from/to account ต่างสกุลเงินกัน
     double? toAmount;
-    if (_type == TransactionType.transfer && toAccountId != null) {
+    if (_usesTargetAccount(_type) && toAccountId != null) {
       final fromAcc = accountProvider.findById(_selectedAccountId!);
       final toAcc = accountProvider.findById(toAccountId);
-      if (fromAcc != null &&
+      final isCrossCurrency =
+          fromAcc != null &&
           toAcc != null &&
-          fromAcc.currency != toAcc.currency) {
-        final toAmountText = _toAmountController.text
-            .replaceAll(',', '')
-            .trim();
-        toAmount = double.tryParse(toAmountText);
+          fromAcc.currency != toAcc.currency;
+      if (_type == TransactionType.exchange && !isCrossCurrency) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('แลกเงินต้องเป็นบัญชีคนละสกุลเงิน')),
+        );
+        return;
+      }
+      if (isCrossCurrency) {
+        toAmount = _conversion.toAmount;
         if (toAmount == null || toAmount <= 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('กรุณากรอกจำนวนที่ได้รับ')),
@@ -364,7 +367,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
 
       widget.onSaved?.call(tx.id);
       if (mounted) {
-        _closeKeyboard();
+        closeTransactionKeyboard();
         Navigator.pop(context);
       }
     } catch (e) {
@@ -407,25 +410,48 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       recurProvider.undoOccurrence(occ.recurringId, occ.dueDate);
     }
 
-    _closeKeyboard();
+    closeTransactionKeyboard();
     Navigator.pop(context); // Close form
   }
 
   void _selectType(TransactionType t) {
-    _closeKeyboard();
+    closeTransactionKeyboard();
     final wasAdjustment = _isAdjustment;
     setState(() {
       _type = t;
       if (wasAdjustment != _isAdjustment) _amountController.clear();
       _selectedCategoryId = null;
-      if (t != TransactionType.transfer) {
+      if (!_usesTargetAccount(t)) {
         _selectedToAccountId = null;
       }
+      _dropInvalidAccountSelections();
       if (!t.requiresDebtAccount) {
         _selectedDebtAccountId = null;
       }
       _calculateAccountBalance();
     });
+    _syncConversionCurrencies();
+  }
+
+  /// ล้างบัญชีที่เลือกไว้ถ้าไม่อยู่ในรายการที่เลือกได้ของประเภทปัจจุบัน
+  void _dropInvalidAccountSelections() {
+    final accountProvider = context.read<AccountProvider>();
+    final sources = transactionSourceAccounts(
+      _type,
+      accountProvider.visibleAccounts,
+    );
+    if (_selectedAccountId != null &&
+        !sources.any((a) => a.id == _selectedAccountId)) {
+      _selectedAccountId = null;
+    }
+    final source = _selectedAccountId == null
+        ? null
+        : accountProvider.findById(_selectedAccountId!);
+    final targets = transactionTargetAccounts(_type, sources, source);
+    if (_selectedToAccountId != null &&
+        !targets.any((a) => a.id == _selectedToAccountId)) {
+      _selectedToAccountId = null;
+    }
   }
 
   @override
@@ -445,34 +471,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       builder: (context, accountProvider, txProvider, catProvider, _) {
         final allVisibleAccounts = accountProvider.visibleAccounts;
 
-        final accounts = switch (_type) {
-          TransactionType.debtTransfer =>
-            allVisibleAccounts
-                .where(
-                  (a) =>
-                      (a.type == AccountType.debt ||
-                          a.type == AccountType.creditCard) &&
-                      !a.isPortfolio,
-                )
-                .toList(),
-          TransactionType.income ||
-          TransactionType.expense ||
-          TransactionType.debtRepay =>
-            allVisibleAccounts
-                .where((a) => a.type != AccountType.debt && !a.isPortfolio)
-                .toList(),
-          TransactionType.increaseBalance || TransactionType.decreaseBalance =>
-            allVisibleAccounts
-                .where(
-                  (a) =>
-                      a.type == AccountType.cash ||
-                      a.type == AccountType.bankAccount ||
-                      a.type == AccountType.asset ||
-                      a.type == AccountType.debt,
-                )
-                .toList(),
-          _ => allVisibleAccounts,
-        };
+        final accounts = transactionSourceAccounts(_type, allVisibleAccounts);
 
         final selectedAccount = _selectedAccountId != null
             ? accountProvider.findById(_selectedAccountId!)
@@ -480,6 +479,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         final selectedToAccount = _selectedToAccountId != null
             ? accountProvider.findById(_selectedToAccountId!)
             : null;
+        final targetAccounts = transactionTargetAccounts(
+          _type,
+          accounts,
+          selectedAccount,
+        );
         final selectedDebtAccount = _selectedDebtAccountId != null
             ? accountProvider.findById(_selectedDebtAccountId!)
             : null;
@@ -503,7 +507,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               onPressed: _isLoading
                   ? null
                   : () {
-                      _closeKeyboard();
+                      closeTransactionKeyboard();
                       Navigator.pop(context);
                     },
             ),
@@ -521,7 +525,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             behavior: HitTestBehavior.translucent,
             onTap: () {
               FocusScope.of(context).unfocus();
-              _closeKeyboard();
+              closeTransactionKeyboard();
             },
             child: AbsorbPointer(
               absorbing: _isLoading,
@@ -535,7 +539,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     selectedType: _type,
                     onChanged: _selectType,
                     onShowMore: () {
-                      _closeKeyboard();
+                      closeTransactionKeyboard();
                       showTransactionTypePicker(
                         context,
                         currentType: _type,
@@ -553,6 +557,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                       amountFocusNode: _amountFocusNode,
                       toAmountController: _toAmountController,
                       toAmountFocusNode: _toAmountFocusNode,
+                      rateController: _rateController,
+                      rateFocusNode: _rateFocusNode,
                       selectedAccount: selectedAccount,
                       selectedToAccount: selectedToAccount,
                       accountBalance: _isAdjustment
@@ -585,8 +591,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     accountProvider: accountProvider,
                     transactions: txProvider.transactions,
                     isDarkMode: isDarkMode,
-                    onPickAccount: (isTarget) =>
-                        _pickAccount(context, accounts, isTarget),
+                    onPickAccount: (isTarget) => _pickAccount(
+                      context,
+                      isTarget ? targetAccounts : accounts,
+                      isTarget,
+                    ),
                     onPickDebtAccount: () =>
                         _pickDebtAccount(context, accountProvider),
                     onClearAccount: () =>
@@ -601,6 +610,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                       amountFocusNode: _amountFocusNode,
                       toAmountController: _toAmountController,
                       toAmountFocusNode: _toAmountFocusNode,
+                      rateController: _rateController,
+                      rateFocusNode: _rateFocusNode,
                       selectedAccount: selectedAccount,
                       selectedToAccount: selectedToAccount,
                       accountBalance: _balanceBeforeAdjustment(),
@@ -631,48 +642,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   // 5. Destructive delete button at bottom (iOS Settings pattern)
                   if (_isEditing) ...[
                     const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? AppColors.darkSurface
-                            : AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                        border: Border.all(
-                          color: AppColors.borderFor(isDarkMode),
-                          width: 1,
-                        ),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppRadii.xLarge),
-                        onTap: _isLoading ? null : _delete,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.delete_outline_rounded,
-                                size: 20,
-                                color: isDarkMode
-                                    ? AppColors.darkExpense
-                                    : AppColors.expense,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'ลบรายการนี้',
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? AppColors.darkExpense
-                                      : AppColors.expense,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    TransactionDeleteButton(
+                      isDarkMode: isDarkMode,
+                      onPressed: _isLoading ? null : _delete,
                     ),
                   ],
                 ],
@@ -689,7 +661,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     List<Account> accounts,
     bool isTarget,
   ) async {
-    _closeKeyboard();
+    closeTransactionKeyboard();
     final selectedId = await AccountPickerBottomSheet.show(
       context,
       title: isTarget ? 'เลือกบัญชีปลายทาง' : 'เลือกบัญชี',
@@ -703,8 +675,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           _selectedToAccountId = selectedId;
         } else {
           _selectedAccountId = selectedId;
+          _dropInvalidAccountSelections();
         }
       });
+      _syncConversionCurrencies();
       _calculateAccountBalance();
     }
   }
@@ -713,7 +687,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     BuildContext context,
     AccountProvider accountProvider,
   ) async {
-    _closeKeyboard();
+    closeTransactionKeyboard();
     final selectedId = await AccountPickerBottomSheet.show(
       context,
       title: 'เลือกบัญชีหนี้สิน',
@@ -732,7 +706,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     BuildContext context,
     List<Category> categories,
   ) async {
-    _closeKeyboard();
+    closeTransactionKeyboard();
     final selectedId = await CategoryPickerBottomSheet.show(
       context,
       selectedCategoryId: _selectedCategoryId,
@@ -747,7 +721,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   }
 
   Future<void> _pickDateTime(BuildContext context) async {
-    _closeKeyboard();
+    closeTransactionKeyboard();
     final initialDt = _selectedDateTime;
     final picked = await showAppDatePicker(
       context: context,

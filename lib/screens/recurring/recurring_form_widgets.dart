@@ -81,7 +81,9 @@ class RecurringAmountHeroCard extends StatelessWidget {
         isDarkMode ? AppColors.darkIncome : AppColors.income,
       TransactionType.expense || TransactionType.decreaseBalance =>
         isDarkMode ? AppColors.darkExpense : AppColors.expense,
-      TransactionType.transfer || TransactionType.debtRepay =>
+      TransactionType.transfer ||
+      TransactionType.debtRepay ||
+      TransactionType.exchange =>
         isDarkMode ? AppColors.darkTransfer : AppColors.transfer,
       TransactionType.debtTransfer =>
         isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer,

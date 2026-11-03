@@ -28,7 +28,9 @@ void showRecurringTypePicker(
           Expanded(
             child: ListView(
               controller: sc,
+              // รายการประจำยังไม่รองรับการแลกเงิน
               children: TransactionType.values
+                  .where((t) => t != TransactionType.exchange)
                   .map(
                     (t) => Column(
                       mainAxisSize: MainAxisSize.min,

@@ -49,7 +49,8 @@ class TransactionSelectionGroupCard extends StatelessWidget {
 
     final bool isDebtRepay = type == TransactionType.debtRepay;
     final bool isDebtTransfer = type == TransactionType.debtTransfer;
-    final bool isTransfer = type == TransactionType.transfer;
+    final bool isExchange = type == TransactionType.exchange;
+    final bool isTransfer = type == TransactionType.transfer || isExchange;
     final bool isAdjust =
         type == TransactionType.increaseBalance ||
         type == TransactionType.decreaseBalance;
@@ -236,6 +237,8 @@ class TransactionSelectionGroupCard extends StatelessWidget {
               title: selectedAccount?.name ?? 'เลือกบัญชีต้นทาง',
               subtitle: selectedAccount != null
                   ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
+                  : isExchange
+                  ? 'จ่ายจากบัญชีนี้'
                   : 'โอนออกจากบัญชีนี้',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
@@ -266,6 +269,8 @@ class TransactionSelectionGroupCard extends StatelessWidget {
               title: selectedToAccount?.name ?? 'เลือกบัญชีปลายทาง',
               subtitle: selectedToAccount != null
                   ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedToAccount!.id, transactions), selectedToAccount!.currency)}'
+                  : isExchange
+                  ? 'รับเงินที่แลกเข้าบัญชีนี้ (คนละสกุล)'
                   : 'โอนเข้าสู่บัญชีนี้',
               subtitleColor: selectedToAccount != null
                   ? AppColors.getAmountColor(
