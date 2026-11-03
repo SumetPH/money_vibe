@@ -165,9 +165,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
     final to = _selectedToAccountId == null
         ? null
         : accountProvider.findById(_selectedToAccountId!);
+    final isExchange = _type == TransactionType.exchange;
     _conversion.setCurrencies(
-      fromCurrency: _usesTargetAccount(_type) ? from?.currency : null,
-      toCurrency: _usesTargetAccount(_type) ? to?.currency : null,
+      fromCurrency: isExchange ? from?.currency : null,
+      toCurrency: isExchange ? to?.currency : null,
     );
     _syncPreviousConversionValues();
   }
@@ -331,7 +332,15 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
         );
         return;
       }
-      if (isCrossCurrency) {
+      if (_type == TransactionType.transfer && isCrossCurrency) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('โอนได้เฉพาะบัญชีสกุลเดียวกัน ใช้ "แลกเงิน" แทน'),
+          ),
+        );
+        return;
+      }
+      if (_type == TransactionType.exchange) {
         toAmount = _conversion.toAmount;
         if (toAmount == null || toAmount <= 0) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -452,7 +461,17 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
         !targets.any((a) => a.id == _selectedToAccountId)) {
       _selectedToAccountId = null;
     }
+    final debtTargets = _debtTargetAccounts(accountProvider, source);
+    if (_selectedDebtAccountId != null &&
+        !debtTargets.any((a) => a.id == _selectedDebtAccountId)) {
+      _selectedDebtAccountId = null;
+    }
   }
+
+  List<Account> _debtTargetAccounts(
+    AccountProvider accountProvider,
+    Account? source,
+  ) => transactionTargetAccounts(_type, accountProvider.debtAccounts, source);
 
   @override
   Widget build(BuildContext context) {
@@ -693,6 +712,12 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
       title: 'เลือกบัญชีหนี้สิน',
       selectedAccountId: _selectedDebtAccountId,
       isDebtOnly: true,
+      accountsOverride: _debtTargetAccounts(
+        accountProvider,
+        _selectedAccountId == null
+            ? null
+            : accountProvider.findById(_selectedAccountId!),
+      ),
     );
 
     if (selectedId != null && mounted) {

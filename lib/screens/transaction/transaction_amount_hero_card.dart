@@ -54,8 +54,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
     final toCurrency =
         selectedToAccount?.currency ?? CurrencyUtils.baseCurrency;
     final isCrossCurrency =
-        (type == TransactionType.transfer ||
-            type == TransactionType.exchange) &&
+        type == TransactionType.exchange &&
         selectedAccount != null &&
         selectedToAccount != null &&
         selectedAccount!.currency != selectedToAccount!.currency;

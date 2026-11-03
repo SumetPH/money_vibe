@@ -37,15 +37,21 @@ List<Account> transactionSourceAccounts(
 }
 
 /// บัญชีปลายทางที่เลือกได้: แลกเงินต้องเป็นคนละสกุลกับต้นทาง
+/// ส่วนโอน ชำระหนี้ และโอนหนี้ต้องเป็นสกุลเดียวกัน
 List<Account> transactionTargetAccounts(
   TransactionType type,
-  List<Account> sourceAccounts,
+  List<Account> candidates,
   Account? selectedSource,
 ) {
-  if (type != TransactionType.exchange || selectedSource == null) {
-    return sourceAccounts;
-  }
-  return sourceAccounts
-      .where((a) => a.currency != selectedSource.currency)
-      .toList();
+  if (selectedSource == null) return candidates;
+  final currency = selectedSource.currency;
+  return switch (type) {
+    TransactionType.exchange =>
+      candidates.where((a) => a.currency != currency).toList(),
+    TransactionType.transfer ||
+    TransactionType.debtRepay ||
+    TransactionType.debtTransfer =>
+      candidates.where((a) => a.currency == currency).toList(),
+    _ => candidates,
+  };
 }

@@ -622,11 +622,18 @@ class _RecurringFormScreenState extends State<RecurringFormScreen>
     List<Account> accounts, {
     required bool isDestination,
   }) async {
+    // ปลายทางของการโอนต้องเป็นสกุลเดียวกับต้นทาง (ข้ามสกุลใช้แลกเงิน)
+    final source = _accountId == null
+        ? null
+        : context.read<AccountProvider>().findById(_accountId!);
+    final candidates = isDestination && source != null
+        ? accounts.where((a) => a.currency == source.currency).toList()
+        : accounts;
     final selectedId = await AccountPickerBottomSheet.show(
       context,
       title: isDestination ? 'บัญชีปลายทาง' : 'เลือกบัญชี',
       selectedAccountId: isDestination ? _toAccountId : _accountId,
-      accountsOverride: accounts,
+      accountsOverride: candidates,
     );
 
     if (selectedId == null || !mounted) return;
@@ -636,6 +643,13 @@ class _RecurringFormScreenState extends State<RecurringFormScreen>
         _toAccountId = selectedId;
       } else {
         _accountId = selectedId;
+        final picked = context.read<AccountProvider>().findById(selectedId);
+        final destination = _toAccountId == null
+            ? null
+            : context.read<AccountProvider>().findById(_toAccountId!);
+        if (destination != null && destination.currency != picked?.currency) {
+          _toAccountId = null;
+        }
       }
     });
   }
