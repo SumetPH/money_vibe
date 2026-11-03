@@ -20,6 +20,10 @@ class TransactionAmountHeroCard extends StatelessWidget {
   final Account? selectedToAccount;
   final double accountBalance;
   final bool isDarkMode;
+  // รายรับ/รายจ่ายสกุลต่างประเทศ: null = ปิด
+  final String? foreignCurrency;
+  final ValueChanged<bool>? onToggleForeign;
+  final VoidCallback? onPickForeignCurrency;
 
   const TransactionAmountHeroCard({
     super.key,
@@ -34,6 +38,9 @@ class TransactionAmountHeroCard extends StatelessWidget {
     required this.selectedToAccount,
     required this.accountBalance,
     required this.isDarkMode,
+    this.foreignCurrency,
+    this.onToggleForeign,
+    this.onPickForeignCurrency,
   });
 
   @override
@@ -59,6 +66,12 @@ class TransactionAmountHeroCard extends StatelessWidget {
         selectedToAccount != null &&
         selectedAccount!.currency != selectedToAccount!.currency;
 
+    final canUseForeign =
+        (type == TransactionType.expense || type == TransactionType.income) &&
+        selectedAccount != null &&
+        onToggleForeign != null;
+    final activeForeign = canUseForeign ? foreignCurrency : null;
+
     final isAdjust =
         type == TransactionType.increaseBalance ||
         type == TransactionType.decreaseBalance;
@@ -79,6 +92,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
       TransactionType.debtRepay => 'เงินต้น',
       TransactionType.debtTransfer => 'ยอดโยก',
       TransactionType.exchange => 'จ่าย',
+      _ when activeForeign != null => 'ยอดที่ตัดบัญชี',
       TransactionType.increaseBalance ||
       TransactionType.decreaseBalance => 'ยอดคงเหลือที่ต้องการ',
       _ => 'จำนวนเงิน',
@@ -209,6 +223,31 @@ class TransactionAmountHeroCard extends StatelessWidget {
                   ),
                   accentColor: typeColor,
                   isDarkMode: isDarkMode,
+                ),
+
+              if (canUseForeign) ...[
+                const SizedBox(height: 12),
+                TransactionForeignToggleRow(
+                  value: activeForeign != null,
+                  onChanged: onToggleForeign!,
+                  isDarkMode: isDarkMode,
+                ),
+              ],
+              if (activeForeign != null)
+                TransactionConversionFields(
+                  label: 'ยอดสกุลต่างประเทศ',
+                  currency: activeForeign,
+                  amountController: toAmountController,
+                  amountFocusNode: toAmountFocusNode,
+                  rateController: rateController,
+                  rateFocusNode: rateFocusNode,
+                  quote: ExchangeQuote(
+                    fromCurrency: fromCurrency,
+                    toCurrency: activeForeign,
+                  ),
+                  accentColor: typeColor,
+                  isDarkMode: isDarkMode,
+                  onTapCurrency: onPickForeignCurrency,
                 ),
 
               // Balance preview badge (for increase/decrease balance)

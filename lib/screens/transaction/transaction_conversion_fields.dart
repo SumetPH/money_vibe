@@ -4,6 +4,7 @@ import '../../theme/app_radii.dart';
 import '../../utils/currency_utils.dart';
 import '../../utils/exchange_rate_utils.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_switch.dart';
 import '../../widgets/calculator_text_field_config.dart';
 
 /// ช่องยอดอีกสกุล + rate ใต้ยอดหลักใน amount hero card
@@ -225,6 +226,42 @@ class _CurrencyBadge extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// สวิตช์ "ชำระเป็นสกุลต่างประเทศ" ของรายรับ/รายจ่าย
+class TransactionForeignToggleRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool isDarkMode;
+
+  const TransactionForeignToggleRow({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = AppColors.textSecondaryFor(isDarkMode);
+    return Row(
+      children: [
+        Icon(Icons.public_rounded, size: 16, color: textSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'ชำระเป็นสกุลต่างประเทศ',
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        AppSwitch(value: value, onChanged: onChanged),
+      ],
     );
   }
 }

@@ -61,6 +61,10 @@ class AppTransaction {
   // toAmount: จำนวนเงินในสกุลของ destination account สำหรับ cross-currency transfer
   // null = same currency (ใช้ amount เดิม)
   double? toAmount;
+  // ยอดเดิมในสกุลต่างประเทศของรายรับ/รายจ่าย (ข้อมูลประกอบ)
+  // amount ยังเป็นสกุลของบัญชีเสมอ; ทั้งสองค่าเป็น null หรือมีค่าพร้อมกัน
+  double? foreignAmount;
+  String? foreignCurrency;
 
   AppTransaction({
     required this.id,
@@ -72,6 +76,8 @@ class AppTransaction {
     DateTime? dateTime,
     this.note,
     this.toAmount,
+    this.foreignAmount,
+    this.foreignCurrency,
   }) : dateTime = dateTime ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -84,7 +90,11 @@ class AppTransaction {
     'date_time': dateTime.toIso8601String(),
     'note': note,
     'to_amount': toAmount,
+    'foreign_amount': foreignAmount,
+    'foreign_currency': foreignCurrency,
   };
+
+  bool get hasForeignAmount => foreignAmount != null && foreignCurrency != null;
 
   static AppTransaction fromMap(Map<String, dynamic> m) {
     return AppTransaction(
@@ -97,6 +107,8 @@ class AppTransaction {
       dateTime: DateTime.parse(m['date_time'] as String),
       note: m['note'] as String?,
       toAmount: (m['to_amount'] as num?)?.toDouble(),
+      foreignAmount: (m['foreign_amount'] as num?)?.toDouble(),
+      foreignCurrency: m['foreign_currency'] as String?,
     );
   }
 
@@ -113,6 +125,9 @@ class AppTransaction {
     String? note,
     double? toAmount,
     bool clearToAmount = false,
+    double? foreignAmount,
+    String? foreignCurrency,
+    bool clearForeignAmount = false,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -124,6 +139,12 @@ class AppTransaction {
       dateTime: dateTime ?? this.dateTime,
       note: note ?? this.note,
       toAmount: clearToAmount ? null : (toAmount ?? this.toAmount),
+      foreignAmount: clearForeignAmount
+          ? null
+          : (foreignAmount ?? this.foreignAmount),
+      foreignCurrency: clearForeignAmount
+          ? null
+          : (foreignCurrency ?? this.foreignCurrency),
     );
   }
 }

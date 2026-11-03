@@ -76,7 +76,8 @@ class TransactionListItem extends StatelessWidget {
     final subLabel = _buildSubLabel(
       category?.name,
       note,
-      exchangeSummary: _exchangeSummary(account, toAccount),
+      exchangeSummary:
+          _exchangeSummary(account, toAccount) ?? _foreignSummary(account),
     );
     final amountColor = (_isMovement(tx.type) && viewingAccountId == null)
         ? typeColor
@@ -313,6 +314,15 @@ class TransactionListItem extends StatelessWidget {
     final rate = quote.rateOf(fromAmount: tx.amount, toAmount: toAmount);
     return 'ได้ ${_formatCurrencyAmount(toAmount, toAccount.currency)} • '
         '${quote.label(rate)}';
+  }
+
+  /// รายรับ/รายจ่ายสกุลต่างประเทศ: "¥ 3,000 → ฿ 702.00"
+  String? _foreignSummary(Account? account) {
+    final foreignAmount = tx.foreignAmount;
+    final foreignCurrency = tx.foreignCurrency;
+    if (foreignAmount == null || foreignCurrency == null) return null;
+    return '${_formatCurrencyAmount(foreignAmount, foreignCurrency)} → '
+        '${_formatCurrencyAmount(tx.amount, account?.currency)}';
   }
 
   String _buildSubLabel(

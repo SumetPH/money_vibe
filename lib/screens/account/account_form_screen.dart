@@ -15,6 +15,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/day_of_month_picker_sheet.dart';
 import '../../utils/currency_utils.dart';
+import '../../widgets/currency_picker_sheet.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
@@ -635,7 +636,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
   void _pickCurrency() {
     if (_selectedType.isPortfolio) return;
 
-    showAccountCurrencyPicker(
+    showCurrencyPickerSheet(
       context,
       selectedCurrency: _selectedCurrency,
       onSelected: (code) => setState(() => _selectedCurrency = code),

@@ -26,7 +26,7 @@ class TransactionConversionController {
 
   /// ตั้งค่าเริ่มต้นจากรายการเดิมที่มีทั้งสองยอด: ให้ rate เป็นช่องที่คำนวณ
   void seedFromAmounts({required double toAmount}) {
-    toController.text = _formatAmount(toAmount, _quote?.toCurrency);
+    _write(toController, _formatAmount(toAmount, _quote?.toCurrency));
     _recentEdits = const [ExchangeField.to, ExchangeField.from];
     _recompute();
   }
@@ -55,6 +55,16 @@ class TransactionConversionController {
           .toList();
     }
     _write(rateController, '');
+    _recompute();
+  }
+
+  /// ใส่ rate ตลาดเป็นค่าตั้งต้น ถ้าผู้ใช้ยังกำหนดค่าไม่ครบสองช่อง
+  /// (นับเป็นช่องที่กำหนดเก่าสุด เพื่อให้ช่องที่ผู้ใช้แก้ล่าสุดยังมีผล)
+  void suggestRate(double rate) {
+    if (_quote == null || _recentEdits.length >= 2) return;
+    if (_recentEdits.contains(ExchangeField.rate)) return;
+    _write(rateController, formatExchangeRate(rate));
+    _recentEdits = [..._recentEdits, ExchangeField.rate];
     _recompute();
   }
 

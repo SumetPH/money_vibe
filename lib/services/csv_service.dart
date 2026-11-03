@@ -360,6 +360,8 @@ class CsvService {
         'date_time',
         'note',
         'to_amount',
+        'foreign_amount',
+        'foreign_currency',
       ],
     ];
 
@@ -374,6 +376,8 @@ class CsvService {
         tx.dateTime.toIso8601String(),
         tx.note ?? '',
         tx.toAmount ?? '',
+        tx.foreignAmount ?? '',
+        tx.foreignCurrency ?? '',
       ]);
     }
 
@@ -770,6 +774,16 @@ class CsvService {
         continue;
       }
 
+      final foreignAmount = row.length > 9
+          ? double.tryParse(row[9]?.toString() ?? '')
+          : null;
+      final rawForeignCurrency = row.length > 10
+          ? row[10]?.toString().trim()
+          : null;
+      final foreignCurrency =
+          rawForeignCurrency == null || rawForeignCurrency.isEmpty
+          ? null
+          : rawForeignCurrency;
       transactions.add(
         AppTransaction(
           id: id,
@@ -788,6 +802,11 @@ class CsvService {
           toAmount: row.length > 8
               ? double.tryParse(row[8]?.toString() ?? '')
               : null,
+          // ต้องมีทั้งยอดและสกุล ไม่งั้นถือว่าไม่มีข้อมูลสกุลต่างประเทศ
+          foreignAmount: foreignAmount != null && foreignCurrency != null
+              ? foreignAmount
+              : null,
+          foreignCurrency: foreignAmount != null ? foreignCurrency : null,
         ),
       );
     }

@@ -21,6 +21,7 @@
 | `showAppDatePicker` (`includeTime` สำหรับวัน+เวลา), `showAppDateRangePicker` | `showDatePicker` / `showDateRangePicker` ของ Material — ใช้ปฏิทิน `calendar_date_picker2` ใน bottom sheet, เดือนภาษาไทย ปี ค.ศ., ปุ่มลัด (วันนี้/เมื่อวาน หรือ 7 วัน/30 วัน/เดือนนี้/เดือนที่แล้ว) | `lib/widgets/app_date_picker_sheet.dart` |
 | `AppMetricText`, `AppYearSelector` | คู่ label/ค่าตัวเลขใน metric grid (label 11sp `w600`, ค่า 13sp `w700`) และแถวลูกศรเลือกปีที่เขียนเองในหน้า | `lib/widgets/app_metric_text.dart`, `app_year_selector.dart` |
 | `AppDataStateView`, `AppLoadingView`, `AppDataErrorView`, `AppRefreshActionButton`, `refreshDataModules` | spinner/skeleton/empty state ระหว่างรอข้อมูลครั้งแรก, หน้า error และ `RefreshIndicator`/`CupertinoSliverRefreshControl`/ปุ่ม refresh ที่เขียนเองในหน้า | `lib/widgets/app_data_state_view.dart`, `app_loading_view.dart` |
+| `showCurrencyPickerSheet` | sheet เลือกสกุลเงินจาก `CurrencyUtils.currencies` (ซ่อนสกุลที่ใช้ไม่ได้ด้วย `excludedCurrencies`) ที่เขียนเองในหน้า | `lib/widgets/currency_picker_sheet.dart` |
 | `AppUserAvatar` | รูปโปรไฟล์ผู้ใช้ (`AuthProvider.avatarUrl`) ทรงสี่เหลี่ยมมุมมน (`AppRadii.large`) ที่เขียนเองในหน้า — ไม่มีรูป/กำลังโหลด/โหลดไม่ได้ใช้ `fallback` | `lib/widgets/app_user_avatar.dart` |
 | `AppShimmerText` | ข้อความสถานะกำลังโหลดที่ทำแสงวิ่ง (`ShaderMask`) เองในหน้า เช่น บรรทัดรองของ header ระหว่าง refresh | `lib/widgets/app_shimmer_text.dart` |
 | `AppColors.*For(isDarkMode)` และ `AppRadii`                           | `Color(0x…)` และ ternary สี dark/light ในหน้า          | `lib/theme/`                              |
@@ -56,7 +57,7 @@ Color tokens ที่ใช้บ่อย: `backgroundFor`, `surfaceFor`, `tex
 Account ครอบคลุมเงินสด/เงินฝาก, บัญชีธนาคาร, บัตรเครดิต, หนี้สิน, ทรัพย์สิน, เงินลงทุน/เงินออม และพอร์ตหุ้น US/ไทย. จัดกลุ่มตาม `AccountGroup` ที่ model กำหนด; ลำดับในหน้ารายการ, picker และ summary อาจต่างกัน. ใช้ `AccountProvider` และ `TransactionProvider` สำหรับยอดเงินจริงและ `SettingsProvider` สำหรับ theme/filter. UI ไม่สร้างสูตรยอดเงินหรืออัตราแลกเปลี่ยนใหม่.
 
 - **ซ่อนบัญชี** ส่งผลต่อการแสดงในรายการหลัก; **ไม่รวมในทรัพย์สินสุทธิ** ส่งผลต่อ net worth; ตัวกรอง net worth เป็นอีกการเลือกหนึ่ง. แสดงคำอธิบายและ control แยกกันเสมอ. บัญชีที่ซ่อนยังอาจถูกนับใน net worth ถ้าไม่ได้ถูก exclude/filter ออก.
-- ยอดบัญชีอาจเป็น THB หรือ USD; แสดงหน่วยชัดเจนที่ตัวเลขและในช่องกรอก. ยอดรวมที่แสดงเป็น THB ต้องใช้ conversion ของระบบ. สีและเครื่องหมายของหนี้/ยอดติดลบต้องตรงกับค่าที่ Provider ส่งมา.
+- ยอดบัญชีเป็นสกุลใดก็ได้ใน `CurrencyUtils.currencies`; แสดงหน่วยชัดเจนที่ตัวเลขและในช่องกรอก โดยจัดรูปแบบด้วย `CurrencyUtils.formatAmount`/`formatWithSymbol` (ทศนิยมตามสกุล). rate แสดงแบบ `ExchangeQuote.label` ("1 [สกุลต่างประเทศ] = x ฿"). ยอดรวมที่แสดงเป็น THB ต้องใช้ conversion ของระบบ. สีและเครื่องหมายของหนี้/ยอดติดลบต้องตรงกับค่าที่ Provider ส่งมา.
 - ชนิดบัญชีกำหนดปลายทางเมื่อเปิดรายการ: พอร์ตไปหน้า Portfolio Detail, บัตรเครดิตไปหน้า Credit Card Bill, ชนิดอื่นไป Transaction List ที่กรอง account. การแก้บัญชีเปิด Account Form โดยยังคง account เดิม.
 
 ## Account: สัญญาของแต่ละ surface

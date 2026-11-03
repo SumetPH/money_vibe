@@ -24,6 +24,7 @@ import 'transaction_conversion_controller.dart';
 import 'transaction_delete_button.dart';
 import 'transaction_form_accounts.dart';
 import 'transaction_keyboard_host.dart';
+import 'transaction_foreign_currency.dart';
 import '../../utils/exchange_rate_utils.dart';
 import '../../utils/user_error_message.dart';
 
@@ -44,7 +45,7 @@ class TransactionFormScreen extends StatefulWidget {
 }
 
 class _TransactionFormScreenState extends State<TransactionFormScreen>
-    with TransactionKeyboardHost {
+    with TransactionKeyboardHost, TransactionForeignCurrencyHost {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _amountFocusNode = FocusNode();
   final _toAmountFocusNode = FocusNode();
@@ -113,8 +114,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
     _amountController.text = (tx != null && tx.amount > 0)
         ? formatAmount(tx.amount)
         : '';
+    if (_supportsForeign(_type) && tx != null && tx.hasForeignAmount) {
+      initForeignCurrency(tx.foreignCurrency);
+    }
     _syncConversionCurrencies();
-    final initialToAmount = tx?.toAmount;
+    final initialToAmount = foreignCurrency != null
+        ? tx?.foreignAmount
+        : tx?.toAmount;
     if (initialToAmount != null && initialToAmount > 0) {
       _conversion.seedFromAmounts(toAmount: initialToAmount);
     }
@@ -166,11 +172,28 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
         ? null
         : accountProvider.findById(_selectedToAccountId!);
     final isExchange = _type == TransactionType.exchange;
+    final foreign = _supportsForeign(_type) ? foreignCurrency : null;
     _conversion.setCurrencies(
-      fromCurrency: isExchange ? from?.currency : null,
-      toCurrency: isExchange ? to?.currency : null,
+      fromCurrency: isExchange || foreign != null ? from?.currency : null,
+      toCurrency: isExchange ? to?.currency : foreign,
     );
     _syncPreviousConversionValues();
+  }
+
+  static bool _supportsForeign(TransactionType type) =>
+      type == TransactionType.expense || type == TransactionType.income;
+
+  @override
+  Account? get foreignSourceAccount => _selectedAccountId == null
+      ? null
+      : context.read<AccountProvider>().findById(_selectedAccountId!);
+
+  @override
+  TransactionConversionController get foreignConversion => _conversion;
+
+  @override
+  void onForeignCurrencyChanged() {
+    _syncConversionCurrencies();
   }
 
   void _syncPreviousConversionValues() {
@@ -303,13 +326,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
       amount = difference.abs();
     }
 
-    if (_type == TransactionType.exchange && _selectedToAccountId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('กรุณาเลือกบัญชีปลายทาง')));
-      return;
-    }
-
     String? toAccountId;
     if (_usesTargetAccount(_type)) {
       toAccountId = _selectedToAccountId;
@@ -317,39 +333,26 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
       toAccountId = _selectedDebtAccountId;
     }
 
-    // cross-currency: ตรวจสอบว่า from/to account ต่างสกุลเงินกัน
-    double? toAmount;
-    if (_usesTargetAccount(_type) && toAccountId != null) {
-      final fromAcc = accountProvider.findById(_selectedAccountId!);
-      final toAcc = accountProvider.findById(toAccountId);
-      final isCrossCurrency =
-          fromAcc != null &&
-          toAcc != null &&
-          fromAcc.currency != toAcc.currency;
-      if (_type == TransactionType.exchange && !isCrossCurrency) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('แลกเงินต้องเป็นบัญชีคนละสกุลเงิน')),
-        );
-        return;
-      }
-      if (_type == TransactionType.transfer && isCrossCurrency) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('โอนได้เฉพาะบัญชีสกุลเดียวกัน ใช้ "แลกเงิน" แทน'),
-          ),
-        );
-        return;
-      }
-      if (_type == TransactionType.exchange) {
-        toAmount = _conversion.toAmount;
-        if (toAmount == null || toAmount <= 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('กรุณากรอกจำนวนที่ได้รับ')),
-          );
-          return;
-        }
-      }
+    // แลกเงินเก็บยอดปลายทางใน toAmount, รายรับ/รายจ่ายสกุลต่างประเทศเก็บใน foreignAmount
+    final activeForeign = _supportsForeign(_type) ? foreignCurrency : null;
+    final conversionError = validateTransactionConversion(
+      type: _type,
+      source: accountProvider.findById(_selectedAccountId!),
+      target: toAccountId == null
+          ? null
+          : accountProvider.findById(toAccountId),
+      foreignCurrency: activeForeign,
+      convertedAmount: _conversion.toAmount,
+    );
+    if (conversionError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(conversionError)));
+      return;
     }
+    final isExchange = _type == TransactionType.exchange;
+    final toAmount = isExchange ? _conversion.toAmount : null;
+    final foreignAmount = activeForeign != null ? _conversion.toAmount : null;
 
     final tx = AppTransaction(
       id: _isEditing ? widget.transaction!.id : txProvider.generateId(),
@@ -363,6 +366,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
           ? null
           : _noteController.text.trim(),
       toAmount: toAmount,
+      foreignAmount: foreignAmount,
+      foreignCurrency: activeForeign,
     );
 
     setState(() => _isLoading = true);
@@ -439,6 +444,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
       }
       _calculateAccountBalance();
     });
+    if (!_supportsForeign(t) && foreignCurrency != null) {
+      setForeignCurrency(null);
+    }
     _syncConversionCurrencies();
   }
 
@@ -584,6 +592,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
                           ? _balanceBeforeAdjustment()
                           : _accountBalance,
                       isDarkMode: isDarkMode,
+                      foreignCurrency: foreignCurrency,
+                      onToggleForeign: toggleForeignCurrency,
+                      onPickForeignCurrency: pickForeignCurrency,
                     ),
                   const SizedBox(height: 18),
 
@@ -697,6 +708,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen>
           _dropInvalidAccountSelections();
         }
       });
+      if (!isTarget && foreignSourceAccount?.currency == foreignCurrency) {
+        setForeignCurrency(null);
+      }
       _syncConversionCurrencies();
       _calculateAccountBalance();
     }

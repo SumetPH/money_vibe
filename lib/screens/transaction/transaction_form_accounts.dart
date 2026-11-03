@@ -55,3 +55,32 @@ List<Account> transactionTargetAccounts(
     _ => candidates,
   };
 }
+
+/// ตรวจข้อมูลการแปลงสกุลก่อนบันทึก; คืนข้อความ error หรือ null
+/// [convertedAmount] คือยอดปลายทางของแลกเงิน หรือยอดสกุลต่างประเทศของรายรับ/รายจ่าย
+String? validateTransactionConversion({
+  required TransactionType type,
+  required Account? source,
+  required Account? target,
+  required String? foreignCurrency,
+  required double? convertedAmount,
+}) {
+  final hasAmount = convertedAmount != null && convertedAmount > 0;
+  final isCrossCurrency =
+      source != null && target != null && source.currency != target.currency;
+  if (type == TransactionType.exchange) {
+    if (target == null) return 'กรุณาเลือกบัญชีปลายทาง';
+    if (!isCrossCurrency) return 'แลกเงินต้องเป็นบัญชีคนละสกุลเงิน';
+    if (!hasAmount) return 'กรุณากรอกจำนวนที่ได้รับ';
+  }
+  if (type == TransactionType.transfer && isCrossCurrency) {
+    return 'โอนได้เฉพาะบัญชีสกุลเดียวกัน ใช้ "แลกเงิน" แทน';
+  }
+  if (foreignCurrency != null) {
+    if (foreignCurrency == source?.currency) {
+      return 'สกุลต่างประเทศต้องไม่ตรงกับสกุลของบัญชี';
+    }
+    if (!hasAmount) return 'กรุณากรอกยอดสกุลต่างประเทศ';
+  }
+  return null;
+}
