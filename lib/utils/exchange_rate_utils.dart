@@ -36,12 +36,9 @@ class ExchangeQuote {
   }
 }
 
-const int _rateMaxDecimals = 6;
+final NumberFormat _rateFormatter = NumberFormat('#,##0.00', 'en_US');
 
-String formatExchangeRate(double rate) {
-  final pattern = '#,##0.${'#' * _rateMaxDecimals}';
-  return NumberFormat(pattern, 'en_US').format(rate);
-}
+String formatExchangeRate(double rate) => _rateFormatter.format(rate);
 
 /// เลื่อน [edited] ขึ้นเป็นช่องล่าสุด และเก็บแค่สองช่องที่ผู้ใช้แก้ล่าสุด
 List<ExchangeField> pushExchangeEdit(
