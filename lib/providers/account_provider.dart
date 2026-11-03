@@ -164,7 +164,7 @@ class AccountProvider extends ChangeNotifier {
       );
 
       // ไม่ await: เรียก API ภายนอก (timeout 10s) ไม่ควรบล็อกการเปิดแอพ
-      if (refreshExchangeRate) unawaited(_refreshUsdExchangeRate());
+      if (refreshExchangeRate) unawaited(_refreshForeignExchangeRates());
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
       rethrow;
@@ -184,19 +184,26 @@ class AccountProvider extends ChangeNotifier {
     return _load(refreshExchangeRate: false);
   }
 
-  /// Fetch USD/THB rate และ update เฉพาะ USD accounts ที่มี autoUpdateRate == true
-  Future<void> _refreshUsdExchangeRate() async {
-    final usdAccounts = _accounts
-        .where((a) => a.currency == 'USD' && a.autoUpdateRate)
-        .toList();
-    if (usdAccounts.isEmpty) return;
+  /// Fetch rate เทียบ THB และ update ทุกบัญชีสกุลต่างประเทศที่ autoUpdateRate == true
+  /// ดึงครั้งเดียวต่อสกุล แม้มีหลายบัญชีสกุลเดียวกัน
+  Future<void> _refreshForeignExchangeRates() async {
+    final currencies = _accounts
+        .where((a) => a.isForeignCurrency && a.autoUpdateRate)
+        .map((a) => a.currency)
+        .toSet();
+    await Future.wait(currencies.map(_refreshExchangeRateFor));
+  }
 
+  Future<void> _refreshExchangeRateFor(String currency) async {
     try {
-      final rate = await const ExchangeRateService().fetchUsdThbRate();
-      debugPrint('AccountProvider: USD/THB rate fetched: $rate');
-      // fetch ครั้งเดียว แล้ว apply ให้ทุก USD account
+      final rate = await const ExchangeRateService().fetchRateToThb(currency);
+      debugPrint('AccountProvider: $currency/THB rate fetched: $rate');
       // อ่าน account ล่าสุดจาก _accounts เพราะอาจถูก reload ระหว่างรอ API
-      for (final acc in usdAccounts) {
+      final targets = _accounts
+          .where((a) => a.currency == currency && a.autoUpdateRate)
+          .toList();
+      if (targets.isEmpty) return;
+      for (final acc in targets) {
         final idx = _accounts.indexWhere((a) => a.id == acc.id);
         if (idx != -1) {
           _accounts[idx] = _accounts[idx].copyWith(exchangeRate: rate);
@@ -204,13 +211,13 @@ class AccountProvider extends ChangeNotifier {
       }
       notifyListeners();
       await Future.wait(
-        usdAccounts.map(
+        targets.map(
           (acc) => _db.updateAccountExchangeRate(acc.id, exchangeRate: rate),
         ),
       );
     } catch (e) {
       // Silently fail — ใช้ rate เก่าต่อไป (offline-safe)
-      debugPrint('AccountProvider: Failed to fetch USD/THB rate: $e');
+      debugPrint('AccountProvider: Failed to fetch $currency/THB rate: $e');
     }
   }
 
@@ -611,6 +618,13 @@ class AccountProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+    _refreshRateIfAuto(updated);
+  }
+
+  void _refreshRateIfAuto(Account account) {
+    if (account.isForeignCurrency && account.autoUpdateRate) {
+      unawaited(_refreshExchangeRateFor(account.currency));
+    }
   }
 
   Future<void> updateAccount(Account updated) async {
@@ -630,6 +644,10 @@ class AccountProvider extends ChangeNotifier {
       _accounts[idx] = oldAccount;
       notifyListeners();
       rethrow;
+    }
+    // ดึง rate ใหม่เฉพาะตอนเปลี่ยนสกุลหรือเพิ่งเปิด auto-update
+    if (oldAccount.currency != updated.currency || !oldAccount.autoUpdateRate) {
+      _refreshRateIfAuto(updated);
     }
   }
 

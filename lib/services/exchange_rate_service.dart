@@ -10,9 +10,13 @@ class ExchangeRateService {
   const ExchangeRateService();
 
   /// ดึงอัตราแลกเปลี่ยน USD/THB ล่าสุด
-  Future<double> fetchUsdThbRate() async {
+  Future<double> fetchUsdThbRate() => fetchRateToThb('USD');
+
+  /// ดึงอัตราแลกเปลี่ยนล่าสุด: 1 [currency] = x THB
+  Future<double> fetchRateToThb(String currency) async {
+    if (currency == 'THB') return 1.0;
     final uri = Uri.https(_frankfurterHost, '/v1/latest', {
-      'base': 'USD',
+      'base': currency,
       'symbols': 'THB',
     });
     final response = await http.get(uri).timeout(_requestTimeout);

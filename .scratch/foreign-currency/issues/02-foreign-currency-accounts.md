@@ -4,11 +4,16 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] registry มีสกุล THB, USD, JPY, EUR, GBP, CNY, KRW, SGD โดย JPY/KRW ไม่มีทศนิยม
-- [ ] ตัวเลือกสกุลตอนสร้างหรือแก้บัญชีแสดงทุกสกุลใน registry
-- [ ] ดึง rate เทียบ THB ได้ทุกสกุล และดึงครั้งเดียวต่อสกุลแม้มีหลายบัญชี
-- [ ] ทุกบัญชีที่ไม่ใช่ THB และเปิด auto-update ได้ rate ใหม่ ถ้าดึงไม่สำเร็จให้ใช้ rate เดิมต่อ
-- [ ] ยอดบัญชีและ net worth แสดงถูกต้องตามจำนวนทศนิยมของแต่ละสกุล
-- [ ] `dart format .` และ `tool/check_design.sh` ผ่าน
+- [x] registry มีสกุล THB, USD, JPY, EUR, GBP, CNY, KRW, SGD โดย JPY/KRW ไม่มีทศนิยม
+- [x] ตัวเลือกสกุลตอนสร้างหรือแก้บัญชีแสดงทุกสกุลใน registry
+- [x] ดึง rate เทียบ THB ได้ทุกสกุล และดึงครั้งเดียวต่อสกุลแม้มีหลายบัญชี
+- [x] ทุกบัญชีที่ไม่ใช่ THB และเปิด auto-update ได้ rate ใหม่ ถ้าดึงไม่สำเร็จให้ใช้ rate เดิมต่อ
+- [x] ยอดบัญชีและ net worth แสดงถูกต้องตามจำนวนทศนิยมของแต่ละสกุล
+- [x] `dart format .` และ `tool/check_design.sh` ผ่าน
+
+
+## Comments
+
+- เพิ่ม 6 สกุลใน registry, `ExchangeRateService.fetchRateToThb`, `AccountProvider` refresh ทุกสกุลต่างประเทศ (ครั้งเดียวต่อสกุล) ตอนโหลด และหลังสร้างบัญชี/เปลี่ยนสกุล/เปิด auto-update; ยอดคงเหลือในฟอร์มรายการแสดงตามสกุลของบัญชี; ฟอร์มบัญชีแสดงส่วน "อัตราแลกเปลี่ยน" สำหรับทุกสกุลต่างประเทศ

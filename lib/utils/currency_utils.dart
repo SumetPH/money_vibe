@@ -20,6 +20,17 @@ class CurrencyUtils {
   static const List<CurrencyInfo> currencies = [
     CurrencyInfo(code: 'THB', symbol: '฿', name: 'บาทไทย'),
     CurrencyInfo(code: 'USD', symbol: '\$', name: 'US Dollar'),
+    CurrencyInfo(code: 'JPY', symbol: '¥', name: 'Japanese Yen', decimals: 0),
+    CurrencyInfo(code: 'EUR', symbol: '€', name: 'Euro'),
+    CurrencyInfo(code: 'GBP', symbol: '£', name: 'British Pound'),
+    CurrencyInfo(code: 'CNY', symbol: 'CN¥', name: 'Chinese Yuan'),
+    CurrencyInfo(
+      code: 'KRW',
+      symbol: '₩',
+      name: 'South Korean Won',
+      decimals: 0,
+    ),
+    CurrencyInfo(code: 'SGD', symbol: 'S\$', name: 'Singapore Dollar'),
   ];
 
   static CurrencyInfo info(String code) => currencies.firstWhere(
