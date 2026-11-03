@@ -32,9 +32,7 @@ List<Account> transactionSourceAccounts(
                 a.type == AccountType.debt,
           )
           .toList(),
-    TransactionType.exchange =>
-      visibleAccounts.where((a) => !a.isPortfolio).toList(),
-    TransactionType.transfer => visibleAccounts,
+    TransactionType.transfer || TransactionType.exchange => visibleAccounts,
   };
 }
 

@@ -4,10 +4,17 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] ฟอร์มแลกเงินเลือกพอร์ตหุ้น US เป็นต้นทางหรือปลายทางได้
-- [ ] migration ใหม่แก้ trigger ที่ sync เงินสดในพอร์ตให้ทำงานกับ `exchange` ด้วย และยังตรวจว่ายอด USD ต้องเป็นบวก
-- [ ] การคำนวณเงินเข้าพอร์ตสะสมและ net worth นับ `exchange`
-- [ ] apply migration ด้วย `supabase db push`
-- [ ] `dart format .` และ `tool/check_design.sh` ผ่าน
+- [x] ฟอร์มแลกเงินเลือกพอร์ตหุ้น US เป็นต้นทางหรือปลายทางได้
+- [x] migration ใหม่แก้ trigger ที่ sync เงินสดในพอร์ตให้ทำงานกับ `exchange` ด้วย และยังตรวจว่ายอด USD ต้องเป็นบวก
+- [x] การคำนวณเงินเข้าพอร์ตสะสมและ net worth นับ `exchange`
+- [x] apply migration ด้วย `supabase db push`
+- [x] `dart format .` และ `tool/check_design.sh` ผ่าน
+
+
+## Comments
+
+- migration `20261103130000_sync_exchange_portfolio_cash.sql` ให้ trigger รับทั้ง transfer และ exchange (ยังไม่ได้ `supabase db push`); ฟอร์มแลกเงินเลือกพอร์ตได้
+- การคำนวณเงินเข้าพอร์ตและ net worth ใช้ `usesDestinationAccount` อยู่แล้ว จึงนับ exchange โดยอัตโนมัติ
+- trigger เดิม sync เงินสดเฉพาะการเติมเข้าพอร์ต (THB → US) การถอนออกจากพอร์ตยังไม่ปรับ cash_balance อัตโนมัติเหมือนพฤติกรรมเดิม
