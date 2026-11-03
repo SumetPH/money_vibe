@@ -43,7 +43,7 @@ AccountTotals buildAccountTotals({
 
   double toThb(Account account) {
     final balance = balancesByAccountId[account.id] ?? 0;
-    return account.currency == 'USD' ? balance * account.exchangeRate : balance;
+    return account.toBaseAmount(balance);
   }
 
   final groupTotals = <String, double>{};

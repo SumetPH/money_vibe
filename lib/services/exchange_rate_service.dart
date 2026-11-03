@@ -10,19 +10,30 @@ class ExchangeRateService {
   const ExchangeRateService();
 
   /// ดึงอัตราแลกเปลี่ยน USD/THB ล่าสุด
-  Future<double> fetchUsdThbRate() async {
+  Future<double> fetchUsdThbRate() => fetchRateToThb('USD');
+
+  /// ดึงอัตราแลกเปลี่ยนล่าสุด: 1 [currency] = x THB
+  Future<double> fetchRateToThb(String currency) =>
+      fetchRate(base: currency, quote: 'THB');
+
+  /// ดึงอัตราแลกเปลี่ยนล่าสุด: 1 [base] = x [quote]
+  Future<double> fetchRate({
+    required String base,
+    required String quote,
+  }) async {
+    if (base == quote) return 1.0;
     final uri = Uri.https(_frankfurterHost, '/v1/latest', {
-      'base': 'USD',
-      'symbols': 'THB',
+      'base': base,
+      'symbols': quote,
     });
     final response = await http.get(uri).timeout(_requestTimeout);
     if (response.statusCode != 200) {
       throw Exception('Exchange rate API ตอบกลับ ${response.statusCode}');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final rate = (data['rates']?['THB'] as num?)?.toDouble();
+    final rate = (data['rates']?[quote] as num?)?.toDouble();
     if (rate == null || rate <= 0) {
-      throw Exception('ไม่พบอัตราแลกเปลี่ยน THB');
+      throw Exception('ไม่พบอัตราแลกเปลี่ยน $quote');
     }
     return rate;
   }

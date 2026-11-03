@@ -360,6 +360,8 @@ class CsvService {
         'date_time',
         'note',
         'to_amount',
+        'foreign_amount',
+        'foreign_currency',
       ],
     ];
 
@@ -374,6 +376,8 @@ class CsvService {
         tx.dateTime.toIso8601String(),
         tx.note ?? '',
         tx.toAmount ?? '',
+        tx.foreignAmount ?? '',
+        tx.foreignCurrency ?? '',
       ]);
     }
 
@@ -743,6 +747,12 @@ class CsvService {
     final existingAccountIds = await _dbManager.repository
         .getExistingAccountIds();
 
+    // โอนข้ามสกุลจาก backup เก่าต้องเป็นแลกเงิน (transfer ใช้ได้เฉพาะสกุลเดียวกัน)
+    final accountCurrencies = {
+      for (final account in await _dbManager.repository.getAccounts())
+        account.id: account.currency,
+    };
+
     debugPrint('CSV Import: Found ${existingIds.length} existing transactions');
     debugPrint(
       'CSV Import: Found ${existingAccountIds.length} existing accounts',
@@ -770,24 +780,52 @@ class CsvService {
         continue;
       }
 
+      final toAccountId = row[5]?.toString().isEmpty == true
+          ? null
+          : row[5]?.toString();
+      final parsedType = parseTransactionType(row[1]?.toString());
+      final isCrossCurrency =
+          toAccountId != null &&
+          accountCurrencies[toAccountId] != null &&
+          accountCurrencies[toAccountId] != accountCurrencies[accountId];
+      final type = parsedType == TransactionType.transfer && isCrossCurrency
+          ? TransactionType.exchange
+          : parsedType;
+      final parsedForeignAmount = row.length > 9
+          ? double.tryParse(row[9]?.toString() ?? '')
+          : null;
+      final foreignAmount =
+          parsedForeignAmount != null && parsedForeignAmount > 0
+          ? parsedForeignAmount
+          : null;
+      final rawForeignCurrency = row.length > 10
+          ? row[10]?.toString().trim()
+          : null;
+      final foreignCurrency =
+          rawForeignCurrency == null || rawForeignCurrency.isEmpty
+          ? null
+          : rawForeignCurrency;
       transactions.add(
         AppTransaction(
           id: id,
-          type: parseTransactionType(row[1]?.toString()),
+          type: type,
           amount: double.tryParse(row[2]?.toString() ?? '0') ?? 0,
           accountId: accountId,
           categoryId: row[4]?.toString().isEmpty == true
               ? null
               : row[4]?.toString(),
-          toAccountId: row[5]?.toString().isEmpty == true
-              ? null
-              : row[5]?.toString(),
+          toAccountId: toAccountId,
           dateTime:
               DateTime.tryParse(row[6]?.toString() ?? '') ?? DateTime.now(),
           note: row[7]?.toString(),
           toAmount: row.length > 8
               ? double.tryParse(row[8]?.toString() ?? '')
               : null,
+          // ต้องมีทั้งยอดและสกุล ไม่งั้นถือว่าไม่มีข้อมูลสกุลต่างประเทศ
+          foreignAmount: foreignAmount != null && foreignCurrency != null
+              ? foreignAmount
+              : null,
+          foreignCurrency: foreignAmount != null ? foreignCurrency : null,
         ),
       );
     }

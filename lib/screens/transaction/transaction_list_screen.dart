@@ -708,7 +708,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         tx.toAccountId == widget.accountId) {
       displayAmount = tx.amount;
       amountInThb = tx.amount * toRate;
-    } else if (tx.type == TransactionType.transfer) {
+    } else if (tx.type.movesBetweenAccounts) {
       if (tx.accountId == widget.accountId) {
         displayAmount = -tx.amount;
         amountInThb = -tx.amount * rate;

@@ -28,6 +28,7 @@ class TransactionTypeSegmentedControl extends StatelessWidget {
         selectedType == TransactionType.transfer;
 
     final otherLabel = switch (selectedType) {
+      TransactionType.exchange => 'แลกเงิน ▾',
       TransactionType.debtRepay => 'ชำระหนี้ ▾',
       TransactionType.debtTransfer => 'โอนหนี้ ▾',
       TransactionType.increaseBalance => 'ปรับเพิ่ม ▾',
@@ -155,6 +156,11 @@ void showTransactionTypePicker(
       return (
         Icons.swap_horiz_rounded,
         isDarkMode ? AppColors.darkTransfer : AppColors.transfer,
+      );
+    case TransactionType.exchange:
+      return (
+        Icons.currency_exchange_rounded,
+        AppColors.exchangeFor(isDarkMode),
       );
     case TransactionType.debtRepay:
       return (

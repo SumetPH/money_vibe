@@ -219,8 +219,8 @@ class TransactionProvider extends ChangeNotifier {
   void _refreshTransferAccounts(AppTransaction tx, {AppTransaction? previous}) {
     final refresh = onTransferChanged;
     if (refresh == null ||
-        (tx.type != TransactionType.transfer &&
-            previous?.type != TransactionType.transfer)) {
+        (!tx.type.movesBetweenAccounts &&
+            previous?.type.movesBetweenAccounts != true)) {
       return;
     }
     // Refresh in the background so saving never waits on the account reload;
