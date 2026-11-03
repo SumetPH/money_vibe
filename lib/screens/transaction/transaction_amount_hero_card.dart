@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../utils/currency_utils.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/calculator_text_field_config.dart';
 
@@ -44,8 +44,10 @@ class TransactionAmountHeroCard extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
 
-    final fromCurrency = selectedAccount?.currency == 'USD' ? 'USD' : 'THB';
-    final toCurrency = selectedToAccount?.currency == 'USD' ? 'USD' : 'THB';
+    final fromCurrency =
+        selectedAccount?.currency ?? CurrencyUtils.baseCurrency;
+    final toCurrency =
+        selectedToAccount?.currency ?? CurrencyUtils.baseCurrency;
     final isCrossCurrency =
         type == TransactionType.transfer &&
         selectedAccount != null &&
@@ -137,7 +139,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    fromCurrency == 'USD' ? '\$ ' : '฿ ',
+                    '${CurrencyUtils.getCurrencySymbol(fromCurrency)} ',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
@@ -241,7 +243,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      toCurrency == 'USD' ? '\$ ' : '฿ ',
+                      '${CurrencyUtils.getCurrencySymbol(toCurrency)} ',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
@@ -316,7 +318,10 @@ class TransactionAmountHeroCard extends StatelessWidget {
                       Text(
                         selectedAccount == null
                             ? '—'
-                            : '${fromCurrency == 'USD' ? '\$' : '฿'} ${NumberFormat('#,##0.00').format(accountBalance)}',
+                            : CurrencyUtils.formatWithSymbol(
+                                accountBalance,
+                                fromCurrency,
+                              ),
                         style: TextStyle(
                           color: textPrimary,
                           fontSize: 14,
@@ -356,7 +361,7 @@ class TransactionAmountHeroCard extends StatelessWidget {
                                   ? (type.isIncreaseBalance
                                         ? 'กรอกยอดที่สูงกว่ายอดก่อนปรับ'
                                         : 'กรอกยอดที่ต่ำกว่ายอดก่อนปรับ')
-                                  : '${difference >= 0 ? 'ปรับเพิ่ม' : 'ปรับลด'} ${fromCurrency == 'USD' ? '\$' : '฿'} ${NumberFormat('#,##0.00').format(difference.abs())}'),
+                                  : '${difference >= 0 ? 'ปรับเพิ่ม' : 'ปรับลด'} ${CurrencyUtils.formatWithSymbol(difference.abs(), fromCurrency)}'),
                           style: TextStyle(
                             color: error == null
                                 ? textSecondary

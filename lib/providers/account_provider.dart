@@ -559,11 +559,7 @@ class AccountProvider extends ChangeNotifier {
     final account = findById(accountId);
     if (account == null) return 0;
     final balance = getBalance(accountId, transactions);
-    // USD accounts convert with exchangeRate; THB portfolios already stay in THB
-    if (account.currency == 'USD') {
-      return balance * account.exchangeRate;
-    }
-    return balance;
+    return account.toBaseAmount(balance);
   }
 
   double getTotalNetWorth(

@@ -4,7 +4,7 @@ import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../main.dart';
+import '../../utils/currency_utils.dart';
 import '../../providers/category_provider.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -83,12 +83,12 @@ class TransactionListItem extends StatelessWidget {
         : AppColors.getAmountColor(displayAmount, isDarkMode);
     final amountText =
         (tx.type == TransactionType.transfer && viewingAccountId == null)
-        ? '฿ ${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
+        ? _formatCurrencyAmount(tx.amount, account?.currency)
         : '${displayAmount < 0
               ? '-'
               : displayAmount > 0
               ? '+'
-              : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
+              : ''}${_formatCurrencyAmount(displayAmount.abs(), currency)}';
 
     return InkWell(
       onTap: onTap,
@@ -367,4 +367,10 @@ class TransactionListItem extends StatelessWidget {
       ),
     );
   }
+
+  String _formatCurrencyAmount(double amount, String? currency) =>
+      CurrencyUtils.formatWithSymbol(
+        amount,
+        currency ?? CurrencyUtils.baseCurrency,
+      );
 }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+import '../utils/currency_utils.dart';
 import 'calculator_text_field_config.dart';
 
 /// การ์ดกรอกจำนวนเงินหลักของฟอร์ม: สัญลักษณ์สกุลเงินใช้สีตามประเภทรายการ
@@ -79,7 +80,7 @@ class AppAmountHeroCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    currencyCode == 'USD' ? '\$ ' : '฿ ',
+                    '${CurrencyUtils.getCurrencySymbol(currencyCode)} ',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,

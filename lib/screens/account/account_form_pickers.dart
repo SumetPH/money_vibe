@@ -116,9 +116,9 @@ void showAccountCurrencyPicker(
                 SliverList(
                   delegate: SliverChildBuilderDelegate((_, i) {
                     final currency = CurrencyUtils.currencies[i];
-                    final code = currency['code']!;
-                    final symbol = currency['symbol']!;
-                    final name = currency['name']!;
+                    final code = currency.code;
+                    final symbol = currency.symbol;
+                    final name = currency.name;
                     final selected = code == selectedCurrency;
                     return ListTile(
                       tileColor: surfaceColor,

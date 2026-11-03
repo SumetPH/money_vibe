@@ -4,6 +4,7 @@ import '../../models/account.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../utils/currency_utils.dart';
 import '../../main.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_status_chip.dart';
@@ -112,7 +113,7 @@ class AccountListItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '฿ ${formatAmount(account.currency == 'USD' ? balance * account.exchangeRate : balance)}',
+                        '฿ ${formatAmount(account.toBaseAmount(balance))}',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -120,8 +121,8 @@ class AccountListItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        account.currency == 'USD'
-                            ? '${formatAmount(balance)} USD'
+                        account.isForeignCurrency
+                            ? '${CurrencyUtils.formatAmount(balance, account.currency)} ${account.currency}'
                             : 'THB',
                         style: TextStyle(
                           fontSize: 12,

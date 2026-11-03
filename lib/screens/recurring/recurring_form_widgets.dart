@@ -3,6 +3,7 @@ import '../../models/transaction.dart';
 import '../../models/account.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../utils/currency_utils.dart';
 import '../../widgets/app_amount_hero_card.dart';
 import '../../widgets/app_form_row.dart';
 import '../../widgets/app_segmented_tabs.dart';
@@ -90,7 +91,7 @@ class RecurringAmountHeroCard extends StatelessWidget {
       controller: amountController,
       focusNode: amountFocusNode,
       accentColor: typeColor,
-      currencyCode: selectedAccount?.currency == 'USD' ? 'USD' : 'THB',
+      currencyCode: selectedAccount?.currency ?? CurrencyUtils.baseCurrency,
     );
   }
 }
