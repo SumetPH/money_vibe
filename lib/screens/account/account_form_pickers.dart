@@ -6,7 +6,6 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
-import '../../utils/currency_utils.dart';
 
 final List<AccountType> _accountTypes = AccountType.values
     .where((t) => AppConfig.showStockFeatures || !t.isPortfolio)
@@ -71,77 +70,6 @@ void showAccountTypePicker(
                       );
                     },
                   ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
-void showAccountCurrencyPicker(
-  BuildContext context, {
-  required String selectedCurrency,
-  required ValueChanged<String> onSelected,
-}) {
-  showAppModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, _) {
-        final isDarkMode = settingsProvider.isDarkMode;
-        final surfaceColor = isDarkMode
-            ? AppColors.darkSurface
-            : AppColors.surface;
-        final textPrimaryColor = isDarkMode
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary;
-        final textSecondaryColor = isDarkMode
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary;
-        final headerColor = isDarkMode
-            ? AppColors.darkIncome
-            : AppColors.header;
-
-        return AppDraggableSheet(
-          builder: (context, scrollController) => SafeArea(
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: AppModalBottomSheetHeader(title: 'เลือกสกุลเงิน'),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((_, i) {
-                    final currency = CurrencyUtils.currencies[i];
-                    final code = currency['code']!;
-                    final symbol = currency['symbol']!;
-                    final name = currency['name']!;
-                    final selected = code == selectedCurrency;
-                    return ListTile(
-                      tileColor: surfaceColor,
-                      title: Text(
-                        '$code - $name',
-                        style: TextStyle(color: textPrimaryColor, fontSize: 15),
-                      ),
-                      subtitle: Text(
-                        'สัญลักษณ์: $symbol',
-                        style: TextStyle(
-                          color: textSecondaryColor,
-                          fontSize: 13,
-                        ),
-                      ),
-                      trailing: selected
-                          ? Icon(Icons.check, color: headerColor)
-                          : null,
-                      onTap: () {
-                        onSelected(code);
-                        Navigator.pop(context);
-                      },
-                    );
-                  }, childCount: CurrencyUtils.currencies.length),
                 ),
               ],
             ),

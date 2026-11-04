@@ -15,6 +15,7 @@ import '../../theme/app_radii.dart';
 import '../../main.dart';
 import '../../widgets/day_of_month_picker_sheet.dart';
 import '../../utils/currency_utils.dart';
+import '../../widgets/currency_picker_sheet.dart';
 import '../../widgets/app_bar_buttons.dart';
 import '../../widgets/app_inset_card.dart';
 import '../../widgets/app_confirm_dialog.dart';
@@ -57,6 +58,8 @@ class _AccountFormScreenState extends State<AccountFormScreen>
   String get _effectiveSelectedCurrency => _selectedType.isPortfolio
       ? _selectedType.defaultCurrency
       : _selectedCurrency;
+  bool get _isForeignCurrencySelected =>
+      !CurrencyUtils.isBase(_effectiveSelectedCurrency);
   bool _isDarkMode = false;
   bool _isLoading = false;
 
@@ -100,7 +103,9 @@ class _AccountFormScreenState extends State<AccountFormScreen>
       _initialBalanceController.text = acc != null
           ? formatAmount(acc.initialBalance)
           : '';
-      _exchangeRateController.text = '1';
+      _exchangeRateController.text = acc != null && acc.isForeignCurrency
+          ? acc.exchangeRate.toString()
+          : '1';
     }
 
     attachCalculatorKeyboard();
@@ -148,7 +153,8 @@ class _AccountFormScreenState extends State<AccountFormScreen>
         .trim();
     final balanceValue = double.tryParse(balanceText) ?? 0;
     final effectiveCurrency = _effectiveSelectedCurrency;
-    final exchangeRate = effectiveCurrency == 'USD'
+    final isForeignCurrency = !CurrencyUtils.isBase(effectiveCurrency);
+    final exchangeRate = isForeignCurrency
         ? double.tryParse(_exchangeRateController.text.trim()) ?? 1.0
         : 1.0;
 
@@ -159,7 +165,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
         ? -balanceValue.abs()
         : balanceValue;
     final cashBalance = isPortfolio ? balanceValue : 0.0;
-    final autoUpdateRate = effectiveCurrency == 'USD' && _autoUpdateRate;
+    final autoUpdateRate = isForeignCurrency && _autoUpdateRate;
 
     final provider = context.read<AccountProvider>();
 
@@ -424,21 +430,23 @@ class _AccountFormScreenState extends State<AccountFormScreen>
                     ],
                   ),
 
-                  // 4. พอร์ตการลงทุน (USD only or portfolio)
-                  if (_effectiveSelectedCurrency == 'USD' ||
+                  // 4. อัตราแลกเปลี่ยน (สกุลต่างประเทศ หรือพอร์ต)
+                  if (_isForeignCurrencySelected ||
                       _selectedType.isPortfolio) ...[
                     AppSectionHeader(
-                      'พอร์ตการลงทุน',
+                      _selectedType.isPortfolio
+                          ? 'พอร์ตการลงทุน'
+                          : 'อัตราแลกเปลี่ยน',
                       padding: EdgeInsets.fromLTRB(4, 16, 4, 6),
                     ),
                     AppInsetCard(
                       margin: EdgeInsets.zero,
                       children: [
-                        if (_effectiveSelectedCurrency == 'USD') ...[
+                        if (_isForeignCurrencySelected) ...[
                           buildAccountSwitchRow(
                             label: 'อัปเดตอัตราแลกเปลี่ยนอัตโนมัติ',
                             subtitle:
-                                'ดึงอัตราแลกเปลี่ยน USD/THB จากระบบโดยอัตโนมัติ',
+                                'ดึงอัตราแลกเปลี่ยน $_effectiveSelectedCurrency/THB จากระบบโดยอัตโนมัติ',
                             value: _autoUpdateRate,
                             onChanged: (v) =>
                                 setState(() => _autoUpdateRate = v),
@@ -449,6 +457,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
                             const AppCardDivider(),
                             buildAccountExchangeRateField(
                               exchangeRateController: _exchangeRateController,
+                              currency: _effectiveSelectedCurrency,
                               textPrimaryColor: textPrimaryColor,
                               textSecondaryColor: textSecondaryColor,
                             ),
@@ -627,7 +636,7 @@ class _AccountFormScreenState extends State<AccountFormScreen>
   void _pickCurrency() {
     if (_selectedType.isPortfolio) return;
 
-    showAccountCurrencyPicker(
+    showCurrencyPickerSheet(
       context,
       selectedCurrency: _selectedCurrency,
       onSelected: (code) => setState(() => _selectedCurrency = code),

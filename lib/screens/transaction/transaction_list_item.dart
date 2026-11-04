@@ -4,7 +4,8 @@ import '../../models/account.dart';
 import '../../providers/account_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../main.dart';
+import '../../utils/currency_utils.dart';
+import '../../utils/exchange_rate_utils.dart';
 import '../../providers/category_provider.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
@@ -49,7 +50,7 @@ class TransactionListItem extends StatelessWidget {
               tx.type == TransactionType.debtTransfer) &&
           tx.toAccountId == viewingAccountId) {
         displayAmount = tx.amount;
-      } else if (tx.type == TransactionType.transfer) {
+      } else if (tx.type.movesBetweenAccounts) {
         if (tx.accountId == viewingAccountId) {
           displayAmount = -tx.amount;
         } else if (tx.toAccountId == viewingAccountId) {
@@ -72,23 +73,28 @@ class TransactionListItem extends StatelessWidget {
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
     final note = tx.note?.trim();
-    final subLabel = _buildSubLabel(category?.name, note);
+    final subLabel = _buildSubLabel(
+      category?.name,
+      note,
+      exchangeSummary:
+          _exchangeSummary(account, toAccount) ?? _foreignSummary(account),
+    );
     final amountColor =
-        (tx.type == TransactionType.transfer && viewingAccountId == null)
-        ? (isDarkMode ? AppColors.darkTransfer : AppColors.transfer)
+        (tx.type.movesBetweenAccounts && viewingAccountId == null)
+        ? typeColor
         : (tx.type == TransactionType.debtRepay && viewingAccountId == null)
         ? (isDarkMode ? AppColors.darkExpense : AppColors.expense)
         : (tx.type == TransactionType.debtTransfer && viewingAccountId == null)
         ? (isDarkMode ? AppColors.darkDebtTransfer : AppColors.debtTransfer)
         : AppColors.getAmountColor(displayAmount, isDarkMode);
     final amountText =
-        (tx.type == TransactionType.transfer && viewingAccountId == null)
-        ? '฿ ${formatAmount(tx.amount)}${account?.currency == 'THB' ? '' : ' ${account?.currency ?? ''}'}'
+        (tx.type.movesBetweenAccounts && viewingAccountId == null)
+        ? _formatCurrencyAmount(tx.amount, account?.currency)
         : '${displayAmount < 0
               ? '-'
               : displayAmount > 0
               ? '+'
-              : ''}฿ ${formatAmount(displayAmount.abs())}${currency == 'THB' ? '' : ' ${currency ?? ''}'}';
+              : ''}${_formatCurrencyAmount(displayAmount.abs(), currency)}';
 
     return InkWell(
       onTap: onTap,
@@ -111,6 +117,8 @@ class TransactionListItem extends StatelessWidget {
                     ? Icons.account_tree
                     : tx.type == TransactionType.transfer
                     ? Icons.swap_horiz
+                    : tx.type == TransactionType.exchange
+                    ? Icons.currency_exchange
                     : tx.type == TransactionType.debtRepay
                     ? Icons.payment
                     : (category?.icon ?? Icons.receipt),
@@ -174,6 +182,8 @@ class TransactionListItem extends StatelessWidget {
           return AppColors.darkExpense;
         case TransactionType.transfer:
           return AppColors.darkTransfer;
+        case TransactionType.exchange:
+          return AppColors.darkExchange;
         case TransactionType.debtRepay:
           return AppColors.darkDebtRepay;
         case TransactionType.debtTransfer:
@@ -191,6 +201,8 @@ class TransactionListItem extends StatelessWidget {
         return AppColors.expense;
       case TransactionType.transfer:
         return AppColors.transfer;
+      case TransactionType.exchange:
+        return AppColors.exchange;
       case TransactionType.debtRepay:
         return AppColors.debtRepay;
       case TransactionType.debtTransfer:
@@ -283,8 +295,42 @@ class TransactionListItem extends StatelessWidget {
     );
   }
 
-  String _buildSubLabel(String? categoryName, String? note) {
+  /// แลกเงิน: "ได้ ¥ 42,700 • 1 JPY = 0.2342 ฿"
+  String? _exchangeSummary(Account? account, Account? toAccount) {
+    final toAmount = tx.toAmount;
+    if (tx.type != TransactionType.exchange ||
+        account == null ||
+        toAccount == null ||
+        toAmount == null ||
+        toAmount <= 0 ||
+        tx.amount <= 0) {
+      return null;
+    }
+    final quote = ExchangeQuote(
+      fromCurrency: account.currency,
+      toCurrency: toAccount.currency,
+    );
+    final rate = quote.rateOf(fromAmount: tx.amount, toAmount: toAmount);
+    return 'ได้ ${_formatCurrencyAmount(toAmount, toAccount.currency)} • '
+        '${quote.label(rate)}';
+  }
+
+  /// รายรับ/รายจ่ายสกุลต่างประเทศ: "¥ 3,000 → ฿ 702.00"
+  String? _foreignSummary(Account? account) {
+    final foreignAmount = tx.foreignAmount;
+    final foreignCurrency = tx.foreignCurrency;
+    if (foreignAmount == null || foreignCurrency == null) return null;
+    return '${_formatCurrencyAmount(foreignAmount, foreignCurrency)} → '
+        '${_formatCurrencyAmount(tx.amount, account?.currency)}';
+  }
+
+  String _buildSubLabel(
+    String? categoryName,
+    String? note, {
+    String? exchangeSummary,
+  }) {
     final parts = <String>[
+      ?exchangeSummary,
       if (categoryName != null && categoryName.isNotEmpty) categoryName,
       if (note != null && note.isNotEmpty) note,
     ];
@@ -367,4 +413,10 @@ class TransactionListItem extends StatelessWidget {
       ),
     );
   }
+
+  String _formatCurrencyAmount(double amount, String? currency) =>
+      CurrencyUtils.formatWithSymbol(
+        amount,
+        currency ?? CurrencyUtils.baseCurrency,
+      );
 }

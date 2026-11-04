@@ -279,6 +279,7 @@ Widget buildAccountDayPickerRow({
 
 Widget buildAccountExchangeRateField({
   required TextEditingController exchangeRateController,
+  required String currency,
   required Color textPrimaryColor,
   required Color textSecondaryColor,
 }) {
@@ -301,7 +302,7 @@ Widget buildAccountExchangeRateField({
         ),
         const SizedBox(width: 12),
         Text(
-          'USD / THB',
+          '$currency / THB',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
@@ -358,7 +359,7 @@ Widget buildAccountHeroBalanceCard({
 }) {
   final isPortfolio = selectedType.isPortfolio;
   final isDebt = selectedType == AccountType.debt;
-  final currencyText = effectiveSelectedCurrency == 'USD' ? 'USD' : 'THB';
+  final currencyText = effectiveSelectedCurrency;
 
   return Container(
     decoration: BoxDecoration(

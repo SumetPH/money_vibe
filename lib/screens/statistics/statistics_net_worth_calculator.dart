@@ -77,9 +77,7 @@ List<StatisticsNetWorthData> calculateNetWorthData(
     for (final account in effectiveAccounts) {
       if (account.startDate.isAfter(snapshotDate)) continue;
       final balance = balancesByAccountId[account.id] ?? 0.0;
-      netWorth += account.currency == 'USD'
-          ? balance * account.exchangeRate
-          : balance;
+      netWorth += account.toBaseAmount(balance);
     }
 
     result.add(StatisticsNetWorthData(date: snapshotDate, netWorth: netWorth));
@@ -160,10 +158,8 @@ double _destinationAmount(
   if (from == null || to == null || !to.isPortfolio) return tx.amount;
   if (from.currency == to.currency) return tx.amount;
 
-  final amountInThb = from.currency == 'USD'
-      ? tx.amount * from.exchangeRate
-      : tx.amount;
-  return to.currency == 'USD' ? amountInThb / to.exchangeRate : amountInThb;
+  final amountInThb = from.toBaseAmount(tx.amount);
+  return to.isForeignCurrency ? amountInThb / to.exchangeRate : amountInThb;
 }
 
 List<StatisticsNetWorthData> filterNetWorthData(

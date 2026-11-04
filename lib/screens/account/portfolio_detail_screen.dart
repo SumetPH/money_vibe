@@ -425,7 +425,7 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
       switchOutCurve: fadeHalf,
       child: _isRefreshing
           ? AppShimmerText(
-              'กำลังโหลดข้อมูล',
+              'กำลังอัพเดทข้อมูล',
               key: const ValueKey('loading'),
               style: style,
             )

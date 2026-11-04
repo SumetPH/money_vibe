@@ -5,7 +5,7 @@ import '../../models/category.dart';
 import '../../providers/account_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
-import '../../main.dart';
+import '../../utils/currency_utils.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_inset_card.dart';
 
@@ -49,7 +49,8 @@ class TransactionSelectionGroupCard extends StatelessWidget {
 
     final bool isDebtRepay = type == TransactionType.debtRepay;
     final bool isDebtTransfer = type == TransactionType.debtTransfer;
-    final bool isTransfer = type == TransactionType.transfer;
+    final bool isExchange = type == TransactionType.exchange;
+    final bool isTransfer = type.movesBetweenAccounts;
     final bool isAdjust =
         type == TransactionType.increaseBalance ||
         type == TransactionType.decreaseBalance;
@@ -68,7 +69,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สิน',
               subtitle: selectedDebtAccount != null
-                  ? 'ยอดหนี้ ฿ ${formatAmount(accountProvider.getBalance(selectedDebtAccount!.id, transactions))}'
+                  ? 'ยอดหนี้ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedDebtAccount!.id, transactions), selectedDebtAccount!.currency)}'
                   : 'หนี้สินที่ต้องการชำระ',
               subtitleColor: selectedDebtAccount != null
                   ? AppColors.getAmountColor(
@@ -98,7 +99,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีที่ใช้ชำระ',
               subtitle: selectedAccount != null
-                  ? 'คงเหลือ ฿ ${formatAmount(accountProvider.getBalance(selectedAccount!.id, transactions))}'
+                  ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
                   : 'ปล่อยว่างได้หากชำระภายนอก',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
@@ -156,7 +157,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีหนี้สินต้นทาง',
               subtitle: selectedAccount != null
-                  ? 'ยอดหนี้ ฿ ${formatAmount(accountProvider.getBalance(selectedAccount!.id, transactions))}'
+                  ? 'ยอดหนี้ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
                   : 'โอนออกจากหนี้สินนี้',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
@@ -186,7 +187,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedDebtAccount?.name ?? 'เลือกบัญชีหนี้สินปลายทาง',
               subtitle: selectedDebtAccount != null
-                  ? 'ยอดหนี้ ฿ ${formatAmount(accountProvider.getBalance(selectedDebtAccount!.id, transactions))}'
+                  ? 'ยอดหนี้ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedDebtAccount!.id, transactions), selectedDebtAccount!.currency)}'
                   : 'โอนเข้าสู่หนี้สินนี้',
               subtitleColor: selectedDebtAccount != null
                   ? AppColors.getAmountColor(
@@ -235,7 +236,9 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชีต้นทาง',
               subtitle: selectedAccount != null
-                  ? 'คงเหลือ ฿ ${formatAmount(accountProvider.getBalance(selectedAccount!.id, transactions))}'
+                  ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
+                  : isExchange
+                  ? 'จ่ายจากบัญชีนี้'
                   : 'โอนออกจากบัญชีนี้',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
@@ -265,7 +268,9 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedToAccount?.name ?? 'เลือกบัญชีปลายทาง',
               subtitle: selectedToAccount != null
-                  ? 'คงเหลือ ฿ ${formatAmount(accountProvider.getBalance(selectedToAccount!.id, transactions))}'
+                  ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedToAccount!.id, transactions), selectedToAccount!.currency)}'
+                  : isExchange
+                  ? 'รับเงินที่แลกเข้าบัญชีนี้ (คนละสกุล)'
                   : 'โอนเข้าสู่บัญชีนี้',
               subtitleColor: selectedToAccount != null
                   ? AppColors.getAmountColor(
@@ -295,7 +300,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชี',
               subtitle: selectedAccount != null
-                  ? 'คงเหลือปัจจุบัน ฿ ${formatAmount(accountProvider.getBalance(selectedAccount!.id, transactions))}'
+                  ? 'คงเหลือปัจจุบัน ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
                   : 'แตะเพื่อเลือกบัญชี',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
@@ -328,7 +333,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
             TransactionSelectionRow(
               title: selectedAccount?.name ?? 'เลือกบัญชี',
               subtitle: selectedAccount != null
-                  ? 'คงเหลือ ฿ ${formatAmount(accountProvider.getBalance(selectedAccount!.id, transactions))}'
+                  ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
                   : 'แตะเพื่อเลือกบัญชี',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(

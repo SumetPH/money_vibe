@@ -29,7 +29,9 @@ class SupabaseTransactionAdapter implements TransactionRepositoryInterface {
       'to_account_id': transaction.toAccountId,
       'date_time': transaction.dateTime.toIso8601String(),
       'note': transaction.note,
-      'to_amount': transaction.toAmount, // cross-currency transfer amount
+      'to_amount': transaction.toAmount, // cross-currency exchange amount
+      'foreign_amount': transaction.foreignAmount,
+      'foreign_currency': transaction.foreignCurrency,
     };
   }
 

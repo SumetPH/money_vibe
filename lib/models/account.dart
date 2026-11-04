@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../utils/currency_utils.dart';
 
 enum AccountGroup {
   investment(
@@ -151,8 +152,13 @@ class Account {
   bool get isPortfolio => type.isPortfolio;
   bool get isThaiPortfolio => type.isThaiPortfolio;
   bool get isUsPortfolio => type.isUsPortfolio;
-  String get currencyCodeLabel => currency == 'USD' ? 'USD' : 'THB';
-  String get currencyAmountSuffix => currency == 'USD' ? 'USD' : 'บาท';
+  String get currencyCodeLabel => currency;
+  String get currencyAmountSuffix => CurrencyUtils.amountSuffix(currency);
+  bool get isForeignCurrency => !CurrencyUtils.isBase(currency);
+
+  /// แปลงยอดในสกุลของบัญชีเป็น THB ด้วย exchangeRate ปัจจุบัน
+  double toBaseAmount(double amount) =>
+      isForeignCurrency ? amount * exchangeRate : amount;
 
   /// symbol สำหรับดึงราคาอัตโนมัติ (Finnhub); null = ไม่มีแหล่งราคาอัตโนมัติ
   /// พอร์ตหุ้นไทยต้องกรอกราคาเอง เพราะ Finnhub ไม่มีข้อมูลตลาด SET

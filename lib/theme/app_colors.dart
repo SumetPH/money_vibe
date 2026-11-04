@@ -10,6 +10,7 @@ class AppColors {
   static const Color transfer = Color(0xFF2196F3);
   static const Color debtTransfer = Color(0xFFFB8C00);
   static const Color debtRepay = Color(0xFFFB8C00);
+  static const Color exchange = Color(0xFF00897B);
   // static const Color background = Color(0xFFE4E7E8);
   static const Color background = Color(0xFFF4F6F8);
   // static const Color surface = Color(0xFFECEFF1);
@@ -36,6 +37,7 @@ class AppColors {
   static const Color darkTransfer = Color(0xFF42A5F5);
   static const Color darkDebtRepay = Color(0xFFFFB74D);
   static const Color darkDebtTransfer = Color(0xFFFFB74D);
+  static const Color darkExchange = Color(0xFF4DB6AC);
   static const Color darkFabYellow = Color(0xFFFFB74D);
 
   /// Border for cards, circular header buttons and in-card dividers.
@@ -65,6 +67,9 @@ class AppColors {
       isDarkMode ? darkSurfaceVariant : sectionHeader;
 
   static Color incomeFor(bool isDarkMode) => isDarkMode ? darkIncome : income;
+
+  static Color exchangeFor(bool isDarkMode) =>
+      isDarkMode ? darkExchange : exchange;
 
   static Color expenseFor(bool isDarkMode) =>
       isDarkMode ? darkExpense : expense;
