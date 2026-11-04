@@ -23,6 +23,7 @@ import '../../widgets/app_cupertino_refresh.dart';
 import '../../widgets/app_segmented_tabs.dart';
 import '../../widgets/app_shimmer_text.dart';
 import 'portfolio_hero_summary_card.dart';
+import 'portfolio_spinning_refresh_icon.dart';
 import 'portfolio_edit_dialogs.dart';
 import 'portfolio_group_section.dart';
 import 'portfolio_holding_actions.dart';
@@ -375,6 +376,17 @@ class _PortfolioDetailScreenState extends State<PortfolioDetailScreen> {
               ],
             ),
             actions: [
+              // web ดึงหน้าจอเพื่อ refresh ด้วยเมาส์ไม่ได้ จึงมีปุ่มให้กดแทน
+              if (kIsWeb)
+                AppBarActionButton(
+                  // ใช้ไอคอนตัวเดียวตลอด เพื่อให้หมุนชะลอจนหยุดได้ต่อเนื่องตอนโหลดเสร็จ
+                  icon: PortfolioSpinningRefreshIcon(
+                    isSpinning: _isRefreshing,
+                    color: AppColors.textPrimaryFor(isDarkMode),
+                  ),
+                  tooltip: 'อัปเดตราคาหุ้น',
+                  onPressed: _isRefreshing ? null : _refreshPrices,
+                ),
               AppBarActionButton(
                 icon: Icon(
                   Icons.more_vert_rounded,
