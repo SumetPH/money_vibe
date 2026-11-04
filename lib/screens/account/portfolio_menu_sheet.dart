@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/stock_holding.dart';
@@ -116,6 +119,36 @@ void showPortfolioMenuSheet(
                         ],
                         const AppCardDivider(),
                         _buildPortfolioMenuTile(
+                          icon: Icons.data_object_rounded,
+                          iconColor: textColor,
+                          title: 'คัดลอกข้อมูลพอร์ตเป็น JSON',
+                          subtitle:
+                              'จำนวนหุ้น ต้นทุน และราคาปัจจุบันของแต่ละตัว',
+                          textColor: textColor,
+                          secondaryColor: textSecondary,
+                          bgColor: isDarkMode
+                              ? AppColors.darkSurface
+                              : AppColors.surface,
+                          onTap: () async {
+                            final holdings = context
+                                .read<AccountProvider>()
+                                .getHoldings(account.id);
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.pop(context);
+                            await Clipboard.setData(
+                              ClipboardData(
+                                text: buildPortfolioHoldingsJson(holdings),
+                              ),
+                            );
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('คัดลอกข้อมูลพอร์ตเรียบร้อยแล้ว'),
+                              ),
+                            );
+                          },
+                        ),
+                        const AppCardDivider(),
+                        _buildPortfolioMenuTile(
                           icon: Icons.account_tree_outlined,
                           iconColor: textColor,
                           title: 'จัดลำดับกลุ่ม',
@@ -144,6 +177,24 @@ void showPortfolioMenuSheet(
       );
     },
   );
+}
+
+/// JSON ของ holding ในพอร์ต: จำนวนหุ้น ต้นทุนรวม ต้นทุนต่อหุ้น และราคาปัจจุบัน
+/// (ปัดทศนิยมเพื่อตัดเศษ floating point)
+String buildPortfolioHoldingsJson(List<StockHolding> holdings) {
+  double round(double value, int digits) =>
+      double.parse(value.toStringAsFixed(digits));
+  final data = [
+    for (final h in holdings)
+      {
+        'ticker': h.ticker,
+        'shares': round(h.shares, 8),
+        'total_cost': round(h.totalCostUsd, 4),
+        'cost_per_share': round(h.costBasisUsd, 4),
+        'current_price': round(h.priceUsd, 4),
+      },
+  ];
+  return const JsonEncoder.withIndent('  ').convert(data);
 }
 
 Widget _buildPortfolioMenuTile({
