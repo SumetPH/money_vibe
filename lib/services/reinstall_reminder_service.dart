@@ -43,6 +43,7 @@ class ReinstallReminderService extends ChangeNotifier {
 
   static final instance = ReinstallReminderService._();
 
+  static const _installationChannel = MethodChannel('money_vibe/installation');
   static const _installationIdKey = 'reinstall_reminder_installation_id';
   static const _firstLaunchKey = 'reinstall_reminder_first_launch';
   static const _notificationEnabledKey =
@@ -90,9 +91,9 @@ class ReinstallReminderService extends ChangeNotifier {
         AppConfig.showReinstallReminder;
     if (!_isSupported) return;
 
-    final installationId = await const MethodChannel(
-      'money_vibe/installation',
-    ).invokeMethod<String>('getInstallationId');
+    final installationId = await _installationChannel.invokeMethod<String>(
+      'getInstallationId',
+    );
     if (installationId == null || installationId.isEmpty) {
       throw StateError('iOS installation identity is unavailable');
     }
@@ -120,7 +121,17 @@ class ReinstallReminderService extends ChangeNotifier {
       (_) => notifyListeners(),
     );
     await _scheduleReminder();
+    // iOS เก็บตัวเลข badge ไว้ข้ามการติดตั้งทับ จึงต้องล้างเองเมื่อยังไม่หมดอายุ
+    if (!needsExpiredBadge) await _clearAppIconBadge();
     notifyListeners();
+  }
+
+  Future<void> _clearAppIconBadge() async {
+    try {
+      await _installationChannel.invokeMethod<void>('clearAppIconBadge');
+    } on PlatformException catch (e) {
+      debugPrint('ReinstallReminderService: Failed to clear badge: $e');
+    }
   }
 
   Future<void> setNotificationEnabled(bool enabled) async {

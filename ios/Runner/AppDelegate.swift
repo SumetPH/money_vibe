@@ -19,12 +19,15 @@ import UserNotifications
       binaryMessenger: engineBridge.applicationRegistrar.messenger()
     )
     installationChannel.setMethodCallHandler { call, result in
-      guard call.method == "getInstallationId" else {
+      switch call.method {
+      case "getInstallationId":
+        // ponytail: bundle relocation identifies installs; verify with the IPA installer in use.
+        result(Bundle.main.bundleURL.resolvingSymlinksInPath().path)
+      case "clearAppIconBadge":
+        self.clearAppIconBadge(result: result)
+      default:
         result(FlutterMethodNotImplemented)
-        return
       }
-      // ponytail: bundle relocation identifies installs; verify with the IPA installer in use.
-      result(Bundle.main.bundleURL.resolvingSymlinksInPath().path)
     }
 
     let appIconChannel = FlutterMethodChannel(
@@ -47,6 +50,23 @@ import UserNotifications
       app.setAlternateIconName(target) { error in
         if let error = error {
           result(FlutterError(code: "set_icon_failed", message: error.localizedDescription, details: nil))
+        } else {
+          result(nil)
+        }
+      }
+    }
+  }
+
+  private func clearAppIconBadge(result: @escaping FlutterResult) {
+    guard #available(iOS 16.0, *) else {
+      UIApplication.shared.applicationIconBadgeNumber = 0
+      result(nil)
+      return
+    }
+    UNUserNotificationCenter.current().setBadgeCount(0) { error in
+      DispatchQueue.main.async {
+        if let error = error {
+          result(FlutterError(code: "clear_badge_failed", message: error.localizedDescription, details: nil))
         } else {
           result(nil)
         }
