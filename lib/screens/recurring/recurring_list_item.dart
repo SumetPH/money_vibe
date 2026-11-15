@@ -1,6 +1,7 @@
 import '../../widgets/app_status_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../models/recurring_transaction.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
@@ -164,7 +165,7 @@ class RecurringListItem extends StatelessWidget {
                 if (reorderIndex != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
-                    child: ReorderableDragStartListener(
+                    child: AppReorderDragHandle(
                       index: reorderIndex!,
                       child: Icon(
                         Icons.drag_indicator,

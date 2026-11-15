@@ -6,6 +6,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_switch.dart';
+import '../../widgets/app_reorder_mode.dart';
 
 Future<void> editPortfolioExchangeRate(
   BuildContext context,
@@ -208,7 +209,7 @@ void showPortfolioGroupReorderDialog(
                       return ListTile(
                         key: ValueKey(g),
                         title: Text(g, style: TextStyle(color: textColor)),
-                        trailing: ReorderableDragStartListener(
+                        trailing: AppReorderDragHandle(
                           index: index,
                           child: Icon(Icons.drag_handle, color: dividerColor),
                         ),

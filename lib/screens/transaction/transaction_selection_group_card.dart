@@ -100,7 +100,7 @@ class TransactionSelectionGroupCard extends StatelessWidget {
               title: selectedAccount?.name ?? 'เลือกบัญชีที่ใช้ชำระ',
               subtitle: selectedAccount != null
                   ? 'คงเหลือ ${CurrencyUtils.formatWithSymbol(accountProvider.getBalance(selectedAccount!.id, transactions), selectedAccount!.currency)}'
-                  : 'ปล่อยว่างได้หากชำระภายนอก',
+                  : 'เลือกบัญชีที่ใช้จ่ายชำระ',
               subtitleColor: selectedAccount != null
                   ? AppColors.getAmountColor(
                       accountProvider.getBalance(

@@ -667,7 +667,7 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                     ),
                   ),
                   if (_isReorderMode)
-                    ReorderableDragStartListener(
+                    AppReorderDragHandle(
                       index: index,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8),

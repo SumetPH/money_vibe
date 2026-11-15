@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/app_reorder_mode.dart';
 
 import '../../main.dart';
 import '../../models/category.dart';
@@ -142,7 +143,7 @@ class CategoryListItem extends StatelessWidget {
                 ],
                 // Drag handle (visible only in reorder mode)
                 if (reorderIndex != null) ...[
-                  ReorderableDragStartListener(
+                  AppReorderDragHandle(
                     index: reorderIndex!,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 12),

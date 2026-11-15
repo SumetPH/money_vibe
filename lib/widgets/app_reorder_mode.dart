@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+
+/// Drag handle for reorderable lists. Vibrates as soon as the handle is
+/// pressed (before the drag actually starts) so the user feels the grab.
+class AppReorderDragHandle extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const AppReorderDragHandle({
+    super.key,
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => HapticFeedback.mediumImpact(),
+    child: ReorderableDragStartListener(index: index, child: child),
+  );
+}
 
 Color _reorderAccentFor(bool isDarkMode) =>
     isDarkMode ? AppColors.darkIncome : AppColors.income;

@@ -285,7 +285,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                                 ),
                               ),
                               if (isReorderMode)
-                                ReorderableDragStartListener(
+                                AppReorderDragHandle(
                                   index: groupIndex,
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 8),

@@ -216,7 +216,7 @@ class _RecurringListScreenState extends State<RecurringListScreen> {
                               title: entry.key.label,
                               trailing: _isReorderMode
                                   ? [
-                                      ReorderableDragStartListener(
+                                      AppReorderDragHandle(
                                         index: groupIndex,
                                         child: Icon(
                                           Icons.drag_indicator,

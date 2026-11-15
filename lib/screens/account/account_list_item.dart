@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../models/account.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
@@ -137,7 +138,7 @@ class AccountListItem extends StatelessWidget {
                   // Drag handle (only visible in reorder mode)
                   if (reorderIndex != null) ...[
                     const SizedBox(width: 8),
-                    ReorderableDragStartListener(
+                    AppReorderDragHandle(
                       index: reorderIndex!,
                       child: Icon(
                         Icons.drag_indicator,

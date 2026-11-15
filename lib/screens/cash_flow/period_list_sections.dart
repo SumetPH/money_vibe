@@ -7,6 +7,7 @@ import '../../models/planned_purchase.dart';
 import '../../providers/cash_flow_forecast_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_inset_card.dart';
+import '../../widgets/app_reorder_mode.dart';
 import 'cash_flow_section.dart';
 import 'fixed_cash_flow_item_form_screen.dart';
 import 'planned_purchase_form_screen.dart';
@@ -292,7 +293,7 @@ class _TickRow extends StatelessWidget {
               ),
             ),
             if (index != null)
-              ReorderableDragStartListener(
+              AppReorderDragHandle(
                 index: index,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8),

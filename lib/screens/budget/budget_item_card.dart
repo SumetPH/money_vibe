@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/app_reorder_mode.dart';
 import '../../models/budget.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
@@ -273,7 +274,7 @@ class BudgetItemRow extends StatelessWidget {
                   ],
                   // Reorder Handle if active
                   if (reorderIndex != null) ...[
-                    ReorderableDragStartListener(
+                    AppReorderDragHandle(
                       index: reorderIndex!,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 10),
