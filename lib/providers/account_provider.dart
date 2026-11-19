@@ -203,7 +203,19 @@ class AccountProvider extends ChangeNotifier {
           .where((a) => a.currency == currency && a.autoUpdateRate)
           .toList();
       if (targets.isEmpty) return;
-      for (final acc in targets) {
+
+      // กรองเฉพาะบัญชีที่เรทเปลี่ยนจริง เพื่อไม่ให้ UI กระตุก และลด write ไป DB ซ้ำซ้อน
+      final changedTargets = targets
+          .where((acc) => (acc.exchangeRate - rate).abs() >= 0.0001)
+          .toList();
+      if (changedTargets.isEmpty) {
+        debugPrint(
+          'AccountProvider: $currency/THB rate unchanged ($rate), skipping update.',
+        );
+        return;
+      }
+
+      for (final acc in changedTargets) {
         final idx = _accounts.indexWhere((a) => a.id == acc.id);
         if (idx != -1) {
           _accounts[idx] = _accounts[idx].copyWith(exchangeRate: rate);
@@ -211,7 +223,7 @@ class AccountProvider extends ChangeNotifier {
       }
       notifyListeners();
       await Future.wait(
-        targets.map(
+        changedTargets.map(
           (acc) => _db.updateAccountExchangeRate(acc.id, exchangeRate: rate),
         ),
       );
@@ -965,10 +977,11 @@ class AccountProvider extends ChangeNotifier {
         (account) => account.id == portfolioId,
       );
       if (accountIndex != -1) {
-        updatedAccount = _accounts[accountIndex].copyWith(
-          exchangeRate: exchangeRate,
-        );
-        _accounts[accountIndex] = updatedAccount;
+        final currentAccount = _accounts[accountIndex];
+        if ((currentAccount.exchangeRate - exchangeRate).abs() >= 0.0001) {
+          updatedAccount = currentAccount.copyWith(exchangeRate: exchangeRate);
+          _accounts[accountIndex] = updatedAccount;
+        }
       }
     }
 

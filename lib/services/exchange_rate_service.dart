@@ -55,6 +55,12 @@ class ExchangeRateService {
 
   const ExchangeRateService({http.Client? client}) : _client = client;
 
+  /// ปัดเศษอัตราแลกเปลี่ยนให้เหลือทศนิยม 4 ตำแหน่ง
+  /// สอดคล้องกับ schema ของ Database numeric(15, 4) และมาตรฐานอัตราแลกเปลี่ยนทางการ
+  static double roundRate(double rate) {
+    return double.parse(rate.toStringAsFixed(4));
+  }
+
   /// ดึงอัตราแลกเปลี่ยน USD/THB ล่าสุด
   Future<double> fetchUsdThbRate({bool forceRefresh = false}) =>
       fetchRateToThb('USD', forceRefresh: forceRefresh);
@@ -94,7 +100,7 @@ class ExchangeRateService {
         'ไม่พบอัตราแลกเปลี่ยน $normalizedQuote จากฐาน $normalizedBase',
       );
     }
-    return rate;
+    return roundRate(rate);
   }
 
   /// อ่านค่าจาก memory cache หรือ SharedPreferences หากยังไม่หมดอายุ
@@ -220,7 +226,7 @@ class ExchangeRateService {
       final rates = <String, double>{};
       for (final entry in rawRates.entries) {
         if (entry.value is num) {
-          rates[entry.key] = (entry.value as num).toDouble();
+          rates[entry.key] = roundRate((entry.value as num).toDouble());
         }
       }
       if (rates.isEmpty) {
@@ -255,7 +261,7 @@ class ExchangeRateService {
       final rates = <String, double>{};
       for (final entry in rawRates.entries) {
         if (entry.value is num) {
-          rates[entry.key] = (entry.value as num).toDouble();
+          rates[entry.key] = roundRate((entry.value as num).toDouble());
         }
       }
       if (rates.isEmpty) {

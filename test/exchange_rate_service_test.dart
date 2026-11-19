@@ -22,6 +22,49 @@ void main() {
     expect(rate, 1.0);
   });
 
+  test('rounds rates to 4 decimal places matching database numeric(15, 4)', () async {
+    expect(ExchangeRateService.roundRate(33.964642), 33.9646);
+    expect(ExchangeRateService.roundRate(33.96468), 33.9647);
+
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'result': 'success',
+          'base_code': 'USD',
+          'rates': {'THB': 33.964642},
+        }),
+        200,
+      );
+    });
+
+    final service = ExchangeRateService(client: mockClient);
+    final rate = await service.fetchRate(base: 'USD', quote: 'THB');
+    expect(rate, 33.9646);
+  });
+
+  test(
+    'rounds rates to 4 decimal places matching database numeric(15, 4)',
+    () async {
+      expect(ExchangeRateService.roundRate(33.964642), 33.9646);
+      expect(ExchangeRateService.roundRate(33.96468), 33.9647);
+
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'result': 'success',
+            'base_code': 'USD',
+            'rates': {'THB': 33.964642},
+          }),
+          200,
+        );
+      });
+
+      final service = ExchangeRateService(client: mockClient);
+      final rate = await service.fetchRate(base: 'USD', quote: 'THB');
+      expect(rate, 33.9646);
+    },
+  );
+
   test(
     'fetches successfully from primary API (open.er-api.com) and caches it',
     () async {
