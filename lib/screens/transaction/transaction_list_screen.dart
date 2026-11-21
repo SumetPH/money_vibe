@@ -55,6 +55,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   TransactionTypeFilter _typeFilter = TransactionTypeFilter.all;
   String _searchQuery = '';
   TransactionType? _searchType;
+  bool _isForeignOnly = false;
   DateTime? _selectedCycleMonth;
   DateTimeRange? _customRange;
 
@@ -93,6 +94,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             final visibleTx = allTx
                 .where(_matchesTypeFilter)
                 .where((tx) => _searchType == null || tx.type == _searchType)
+                .where((tx) => !_isForeignOnly || tx.hasForeignAmount)
                 .where((tx) => _matchesSearch(tx, accountProvider, catProvider))
                 .toList();
             final listData = _buildTransactionListData(
@@ -101,7 +103,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             );
             // ค้นหาอยู่: สรุปยอดจากผลการค้นหาแทนทั้งช่วงเวลา
             final searchQuery = _searchQuery.trim();
-            final isSearching = searchQuery.isNotEmpty || _searchType != null;
+            final isSearching =
+                searchQuery.isNotEmpty || _searchType != null || _isForeignOnly;
             final cardData = isSearching ? listData : summaryData;
             final isFromAccount = widget.accountId != null;
             final isFiltered =
@@ -240,7 +243,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           income: cardData.totalIncome,
                           expense: cardData.totalExpense,
                           title: isSearching
-                              ? '${_searchTitle(searchQuery)} · ${listData.transactions.length} รายการ'
+                              ? '${transactionSearchTitle(searchQuery, _searchType, _isForeignOnly)} · ${listData.transactions.length} รายการ'
                               : 'กระแสเงินสด',
                           periodLabel: _periodShortLabel(),
                           isDarkMode: isDarkMode,
@@ -482,13 +485,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  String _searchTitle(String query) {
-    final typeLabel = _searchType?.label;
-    if (query.isEmpty) return 'ประเภท $typeLabel';
-    if (typeLabel == null) return 'ค้นหา "$query"';
-    return 'ค้นหา "$query" · $typeLabel';
-  }
-
   void _showSearchSheet() {
     final settings = context.read<SettingsProvider>();
     showTransactionSearchSheet(
@@ -501,10 +497,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         settings.themeColor,
       ),
       onChanged: (value) => setState(() => _searchQuery = value),
+      isForeignOnly: _isForeignOnly,
       onTypeChanged: (type) => setState(() => _searchType = type),
+      onForeignOnlyChanged: (value) => setState(() => _isForeignOnly = value),
       onClear: () => setState(() {
         _searchQuery = '';
         _searchType = null;
+        _isForeignOnly = false;
       }),
     );
   }

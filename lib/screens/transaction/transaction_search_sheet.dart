@@ -6,15 +6,32 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../widgets/app_modal_bottom_sheet.dart';
 
+/// หัวข้อสรุปผลการค้นหา เช่น `ค้นหา "กาแฟ" · รายจ่าย · เงินต่างประเทศ`
+String transactionSearchTitle(
+  String query,
+  TransactionType? type,
+  bool isForeignOnly,
+) {
+  final typeLabel = type?.label;
+  return [
+    if (query.isNotEmpty) 'ค้นหา "$query"',
+    if (typeLabel != null) query.isEmpty ? 'ประเภท $typeLabel' : typeLabel,
+    if (isForeignOnly) 'เงินต่างประเทศ',
+  ].join(' · ');
+}
+
 /// เปิด sheet ค้นหาธุรกรรมด้วยข้อความและกรองตามประเภท ([type] = null คือทุกประเภท)
+/// และกรองเฉพาะรายการที่ชำระด้วยเงินต่างประเทศ ([isForeignOnly])
 void showTransactionSearchSheet(
   BuildContext context,
   bool isDarkMode, {
   required String query,
   required TransactionType? type,
+  required bool isForeignOnly,
   required Color accentColor,
   required ValueChanged<String> onChanged,
   required ValueChanged<TransactionType?> onTypeChanged,
+  required ValueChanged<bool> onForeignOnlyChanged,
   required VoidCallback onClear,
 }) {
   showAppModalBottomSheet(
@@ -24,9 +41,11 @@ void showTransactionSearchSheet(
       isDarkMode: isDarkMode,
       initialQuery: query,
       initialType: type,
+      initialForeignOnly: isForeignOnly,
       accentColor: accentColor,
       onChanged: onChanged,
       onTypeChanged: onTypeChanged,
+      onForeignOnlyChanged: onForeignOnlyChanged,
       onClear: onClear,
     ),
   );
@@ -36,9 +55,11 @@ class TransactionSearchSheetContent extends StatefulWidget {
   final bool isDarkMode;
   final String initialQuery;
   final TransactionType? initialType;
+  final bool initialForeignOnly;
   final Color accentColor;
   final ValueChanged<String> onChanged;
   final ValueChanged<TransactionType?> onTypeChanged;
+  final ValueChanged<bool> onForeignOnlyChanged;
   final VoidCallback onClear;
 
   const TransactionSearchSheetContent({
@@ -46,9 +67,11 @@ class TransactionSearchSheetContent extends StatefulWidget {
     required this.isDarkMode,
     required this.initialQuery,
     required this.initialType,
+    required this.initialForeignOnly,
     required this.accentColor,
     required this.onChanged,
     required this.onTypeChanged,
+    required this.onForeignOnlyChanged,
     required this.onClear,
   });
 
@@ -63,6 +86,7 @@ class _TransactionSearchSheetContentState
     text: widget.initialQuery,
   )..selection = TextSelection.collapsed(offset: widget.initialQuery.length);
   late TransactionType? _type = widget.initialType;
+  late bool _isForeignOnly = widget.initialForeignOnly;
 
   @override
   void dispose() {
@@ -73,6 +97,12 @@ class _TransactionSearchSheetContentState
   void _selectType(TransactionType? type) {
     setState(() => _type = type);
     widget.onTypeChanged(type);
+  }
+
+  void _toggleForeignOnly() {
+    final value = !_isForeignOnly;
+    setState(() => _isForeignOnly = value);
+    widget.onForeignOnlyChanged(value);
   }
 
   void _clear() {
@@ -158,6 +188,26 @@ class _TransactionSearchSheetContentState
                     onTap: () => _selectType(type),
                   ),
               ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'การชำระเงิน',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TransactionSearchTypeChip(
+                label: 'ชำระด้วยเงินต่างประเทศ',
+                isSelected: _isForeignOnly,
+                isDarkMode: isDarkMode,
+                accentColor: widget.accentColor,
+                onTap: _toggleForeignOnly,
+              ),
             ),
           ],
         ),
