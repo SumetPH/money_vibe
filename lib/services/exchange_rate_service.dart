@@ -168,10 +168,7 @@ class ExchangeRateService {
           quote: quote,
           client: _client,
         );
-        fetchedRates = {
-          if (fetchedRates != null) ...fetchedRates,
-          ...fallbackRates,
-        };
+        fetchedRates = {...?fetchedRates, ...fallbackRates};
       } catch (e) {
         debugPrint(
           'ExchangeRateService: Fallback API (Frankfurter) also failed: $e',
