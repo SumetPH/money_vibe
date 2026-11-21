@@ -54,6 +54,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   TransactionPeriodFilter _filter = TransactionPeriodFilter.all;
   TransactionTypeFilter _typeFilter = TransactionTypeFilter.all;
   String _searchQuery = '';
+  TransactionType? _searchType;
   DateTime? _selectedCycleMonth;
   DateTimeRange? _customRange;
 
@@ -91,6 +92,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             );
             final visibleTx = allTx
                 .where(_matchesTypeFilter)
+                .where((tx) => _searchType == null || tx.type == _searchType)
                 .where((tx) => _matchesSearch(tx, accountProvider, catProvider))
                 .toList();
             final listData = _buildTransactionListData(
@@ -99,7 +101,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             );
             // ค้นหาอยู่: สรุปยอดจากผลการค้นหาแทนทั้งช่วงเวลา
             final searchQuery = _searchQuery.trim();
-            final isSearching = searchQuery.isNotEmpty;
+            final isSearching = searchQuery.isNotEmpty || _searchType != null;
             final cardData = isSearching ? listData : summaryData;
             final isFromAccount = widget.accountId != null;
             final isFiltered =
@@ -238,7 +240,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           income: cardData.totalIncome,
                           expense: cardData.totalExpense,
                           title: isSearching
-                              ? 'ค้นหา "$searchQuery" · ${listData.transactions.length} รายการ'
+                              ? '${_searchTitle(searchQuery)} · ${listData.transactions.length} รายการ'
                               : 'กระแสเงินสด',
                           periodLabel: _periodShortLabel(),
                           isDarkMode: isDarkMode,
@@ -284,7 +286,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         hasScrollBody: false,
                         child: Center(
                           child: Text(
-                            _searchQuery.isEmpty
+                            !isSearching
                                 ? 'ยังไม่มีรายการ'
                                 : 'ไม่พบรายการที่ค้นหา',
                             style: TextStyle(
@@ -480,12 +482,30 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
+  String _searchTitle(String query) {
+    final typeLabel = _searchType?.label;
+    if (query.isEmpty) return 'ประเภท $typeLabel';
+    if (typeLabel == null) return 'ค้นหา "$query"';
+    return 'ค้นหา "$query" · $typeLabel';
+  }
+
   void _showSearchSheet() {
+    final settings = context.read<SettingsProvider>();
     showTransactionSearchSheet(
       context,
-      context.read<SettingsProvider>().isDarkMode,
+      settings.isDarkMode,
       query: _searchQuery,
+      type: _searchType,
+      accentColor: AppColors.accentFor(
+        settings.isDarkMode,
+        settings.themeColor,
+      ),
       onChanged: (value) => setState(() => _searchQuery = value),
+      onTypeChanged: (type) => setState(() => _searchType = type),
+      onClear: () => setState(() {
+        _searchQuery = '';
+        _searchType = null;
+      }),
     );
   }
 
