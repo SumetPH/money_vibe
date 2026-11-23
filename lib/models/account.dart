@@ -128,6 +128,9 @@ class Account {
   // Cash-flow forecast: ไม่นับบัญชีนี้เป็น liquid account
   bool isExcludedFromCashForecast;
 
+  // ตัวกรองยอดเงินสุทธิหน้า account list: ไม่นับบัญชีนี้ในยอดเงินสุทธิ
+  bool isExcludedFromNetWorthFilter;
+
   Account({
     required this.id,
     required this.name,
@@ -147,6 +150,7 @@ class Account {
     this.statementDay,
     this.paymentDueDay,
     this.isExcludedFromCashForecast = false,
+    this.isExcludedFromNetWorthFilter = false,
   }) : startDate = startDate ?? DateTime.now();
 
   bool get isPortfolio => type.isPortfolio;
@@ -187,6 +191,7 @@ class Account {
     'statement_day': statementDay,
     'payment_due_day': paymentDueDay,
     'is_excluded_from_cash_forecast': isExcludedFromCashForecast,
+    'is_excluded_from_net_worth_filter': isExcludedFromNetWorthFilter,
   };
 
   static Account fromMap(Map<String, dynamic> m) {
@@ -211,6 +216,8 @@ class Account {
       paymentDueDay: m['payment_due_day'] as int?,
       isExcludedFromCashForecast:
           m['is_excluded_from_cash_forecast'] as bool? ?? false,
+      isExcludedFromNetWorthFilter:
+          m['is_excluded_from_net_worth_filter'] as bool? ?? false,
     );
   }
 
@@ -236,6 +243,7 @@ class Account {
     int? statementDay,
     int? paymentDueDay,
     bool? isExcludedFromCashForecast,
+    bool? isExcludedFromNetWorthFilter,
     bool clearStatementDay = false,
     bool clearPaymentDueDay = false,
   }) {
@@ -263,6 +271,8 @@ class Account {
           : paymentDueDay ?? this.paymentDueDay,
       isExcludedFromCashForecast:
           isExcludedFromCashForecast ?? this.isExcludedFromCashForecast,
+      isExcludedFromNetWorthFilter:
+          isExcludedFromNetWorthFilter ?? this.isExcludedFromNetWorthFilter,
     );
   }
 }

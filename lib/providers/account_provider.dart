@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../repositories/database_repository.dart';
 import '../services/database_manager.dart';
 import '../services/exchange_rate_service.dart';
+import '../services/legacy_net_worth_filter_store.dart';
 import '../models/account.dart';
 import '../models/stock_holding.dart';
 import '../models/stock_trade.dart';
@@ -165,6 +166,7 @@ class AccountProvider extends ChangeNotifier {
 
       // ไม่ await: เรียก API ภายนอก (timeout 10s) ไม่ควรบล็อกการเปิดแอพ
       if (refreshExchangeRate) unawaited(_refreshForeignExchangeRates());
+      unawaited(_migrateLegacyNetWorthFilter());
     } catch (e) {
       debugPrint('AccountProvider: Init error: $e');
       rethrow;
@@ -592,6 +594,68 @@ class AccountProvider extends ChangeNotifier {
               (filterIds == null || filterIds.contains(a.id)),
         )
         .fold(0.0, (sum, a) => sum + getBalanceInThb(a.id, transactions));
+  }
+
+  /// บัญชีที่นับในยอดเงินสุทธิหน้า account list; null = ทุกบัญชี
+  Set<String>? get netWorthFilterIds {
+    if (!_accounts.any((a) => a.isExcludedFromNetWorthFilter)) return null;
+    return Set.unmodifiable(
+      _accounts.where((a) => !a.isExcludedFromNetWorthFilter).map((a) => a.id),
+    );
+  }
+
+  /// บันทึกตัวกรองยอดเงินสุทธิลง database; [ids] null = ทุกบัญชี
+  Future<void> setNetWorthFilterIds(Set<String>? ids) async {
+    bool shouldExclude(Account a) => ids != null && !ids.contains(a.id);
+    final changed = _accounts
+        .where((a) => a.isExcludedFromNetWorthFilter != shouldExclude(a))
+        .toList();
+    if (changed.isEmpty) return;
+
+    final previous = List<Account>.from(_accounts);
+    _accounts
+      ..clear()
+      ..addAll(
+        previous.map(
+          (a) => a.copyWith(isExcludedFromNetWorthFilter: shouldExclude(a)),
+        ),
+      );
+    notifyListeners();
+
+    try {
+      await Future.wait([
+        _db.updateAccountsNetWorthFilter(
+          changed.where(shouldExclude).map((a) => a.id).toList(),
+          isExcluded: true,
+        ),
+        _db.updateAccountsNetWorthFilter(
+          changed.where((a) => !shouldExclude(a)).map((a) => a.id).toList(),
+          isExcluded: false,
+        ),
+      ]);
+    } catch (e) {
+      debugPrint('AccountProvider: Error saving net worth filter: $e');
+      _accounts
+        ..clear()
+        ..addAll(previous);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// ย้ายตัวกรองที่เคยเก็บในเครื่องขึ้น database ครั้งเดียว
+  /// ถ้า database มีการเลือกไว้แล้วให้ยึดค่าใน database
+  Future<void> _migrateLegacyNetWorthFilter() async {
+    final legacyIds = await LegacyNetWorthFilterStore.read();
+    if (legacyIds == null) return;
+    try {
+      if (netWorthFilterIds == null) {
+        await setNetWorthFilterIds(legacyIds);
+      }
+      await LegacyNetWorthFilterStore.clear();
+    } catch (e) {
+      debugPrint('AccountProvider: Legacy net worth filter migration: $e');
+    }
   }
 
   Map<String, double> getGroupTotals(List<AppTransaction> transactions) {

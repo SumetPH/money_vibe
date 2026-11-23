@@ -40,9 +40,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<SettingsProvider>().isDarkMode;
-    final filterIds = context.select<SettingsProvider, Set<String>?>(
-      (settingsProvider) => settingsProvider.netWorthFilterIds,
-    );
 
     final isLargeScreen = MediaQuery.of(context).size.width >= 800;
     final isDataReady = context.select<SyncProvider, bool>(
@@ -156,19 +153,16 @@ class _AccountListScreenState extends State<AccountListScreen> {
       ),
       body: AppDataStateView(
         modules: ScreenModules.accounts,
-        builder: (context) => _buildAccountList(context, isDarkMode, filterIds),
+        builder: (context) => _buildAccountList(context, isDarkMode),
       ),
       bottomNavigationBar: null,
     );
   }
 
-  Widget _buildAccountList(
-    BuildContext context,
-    bool isDarkMode,
-    Set<String>? filterIds,
-  ) {
+  Widget _buildAccountList(BuildContext context, bool isDarkMode) {
     return Consumer2<AccountProvider, TransactionProvider>(
       builder: (context, accountProvider, txProvider, _) {
+        final filterIds = accountProvider.netWorthFilterIds;
         final transactions = txProvider.transactions;
         final allAccounts = accountProvider.accounts;
         final accounts = accountProvider.visibleAccounts;
@@ -619,7 +613,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
       allAccounts: accountProvider.accounts,
       visibleAccounts: accountProvider.visibleAccounts,
       transactions: transactions,
-      filterIds: context.read<SettingsProvider>().netWorthFilterIds,
+      filterIds: accountProvider.netWorthFilterIds,
     );
     final groupTotals = totals.groupTotals;
 

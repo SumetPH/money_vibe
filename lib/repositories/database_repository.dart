@@ -28,6 +28,10 @@ abstract class AccountRepositoryInterface {
   });
   Future<void> updateAccountSortOrder(String id, int sortOrder);
   Future<void> updateAccountSortOrders(List<Account> accounts);
+  Future<void> updateAccountsNetWorthFilter(
+    List<String> ids, {
+    required bool isExcluded,
+  });
   Future<void> deleteAccount(String id);
   Future<Set<String>> getExistingAccountIds();
   Future<void> bulkInsertAccounts(List<Account> accounts);

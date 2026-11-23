@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,7 +23,6 @@ class SettingsProvider extends ChangeNotifier {
   static const _monthlyCycleStartDayKey = 'budget_start_day';
   static const _cashFlowAnchorDayKey = 'cash_flow_anchor_day';
   static const _legacyStatisticsStartDayKey = 'statistics_start_day';
-  static const _netWorthFilterKey = 'net_worth_filter_ids';
 
   String? _finnhubApiKey;
   bool _useFinnhub = true;
@@ -33,7 +31,6 @@ class SettingsProvider extends ChangeNotifier {
   bool _isLoaded = false;
   int _monthlyCycleStartDay = 1;
   int? _cashFlowAnchorDay; // วันเคลียร์ยอดของการคาดการณ์; null = ยังไม่ได้ตั้ง
-  Set<String>? _netWorthFilterIds; // null = all accounts
 
   String? get finnhubApiKey => _finnhubApiKey;
   bool get useFinnhub => !AppConfig.canUseYahooPrices || _useFinnhub;
@@ -42,8 +39,6 @@ class SettingsProvider extends ChangeNotifier {
   bool get isLoaded => _isLoaded;
   int get monthlyCycleStartDay => _monthlyCycleStartDay;
   int? get cashFlowAnchorDay => _cashFlowAnchorDay;
-  Set<String>? get netWorthFilterIds =>
-      _netWorthFilterIds == null ? null : Set.unmodifiable(_netWorthFilterIds!);
 
   bool get isFinnhubConfigured =>
       _finnhubApiKey != null && _finnhubApiKey!.isNotEmpty;
@@ -60,26 +55,9 @@ class SettingsProvider extends ChangeNotifier {
         prefs.getInt(_legacyStatisticsStartDayKey) ??
         1;
     _cashFlowAnchorDay = prefs.getInt(_cashFlowAnchorDayKey);
-    final filterJson = prefs.getString(_netWorthFilterKey);
-    if (filterJson != null) {
-      final list = jsonDecode(filterJson) as List;
-      _netWorthFilterIds = list.cast<String>().toSet();
-    }
     _isLoaded = true;
     // sync icon สำหรับคนที่ตั้ง light ไว้ก่อนมีฟีเจอร์นี้ (native ข้ามถ้าตรงอยู่แล้ว)
     AppIconService.apply(isDarkMode: _isDarkMode);
-    notifyListeners();
-  }
-
-  Future<void> setNetWorthFilterIds(Set<String>? ids) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (ids == null) {
-      await prefs.remove(_netWorthFilterKey);
-      _netWorthFilterIds = null;
-    } else {
-      await prefs.setString(_netWorthFilterKey, jsonEncode(ids.toList()));
-      _netWorthFilterIds = Set.from(ids);
-    }
     notifyListeners();
   }
 

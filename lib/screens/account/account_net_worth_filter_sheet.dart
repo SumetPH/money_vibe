@@ -212,8 +212,17 @@ class _NetWorthFilterSheetState extends State<AccountNetWorthFilterSheet> {
                         : _selected.isEmpty
                         ? <String>{}
                         : _selected;
-                    await widget.onSave(saveValue);
-                    if (context.mounted) Navigator.pop(context);
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await widget.onSave(saveValue);
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (_) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('บันทึกตัวกรองยอดเงินสุทธิไม่สำเร็จ'),
+                        ),
+                      );
+                    }
                   },
                   child: Text(
                     'บันทึก',

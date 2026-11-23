@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/account.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
@@ -214,7 +215,7 @@ class AccountTotalRow extends StatelessWidget {
                           : null,
                       onTap: () {
                         Navigator.pop(context);
-                        _showNetWorthFilterSheet(context, settingsProvider);
+                        _showNetWorthFilterSheet(context);
                       },
                     ),
                   ),
@@ -227,10 +228,8 @@ class AccountTotalRow extends StatelessWidget {
     );
   }
 
-  void _showNetWorthFilterSheet(
-    BuildContext context,
-    SettingsProvider settingsProvider,
-  ) {
+  void _showNetWorthFilterSheet(BuildContext context) {
+    final accountProvider = context.read<AccountProvider>();
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -238,7 +237,7 @@ class AccountTotalRow extends StatelessWidget {
         accounts: accounts,
         filterIds: filterIds,
         isDarkMode: isDarkMode,
-        onSave: (selected) => settingsProvider.setNetWorthFilterIds(selected),
+        onSave: accountProvider.setNetWorthFilterIds,
       ),
     );
   }

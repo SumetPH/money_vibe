@@ -226,6 +226,13 @@ class SupabaseRepository with RepositoryLogger implements DatabaseRepository {
       _accountAdapter.updateAccountSortOrders(accounts);
 
   @override
+  Future<void> updateAccountsNetWorthFilter(
+    List<String> ids, {
+    required bool isExcluded,
+  }) =>
+      _accountAdapter.updateAccountsNetWorthFilter(ids, isExcluded: isExcluded);
+
+  @override
   Future<void> deleteAccount(String id) => _accountAdapter.deleteAccount(id);
 
   // ── Categories (Delegated to Adapter) ─────────────────────────────────────

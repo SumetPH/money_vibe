@@ -39,6 +39,7 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
       'statement_day': account.statementDay,
       'payment_due_day': account.paymentDueDay,
       'is_excluded_from_cash_forecast': account.isExcludedFromCashForecast,
+      'is_excluded_from_net_worth_filter': account.isExcludedFromNetWorthFilter,
     };
   }
 
@@ -146,6 +147,21 @@ class SupabaseAccountAdapter implements AccountRepositoryInterface {
     await client
         .from('accounts')
         .upsert(accounts.map(_accountToSupabase).toList(), onConflict: 'id');
+  }
+
+  @override
+  Future<void> updateAccountsNetWorthFilter(
+    List<String> ids, {
+    required bool isExcluded,
+  }) async {
+    if (ids.isEmpty) return;
+    _requireAuth();
+    repo.log('Updating net worth filter for ${ids.length} accounts');
+    await client
+        .from('accounts')
+        .update({'is_excluded_from_net_worth_filter': isExcluded})
+        .eq('user_id', currentUserId!)
+        .inFilter('id', ids);
   }
 
   @override
