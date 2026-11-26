@@ -6,7 +6,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_BUNDLE="$PROJECT_ROOT/build/ios/iphoneos/Runner.app"
-OUTPUT_DIR="$PROJECT_ROOT/build/sideloadly"
+OUTPUT_DIR="$PROJECT_ROOT/sideloadly"
 
 log() {
   printf '[sideloadly] %s\n' "$*"

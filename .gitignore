@@ -65,3 +65,6 @@ android/key.properties
 /supabase/.temp/
 # Per-environment native Google OAuth client IDs
 ios/Flutter/GoogleAuth.xcconfig
+
+# Sideloadly build output
+sideloadly/
