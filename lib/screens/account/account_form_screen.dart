@@ -161,8 +161,8 @@ class _AccountFormScreenState extends State<AccountFormScreen>
     final isPortfolio = _selectedType.isPortfolio;
     final initialBalance = isPortfolio
         ? 0.0
-        : !_isEditing && _selectedType == AccountType.debt
-        ? -balanceValue.abs()
+        : _selectedType == AccountType.debt
+        ? (balanceValue == 0 ? 0.0 : -balanceValue.abs())
         : balanceValue;
     final cashBalance = isPortfolio ? balanceValue : 0.0;
     final autoUpdateRate = isForeignCurrency && _autoUpdateRate;
