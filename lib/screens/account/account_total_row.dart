@@ -233,6 +233,8 @@ class AccountTotalRow extends StatelessWidget {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: false,
+      enableDrag: false,
       builder: (_) => AccountNetWorthFilterSheet(
         accounts: accounts,
         filterIds: filterIds,

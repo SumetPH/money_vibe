@@ -6,7 +6,6 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/account_icon_widget.dart';
 import '../../widgets/app_inset_card.dart';
-import '../../widgets/app_modal_bottom_sheet.dart';
 import '../../widgets/group_header.dart';
 
 class AccountNetWorthFilterSheet extends StatefulWidget {
@@ -69,13 +68,19 @@ class _NetWorthFilterSheetState extends State<AccountNetWorthFilterSheet> {
     }
 
     return SafeArea(
-      child: AppDraggableSheet(
-        builder: (_, scrollController) => Column(
+      child: FractionallySizedBox(
+        heightFactor: 0.85,
+        child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              padding: const EdgeInsets.fromLTRB(8, 12, 16, 12),
               child: Row(
                 children: [
+                  IconButton(
+                    icon: Icon(Icons.close, size: 20, color: textPrimary),
+                    tooltip: 'ปิด',
+                    onPressed: () => Navigator.pop(context),
+                  ),
                   Expanded(
                     child: Text(
                       'เลือกบัญชีที่คำนวณยอดรวม',
@@ -115,7 +120,7 @@ class _NetWorthFilterSheetState extends State<AccountNetWorthFilterSheet> {
             ),
             Expanded(
               child: ListView(
-                controller: scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   for (final group in accountGroupsForAccountList)
                     if (grouped.containsKey(group.label)) ...[

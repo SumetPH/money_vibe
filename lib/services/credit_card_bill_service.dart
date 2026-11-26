@@ -209,16 +209,16 @@ class CreditCardBillService {
       final totalAmount = _round(expensesAmount + carryOverAmount);
       final remainingAmount = _round(totalAmount - totalPaid);
 
-      // ยอดชำระเกิน: ถ้าชำระรวมมากกว่ายอดที่ต้องชำระ → ยกยอดส่วนเกินทั้งหมดไปรอบหน้า
-      double overpaidAmount = 0;
-      if (totalAmount > 0 && totalPaid > totalAmount) {
-        overpaidAmount = _round(totalPaid - totalAmount);
-      }
+      // ยอดชำระเกิน: ถ้าหลังหักยอดชำระแล้วยังติดลบ (รวมกรณี totalAmount <= 0)
+      // → ยกยอดเครดิตส่วนเกินทั้งหมดไปรอบหน้า
+      final overpaidAmount = remainingAmount < 0
+          ? _round(-remainingAmount)
+          : 0.0;
 
       // ยอดคงเหลือสำหรับแสดงผล:
-      //   บวก = ยังค้างชำระ
-      //   ลบ  = ชำระเกินใน grace period (จะยกไปรอบหน้า)
-      //   ศูนย์ = ชำระครบ หรือชำระเกินหลัง grace period (ไม่ยกยอด)
+      //   บวก  = ยังค้างชำระ
+      //   ลบ   = ชำระเกิน/เครดิตคงเหลือ (จะยกไปรอบหน้า)
+      //   ศูนย์ = ชำระครบพอดี
       final displayRemaining = remainingAmount < 0
           ? -overpaidAmount
           : remainingAmount;
