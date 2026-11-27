@@ -56,6 +56,9 @@ class AppDataStateView extends StatelessWidget {
     final readiness = context.select<SyncProvider, DataReadiness>(
       (syncProvider) => syncProvider.readinessOf(modules),
     );
+    final isLoading =
+        readiness == DataReadiness.notLoaded ||
+        readiness == DataReadiness.loading;
 
     final content = switch (readiness) {
       DataReadiness.ready => builder(context),
@@ -64,15 +67,14 @@ class AppDataStateView extends StatelessWidget {
           onRetry: () => refreshDataModules(context, modules),
         ),
       ),
-      _ => _StateScrollView(
-        isCentered: true,
+      DataReadiness.notLoaded || DataReadiness.loading => _ScreenCenteredBox(
         child: AppLoadingView(
           subtitles: [for (final m in modules) _syncModuleLabels[m]!],
         ),
       ),
     };
 
-    if (!enablePullToRefresh) {
+    if (!enablePullToRefresh || isLoading) {
       final header = this.header;
       if (header == null) return content;
       return Column(
@@ -104,25 +106,10 @@ const _syncModuleLabels = {
 class _StateScrollView extends StatelessWidget {
   final Widget child;
 
-  /// true = วาง [child] กลางจอในแนวตั้ง
-  final bool isCentered;
-
-  const _StateScrollView({required this.child, this.isCentered = false});
+  const _StateScrollView({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    if (isCentered) {
-      // SliverFillRemaining ให้ child เต็มความสูงที่เหลือ แต่ยังดึงลงเพื่อ refresh ได้
-      return CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: _ScreenCenteredBox(child: child),
-          ),
-        ],
-      );
-    }
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(

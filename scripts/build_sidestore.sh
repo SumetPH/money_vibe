@@ -1,23 +1,31 @@
 #!/bin/bash
-# Build IPA แบบไม่ sign สำหรับติดตั้งผ่าน Sideloadly (Sideloadly จะ re-sign ด้วย Apple ID ตอนติดตั้ง)
+# Build IPA แบบไม่ sign สำหรับติดตั้งผ่าน SideStore (SideStore จะ re-sign ด้วย Apple ID ตอนติดตั้ง)
 
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_BUNDLE="$PROJECT_ROOT/build/ios/iphoneos/Runner.app"
-OUTPUT_DIR="$PROJECT_ROOT/sideloadly"
+OUTPUT_DIR="$HOME/Documents/IPA"
+STAGING_DIR=""
 
 log() {
-  printf '[sideloadly] %s\n' "$*"
+  printf '[sidestore] %s\n' "$*"
 }
 
 die() {
-  printf '[sideloadly] ERROR: %s\n' "$*" >&2
+  printf '[sidestore] ERROR: %s\n' "$*" >&2
   exit 1
 }
 
+cleanup() {
+  if [[ -n "$STAGING_DIR" && -d "$STAGING_DIR" ]]; then
+    rm -rf "$STAGING_DIR"
+  fi
+}
+
 trap 'die "คำสั่งล้มเหลวที่บรรทัด $LINENO"' ERR
+trap cleanup EXIT
 
 [[ "$(uname -s)" == "Darwin" ]] || die "สคริปต์นี้รองรับเฉพาะ macOS"
 command -v flutter >/dev/null 2>&1 || die "ไม่พบคำสั่ง 'flutter'"
@@ -35,13 +43,14 @@ flutter build ios --release --no-codesign --no-tree-shake-icons \
 [[ -d "$APP_BUNDLE" ]] || die "ไม่พบ app bundle: $APP_BUNDLE"
 
 log "กำลังแพ็ก Payload/Runner.app เป็น .ipa..."
-rm -rf "$OUTPUT_DIR"
-mkdir -p "$OUTPUT_DIR/Payload"
-cp -R "$APP_BUNDLE" "$OUTPUT_DIR/Payload/"
+STAGING_DIR="$(mktemp -d)"
+mkdir -p "$STAGING_DIR/Payload"
+cp -R "$APP_BUNDLE" "$STAGING_DIR/Payload/"
 
 ipa_name="Money Vibe-${FLUTTER_ENV_NAME}-${FLUTTER_BUILD_NAME}+${FLUTTER_BUILD_NUMBER}.ipa"
-(cd "$OUTPUT_DIR" && zip -qry "$ipa_name" Payload)
-rm -rf "$OUTPUT_DIR/Payload"
+(cd "$STAGING_DIR" && zip -qry "$ipa_name" Payload)
+mkdir -p "$OUTPUT_DIR"
+mv -f "$STAGING_DIR/$ipa_name" "$OUTPUT_DIR/$ipa_name"
 
 log "✅ เสร็จแล้ว: $OUTPUT_DIR/$ipa_name"
-log "เปิด Sideloadly แล้วลากไฟล์นี้เข้าไปเพื่อติดตั้ง"
+log "นำไฟล์นี้ไปติดตั้งผ่าน SideStore ได้เลย"
